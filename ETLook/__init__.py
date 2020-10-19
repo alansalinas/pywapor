@@ -7,7 +7,7 @@ ETLook functions (:mod:`ETLook`)
 
 Within the :mod:`ETLook` module all physical and empirical
 functions related to the calculation of the soil moisture, interceptin,
-evaporation and transpiration are provided. These functions listed here 
+evaporation and transpiration are provided. These functions listed here
 can be used to build function chains.
 
 Instantaneous Radiation (:mod:`ETLook.clear_sky_radiation`)
@@ -89,6 +89,9 @@ Meteorology (:mod:`ETLook.meteo`)
    psychrometric_constant
    psychrometric_constant_daily
    saturated_vapour_pressure
+   saturated_vapour_pressure_minimum
+   saturated_vapour_pressure_maximum
+   saturated_vapour_pressure_average
    saturated_vapour_pressure_daily
    slope_saturated_vapour_pressure
    slope_saturated_vapour_pressure_daily
@@ -115,6 +118,7 @@ Net Available Energy (:mod:`ETLook.radiation`)
     damping_depth
     interception_wm2
     longwave_radiation_fao
+    longwave_radiation_fao_etref
     net_radiation
     net_radiation_canopy
     net_radiation_grass
@@ -172,7 +176,9 @@ Plant stress (:mod:`ETLook.stress`)
     stress_radiation
     stress_temperature
     stress_vpd
-
+    epsilon_soil_moisture
+    epsilon_autotrophic_respiration
+    
 Canopy and Soil Resistance (:mod:`ETLook.resistance`)
 ===========================================================
 
@@ -242,6 +248,7 @@ Soil Moisture (:mod:`ETLook.soil_moisture`)
     friction_velocity_bare_inst
     friction_velocity_full_inst
     initial_friction_velocity_inst
+    minimum_temperature
     maximum_temperature
     maximum_temperature_bare
     maximum_temperature_full
@@ -256,11 +263,21 @@ Soil Moisture (:mod:`ETLook.soil_moisture`)
     wind_speed_blending_height_full_inst
     wind_speed_soil_inst
 
+Biomass Production (:mod:`ETLook.biomass`)
+====================================================================
 
+.. automodule:: ETLook.biomass
+
+.. autosummary::
+    :toctree: generated/
+    
+    lue
+    apar
+    biomass
+    
 """
-from pyWAPOR.ETLook import ETLook_code, solar_radiation, clear_sky_radiation, meteo, radiation, evapotranspiration, soil_moisture, leaf, stress, resistance, roughness, neutral, unstable, outputs
+from pyWAPOR.ETLook import ETLook_code, solar_radiation, clear_sky_radiation, meteo, radiation, evapotranspiration, soil_moisture, leaf, stress, resistance, roughness, neutral, unstable, outputs, biomass
 
-__all__ = ['ETLook_code', 'solar_radiation', 'clear_sky_radiation', 'meteo, radiation', 'evapotranspiration', 'soil_moisture', 'leaf', 'stress', 'resistance', 'roughness', 'neutral', 'unstable', 'outputs']
+__all__ = ['ETLook_code', 'solar_radiation', 'clear_sky_radiation', 'meteo, radiation', 'evapotranspiration', 'soil_moisture', 'leaf', 'stress', 'resistance', 'roughness', 'neutral', 'unstable', 'outputs', 'biomass']
 
 __version__ = '0.1'
-

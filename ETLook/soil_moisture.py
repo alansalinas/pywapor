@@ -2,12 +2,12 @@
     The soil_moisture module contains all functions related to soil moisture data components.
 
 """
-import math
 from pyWAPOR.ETLook import constants as c
 from pyWAPOR.ETLook import unstable
 import numpy as np
 
-def wet_bulb_temperature_inst(t_air_i, t_dew_i):
+
+def wet_bulb_temperature_inst(t_air_i, t_dew_i, p_air_i):
     r"""
     Computes the instantaneous wet bulb temperature.
 
@@ -29,7 +29,65 @@ def wet_bulb_temperature_inst(t_air_i, t_dew_i):
         :math:`Tw_{a}`
         [C]
     """
-    tw = wetbulb_temperature_iter(t_air_i, t_dew_i)
+    tw = wetbulb_temperature_iter(t_air_i, t_dew_i, p_air_i)
+
+    return tw
+
+def wet_bulb_temperature_inst_new(t_air_i, qv_i, p_air_i):
+    r"""
+    Computes the instantaneous wet bulb temperature.
+
+    Parameters
+    ----------
+    t_air_i : float
+        instantaneous air temperature
+        :math:`T_{a}`
+        [C]
+    qv_i : float
+        instantaneous specific humidity
+        :math:`q_{v,i}`
+        [kg/kg]
+    p_air_i : float
+        instantaneous air pressure
+        :math:`P_{i}`
+        [mbar]
+
+    Returns
+    -------
+    t_wet_i : float
+        instantaneous wet bulb temperature
+        :math:`Tw_{a}`
+        [C]
+    """
+    es_i = 0.6108*np.exp((17.27*t_air_i)/(t_air_i+237.3))
+    rh_i = np.minimum((1.6077717*qv_i/10*p_air_i/es_i),1)*100
+    rh_i = rh_i.clip(0,100)
+    
+    tw = t_air_i * np.arctan(0.152 * (rh_i + 8.3136)**(1/2)) + np.arctan(t_air_i + rh_i) - np.arctan(rh_i - 1.6763) + 0.00391838 *(rh_i)**(3/2) * np.arctan(0.0231 * rh_i) - 4.686
+
+    return tw
+
+def wet_bulb_temperature_inst_new2(t_air_i):
+    r"""
+    Computes the instantaneous wet bulb temperature.
+
+    Parameters
+    ----------
+    t_air_i : float
+        instantaneous air temperature
+        :math:`T_{a}`
+        [C]
+
+    Returns
+    -------
+    t_wet_i : float
+        instantaneous wet bulb temperature
+        :math:`Tw_{a}`
+        [C]
+    """
+    
+    temp_tw = (17.27*t_air_i)/(237.3+t_air_i)
+    tw = 1.0919*temp_tw**2 + 13.306*temp_tw + 0.1304
 
     return tw
 
@@ -110,11 +168,11 @@ def vapor_pressure_iter(t):
 
 
 # only used internally
-def wetbulb_temperature_iter(ta, td):
+def wetbulb_temperature_iter(ta, td, pressure):
     
     maxiter = 1000
-    tol = 1e-6
-    pressure = 1013.25
+    tol = 1e-7
+    #pressure = 1013.25
 
     lv = latent_heat_iter(ta)
     psy = psychometric_constant_iter(lv, p=pressure)
@@ -124,7 +182,7 @@ def wetbulb_temperature_iter(ta, td):
 
     n = 0
 
-    prev_dir = np.zeros(ta.shape)
+    prev_dir = np.zeros_like(ta)
     step = (ta - td) / 5.
 
     while abs(np.nanmax(step)) > tol:
@@ -139,7 +197,6 @@ def wetbulb_temperature_iter(ta, td):
         prev_dir = direction
 
         n += 1
-
         if n >= maxiter:
             return tw
 
@@ -523,7 +580,9 @@ def wind_speed_blending_height_bare(u_i, z0m_bare=0.001, z_obs=10, z_b=100):
         [m/s]
     """
     ws = (c.k * u_i) / np.log(z_obs / z0m_bare) * np.log(z_b / z0m_bare) / c.k
-    ws = ws.clip(1,150)
+
+    ws = np.clip(ws, 1, 150)
+
     return ws
 
 
@@ -563,7 +622,8 @@ def wind_speed_blending_height_full_inst(u_i, z0m_full=0.1, z_obs=10, z_b=100):
         [m s-1]
     """
     ws = (c.k * u_i) / np.log(z_obs / z0m_full) * np.log(z_b / z0m_full) / c.k
-    ws = ws.clip(1, 150)
+
+    ws = np.clip(ws, 1, 150)
 
     return ws
 
@@ -1039,7 +1099,43 @@ def maximum_temperature(t_max_bare, t_max_full, vc):
     return vc * (t_max_full - t_max_bare) + t_max_bare
 
 
-def soil_moisture_from_maximum_temperature(lst_max, lst, t_wet_k_i):
+def minimum_temperature(t_wet_k_i, t_air_k_i, vc):
+    r"""
+    Computes the maximum temperature at dry conditions
+
+    .. math ::
+
+        T_{0,min} = c_{veg}(T_{a,i}-T_{w})+T_{w}
+
+
+    Parameters
+    ----------
+    t_wet_k_i : float
+        minimum temperature at bare soil
+        :math:`T_{s,max}`
+        [K]
+    t_air_k_i : float
+        minimum temperature at full vegetation
+        :math:`T_{c,max}`
+        [K]
+    vc : float
+        vegetation cover
+        :math:`c_{veg}`
+        [-]
+
+
+    Returns
+    -------
+    lst_min : float
+        minimum temperature at wet conditions
+        :math:`T_{0,min}`
+        [K]
+
+    """
+    return vc * (t_air_k_i - t_wet_k_i) + t_wet_k_i
+
+
+def soil_moisture_from_maximum_temperature(lst_max, lst, lst_min):
     r"""
     Computes the relative root zone soil moisture based on estimates of
     maximum temperature and wet bulb temperature and measured land
@@ -1047,7 +1143,7 @@ def soil_moisture_from_maximum_temperature(lst_max, lst, t_wet_k_i):
 
     .. math ::
 
-        \Theta = \frac{T_{0}-T_{w}}{T_{0,max}-T_{w}}
+        \Theta = \frac{T_{0}-T_{0,min}}{T_{0,max}-T_{0,min}}
 
     Parameters
     ----------
@@ -1059,23 +1155,23 @@ def soil_moisture_from_maximum_temperature(lst_max, lst, t_wet_k_i):
         maximum temperature at dry conditions
         :math:`T_{0,max}`
         [K]
-    t_wet_k_i : float
-        instantaneous wet bulb temperature
-        :math:`T_{w}`
+    lst_min : float
+        minimum temperature at wet conditions
+        :math:`T_{0, min}`
         [K]
 
 
     Returns
     -------
     se_root : float
-        relative root zone soil moisture (based on LST)
+        soil moisture root zone soil moisture (based on LST)
         :math:`\Theta`
-        [%]
+        [cm3/cm3]
 
     """
-    ratio = (lst - t_wet_k_i) / (lst_max - t_wet_k_i)
-    #ratio[ratio < 0] = 0
-    #ratio[ratio > 1] = 1
-    ratio = ratio.clip(0, 1)
+    ratio = (lst - lst_min) / (lst_max - lst_min)
+    ratio = np.clip(ratio, 0, 1)
+    ratio = 1 - ratio
+    se_root = np.exp((ratio-1.0)/0.421)
     
-    return 1 - ratio
+    return se_root
