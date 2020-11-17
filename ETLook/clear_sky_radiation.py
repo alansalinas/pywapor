@@ -4,7 +4,6 @@
     functions are based upon Šúri et Hofierka, 2004. [SuHi04]_
 
 """
-from math import pi, sin, cos, asin, exp, log
 import numpy as np
 
 def extraterrestrial_irradiance_normal(I0, ied):
@@ -58,7 +57,7 @@ def inverse_earth_sun_distance(day_angle):
         [AU]
 
     """
-    return 1 + 0.03344 * cos(day_angle - 0.048869)
+    return 1 + 0.03344 * np.cos(day_angle - 0.048869)
 
 
 def day_angle(doy):
@@ -85,7 +84,7 @@ def day_angle(doy):
         [rad]
 
     """
-    return 2 * pi * doy / 365.25
+    return 2 * np.pi * doy / 365.25
 
 
 def solar_constant():
@@ -135,7 +134,7 @@ def declination(day_angle):
     .. [Gr84] Gruter, J. W. (ed), 1984, Radiation Nomenclature, Brussels, CEC, Second
         Solar Energy Programme, Project F, Solar Radiation Data
     """
-    return asin(0.3978 * sin(day_angle - 1.4 + 0.0355 * sin(day_angle - 0.0489)))
+    return np.arcsin(0.3978 * np.sin(day_angle - 1.4 + 0.0355 * np.sin(day_angle - 0.0489)))
 
 
 def relative_optical_airmass(p_air_i, p_air_0_i, h0ref):
@@ -237,7 +236,7 @@ def hour_angle(solar_time):
         [rad]
 
     """
-    ha = pi / 12 * (solar_time - 12)
+    ha = np.pi / 12 * (solar_time - 12)
 
     return ha
 
@@ -403,7 +402,7 @@ def beam_irradiance_horizontal_clear(B0c, h0):
         [W/m2]
 
     """
-    Bhc = B0c * np.sin(h0 * pi / 180)
+    Bhc = B0c * np.sin(h0 * np.pi / 180)
     Bhc[h0 < 0] = 0
 
     return Bhc

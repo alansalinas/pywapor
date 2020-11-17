@@ -58,8 +58,8 @@ def Globcover_MaxObs(version = '1.0'):
     160: 0.3,  	#Closed to open (>15%) broadleaved forest regularly flooded (semi-permanently or temporarily) - Fresh or brackish water
     170: 6.0,  	#Closed (>40%) broadleaved forest or shrubland permanently flooded - Saline or brackish water
     180: 10,  	#Closed to open (>15%) grassland or woody vegetation on regularly flooded or waterlogged soil - Fresh, brackish or saline water
-    190: 0.1,  	#Artificial surfaces and associated areas (Urban areas >50%)
-    200: 10,  	#Bare areas
+    190: 10,  	#Artificial surfaces and associated areas (Urban areas >50%)
+    200: 0.1,  	#Bare areas
     210: 0.1,  	#Water bodies
     220: 0.1,  	#Permanent snow and ice
     230: 0  	#No data (burnt areas, clouds,…)

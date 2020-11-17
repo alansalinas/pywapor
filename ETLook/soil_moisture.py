@@ -67,31 +67,6 @@ def wet_bulb_temperature_inst_new(t_air_i, qv_i, p_air_i):
 
     return tw
 
-def wet_bulb_temperature_inst_new2(t_air_i):
-    r"""
-    Computes the instantaneous wet bulb temperature.
-
-    Parameters
-    ----------
-    t_air_i : float
-        instantaneous air temperature
-        :math:`T_{a}`
-        [C]
-
-    Returns
-    -------
-    t_wet_i : float
-        instantaneous wet bulb temperature
-        :math:`Tw_{a}`
-        [C]
-    """
-    
-    temp_tw = (17.27*t_air_i)/(237.3+t_air_i)
-    tw = 1.0919*temp_tw**2 + 13.306*temp_tw + 0.1304
-
-    return tw
-
-
 def dew_point_temperature_inst(vp_i):
     r"""
     Computes the instantaneous dew point temperature.
@@ -168,11 +143,10 @@ def vapor_pressure_iter(t):
 
 
 # only used internally
-def wetbulb_temperature_iter(ta, td, pressure):
-    
+def wetbulb_temperature_iter(ta, td):
     maxiter = 1000
     tol = 1e-7
-    #pressure = 1013.25
+    pressure = 1013.25
 
     lv = latent_heat_iter(ta)
     psy = psychometric_constant_iter(lv, p=pressure)
@@ -1164,14 +1138,11 @@ def soil_moisture_from_maximum_temperature(lst_max, lst, lst_min):
     Returns
     -------
     se_root : float
-        soil moisture root zone soil moisture (based on LST)
+        relative root zone soil moisture (based on LST)
         :math:`\Theta`
-        [cm3/cm3]
+        [%]
 
     """
     ratio = (lst - lst_min) / (lst_max - lst_min)
     ratio = np.clip(ratio, 0, 1)
-    ratio = 1 - ratio
-    se_root = np.exp((ratio-1.0)/0.421)
-    
-    return se_root
+    return 1 - ratio

@@ -176,9 +176,7 @@ Plant stress (:mod:`ETLook.stress`)
     stress_radiation
     stress_temperature
     stress_vpd
-    epsilon_soil_moisture
-    epsilon_autotrophic_respiration
-    
+
 Canopy and Soil Resistance (:mod:`ETLook.resistance`)
 ===========================================================
 
@@ -263,21 +261,10 @@ Soil Moisture (:mod:`ETLook.soil_moisture`)
     wind_speed_blending_height_full_inst
     wind_speed_soil_inst
 
-Biomass Production (:mod:`ETLook.biomass`)
-====================================================================
 
-.. automodule:: ETLook.biomass
-
-.. autosummary::
-    :toctree: generated/
-    
-    lue
-    apar
-    biomass
-    
 """
-from pyWAPOR.ETLook import ETLook_code, solar_radiation, clear_sky_radiation, meteo, radiation, evapotranspiration, soil_moisture, leaf, stress, resistance, roughness, neutral, unstable, outputs, biomass
+from pyWAPOR.ETLook import ETLook_code, solar_radiation, clear_sky_radiation, meteo, radiation, evapotranspiration, soil_moisture, leaf, stress, resistance, roughness, neutral, unstable, outputs
 
-__all__ = ['ETLook_code', 'solar_radiation', 'clear_sky_radiation', 'meteo, radiation', 'evapotranspiration', 'soil_moisture', 'leaf', 'stress', 'resistance', 'roughness', 'neutral', 'unstable', 'outputs', 'biomass']
+__all__ = ['ETLook_code', 'solar_radiation', 'clear_sky_radiation', 'meteo, radiation', 'evapotranspiration', 'soil_moisture', 'leaf', 'stress', 'resistance', 'roughness', 'neutral', 'unstable', 'outputs']
 
 __version__ = '0.1'

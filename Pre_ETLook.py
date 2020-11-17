@@ -5,6 +5,7 @@ author: Tim Martijn Hessels
 Created on Thu Feb 21 18:57:09 2019
 """
 import os
+import sys
 import shutil
 import datetime
 import gdal
@@ -19,7 +20,7 @@ import watertools.General.raster_conversions as RC
 
 import pyWAPOR
 
-def main(output_folder, Startdate, Enddate, latlim, lonlim, LandCover = "GlobCover", Short_Downwards_Radiation = "MSGCCP", composite = False):
+def main(output_folder, Startdate, Enddate, latlim, lonlim, LandCover = "GlobCover", Short_Downwards_Radiation = "MSGCCP", Satellite_folder = None, composite = False):
 
     ############################ Get General inputs ###############################
     
@@ -42,21 +43,7 @@ def main(output_folder, Startdate, Enddate, latlim, lonlim, LandCover = "GlobCov
         Dates = watertools.Collect.MOD11.DataAccess.Make_TimeStamps(Startdate, Enddate)
     else:
         Dates = pd.date_range(Startdate, Enddate, freq = "D")
-    
-    ######################### Download LST MODIS data #############################
-    
-    # Download LST data
-    if composite == True:
-        watertools.Collect.MOD11.LST_8daily(folders_input_RAW, Startdate, Enddate, latlim, lonlim)
-        watertools.Collect.MYD11.LST_8daily(folders_input_RAW, Startdate, Enddate, latlim, lonlim)        
-        Combine_LST_composite(folders_input_RAW, Startdate, Enddate)
-    else:
-        watertools.Collect.MOD11.LST_daily(folders_input_RAW, Startdate, Enddate, latlim, lonlim, angle_info = 1, time_info = 1)
-        watertools.Collect.MYD11.LST_daily(folders_input_RAW, Startdate, Enddate, latlim, lonlim, angle_info = 1, time_info = 1)   
-        Combine_LST(folders_input_RAW, Startdate, Enddate)
-    
-    ################## Download ALBEDO and NDVI MODIS data ########################
-    
+
     # Extend the days for NDVI data with +8 for both sides
     Startdate_NDVI = datetime.datetime.strptime(Startdate, "%Y-%m-%d") - datetime.timedelta(days = 8) 
     Enddate_NDVI = datetime.datetime.strptime(Enddate, "%Y-%m-%d") + datetime.timedelta(days = 8) 
@@ -64,30 +51,51 @@ def main(output_folder, Startdate, Enddate, latlim, lonlim, LandCover = "GlobCov
     Startdate_NDVI_str = datetime.datetime.strftime(Startdate_NDVI, "%Y-%m-%d")
     Enddate_NDVI_str = datetime.datetime.strftime(Enddate_NDVI, "%Y-%m-%d")
     
-    # Download NDVI and ALBEDO data
-    watertools.Collect.MOD13.NDVI_16daily(folders_input_RAW, Startdate_NDVI_str, Enddate_NDVI_str, latlim, lonlim)
-    watertools.Collect.MYD13.NDVI_16daily(folders_input_RAW, Startdate_NDVI_str, Enddate_NDVI_str, latlim, lonlim)
+    ######################### Download LST MODIS data #############################
+    if Satellite_folder == None:
+        # Download LST data
+        if composite == True:
+            watertools.Collect.MOD11.LST_8daily(folders_input_RAW, Startdate, Enddate, latlim, lonlim)
+            watertools.Collect.MYD11.LST_8daily(folders_input_RAW, Startdate, Enddate, latlim, lonlim)        
+            Combine_LST_composite(folders_input_RAW, Startdate, Enddate)
+        else:
+            watertools.Collect.MOD11.LST_daily(folders_input_RAW, Startdate, Enddate, latlim, lonlim, angle_info = 1, time_info = 1)
+            watertools.Collect.MYD11.LST_daily(folders_input_RAW, Startdate, Enddate, latlim, lonlim, angle_info = 1, time_info = 1)   
+            Combine_LST(folders_input_RAW, Startdate, Enddate)
     
-    if composite == True:
+    ################## Download ALBEDO and NDVI MODIS data ########################
+            
+        # Download NDVI and ALBEDO data
+        watertools.Collect.MOD13.NDVI_16daily(folders_input_RAW, Startdate_NDVI_str, Enddate_NDVI_str, latlim, lonlim)
+        watertools.Collect.MYD13.NDVI_16daily(folders_input_RAW, Startdate_NDVI_str, Enddate_NDVI_str, latlim, lonlim)
         
-        #for Date_albedo in Dates:
-        #    watertools.Collect.MCD43.Albedo_daily(folders_input_RAW, Date_albedo, Date_albedo, latlim, lonlim)
+        if composite == True:
             
-        watertools.Collect.MCD19.Albedo_8daily(folders_input_RAW, Startdate_NDVI_str, Enddate_NDVI_str, latlim, lonlim)
-            
+            #for Date_albedo in Dates:
+            #    watertools.Collect.MCD43.Albedo_daily(folders_input_RAW, Date_albedo, Date_albedo, latlim, lonlim)
+                
+            watertools.Collect.MCD19.Albedo_8daily(folders_input_RAW, Startdate_NDVI_str, Enddate_NDVI_str, latlim, lonlim)
+                
+                
+        else:     
+            print("Download Albedo")
+            watertools.Collect.MCD43.Albedo_daily(folders_input_RAW, Startdate, Enddate, latlim, lonlim)
+    
+    ########################### Download CHIRPS data ################################    
+
+    if composite == True:
+
         ######################## Download Rainfall Data ###############################
         # Download CHIRPS data
         watertools.Collect.CHIRPS.daily(folders_input_RAW, Startdate_NDVI_str, Enddate_NDVI_str, latlim, lonlim)
-            
+                
     else:     
-        print("Download Albedo")
-        watertools.Collect.MCD43.Albedo_daily(folders_input_RAW, Startdate, Enddate, latlim, lonlim)
 
         ######################## Download Rainfall Data ###############################
         print("Download CHIRPS")
         # Download CHIRPS data
         watertools.Collect.CHIRPS.daily(folders_input_RAW, Startdate, Enddate, latlim, lonlim)    
-    
+
     ########################### Download DEM data #################################
     
     # Download DEM data
@@ -116,7 +124,7 @@ def main(output_folder, Startdate, Enddate, latlim, lonlim, LandCover = "GlobCov
 
     ############### Loop over days for the dynamic data ###############################
     
-    # Create the inputs of MODIS for all the Dates
+    # Create the inputs of MODIS or LS for all the Dates
     for Date in Dates:
         
         try:
@@ -128,37 +136,58 @@ def main(output_folder, Startdate, Enddate, latlim, lonlim, LandCover = "GlobCov
             folder_input_ETLook_Static = os.path.join(folder_input_ETLook, "Static")
             if not os.path.exists(folder_input_ETLook_Static):
                 os.makedirs(folder_input_ETLook_Static)
+
+            if Satellite_folder == None:
                 
-            # Find nearest date for NDVI 
-            Startdate_year = "%d-01-01" %Date.year
-            Enddate_year = "%d-12-31" %Date.year
-            
-            # Create MODIS NDVI dataset
-            Dates_eight_daily_year = pd.date_range(Startdate_year, Enddate_year, freq = "8D")
-            
-            # find nearest NDVI date
-            Date_nearest = min(Dates_eight_daily_year, key=lambda Dates_eight_daily_year: abs(Dates_eight_daily_year - Date))   
-            
-            # Create NDVI files for ETLook
-            
-            # try MOD13 and MYD13
-            NDVI_file = os.path.join(folder_input_ETLook_Date, "NDVI_%d%02d%02d.tif" %(Date.year, Date.month, Date.day))
-            if not os.path.exists(NDVI_file):
-                folder_RAW_file_NDVI = os.path.join(folders_input_RAW, "NDVI", "{v}13")      
-                filename_NDVI = "NDVI_{v}13Q1_-_16-daily_%d.%02d.%02d.tif" %(Date_nearest.year, Date_nearest.month, Date_nearest.day)
+                # Find nearest date for NDVI 
+                Startdate_year = "%d-01-01" %Date.year
+                Enddate_year = "%d-12-31" %Date.year
+                            
+                # Create MODIS NDVI dataset
+                Dates_eight_daily_year = pd.date_range(Startdate_year, Enddate_year, freq = "8D")
                 
-                if os.path.exists(os.path.join(folder_RAW_file_NDVI, filename_NDVI).format(v="MOD")):
-                    shutil.copy(os.path.join(folder_RAW_file_NDVI, filename_NDVI).format(v="MOD"), 
-                                folder_input_ETLook_Date)
-                    os.rename(os.path.join(folder_input_ETLook_Date, filename_NDVI).format(v="MOD"), NDVI_file)
-                     
-                elif os.path.exists(os.path.join(folder_RAW_file_NDVI, filename_NDVI).format(v="MYD")): 
-                    shutil.copy(os.path.join(folder_RAW_file_NDVI, filename_NDVI).format(v="MYD"), 
-                                folder_input_ETLook_Date)
-                    os.rename(os.path.join(folder_input_ETLook_Date, filename_NDVI).format(v="MYD"), NDVI_file)
-            
-                else:
-                    print("NDVI is not available for date: %d%02d%02d" %(Date.year, Date.month, Date.day))
+                # find nearest NDVI date
+                Date_nearest = min(Dates_eight_daily_year, key=lambda Dates_eight_daily_year: abs(Dates_eight_daily_year - Date))   
+
+                # Create NDVI files for ETLook
+                
+                # try MOD13 and MYD13
+                NDVI_file = os.path.join(folder_input_ETLook_Date, "NDVI_%d%02d%02d.tif" %(Date.year, Date.month, Date.day))
+                if not os.path.exists(NDVI_file):
+                    folder_RAW_file_NDVI = os.path.join(folders_input_RAW, "NDVI", "{v}13")      
+                    filename_NDVI = "NDVI_{v}13Q1_-_16-daily_%d.%02d.%02d.tif" %(Date_nearest.year, Date_nearest.month, Date_nearest.day)
+                    
+                    if os.path.exists(os.path.join(folder_RAW_file_NDVI, filename_NDVI).format(v="MOD")):
+                        shutil.copy(os.path.join(folder_RAW_file_NDVI, filename_NDVI).format(v="MOD"), 
+                                    folder_input_ETLook_Date)
+                        os.rename(os.path.join(folder_input_ETLook_Date, filename_NDVI).format(v="MOD"), NDVI_file)
+                         
+                    elif os.path.exists(os.path.join(folder_RAW_file_NDVI, filename_NDVI).format(v="MYD")): 
+                        shutil.copy(os.path.join(folder_RAW_file_NDVI, filename_NDVI).format(v="MYD"), 
+                                    folder_input_ETLook_Date)
+                        os.rename(os.path.join(folder_input_ETLook_Date, filename_NDVI).format(v="MYD"), NDVI_file)
+                
+                    else:
+                        print("NDVI is not available for date: %d%02d%02d" %(Date.year, Date.month, Date.day))
+           
+            else:
+                NDVI_file = os.path.join(folder_input_ETLook_Date, "NDVI_%d%02d%02d.tif" %(Date.year, Date.month, Date.day))
+                DEM_file = os.path.join(folders_input_RAW, "SRTM", "DEM", "DEM_SRTM_m_3s.tif")
+                dest_dem = gdal.Open(DEM_file)
+                geo_dem = dest_dem.GetGeoTransform()
+                geo_dem = np.array(geo_dem)
+                geo_dem[1] = geo_dem[1]/3
+                geo_dem[5] = geo_dem[5]/3
+                geo_dem = tuple(geo_dem)
+                data_ex = np.ones([dest_dem.RasterYSize *3, dest_dem.RasterXSize *3]) * np.nan
+                dest_dem_ex = DC.Save_as_MEM(data_ex, geo_dem, 4326)
+                
+                folder_NDVI_LS = os.path.join(Satellite_folder, "NDVI")
+                os.chdir(folder_NDVI_LS)
+                filename_NDVI = os.path.join(folder_NDVI_LS, glob.glob("*_%d%02d%02d.tif" %(Date.year, Date.month, Date.day))[0])
+                dest_rep = RC.reproject_dataset_example(filename_NDVI, dest_dem_ex, 2)
+                ndvi_rep, Geo_out = RC.clip_data(dest_rep, latlim, lonlim)            
+                DC.Save_as_tiff(NDVI_file, ndvi_rep, Geo_out, 4326)
         
             # Get example files
             dest_ex = gdal.Open(NDVI_file)
@@ -166,62 +195,7 @@ def main(output_folder, Startdate, Enddate, latlim, lonlim, LandCover = "GlobCov
             proj_ex = dest_ex.GetProjection()
             size_x_ex = dest_ex.RasterXSize
             size_y_ex = dest_ex.RasterYSize    
-        
-            # Create ALBEDO files for ETLook
-        
-            # try MCD43
-            ALBEDO_file = os.path.join(folder_input_ETLook_Date, "ALBEDO_%d%02d%02d.tif" %(Date.year, Date.month, Date.day))
-            if not os.path.exists(ALBEDO_file):
-                
-                if composite == True:
-                    folder_RAW_file_ALBEDO = os.path.join(folders_input_RAW, "Albedo", "MCD19", "8_Daily")      
-                    filename_ALBEDO = "Albedo_MCD19A3_-_8-daily_%d.%02d.%02d.tif" %(Date.year, Date.month, Date.day)                    
-                    #folder_RAW_file_ALBEDO = os.path.join(folders_input_RAW, "Albedo", "MCD43")      
-                    #filename_ALBEDO = "Albedo_MCD43A3_-_daily_%d.%02d.%02d.tif" %(Date.year, Date.month, Date.day)
-                    
-                else:
-                    folder_RAW_file_ALBEDO = os.path.join(folders_input_RAW, "Albedo", "MCD43")      
-                    filename_ALBEDO = "Albedo_MCD43A3_-_daily_%d.%02d.%02d.tif" %(Date.year, Date.month, Date.day)
-                
-                if os.path.exists(os.path.join(folder_RAW_file_ALBEDO, filename_ALBEDO)):
-                    destalbedo = RC.reproject_dataset_example(os.path.join(folder_RAW_file_ALBEDO, filename_ALBEDO), NDVI_file, method=1)
-                    albedo = destalbedo.GetRasterBand(1).ReadAsArray()
-                    albedo[albedo<=-0.4] = -9999                    
-                    DC.Save_as_tiff(ALBEDO_file, albedo, geo_ex, proj_ex)            
-                    
-                else:
-                    print("ALBEDO is not available for date: %d%02d%02d" %(Date.year, Date.month, Date.day))
-                    
-            # Create LST files for ETLook            
-            LST_file = os.path.join(folder_input_ETLook_Date, "LST_%d%02d%02d.tif" %(Date.year, Date.month, Date.day))            
-            Time_file = os.path.join(folder_input_ETLook_Date, "Time_%d%02d%02d.tif" %(Date.year, Date.month, Date.day))       
-            if not os.path.exists(LST_file):
-                if composite == True:
-                    folder_RAW_file_LST = os.path.join(folders_input_RAW, "MODIS", "LST", "8_Daily")      
-                    filename_LST = "LST_MCD11A2_K_8-daily_%d.%02d.%02d.tif" %(Date.year, Date.month, Date.day)    
-                    filename_Time = "Time_MCD11A2_hour_8-daily_%d.%02d.%02d.tif" %(Date.year, Date.month, Date.day)                    
-                else:
-                    folder_RAW_file_LST = os.path.join(folders_input_RAW, "MODIS", "LST", "Daily")      
-                    filename_LST = "LST_MCD11A1_K_daily_%d.%02d.%02d.tif" %(Date.year, Date.month, Date.day)    
-                    filename_Time = "Time_MCD11A1_hour_daily_%d.%02d.%02d.tif" %(Date.year, Date.month, Date.day)
-                if os.path.exists(os.path.join(folder_RAW_file_LST, filename_LST)):        
-                    destLST = RC.reproject_dataset_example(os.path.join(folder_RAW_file_LST, filename_LST), NDVI_file, method=2)
-                    LST = destLST.GetRasterBand(1).ReadAsArray()
-                    LST[LST==0.0] = -9999
-                    DC.Save_as_tiff(LST_file, LST, geo_ex, proj_ex)
-        
-                    destTime = RC.reproject_dataset_example(os.path.join(folder_RAW_file_LST, filename_Time), NDVI_file, method=1)
-                    Time = destTime.GetRasterBand(1).ReadAsArray()
-                    Time[Time==0.0] = -9999
-                    DC.Save_as_tiff(Time_file, Time, geo_ex, proj_ex)
-                    
-                else:
-                    print("LST is not available for date: %d%02d%02d" %(Date.year, Date.month, Date.day))        
-            else:
-                destTime = gdal.Open(Time_file)
-                Time = destTime.GetRasterBand(1).ReadAsArray()
-                Time[Time==0.0] = -9999
-                
+
             ####################### Create lat and lon rasters ############################
             
             Lon_file = os.path.join(folder_input_ETLook_Static, "Lon.tif")     
@@ -237,9 +211,92 @@ def main(output_folder, Startdate, Enddate, latlim, lonlim, LandCover = "GlobCov
             else:
                dest_lon = gdal.Open(Lon_file)
                lon_deg = dest_lon.GetRasterBand(1).ReadAsArray()
+               
+            dlat, dlon = watertools.Functions.Area_Conversions.Area_converter.Calc_dlat_dlon(geo_ex, size_x_ex, size_y_ex)
             
             offset_GTM = int(round(lon_deg[int(lon_deg.shape[0]/2),int(lon_deg.shape[1]/2)] * 24 / 360))
+        
+            # Create ALBEDO files for ETLook
+
+            if Satellite_folder == None:        
+                # try MCD43
+                ALBEDO_file = os.path.join(folder_input_ETLook_Date, "ALBEDO_%d%02d%02d.tif" %(Date.year, Date.month, Date.day))
+                if not os.path.exists(ALBEDO_file):
+                    
+                    if composite == True:
+                        folder_RAW_file_ALBEDO = os.path.join(folders_input_RAW, "Albedo", "MCD19", "8_Daily")      
+                        filename_ALBEDO = "Albedo_MCD19A3_-_8-daily_%d.%02d.%02d.tif" %(Date.year, Date.month, Date.day)                    
+                        #folder_RAW_file_ALBEDO = os.path.join(folders_input_RAW, "Albedo", "MCD43")      
+                        #filename_ALBEDO = "Albedo_MCD43A3_-_daily_%d.%02d.%02d.tif" %(Date.year, Date.month, Date.day)
+                        
+                    else:
+                        folder_RAW_file_ALBEDO = os.path.join(folders_input_RAW, "Albedo", "MCD43")      
+                        filename_ALBEDO = "Albedo_MCD43A3_-_daily_%d.%02d.%02d.tif" %(Date.year, Date.month, Date.day)
+                    
+                    if os.path.exists(os.path.join(folder_RAW_file_ALBEDO, filename_ALBEDO)):
+                        destalbedo = RC.reproject_dataset_example(os.path.join(folder_RAW_file_ALBEDO, filename_ALBEDO), NDVI_file, method=1)
+                        albedo = destalbedo.GetRasterBand(1).ReadAsArray()
+                        albedo[albedo<=-0.4] = -9999                    
+                        DC.Save_as_tiff(ALBEDO_file, albedo, geo_ex, proj_ex)            
+                        
+                    else:
+                        print("ALBEDO is not available for date: %d%02d%02d" %(Date.year, Date.month, Date.day))
+                        
+                # Create LST files for ETLook            
+                LST_file = os.path.join(folder_input_ETLook_Date, "LST_%d%02d%02d.tif" %(Date.year, Date.month, Date.day))            
+                Time_file = os.path.join(folder_input_ETLook_Date, "Time_%d%02d%02d.tif" %(Date.year, Date.month, Date.day))       
+                if not os.path.exists(LST_file):
+                    if composite == True:
+                        folder_RAW_file_LST = os.path.join(folders_input_RAW, "MODIS", "LST", "8_Daily")      
+                        filename_LST = "LST_MCD11A2_K_8-daily_%d.%02d.%02d.tif" %(Date.year, Date.month, Date.day)    
+                        filename_Time = "Time_MCD11A2_hour_8-daily_%d.%02d.%02d.tif" %(Date.year, Date.month, Date.day)                    
+                    else:
+                        folder_RAW_file_LST = os.path.join(folders_input_RAW, "MODIS", "LST", "Daily")      
+                        filename_LST = "LST_MCD11A1_K_daily_%d.%02d.%02d.tif" %(Date.year, Date.month, Date.day)    
+                        filename_Time = "Time_MCD11A1_hour_daily_%d.%02d.%02d.tif" %(Date.year, Date.month, Date.day)
+                    if os.path.exists(os.path.join(folder_RAW_file_LST, filename_LST)):        
+                        destLST = RC.reproject_dataset_example(os.path.join(folder_RAW_file_LST, filename_LST), NDVI_file, method=2)
+                        LST = destLST.GetRasterBand(1).ReadAsArray()
+                        LST[LST==0.0] = -9999
+                        DC.Save_as_tiff(LST_file, LST, geo_ex, proj_ex)
+            
+                        destTime = RC.reproject_dataset_example(os.path.join(folder_RAW_file_LST, filename_Time), NDVI_file, method=1)
+                        Time = destTime.GetRasterBand(1).ReadAsArray()
+                        Time[Time==0.0] = -9999
+                        DC.Save_as_tiff(Time_file, Time, geo_ex, proj_ex)
+                        
+                    else:
+                        print("LST is not available for date: %d%02d%02d" %(Date.year, Date.month, Date.day))        
+                else:
+                    destTime = gdal.Open(Time_file)
+                    Time = destTime.GetRasterBand(1).ReadAsArray()
+                    Time[Time==0.0] = -9999
+            
+            else:
+                ALBEDO_file = os.path.join(folder_input_ETLook_Date, "ALBEDO_%d%02d%02d.tif" %(Date.year, Date.month, Date.day))
+                folder_ALBEDO_LS = os.path.join(Satellite_folder, "Albedo")
+                os.chdir(folder_ALBEDO_LS)
+                filename_ALBEDO = os.path.join(folder_ALBEDO_LS, glob.glob("*_%d%02d%02d.tif" %(Date.year, Date.month, Date.day))[0])
+                destalbedo = RC.reproject_dataset_example(os.path.join(folder_ALBEDO_LS, filename_ALBEDO), NDVI_file, method=1)
+                albedo = destalbedo.GetRasterBand(1).ReadAsArray()
+                albedo[albedo<=-0.4] = -9999                    
+                DC.Save_as_tiff(ALBEDO_file, albedo, geo_ex, proj_ex)                     
+          
+                LST_file = os.path.join(folder_input_ETLook_Date, "LST_%d%02d%02d.tif" %(Date.year, Date.month, Date.day))            
+                Time_file = os.path.join(folder_input_ETLook_Date, "Time_%d%02d%02d.tif" %(Date.year, Date.month, Date.day))  
+
+                folder_LST_LS = os.path.join(Satellite_folder, "LST")
+                os.chdir(folder_LST_LS)
+                lst_filename = glob.glob("*_LST_*_%d%02d%02d_*.tif" %(Date.year, Date.month, Date.day))[0]
+                filename_LST = os.path.join(folder_LST_LS, lst_filename)
+                destlst = RC.reproject_dataset_example(os.path.join(folder_LST_LS, filename_LST), NDVI_file, method=1)
+                lst = destlst.GetRasterBand(1).ReadAsArray()
+                albedo[lst<=-0.4] = -9999                    
+                DC.Save_as_tiff(LST_file, lst, geo_ex, proj_ex)                     
                 
+                Time = np.ones(albedo.shape)*(int(lst_filename.split("_")[-1][0:2])+(offset_GTM) + int(lst_filename.split("_")[-1][2:4])/60)
+                DC.Save_as_tiff(Time_file, Time, geo_ex, proj_ex)  
+
             ########################## Create Time rasters ################################
             
             # calculate overall time
@@ -284,7 +341,7 @@ def main(output_folder, Startdate, Enddate, latlim, lonlim, LandCover = "GlobCov
                 DEM = destDEM.GetRasterBand(1).ReadAsArray()
                 
                 # constants
-                pixel_spacing = 1000
+                pixel_spacing = (np.nanmean(dlon) +np.nanmean(dlat))/2
                 deg2rad = np.pi / 180.0  # Factor to transform from degree to rad
                 rad2deg = 180.0 / np.pi  # Factor to transform from rad to degree
             
@@ -886,7 +943,6 @@ def main(output_folder, Startdate, Enddate, latlim, lonlim, LandCover = "GlobCov
                             folder_RAW_file_trans = os.path.join(folders_input_RAW, str_TRANS, "SDS", "15min") 
                             filename_trans = "SDS_MSGCPP_W-m-2_15min_%d.%02d.%02d_H{hour}.M{minutes}.tif"  %(Date.year, Date.month, Date.day)
                             
-                            import glob
                             os.chdir(folder_RAW_file_trans)
                             files = glob.glob(filename_trans.format(hour = "*", minutes = "*"))
                             i = 0
@@ -935,7 +991,6 @@ def main(output_folder, Startdate, Enddate, latlim, lonlim, LandCover = "GlobCov
                         folder_RAW_file_trans = os.path.join(folders_input_RAW, str_TRANS, "SDS", "15min") 
                         filename_trans = "SDS_MSGCPP_W-m-2_15min_%d.%02d.%02d_H{hour}.M{minutes}.tif"  %(Date.year, Date.month, Date.day)
                         
-                        import glob
                         os.chdir(folder_RAW_file_trans)
                         files = glob.glob(filename_trans.format(hour = "*", minutes = "*"))
                         i = 0
@@ -969,8 +1024,9 @@ def main(output_folder, Startdate, Enddate, latlim, lonlim, LandCover = "GlobCov
                     trans = swgnet / Ra24_flat
                     DC.Save_as_tiff(Trans_file, trans, geo_ex, proj_ex)
                 
-        except:           
+        except Exception as e:
             print("No ETLook input dataset for %s" %Date)
+            print(e)  
             
     return()    
     
@@ -1160,4 +1216,5 @@ def save_response_content(response, destination):
     with open(destination, "wb") as f:
         for chunk in response.iter_content(CHUNK_SIZE):
             if chunk: # filter out keep-alive new chunks
-                f.write(chunk)           
+                f.write(chunk)          
+ 

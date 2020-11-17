@@ -2,7 +2,6 @@ import os
 import gdal
 import numpy as np
 import warnings
-import time
 
 def main(input_folder, output_folder, Date):
 
@@ -11,8 +10,10 @@ def main(input_folder, output_folder, Date):
 
     import pyWAPOR.ETLook as ETLook
     import pyWAPOR.ETLook.outputs as out
+    import watertools
     import watertools.General.data_conversions as DC
 
+    
     # Define Date string
     Date_str = "%d%02d%02d" %(Date.year, Date.month, Date.day)
 
@@ -33,9 +34,8 @@ def main(input_folder, output_folder, Date):
     Slope_filename = os.path.join(input_folder_static, "Slope.tif")
     Aspect_filename = os.path.join(input_folder_static, "Aspect.tif")
     LandMask_filename = os.path.join(input_folder_static, "LandMask_%d.tif" %Date.year)
-    Bulk_filename =os.path.join(input_folder_static, "Bulk_Stomatal_resistance_%d.tif" %Date.year)
     MaxObs_filename = os.path.join(input_folder_static, "Maximum_Obstacle_Height_%d.tif" %Date.year)
-    LUEmax_filename = os.path.join(input_folder_static, "LUEmax_%d.tif" %Date.year)
+    Bulk_filename = os.path.join(input_folder_static, "Bulk_Stomatal_resistance_%d.tif" %Date.year)
     Pair_24_0_filename = os.path.join(input_folder_date, "Pair_24_0_%s.tif" %Date_str)
     Pair_inst_0_filename = os.path.join(input_folder_date, "Pair_inst_0_%s.tif" %Date_str)
     Pair_inst_filename = os.path.join(input_folder_date, "Pair_inst_%s.tif" %Date_str)
@@ -51,7 +51,7 @@ def main(input_folder, output_folder, Date):
     Wind_inst_filename = os.path.join(input_folder_date, "wind_inst_%s.tif" %Date_str)
     WatCol_inst_filename = os.path.join(input_folder_date, "wv_inst_%s.tif" %Date_str)
     Trans_24_filename = os.path.join(input_folder_date, "Trans_24_%s.tif" %Date_str)
-
+    
     ############################ Define outputs ###############################
 
     # Output folder Date
@@ -157,8 +157,7 @@ def main(input_folder, output_folder, Date):
     rn_24_grass_filename= os.path.join(output_folder_date, "rn_24_grass_%s.tif" %Date_str)
     et_ref_24_filename= os.path.join(output_folder_date, "et_ref_24_%s.tif" %Date_str)
     et_ref_24_mm_filename= os.path.join(output_folder_date, "et_ref_24_mm_%s.tif" %Date_str)
-    biomass_prod_filename= os.path.join(output_folder_date, "biomass_prod_kg-ha_%s.tif" %Date_str)
-    
+
     ########################## Open input rasters #############################
     dest_lst = gdal.Open(LST_filename)
     lst = dest_lst.GetRasterBand(1).ReadAsArray()
@@ -200,16 +199,12 @@ def main(input_folder, output_folder, Date):
     land_mask = dest_lm.GetRasterBand(1).ReadAsArray()
     land_mask[np.isnan(lst)] = np.nan
 
-    #dest_bulk = gdal.Open(Bulk_filename)
-    #bulk = dest_bulk.GetRasterBand(1).ReadAsArray()
+    dest_bulk = gdal.Open(Bulk_filename)
+    rs_min = dest_bulk.GetRasterBand(1).ReadAsArray()
 
     dest_maxobs = gdal.Open(MaxObs_filename)
     z_obst_max = dest_maxobs.GetRasterBand(1).ReadAsArray()
     z_obst_max[np.isnan(lst)] = np.nan
-
-    dest_luemax = gdal.Open(LUEmax_filename)
-    lue_max = dest_luemax.GetRasterBand(1).ReadAsArray()
-    lue_max[np.isnan(lst)] = np.nan
 
     dest_pairsea24 = gdal.Open(Pair_24_0_filename)
     p_air_0_24 = dest_pairsea24.GetRasterBand(1).ReadAsArray()
@@ -254,7 +249,6 @@ def main(input_folder, output_folder, Date):
     dest_tairinst = gdal.Open(Tair_inst_filename)
     t_air_i = dest_tairinst.GetRasterBand(1).ReadAsArray()
     t_air_i[np.isnan(lst)] = np.nan
-    t_air_i[t_air_i<-270] = np.nan
 
     dest_tairamp = gdal.Open(Tair_amp_filename)
     t_amp_year = dest_tairamp.GetRasterBand(1).ReadAsArray()
@@ -316,7 +310,7 @@ def main(input_folder, output_folder, Date):
     t_min = 0 # minimal temperature for plant growth
     t_max = 50 # maximal temperature for plant growth
     vpd_slope = -0.3
-    rs_min = 100
+    #rs_min = 70
     rcan_max = 1000000
 
     # **net radiation canopy******************************************************
@@ -346,7 +340,6 @@ def main(input_folder, output_folder, Date):
     ndvi_obs_min = 0.25
     ndvi_obs_max = 0.75
     obs_fr = 0.25
-    dem_resolution = geo_ex[1]
 
     # **ETLook.unstable.initial_friction_velocity_daily***********************************************************
     # constants or predefined:
@@ -373,7 +366,7 @@ def main(input_folder, output_folder, Date):
     # constants or predefined:
     r0_grass = 0.23
 
-    ######################## MODEL ETLOOK #########################################
+    ######################## MODEL ETLook #########################################
 
     # **effective_leaf_area_index**************************************************
     vc = ETLook.leaf.vegetation_cover(ndvi, nd_min, nd_max, vc_pow)
@@ -483,8 +476,6 @@ def main(input_folder, output_folder, Date):
     if out.r_canopy_0 == 1:
         DC.Save_as_tiff(r_canopy_0_filename, r_canopy_0, geo_ex, proj_ex)
 
-    del iesd, aspect, ra_24_toa, ws, ra_24_toa_flat, diffusion_index, svp_24
-
     # **net radiation canopy******************************************************
     t_air_k_24 = ETLook.meteo.air_temperature_kelvin_daily(t_air_24)
     # select one of the below two
@@ -518,8 +509,6 @@ def main(input_folder, output_folder, Date):
         DC.Save_as_tiff(rn_24_filename, rn_24, geo_ex, proj_ex)
     if out.rn_24_canopy == 1:
         DC.Save_as_tiff(rn_24_canopy_filename, rn_24_canopy, geo_ex, proj_ex)
-
-    del int_mm, int_wm2
 
     # **canopy resistance***********************************************************
 
@@ -571,11 +560,10 @@ def main(input_folder, output_folder, Date):
     #time4 = time.time()
     #print("Time method 1 = %s" %(time2-time1))
     #print("Time method 2 = %s" %(time3-time2))    
-    #print("Time method 3 = %s" %(time4-time3))    
+    #print("Time method 3 = %s" %(time4-time3))   
     
     t_wet_k_i = ETLook.meteo.wet_bulb_temperature_kelvin_inst(t_wet_i)
-    
-    lst_max = ETLook.soil_moisture.maximum_temperature(t_max_bare, t_max_full, vc) #!!! doe lapse rate over lst_max om de waarde te verlagen
+    lst_max = ETLook.soil_moisture.maximum_temperature(t_max_bare, t_max_full, vc)
     lst_min = ETLook.soil_moisture.minimum_temperature(t_wet_k_i, t_air_k_i, vc)
     se_root = ETLook.soil_moisture.soil_moisture_from_maximum_temperature(lst_max, lst, lst_min)
     stress_moist = ETLook.stress.stress_moisture(se_root, tenacity)
@@ -700,14 +688,12 @@ def main(input_folder, output_folder, Date):
     if out.r_canopy == 1:
         DC.Save_as_tiff(r_canopy_filename, r_canopy, geo_ex, proj_ex)
 
-    del lai_eff, sc, day_angle, stress_rad, stress_vpd, r_canopy_0, t_air_k_i, vp_i, ad_moist_i, ad_dry_i, ad_i, u_b_i_bare
-    del lon, ha, I0, ied, h0, h0ref, m, rotm, Tl2, G0, B0c, Bhc, Dhc, ra_hor_clear_i, emiss_atm_i, rn_bare, rn_full, u_b_i_full, u_star_i_bare
-    del u_star_i_full, u_i_soil, ras, raa, rac, t_max_bare, t_max_full, w_i, t_dew_i, t_wet_i, t_wet_k_i, lst_max 
-    
     # **initial canopy aerodynamic resistance***********************************************************
-
+    dlat, dlon = watertools.Functions.Area_Conversions.Area_converter.Calc_dlat_dlon(geo_ex, ndvi.shape[1], ndvi.shape[0])
+    dem_resolution = (np.nanmean(dlon) +np.nanmean(dlat))/2
+    
     z_obst = ETLook.roughness.obstacle_height(ndvi, z_obst_max, ndvi_obs_min, ndvi_obs_max, obs_fr)
-    z_oro = ETLook.roughness.orographic_roughness(slope, dem_resolution) #careful - standard res is set to 250 # !!!
+    z_oro = ETLook.roughness.orographic_roughness(slope, dem_resolution)
     z0m = ETLook.roughness.roughness_length(lai, z_oro, z_obst, z_obst_max, land_mask)
     ra_canopy_init = ETLook.neutral.initial_canopy_aerodynamic_resistance(u_24, z0m, z_obs)
 
@@ -724,8 +710,6 @@ def main(input_folder, output_folder, Date):
         DC.Save_as_tiff(z0m_filename, z0m, geo_ex, proj_ex)
     if out.ra_canopy_init == 1:
         DC.Save_as_tiff(ra_canopy_init_filename, ra_canopy_init, geo_ex, proj_ex)
-    
-    del slope, z_oro
 
     # **windspeed blending height daily***********************************************************
     u_b_24 = ETLook.meteo.wind_speed_blending_height_daily(u_24, z_obs, z_b)
@@ -746,8 +730,6 @@ def main(input_folder, output_folder, Date):
         DC.Save_as_tiff(disp_filename, disp, geo_ex, proj_ex)
     if out.u_star_24_init == 1:
         DC.Save_as_tiff(u_star_24_init_filename, u_star_24_init, geo_ex, proj_ex)
-
-    del z_obst
 
     # **ETLook.neutral.initial_daily_transpiration***********************************************************
     ad_dry_24 = ETLook.meteo.dry_air_density_daily(p_air_24, vp_24, t_air_k_24)
@@ -777,8 +759,6 @@ def main(input_folder, output_folder, Date):
     if out.t_24_init == 1:
         DC.Save_as_tiff(t_24_init_filename, t_24_init, geo_ex, proj_ex)
 
-    del p_air_24, vp_24, ra_canopy_init, ad_dry_24, ad_moist_24
-
     # **ETLook.unstable.initial_sensible_heat_flux_canopy_daily***********************************************************
     h_canopy_24_init = ETLook.unstable.initial_sensible_heat_flux_canopy_daily(rn_24_canopy, t_24_init)
 
@@ -786,8 +766,6 @@ def main(input_folder, output_folder, Date):
     h_canopy_24_init[np.isnan(QC)] = np.nan
     if out.h_canopy_24_init == 1:
         DC.Save_as_tiff(h_canopy_24_init_filename, h_canopy_24_init, geo_ex, proj_ex)
-
-    del t_24_init
 
     # **ETLook.unstable.transpiration***********************************************************
 
@@ -801,8 +779,6 @@ def main(input_folder, output_folder, Date):
         DC.Save_as_tiff(t_24_filename, t_24, geo_ex, proj_ex)
     if out.t_24_mm == 1:
         DC.Save_as_tiff(t_24_mm_filename, t_24_mm, geo_ex, proj_ex)
-
-    del rn_24_canopy, r_canopy, z0m, u_star_24_init, h_canopy_24_init, t_24
 
     #*******EVAPORATION COMPONENT****************************************************************
 
@@ -818,18 +794,14 @@ def main(input_folder, output_folder, Date):
     if out.rn_24_soil == 1:
         DC.Save_as_tiff(rn_24_soil_filename, rn_24_soil, geo_ex, proj_ex)
 
-    del lai
-    
     # **ETLook.resistance.soil_resistance***********************************************************
 
-    r_soil = ETLook.resistance.soil_resistance(se_root, land_mask, r_soil_pow, r_soil_min) #se_root was se_top
+    r_soil = ETLook.resistance.soil_resistance(se_top, land_mask, r_soil_pow, r_soil_min)
 
     # Save as tiff files
     r_soil[np.isnan(QC)] = np.nan
     if out.r_soil == 1:
         DC.Save_as_tiff(r_soil_filename, r_soil, geo_ex, proj_ex)
-
-    del se_root
 
     # **ETLook.resistance.soil_resistance***********************************************************
 
@@ -839,6 +811,15 @@ def main(input_folder, output_folder, Date):
     ra_soil_init[np.isnan(QC)] = np.nan
     if out.ra_soil_init == 1:
         DC.Save_as_tiff(ra_soil_init_filename, ra_soil_init, geo_ex, proj_ex)
+
+    # **ETLook.meteo.wind_speed_blending_height_daily***********************************************************
+
+    u_b_24 = ETLook.meteo.wind_speed_blending_height_daily(u_24, z_obs, z_b)
+
+    # Save as tiff files
+    u_b_24[np.isnan(QC)] = np.nan
+    if out.u_b_24 == 1:
+        DC.Save_as_tiff(u_b_24_filename, u_b_24, geo_ex, proj_ex)
 
     # **ETLook.unstable.initial_friction_velocity_soil_daily***********************************************************
 
@@ -873,8 +854,6 @@ def main(input_folder, output_folder, Date):
     if out.h_soil_24_init == 1:
         DC.Save_as_tiff(h_soil_24_init_filename, h_soil_24_init, geo_ex, proj_ex)
 
-    del sf_soil, lat, ra_soil_init, stc, vhc, dd, g0_bs, e_24_init
-    
     # **ETLook.unstable.evaporation***********************************************************
 
     e_24 = ETLook.unstable.evaporation(rn_24_soil, g0_24, ssvp_24, ad_24, vpd_24, psy_24, r_soil, h_soil_24_init, t_air_k_24, u_star_24_soil_init, disp, u_b_24, z_b, z_obs, iter_h)
@@ -885,16 +864,12 @@ def main(input_folder, output_folder, Date):
     e_24[np.isnan(QC)] = np.nan
     e_24_mm[np.isnan(QC)] = np.nan
     et_24_mm[np.isnan(QC)] = np.nan
-    e_24_mm[e_24_mm<0] = 0
-    et_24_mm[et_24_mm<0] = 0 
     if out.e_24 == 1:
         DC.Save_as_tiff(e_24_filename, e_24, geo_ex, proj_ex)
     if out.e_24_mm == 1:
         DC.Save_as_tiff(e_24_mm_filename, e_24_mm, geo_ex, proj_ex)
     if out.et_24_mm == 1:
         DC.Save_as_tiff(et_24_mm_filename, et_24_mm, geo_ex, proj_ex)
-
-    del t_air_k_24, u_b_24, disp, rn_24_soil, r_soil, u_star_24_soil_init, h_soil_24_init, e_24, e_24_mm
 
     # **ETLook.unstable.evaporation***********************************************************
     rn_24_grass = ETLook.radiation.net_radiation_grass(ra_24, l_net, r0_grass)
@@ -905,26 +880,11 @@ def main(input_folder, output_folder, Date):
     rn_24_grass[np.isnan(QC)] = np.nan
     et_ref_24[np.isnan(QC)] = np.nan
     et_ref_24_mm[np.isnan(QC)] = np.nan
+    et_ref_24_mm[et_ref_24_mm<0] = 0
     if out.rn_24_grass == 1:
         DC.Save_as_tiff(rn_24_grass_filename, rn_24_grass, geo_ex, proj_ex)
     if out.et_ref_24 == 1:
         DC.Save_as_tiff(et_ref_24_filename, et_ref_24, geo_ex, proj_ex)
     if out.et_ref_24_mm == 1:
         DC.Save_as_tiff(et_ref_24_mm_filename, et_ref_24_mm, geo_ex, proj_ex)
-        
-    del vpd_24, l_net, ad_24, psy_24, ssvp_24, rn_24_grass, et_ref_24, et_ref_24_mm
-    
-    #ef_24 = ETLook.evapotranspiration.evaporative_fraction(et_24_mm, lh_24, rn_24, g0_24)    
-    #eps_w = ETLook.stress.epsilon_soil_moisture(ef_24)    
-    eps_a = ETLook.stress.epsilon_autotrophic_respiration()     
-    lue = ETLook.biomass.lue(lue_max, stress_temp, stress_moist, eps_a)
-    fpar = ETLook.leaf.fpar(vc, ndvi)
-    apar = ETLook.leaf.apar(ra_24, fpar)       
-    biomass = ETLook.biomass.biomass(apar, lue)     
-    
-    # Save as tiff files
-    biomass[np.isnan(QC)] = np.nan
-    if out.biomass_prod == 1:
-        DC.Save_as_tiff(biomass_prod_filename, biomass, geo_ex, proj_ex)
-    
     return()

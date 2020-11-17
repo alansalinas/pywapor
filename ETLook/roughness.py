@@ -4,7 +4,7 @@
 """
 import numpy as np
 
-def orographic_roughness(slope, dem_resolution=250.0):
+def orographic_roughness(slope, dem_resolution=1000.0):
     r"""
     Computes the orographic roughness, which is a function of the slope of the
     terrain. Steeper slopes will increase the orographic roughness
@@ -246,7 +246,7 @@ def displacement_height(lai, z_obst, land_mask=1, c1=1):
     0.51779495
 
     """
-    lai[lai<=0.001] = 0.001
+
     def disp_func(l):
         return z_obst * (1-(1-np.exp(-np.sqrt(c1*l)))/np.sqrt(c1*l))
 

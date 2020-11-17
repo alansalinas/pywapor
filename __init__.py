@@ -7,8 +7,8 @@ Description:
 This WAPOR toolbox is a set of functions to collect and run the WAPOR ET model
 """
 
-from pyWAPOR import Functions, ETLook, Pre_ETLook, ETLook_org
+from pyWAPOR import Functions, ETLook, Pre_ETLook
 
-__all__ = ['Functions', 'ETLook', 'ETLook_org', 'Pre_ETLook']
+__all__ = ['Functions', 'ETLook', 'Pre_ETLook']
 
 __version__ = '0.1'

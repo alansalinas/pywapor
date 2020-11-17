@@ -6,6 +6,10 @@ for the computation of evapotranspiration for large areas using remote sensing d
 
 [WaPOR portal](https://wapor.apps.fao.org/)
 
+Version 2 on Collaboratory Jupiter
+
+[Try WaPOR-ETLook Version 2 on Collaboratory Jupyter](https://colab.research.google.com/drive/1wJz6sj9JhLUBk-Bnw1zACYE4P3XWExMa)
+
 Data Manuals and algorithms for Version 2
 
 [Download WaPOR-ETLook Version 2 Data Manual](https://bitbucket.org/cioapps/wapor-et-look/downloads/FRAME_ET_v2_data_manual_finaldraft_v2.2.pdf)
