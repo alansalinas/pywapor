@@ -3,6 +3,7 @@
     cover. These functions only work on an instantaneous basis.
 
 """
+import math
 import numpy as np
 
 def vegetation_cover(ndvi, nd_min=0.125, nd_max=0.8, vc_pow=0.7):
@@ -142,9 +143,9 @@ def leaf_area_index(vc, vc_min=0.0, vc_max=vegetation_cover(0.795), lai_pow=-0.4
         if vc <= vc_min:
             res = 0
         if (vc > vc_min) & (vc < vc_max):
-            res = np.log(-(vc - 1)) / lai_pow
+            res = math.log(-(vc - 1)) / lai_pow
         if vc >= vc_max:
-            res = np.log(-(vc_max - 1)) / lai_pow
+            res = math.log(-(vc_max - 1)) / lai_pow
 
     else:
         # Create empty array
@@ -197,3 +198,60 @@ def effective_leaf_area_index(lai):
     """
     lai_eff = lai / ((0.3 * lai) + 1.2)
     return lai_eff
+
+def fpar(vc, ndvi):
+    r"""
+    Computes the fpar
+
+    Parameters
+    ----------
+    vc : float
+        vegetation cover
+        :math:`c_{veg}`
+        [-]
+    ndvi : float
+        Normalized Difference Vegetation Index
+        :math:`I_{NDVI}`
+        [-]
+        
+    Returns
+    -------
+    fpar : float
+        fpar
+        :math:`I_{vc,ndvi}`
+        [-]
+
+    """
+    fpar = 0.925 * vc
+    fpar[ndvi < 0.1] = 0.0
+    
+    return fpar
+
+def apar(ra_24, fpar):    
+    r"""
+    Computes the Aborbed Photosynthetical Active Radiation
+
+    Parameters
+    ----------
+    ra_24 : float
+        daily solar radiation
+        :math:`S^{\downarrow}`
+        [Wm-2]
+    fpar : float
+        fpar
+        :math:`I_{vc,ndvi}`
+        [-]
+        
+    Returns
+    -------
+    apar : float
+        apar
+        :math:`I_{ra_24,fpar}`
+        [MJ/m2]
+
+    """
+    par = 0.48 * ra_24 * 0.0864
+    apar = par * fpar
+    
+    return apar     
+    

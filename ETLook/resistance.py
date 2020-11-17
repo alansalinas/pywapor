@@ -140,6 +140,7 @@ def soil_resistance(se_top, land_mask=1, r_soil_pow=-2.1, r_soil_min=800):
     >>> res.soil_resistance(se_top=0.9)
     998.1153098304111
     """
+    se_top = np.minimum(0.5, se_top)
     res = np.ones(land_mask.shape) * r_soil_min * se_top ** r_soil_pow
     res[land_mask == 2] = 0
 

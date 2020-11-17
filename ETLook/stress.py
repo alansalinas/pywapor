@@ -1,5 +1,46 @@
 import numpy as np
 
+def epsilon_soil_moisture(ef_24):
+    r"""
+    Computes the epsilon soil moisture
+
+    .. math ::
+        I = \frac{\lambda I^*}{86400}
+
+    Parameters
+    ----------
+    ef_24 : float
+        evaporative fraction
+        :math:`EF_{ref}`
+        [-]
+
+    Returns
+    -------
+    eps_w : float
+        epsilon soil moisture
+        :math:`I`
+        [-]
+    """
+    eps_w = 0.5 + 0.5 * ef_24
+     
+    return eps_w
+
+def epsilon_autotrophic_respiration():   
+    r"""
+    Computes the epsilon autotrophic respiration
+
+    Returns
+    -------
+    eps_a : float
+        epsilon autotrophic respiration
+        :math:`I`
+        [-]
+    """    
+    
+    eps_a = 1-0.23 # 23% of GPP
+    
+    return eps_a
+
 def stress_radiation(ra_24):
     r"""
     Computes the stress for plants when there is not sufficient radiation

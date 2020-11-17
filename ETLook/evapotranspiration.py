@@ -1,5 +1,45 @@
 from pyWAPOR.ETLook import constants as c
+from pyWAPOR.ETLook import unstable
 import numpy as np
+
+def evaporative_fraction(et_24_mm, lh_24, rn_24, g0_24):
+    r"""
+    Computes the evaporative fraction.
+
+    where the following constants are used
+
+    * :math:`d_{sec}` seconds in the day = 86400 [s]
+
+    Parameters
+    ----------
+    et_24_mm : float
+        daily actual evapotranspiration
+        :math:`ET_{ref}`
+        [mm]
+    lh_24 : float
+        daily latent heat of evaporation
+        :math:`\lambda_{24}`
+        [J/kg]
+    rn_24 : float
+        daily net radiation
+        :math:`Q^{*}`
+        [Wm-2]
+    g0_24 : float
+        daily soil heat flux
+        :math:`G`
+        [W m-2]
+        
+    Returns
+    -------
+    ef_24 : float
+        evaporative fraction
+        :math:`EF_{ref}`
+        [-]
+    """
+    et_24 = et_24_mm * lh_24/c.day_sec
+    ef_24 = et_24/(rn_24 - g0_24)
+    
+    return ef_24
 
 
 def interception_mm(P_24, vc, lai, int_max=0.2):
@@ -127,8 +167,8 @@ def et_reference(rn_24_grass, ad_24, psy_24, vpd_24, ssvp_24, u_24):
     """
     r_grass = 70
     ra_grass = 208. / u_24
-    et_ref_24 = (ssvp_24 * rn_24_grass + ad_24 * c.sh * (vpd_24 / ra_grass)) /\
-        (ssvp_24 + psy_24 * (1 + r_grass / ra_grass))
+    et_ref_24 = np.maximum(0,(ssvp_24 * rn_24_grass + ad_24 * c.sh * (vpd_24 / ra_grass)) /\
+        (ssvp_24 + psy_24 * (1 + r_grass / ra_grass)))
     return et_ref_24
 
 
