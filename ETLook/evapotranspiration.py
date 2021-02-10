@@ -1,5 +1,4 @@
 from pyWAPOR.ETLook import constants as c
-from pyWAPOR.ETLook import unstable
 import numpy as np
 
 def evaporative_fraction(et_24_mm, lh_24, rn_24, g0_24):

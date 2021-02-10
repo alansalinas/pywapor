@@ -817,10 +817,13 @@ def aerodynamical_resistance_full(u_i, L_full, z0m_full=0.1, disp_full=0.667, z_
     z3 = z0m_full / L_full
     z4 = (z_obs - disp_full) / (z0m_full / 7)
     z5 = (z0m_full / 7) / L_full
-    res = (
-        (np.log(z1) - psi_m(-z2) + psi_m(-z3)) * (np.log(z4) - psi_h(-z2) + psi_h(-z5))
-    ) / (c.k ** 2 * u_i)
-
+        
+    res_stable = (np.log(z_obs/z0m_full) - -5 * z_obs / L_full  +  -5 * z0m_full / L_full ) / (c.k * u_i) 
+    res_unstable =((np.log(z1) - psi_m(-z2) + psi_m(-z3)) * (np.log(z4) - psi_h(-z2) + psi_h(-z5))) / (c.k ** 2 * u_i)
+    
+    res = np.where(L_full>0,  np.nan, res_unstable)    
+    res = res.clip(5, 400)
+    
     return res
 
 
@@ -869,8 +872,13 @@ def aerodynamical_resistance_bare(u_i, L_bare, z0m_bare=0.001, disp_bare=0.0, z_
 
     z1 = (z_obs - disp_bare) / z0m_bare
     z2 = (z_obs - disp_bare) / L_bare
-    res = ((np.log(z1) - psi_m(-z2)) * (np.log(z1) - psi_h(-z2))) / (c.k ** 2 * u_i)
-
+      
+    res_stable = (np.log(z_obs/z0m_bare) - -5 * z_obs / L_bare  +  -5 * z0m_bare / L_bare ) / (c.k * u_i) 
+    res_unstable = ((np.log(z1) - psi_m(-z2)) * (np.log(z1) - psi_h(-z2))) / (c.k ** 2 * u_i)
+    
+    res = np.where(L_bare>0,  np.nan, res_unstable)
+    res = res.clip(5, 400)
+    
     return res
 
 
@@ -908,10 +916,14 @@ def wind_speed_soil_inst(u_i, L_bare, z_obs=10):
     """
     z0_soil = 0.01
     z0_free = 0.1
-    return u_i * (
-        (np.log(z0_free / z0_soil))
-        / (np.log(z_obs / z0_soil) - psi_m(-z0_free / L_bare))
-    )
+
+    res_stable = (np.log(z_obs/z0_free) - -5 * z_obs / L_bare  +  -5 * z0_free / L_bare ) / (c.k * u_i) 
+    res_unstable = u_i * ((np.log(z0_free / z0_soil)) / (np.log(z_obs / z0_soil) - psi_m(-z0_free / L_bare)))
+    
+    res = np.where(L_bare>0, np.nan, res_unstable)
+    res = res.clip(5, 400)
+    
+    return(res)
 
 
 def aerodynamical_resistance_soil(u_i_soil):
@@ -1061,6 +1073,131 @@ def maximum_temperature_bare(
         (raa + ras) * (1 - 0.35)
     )
     return ts_max_num / ts_max_denom + t_air_k_i
+
+def minimum_temperature_full(
+        ra_hor_clear_i, emiss_atm_i, t_air_k_i, ad_i, rac, lst, r0_full=0.18
+):
+    r"""
+    Computes the minimum temperature under fully vegetated conditions
+
+    .. math ::
+
+
+    Parameters
+    ----------
+    ra_hor_clear_i : float
+        Total clear-sky irradiance on a horizontal surface
+        :math:`ra_hor_clear_i`
+        [W/m2]
+    emiss_atm_i : float
+        instantaneous atmospheric emissivity
+        :math:`P`
+        [-]
+    t_air_k_i : float
+        instantaneous air temperature
+        :math:`T_{a}`
+        [K]
+    ad_i : float
+        instantaneous air density
+        :math:`\rho`
+        [kg m-3]
+    rac : float
+        aerodynamical resistance
+        :math:`r_{a,a}`
+        [sm-1]
+    lst : float
+        land surface temperature
+        [K]
+    r0_full : float
+        surface albedo full vegetation cover
+        :math:`\alpha_{0, full}`
+        [-]
+
+    Returns
+    -------
+    t_min_full : float
+        minimum temperature at full vegetation cover
+        :math:`T_{c,max}`
+        [K]
+
+    """
+    
+    emiss_full = 0.99
+    g_rn_ratio = 0.0
+    LE_Rn_ratio = 0
+    
+    x_full = 1-g_rn_ratio-LE_Rn_ratio
+    c1 = x_full*emiss_full*0.0000000567*np.nanmean(lst)**3+(ad_i*c.sh)/rac
+    
+    ts_min_full = (x_full*(1-r0_full)*ra_hor_clear_i+x_full*emiss_atm_i*0.0000000567*t_air_k_i**4+(ad_i*c.sh*t_air_k_i)/rac)/c1
+
+    return ts_min_full
+
+
+
+def minimum_temperature_bare(
+        ra_hor_clear_i, emiss_atm_i, t_air_k_i, ad_i, raa, ras, lst, r0_bare_wet=0.15
+):
+    r"""
+    Computes the minimum temperature under dry bare soil conditions
+
+    .. math ::
+
+
+    Parameters
+    ----------
+    ra_hor_clear_i : float
+        Total clear-sky irradiance on a horizontal surface
+        :math:`ra_hor_clear_i`
+        [W/m2]
+    emiss_atm_i : float
+        instantaneous atmospheric emissivity
+        :math:`P`
+        [-]
+    t_air_k_i : float
+        instantaneous air temperature
+        :math:`T_{a}`
+        [K]
+    ad_i : float
+        instantaneous air density
+        :math:`\rho`
+        [kg m-3]
+    raa : float
+        aerodynamical resistance
+        :math:`r_{a,a}`
+        [sm-1]
+    ras : float
+        aerodynamical resistance
+        :math:`r_{a,a}`
+        [sm-1]
+    lst : float
+        land surface temperature
+        [K]
+    r0_bare_wet : float
+        wet bare soil surface albedo
+        :math:`\alpha_{0, bare}`
+        [-]
+
+    Returns
+    -------
+    t_min_bare : float
+        maximum temperature at bare soil
+        :math:`T_{c,max}`
+        [K]
+
+    """
+    
+    emiss_bare = 0.95
+    g_rn_ratio = 0.15
+    LE_Rn_ratio = 1
+    
+    x_bare = 1-g_rn_ratio-LE_Rn_ratio
+    c1 = x_bare*emiss_bare*0.0000000567*np.nanmean(lst)**3+(ad_i*c.sh)/(raa + ras)
+    
+    ts_min_bare = (x_bare*(1-r0_bare_wet)*ra_hor_clear_i+x_bare*emiss_atm_i*0.0000000567*t_air_k_i**4+(ad_i*c.sh*t_air_k_i)/(raa + ras))/c1
+
+    return ts_min_bare
+
 
 
 def maximum_temperature(t_max_bare, t_max_full, vc):

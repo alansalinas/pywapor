@@ -142,8 +142,8 @@ def WAPOR_MaxObs(version = '1.0'):
     33: 8.0,   #Natural Vegetation
     41:	2.0,   #Cropland, Rainfed or Fallow
     42:	4.0,   #Cropland, Irrigated or Under Water Management
-    50:	0.1,   #Artificial Surfaces
-    60:	10,   #Bare Soil Or Sparse Vegetation
+    50:	10,   #Artificial Surfaces
+    60:	0.1,   #Bare Soil Or Sparse Vegetation
     80:	0.1   #Water
     }
 
@@ -157,8 +157,8 @@ def WAPOR_Bulk(version = '1.0'):
     33: 175,   #Natural Vegetation
     41:	150,   #Cropland, Rainfed or Fallow
     42:	200,   #Cropland, Irrigated or Under Water Management
-    50:	100,   #Artificial Surfaces
-    60:	400,   #Bare Soil Or Sparse Vegetation
+    50:	400,   #Artificial Surfaces
+    60:	100,   #Bare Soil Or Sparse Vegetation
     80:	100   #Water
     }
 

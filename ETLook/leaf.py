@@ -3,7 +3,6 @@
     cover. These functions only work on an instantaneous basis.
 
 """
-import math
 import numpy as np
 
 def vegetation_cover(ndvi, nd_min=0.125, nd_max=0.8, vc_pow=0.7):
@@ -143,9 +142,9 @@ def leaf_area_index(vc, vc_min=0.0, vc_max=vegetation_cover(0.795), lai_pow=-0.4
         if vc <= vc_min:
             res = 0
         if (vc > vc_min) & (vc < vc_max):
-            res = math.log(-(vc - 1)) / lai_pow
+            res = np.log(-(vc - 1)) / lai_pow
         if vc >= vc_max:
-            res = math.log(-(vc_max - 1)) / lai_pow
+            res = np.log(-(vc_max - 1)) / lai_pow
 
     else:
         # Create empty array

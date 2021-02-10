@@ -7,8 +7,8 @@ Description:
 This WAPOR toolbox is a set of functions to collect and run the WAPOR ET model
 """
 
-from pyWAPOR import Functions, ETLook, Pre_ETLook
+from pyWAPOR import Functions, ETLook, Pre_ETLook, Calculate_composite_LS, Calculate_composite_MODIS, Calculate_composite_LS_MODIS
 
-__all__ = ['Functions', 'ETLook', 'Pre_ETLook']
+__all__ = ['Functions', 'ETLook', 'Pre_ETLook', 'Calculate_composite_LS', 'Calculate_composite_MODIS', 'Calculate_composite_LS_MODIS']
 
 __version__ = '0.1'

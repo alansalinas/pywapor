@@ -13,6 +13,7 @@ import requests
 import glob
 import pandas as pd
 import numpy as np
+import numpy.polynomial.polynomial as poly
 
 import watertools
 import watertools.General.data_conversions as DC
@@ -20,10 +21,14 @@ import watertools.General.raster_conversions as RC
 
 import pyWAPOR
 
-def main(output_folder, Startdate, Enddate, latlim, lonlim, LandCover = "GlobCover", Short_Downwards_Radiation = "MSGCCP", Satellite_folder = None, composite = False):
+def main(output_folder, Startdate, Enddate, latlim, lonlim, LandCover = "GlobCover", Short_Downwards_Radiation = "MSGCCP", thermal_ndvi_sharpening = False, Satellite_folder = None, composite = False, RAW_folder = None):
 
     ############################ Get General inputs ###############################
     
+    # No composite if LS is used (Satellite folder)
+    if Satellite_folder != None:
+        composite = False
+ 
     # Define the input folders
     if composite == True:
         folders_input_RAW = os.path.join(output_folder, "RAW_composite")
@@ -31,7 +36,10 @@ def main(output_folder, Startdate, Enddate, latlim, lonlim, LandCover = "GlobCov
     else:
         folders_input_RAW = os.path.join(output_folder, "RAW")
         folder_input_ETLook = os.path.join(output_folder, "ETLook_input")
-        
+ 
+    if RAW_folder != None:
+        folders_input_RAW = RAW_folder
+ 
     # Create folders if not exists
     if not os.path.exists(folders_input_RAW):
         os.makedirs(folders_input_RAW)
@@ -158,15 +166,18 @@ def main(output_folder, Startdate, Enddate, latlim, lonlim, LandCover = "GlobCov
                     filename_NDVI = "NDVI_{v}13Q1_-_16-daily_%d.%02d.%02d.tif" %(Date_nearest.year, Date_nearest.month, Date_nearest.day)
                     
                     if os.path.exists(os.path.join(folder_RAW_file_NDVI, filename_NDVI).format(v="MOD")):
-                        shutil.copy(os.path.join(folder_RAW_file_NDVI, filename_NDVI).format(v="MOD"), 
-                                    folder_input_ETLook_Date)
-                        os.rename(os.path.join(folder_input_ETLook_Date, filename_NDVI).format(v="MOD"), NDVI_file)
+                        dest_ndvi = gdal.Open(os.path.join(folder_RAW_file_NDVI, filename_NDVI).format(v="MOD"))
+                        data, Geo_out, Proj_out = RC.clip_data(dest_ndvi, latlim, lonlim)
+                        
+                        DC.Save_as_tiff(NDVI_file, data, Geo_out, Proj_out)
                          
                     elif os.path.exists(os.path.join(folder_RAW_file_NDVI, filename_NDVI).format(v="MYD")): 
-                        shutil.copy(os.path.join(folder_RAW_file_NDVI, filename_NDVI).format(v="MYD"), 
-                                    folder_input_ETLook_Date)
-                        os.rename(os.path.join(folder_input_ETLook_Date, filename_NDVI).format(v="MYD"), NDVI_file)
-                
+                        
+                        dest_ndvi = gdal.Open(os.path.join(folder_RAW_file_NDVI, filename_NDVI).format(v="MYD"))
+                        data, Geo_out, Proj_out = RC.clip_data(dest_ndvi, latlim, lonlim)
+                        
+                        DC.Save_as_tiff(NDVI_file, data, Geo_out, Proj_out)
+                         
                     else:
                         print("NDVI is not available for date: %d%02d%02d" %(Date.year, Date.month, Date.day))
            
@@ -186,7 +197,8 @@ def main(output_folder, Startdate, Enddate, latlim, lonlim, LandCover = "GlobCov
                 os.chdir(folder_NDVI_LS)
                 filename_NDVI = os.path.join(folder_NDVI_LS, glob.glob("*_%d%02d%02d.tif" %(Date.year, Date.month, Date.day))[0])
                 dest_rep = RC.reproject_dataset_example(filename_NDVI, dest_dem_ex, 2)
-                ndvi_rep, Geo_out = RC.clip_data(dest_rep, latlim, lonlim)            
+                ndvi_rep, Geo_out, Proj_Out = RC.clip_data(dest_rep, latlim, lonlim)   
+                ndvi_rep[ndvi_rep==0] = -9999 
                 DC.Save_as_tiff(NDVI_file, ndvi_rep, Geo_out, 4326)
         
             # Get example files
@@ -254,10 +266,60 @@ def main(output_folder, Startdate, Enddate, latlim, lonlim, LandCover = "GlobCov
                         folder_RAW_file_LST = os.path.join(folders_input_RAW, "MODIS", "LST", "Daily")      
                         filename_LST = "LST_MCD11A1_K_daily_%d.%02d.%02d.tif" %(Date.year, Date.month, Date.day)    
                         filename_Time = "Time_MCD11A1_hour_daily_%d.%02d.%02d.tif" %(Date.year, Date.month, Date.day)
+                        
                     if os.path.exists(os.path.join(folder_RAW_file_LST, filename_LST)):        
-                        destLST = RC.reproject_dataset_example(os.path.join(folder_RAW_file_LST, filename_LST), NDVI_file, method=2)
-                        LST = destLST.GetRasterBand(1).ReadAsArray()
-                        LST[LST==0.0] = -9999
+                        
+                        if thermal_ndvi_sharpening == False:
+                            destLST = RC.reproject_dataset_example(os.path.join(folder_RAW_file_LST, filename_LST), NDVI_file, method=2)
+                            LST = destLST.GetRasterBand(1).ReadAsArray()
+                            LST[LST==0.0] = -9999
+                            
+                        else:
+                            
+                            # open ndvi file
+                            dest_down = gdal.Open(NDVI_file)
+                            NDVI = dest_down.GetRasterBand(1).ReadAsArray()
+                            
+                            # Create mask for thermal sharpening
+                            Total_mask_thermal = np.where(NDVI>0.01, 0, 1)
+                            Total_mask_thermal[Total_mask_thermal > 0] = 1
+                    
+                            # Open LST
+                            dest_up = gdal.Open(os.path.join(folder_RAW_file_LST, filename_LST))
+                            
+                            # Open Thermal data
+                            surface_temp_up = dest_up.GetRasterBand(1).ReadAsArray()
+                            dest_lst_down = RC.reproject_dataset_example(os.path.join(folder_RAW_file_LST, filename_LST), NDVI_file, method = 1)                                       
+                            Surface_temp = dest_lst_down.GetRasterBand(1).ReadAsArray()
+                            
+                            Total_mask_thermal = np.where(Surface_temp<200, 1, Total_mask_thermal)
+                            
+                        	# Upscale DEM
+                            Box = 7
+         
+                            # Upscale NDVI data
+                            dest_ndvi_up = RC.reproject_dataset_example(dest_down, dest_up)
+                            NDVI_up = dest_ndvi_up.GetRasterBand(1).ReadAsArray()
+                    
+                            # upscale the mask to coarser resolution
+                            Total_mask_thermal_up = RC.resize_array_example(Total_mask_thermal, NDVI_up, method=2)
+                            Total_mask_thermal_up[Total_mask_thermal_up>0]=1
+
+                            # Remove wrong values
+                            surface_temp_up[surface_temp_up<=0] = np.nan
+                            NDVI_up[NDVI_up==0] = np.nan
+                            surface_temp_up[surface_temp_up==1] = np.nan
+                            NDVI_up[Total_mask_thermal_up==1] = np.nan
+                            NDVI[Total_mask_thermal==1] = np.nan
+                    
+                            # Apply thermal sharpening
+                            LST = Thermal_Sharpening_Linear_Forced(surface_temp_up, NDVI_up, NDVI, Box, dest_up, NDVI_file, dest_down)
+                    
+                            # Replace water values to original thermal  values
+                            LST[np.logical_and(NDVI>-1, NDVI < 0)] = Surface_temp[np.logical_and(NDVI>-1, NDVI < 0)]
+                            LST[np.isnan(LST)] = Surface_temp[np.isnan(LST)]
+                            LST[LST<200] = np.nan
+
                         DC.Save_as_tiff(LST_file, LST, geo_ex, proj_ex)
             
                         destTime = RC.reproject_dataset_example(os.path.join(folder_RAW_file_LST, filename_Time), NDVI_file, method=1)
@@ -279,7 +341,8 @@ def main(output_folder, Startdate, Enddate, latlim, lonlim, LandCover = "GlobCov
                 filename_ALBEDO = os.path.join(folder_ALBEDO_LS, glob.glob("*_%d%02d%02d.tif" %(Date.year, Date.month, Date.day))[0])
                 destalbedo = RC.reproject_dataset_example(os.path.join(folder_ALBEDO_LS, filename_ALBEDO), NDVI_file, method=1)
                 albedo = destalbedo.GetRasterBand(1).ReadAsArray()
-                albedo[albedo<=-0.4] = -9999                    
+                albedo[albedo<=-0.4] = -9999   
+                albedo[albedo==0] = -9999                   
                 DC.Save_as_tiff(ALBEDO_file, albedo, geo_ex, proj_ex)                     
           
                 LST_file = os.path.join(folder_input_ETLook_Date, "LST_%d%02d%02d.tif" %(Date.year, Date.month, Date.day))            
@@ -289,10 +352,67 @@ def main(output_folder, Startdate, Enddate, latlim, lonlim, LandCover = "GlobCov
                 os.chdir(folder_LST_LS)
                 lst_filename = glob.glob("*_LST_*_%d%02d%02d_*.tif" %(Date.year, Date.month, Date.day))[0]
                 filename_LST = os.path.join(folder_LST_LS, lst_filename)
-                destlst = RC.reproject_dataset_example(os.path.join(folder_LST_LS, filename_LST), NDVI_file, method=1)
-                lst = destlst.GetRasterBand(1).ReadAsArray()
-                albedo[lst<=-0.4] = -9999                    
-                DC.Save_as_tiff(LST_file, lst, geo_ex, proj_ex)                     
+                                   
+
+                if thermal_ndvi_sharpening == False:
+                    
+                    destLST = RC.reproject_dataset_example(os.path.join(folder_LST_LS, filename_LST), NDVI_file, method=1)
+                    LST = destLST.GetRasterBand(1).ReadAsArray()
+                    LST[LST==0.0] = -9999
+                    
+                else:
+                    
+                    # open ndvi file
+                    dest_down = gdal.Open(NDVI_file)
+                    NDVI = dest_down.GetRasterBand(1).ReadAsArray()
+                    
+                    # Create mask for thermal sharpening
+                    Total_mask_thermal = np.where(NDVI>0.01, 0, 1)
+                    Total_mask_thermal[Total_mask_thermal > 0] = 1
+            
+                    # Open LST
+                    dest_start = gdal.Open(os.path.join(folder_LST_LS, filename_LST))
+                    proj_up = dest_start.GetProjection()
+                    geo_start = dest_start.GetGeoTransform()
+                    geo_up = tuple([geo_start[0], geo_start[1] * 3, 0, geo_start[3], 0, geo_start[5] * 3])
+                    Array_up = np.ones([int(np.ceil(dest_start.RasterYSize/3)), int(np.ceil(dest_start.RasterXSize/3))]) * np.nan
+                    dest_up = DC.Save_as_MEM(Array_up, geo_up, proj_up)
+                    
+                    # Open Thermal data
+                    dest_up_lst = RC.reproject_dataset_example(os.path.join(folder_LST_LS, filename_LST), dest_up, method = 4)    
+                    surface_temp_up = dest_up_lst.GetRasterBand(1).ReadAsArray()
+                    dest_lst_down = RC.reproject_dataset_example(os.path.join(folder_LST_LS, filename_LST), NDVI_file, method = 1)                                       
+                    Surface_temp = dest_lst_down.GetRasterBand(1).ReadAsArray()
+                    
+                    Total_mask_thermal = np.where(Surface_temp<200, 1, Total_mask_thermal)
+                    
+                	# Upscale DEM
+                    Box = 4
+ 
+                    # Upscale NDVI data
+                    dest_ndvi_up = RC.reproject_dataset_example(dest_down, dest_up)
+                    NDVI_up = dest_ndvi_up.GetRasterBand(1).ReadAsArray()
+            
+                    # upscale the mask to coarser resolution
+                    Total_mask_thermal_up = RC.resize_array_example(Total_mask_thermal, NDVI_up, method=2)
+                    Total_mask_thermal_up[Total_mask_thermal_up>0]=1
+
+                    # Remove wrong values
+                    surface_temp_up[surface_temp_up<=0] = np.nan
+                    NDVI_up[NDVI_up==0] = np.nan
+                    surface_temp_up[surface_temp_up==1] = np.nan
+                    NDVI_up[Total_mask_thermal_up==1] = np.nan
+                    NDVI[Total_mask_thermal==1] = np.nan
+            
+                    # Apply thermal sharpening
+                    LST = Thermal_Sharpening_Linear_Forced(surface_temp_up, NDVI_up, NDVI, Box, dest_up, NDVI_file, dest_down)
+            
+                    # Replace water values to original thermal  values
+                    LST[np.logical_and(NDVI>-1, NDVI < 0)] = Surface_temp[np.logical_and(NDVI>-1, NDVI < 0)]
+                    LST[np.isnan(LST)] = Surface_temp[np.isnan(LST)]
+                    LST[LST<200] = np.nan
+
+                DC.Save_as_tiff(LST_file, LST, geo_ex, proj_ex)              
                 
                 Time = np.ones(albedo.shape)*(int(lst_filename.split("_")[-1][0:2])+(offset_GTM) + int(lst_filename.split("_")[-1][2:4])/60)
                 DC.Save_as_tiff(Time_file, Time, geo_ex, proj_ex)  
@@ -373,7 +493,7 @@ def main(output_folder, Startdate, Enddate, latlim, lonlim, LandCover = "GlobCov
                 else:
     
                     filename_P = "P_CHIRPS.v2.0_mm-day-1_daily_%d.%02d.%02d.tif" %(Date.year, Date.month, Date.day)
-                    destP = RC.reproject_dataset_example(os.path.join(folder_RAW_file_P, filename_P), NDVI_file, method=2)
+                    destP = RC.reproject_dataset_example(os.path.join(folder_RAW_file_P, filename_P), NDVI_file, method=6)
                     P = destP.GetRasterBand(1).ReadAsArray()
                     DC.Save_as_tiff(P_file, P, geo_ex, proj_ex)
 
@@ -469,10 +589,10 @@ def main(output_folder, Startdate, Enddate, latlim, lonlim, LandCover = "GlobCov
                     
                 else:
           
-                    destPairInst_MOD = RC.reproject_dataset_example(input_format_pair_inst_MOD.format(yyyy=Date.year, mm=Date.month, dd=Date.day), NDVI_file, method=2)
+                    destPairInst_MOD = RC.reproject_dataset_example(input_format_pair_inst_MOD.format(yyyy=Date.year, mm=Date.month, dd=Date.day), NDVI_file, method=6)
                     pair_inst_MOD = destPairInst_MOD.GetRasterBand(1).ReadAsArray()
 
-                    destPairInst_MYD = RC.reproject_dataset_example(input_format_pair_inst_MYD.format(yyyy=Date.year, mm=Date.month, dd=Date.day), NDVI_file, method=2)
+                    destPairInst_MYD = RC.reproject_dataset_example(input_format_pair_inst_MYD.format(yyyy=Date.year, mm=Date.month, dd=Date.day), NDVI_file, method=6)
                     pair_inst_MYD = destPairInst_MYD.GetRasterBand(1).ReadAsArray()
 
                     pair_inst = np.where(Time<12, pair_inst_MOD, pair_inst_MYD)
@@ -496,10 +616,10 @@ def main(output_folder, Startdate, Enddate, latlim, lonlim, LandCover = "GlobCov
                     DC.Save_as_tiff(pair_inst_0_file, pair_inst_sea, geo_ex, proj_ex)  
                 else:    
                     
-                    destPairInstSea_MOD = RC.reproject_dataset_example(input_format_pair_inst_sea_MOD.format(yyyy=Date.year, mm=Date.month, dd=Date.day), NDVI_file, method=2)
+                    destPairInstSea_MOD = RC.reproject_dataset_example(input_format_pair_inst_sea_MOD.format(yyyy=Date.year, mm=Date.month, dd=Date.day), NDVI_file, method=6)
                     pair_inst_sea_MOD = destPairInstSea_MOD.GetRasterBand(1).ReadAsArray()
 
-                    destPairInstSea_MYD = RC.reproject_dataset_example(input_format_pair_inst_sea_MYD.format(yyyy=Date.year, mm=Date.month, dd=Date.day), NDVI_file, method=2)
+                    destPairInstSea_MYD = RC.reproject_dataset_example(input_format_pair_inst_sea_MYD.format(yyyy=Date.year, mm=Date.month, dd=Date.day), NDVI_file, method=6)
                     pair_inst_sea_MYD = destPairInstSea_MYD.GetRasterBand(1).ReadAsArray()
 
                     Pair_inst_sea = np.where(Time<12, pair_inst_sea_MOD, pair_inst_sea_MYD)
@@ -517,7 +637,7 @@ def main(output_folder, Startdate, Enddate, latlim, lonlim, LandCover = "GlobCov
                     
                 else:                
                     
-                    destPair24Sea = RC.reproject_dataset_example(input_format_pair_24_sea.format(yyyy=Date.year, mm=Date.month, dd=Date.day), NDVI_file, method=2)
+                    destPair24Sea = RC.reproject_dataset_example(input_format_pair_24_sea.format(yyyy=Date.year, mm=Date.month, dd=Date.day), NDVI_file, method=6)
                     Pair_24_sea = destPair24Sea.GetRasterBand(1).ReadAsArray()
                     DC.Save_as_tiff(pair_24_0_file, Pair_24_sea, geo_ex, proj_ex)
                     
@@ -553,10 +673,10 @@ def main(output_folder, Startdate, Enddate, latlim, lonlim, LandCover = "GlobCov
              
                 else:
    
-                    destqvInst_MOD = RC.reproject_dataset_example(input_format_qv_inst_MOD.format(yyyy=Date.year, mm=Date.month, dd=Date.day), NDVI_file, method=2)
+                    destqvInst_MOD = RC.reproject_dataset_example(input_format_qv_inst_MOD.format(yyyy=Date.year, mm=Date.month, dd=Date.day), NDVI_file, method=6)
                     qv_inst_MOD = destqvInst_MOD.GetRasterBand(1).ReadAsArray()
                     
-                    destqvInst_MYD = RC.reproject_dataset_example(input_format_qv_inst_MYD.format(yyyy=Date.year, mm=Date.month, dd=Date.day), NDVI_file, method=2)
+                    destqvInst_MYD = RC.reproject_dataset_example(input_format_qv_inst_MYD.format(yyyy=Date.year, mm=Date.month, dd=Date.day), NDVI_file, method=6)
                     qv_inst_MYD = destqvInst_MYD.GetRasterBand(1).ReadAsArray()                    
  
                     qv_inst = np.where(Time<12, qv_inst_MOD, qv_inst_MYD)
@@ -572,7 +692,7 @@ def main(output_folder, Startdate, Enddate, latlim, lonlim, LandCover = "GlobCov
                     
                 else:
 
-                    destqv24 = RC.reproject_dataset_example(input_format_qv_24.format(yyyy=Date.year, mm=Date.month, dd=Date.day), NDVI_file, method=2)
+                    destqv24 = RC.reproject_dataset_example(input_format_qv_24.format(yyyy=Date.year, mm=Date.month, dd=Date.day), NDVI_file, method=6)
                     qv_24 = destqv24.GetRasterBand(1).ReadAsArray()
                     DC.Save_as_tiff(qv_24_file, qv_24, geo_ex, proj_ex)
 
@@ -595,10 +715,10 @@ def main(output_folder, Startdate, Enddate, latlim, lonlim, LandCover = "GlobCov
 
                 if composite == True:
 
-                    tair_inst_MOD = Calc_Composite_METEO(input_format_tair_inst_MOD, Date, NDVI_file, "max")
+                    tair_inst_MOD = Calc_Composite_METEO(input_format_tair_inst_MOD, Date, NDVI_file, "max", DEM_file = DEM_file, lapse = -0.008)
                     tair_inst_MOD[np.isnan(tair_inst_MOD)] = 0
                     
-                    tair_inst_MYD = Calc_Composite_METEO(input_format_tair_inst_MYD, Date, NDVI_file, "max")
+                    tair_inst_MYD = Calc_Composite_METEO(input_format_tair_inst_MYD, Date, NDVI_file, "max", DEM_file = DEM_file, lapse = -0.008)
                     tair_inst_MYD[np.isnan(tair_inst_MYD)] = 0                        
                     
                     tair_inst = np.where(Time<12, tair_inst_MOD, tair_inst_MYD)
@@ -609,11 +729,11 @@ def main(output_folder, Startdate, Enddate, latlim, lonlim, LandCover = "GlobCov
 
                 else:
                     
-                    destTairInst_MOD = RC.reproject_dataset_example(input_format_tair_inst_MOD.format(yyyy=Date.year, mm=Date.month, dd=Date.day), NDVI_file, method=2)
-                    tair_inst_MOD = destTairInst_MOD.GetRasterBand(1).ReadAsArray()
+                    #destTairInst_MOD = RC.reproject_dataset_example(input_format_tair_inst_MOD.format(yyyy=Date.year, mm=Date.month, dd=Date.day), NDVI_file, method=6)
+                    tair_inst_MOD = lapse_rate_temp(input_format_tair_inst_MOD.format(yyyy=Date.year, mm=Date.month, dd=Date.day), DEM_file, lapse = -0.008)
                     
-                    destTairInst_MYD = RC.reproject_dataset_example(input_format_tair_inst_MYD.format(yyyy=Date.year, mm=Date.month, dd=Date.day), NDVI_file, method=2)
-                    tair_inst_MYD = destTairInst_MYD.GetRasterBand(1).ReadAsArray()                    
+                    #destTairInst_MYD = RC.reproject_dataset_example(input_format_tair_inst_MYD.format(yyyy=Date.year, mm=Date.month, dd=Date.day), NDVI_file, method=6)
+                    tair_inst_MYD = lapse_rate_temp(input_format_tair_inst_MYD.format(yyyy=Date.year, mm=Date.month, dd=Date.day), DEM_file, lapse = -0.008)                 
  
                     tair_inst = np.where(Time<12, tair_inst_MOD, tair_inst_MYD)
                     if np.nanmax(tair_inst>270):
@@ -623,7 +743,7 @@ def main(output_folder, Startdate, Enddate, latlim, lonlim, LandCover = "GlobCov
         
                 if composite == True:
                     
-                    tair_24 = Calc_Composite_METEO(input_format_tair_24, Date, NDVI_file, "max")
+                    tair_24 = Calc_Composite_METEO(input_format_tair_24, Date, NDVI_file, "max", DEM_file = DEM_file, lapse = -0.006)
                     tair_24[np.isnan(tair_24)] = 0                       
                     if np.nanmax(tair_24>270):
                         tair_24 = tair_24 -273.15
@@ -632,8 +752,8 @@ def main(output_folder, Startdate, Enddate, latlim, lonlim, LandCover = "GlobCov
                     
                 else:
 
-                    desttair24 = RC.reproject_dataset_example(input_format_tair_24.format(yyyy=Date.year, mm=Date.month, dd=Date.day), NDVI_file, method=2)
-                    tair_24 = desttair24.GetRasterBand(1).ReadAsArray()
+                    #desttair24 = RC.reproject_dataset_example(input_format_tair_24.format(yyyy=Date.year, mm=Date.month, dd=Date.day), NDVI_file, method=6)
+                    tair_24 = lapse_rate_temp(input_format_tair_24.format(yyyy=Date.year, mm=Date.month, dd=Date.day), DEM_file, lapse = -0.006)
                     if np.nanmax(tair_24>270):
                         tair_24 = tair_24 -273.15
 
@@ -642,7 +762,7 @@ def main(output_folder, Startdate, Enddate, latlim, lonlim, LandCover = "GlobCov
 
                 if composite == True:
                     
-                    tair_min_24 = Calc_Composite_METEO(input_format_tair_min_24, Date, NDVI_file, "max")
+                    tair_min_24 = Calc_Composite_METEO(input_format_tair_min_24, Date, NDVI_file, "max", DEM_file = DEM_file, lapse = 0.0)
                     tair_min_24[np.isnan(tair_min_24)] = 0                       
                     if np.nanmax(tair_min_24>270):
                         tair_min_24 = tair_min_24 -273.15
@@ -651,8 +771,8 @@ def main(output_folder, Startdate, Enddate, latlim, lonlim, LandCover = "GlobCov
                     
                 else:
 
-                    desttairmin24 = RC.reproject_dataset_example(input_format_tair_min_24.format(yyyy=Date.year, mm=Date.month, dd=Date.day), NDVI_file, method=2)
-                    tair_min_24 = desttairmin24.GetRasterBand(1).ReadAsArray()
+                    #desttairmin24 = RC.reproject_dataset_example(input_format_tair_min_24.format(yyyy=Date.year, mm=Date.month, dd=Date.day), NDVI_file, method=6)
+                    tair_min_24 = lapse_rate_temp(input_format_tair_min_24.format(yyyy=Date.year, mm=Date.month, dd=Date.day), DEM_file, lapse = 0.0)
                     if np.nanmax(tair_min_24>270):
                         tair_min_24 = tair_min_24 -273.15                    
                     DC.Save_as_tiff(Tair_min_24_file, tair_min_24, geo_ex, proj_ex)                    
@@ -660,7 +780,7 @@ def main(output_folder, Startdate, Enddate, latlim, lonlim, LandCover = "GlobCov
                     
                 if composite == True:
                     
-                    tair_max_24 = Calc_Composite_METEO(input_format_tair_max_24, Date, NDVI_file, "max")
+                    tair_max_24 = Calc_Composite_METEO(input_format_tair_max_24, Date, NDVI_file, "max", DEM_file = DEM_file, lapse = 0.0)
                     tair_max_24[np.isnan(tair_max_24)] = 0                       
                     if np.nanmax(tair_max_24>270):
                         tair_max_24 = tair_max_24 -273.15                       
@@ -668,8 +788,8 @@ def main(output_folder, Startdate, Enddate, latlim, lonlim, LandCover = "GlobCov
                     
                 else:
 
-                    desttairmax24 = RC.reproject_dataset_example(input_format_tair_max_24.format(yyyy=Date.year, mm=Date.month, dd=Date.day), NDVI_file, method=2)
-                    tair_max_24 = desttairmax24.GetRasterBand(1).ReadAsArray()
+                    #desttairmax24 = RC.reproject_dataset_example(input_format_tair_max_24.format(yyyy=Date.year, mm=Date.month, dd=Date.day), NDVI_file, method=6)
+                    tair_max_24 = lapse_rate_temp(input_format_tair_max_24.format(yyyy=Date.year, mm=Date.month, dd=Date.day), DEM_file, lapse = 0.0)
                     if np.nanmax(tair_max_24>270):
                         tair_max_24 = tair_max_24 -273.15                           
                     DC.Save_as_tiff(Tair_max_24_file, tair_max_24, geo_ex, proj_ex)                    
@@ -719,10 +839,10 @@ def main(output_folder, Startdate, Enddate, latlim, lonlim, LandCover = "GlobCov
                     
                 else:
 
-                    destu2inst_MOD = RC.reproject_dataset_example(input_format_u2_inst_MOD.format(yyyy=Date.year, mm=Date.month, dd=Date.day), NDVI_file, method=2)
-                    destu2inst_MYD = RC.reproject_dataset_example(input_format_u2_inst_MYD.format(yyyy=Date.year, mm=Date.month, dd=Date.day), NDVI_file, method=2)
-                    destv2inst_MOD = RC.reproject_dataset_example(input_format_v2_inst_MOD.format(yyyy=Date.year, mm=Date.month, dd=Date.day), NDVI_file, method=2)
-                    destv2inst_MYD = RC.reproject_dataset_example(input_format_v2_inst_MYD.format(yyyy=Date.year, mm=Date.month, dd=Date.day), NDVI_file, method=2)
+                    destu2inst_MOD = RC.reproject_dataset_example(input_format_u2_inst_MOD.format(yyyy=Date.year, mm=Date.month, dd=Date.day), NDVI_file, method=6)
+                    destu2inst_MYD = RC.reproject_dataset_example(input_format_u2_inst_MYD.format(yyyy=Date.year, mm=Date.month, dd=Date.day), NDVI_file, method=6)
+                    destv2inst_MOD = RC.reproject_dataset_example(input_format_v2_inst_MOD.format(yyyy=Date.year, mm=Date.month, dd=Date.day), NDVI_file, method=6)
+                    destv2inst_MYD = RC.reproject_dataset_example(input_format_v2_inst_MYD.format(yyyy=Date.year, mm=Date.month, dd=Date.day), NDVI_file, method=6)
 
                     u2_inst_MOD = destu2inst_MOD.GetRasterBand(1).ReadAsArray()
                     u2_inst_MYD = destu2inst_MYD.GetRasterBand(1).ReadAsArray()
@@ -750,10 +870,10 @@ def main(output_folder, Startdate, Enddate, latlim, lonlim, LandCover = "GlobCov
                     
                 else:
                      
-                    destu224 = RC.reproject_dataset_example(input_format_u2_24.format(yyyy=Date.year, mm=Date.month, dd=Date.day), NDVI_file, method=2)
+                    destu224 = RC.reproject_dataset_example(input_format_u2_24.format(yyyy=Date.year, mm=Date.month, dd=Date.day), NDVI_file, method=6)
                     u2_24 = destu224.GetRasterBand(1).ReadAsArray()
                     
-                    destv224 = RC.reproject_dataset_example(input_format_v2_24.format(yyyy=Date.year, mm=Date.month, dd=Date.day), NDVI_file, method=2)
+                    destv224 = RC.reproject_dataset_example(input_format_v2_24.format(yyyy=Date.year, mm=Date.month, dd=Date.day), NDVI_file, method=6)
                     v2_24 = destv224.GetRasterBand(1).ReadAsArray()                    
  
                     wind_24 = np.sqrt(u2_24**2 + v2_24 **2) 
@@ -787,10 +907,10 @@ def main(output_folder, Startdate, Enddate, latlim, lonlim, LandCover = "GlobCov
 
                 else:    
 
-                    destwvInst_MOD = RC.reproject_dataset_example(input_format_wv_inst_MOD.format(yyyy=Date.year, mm=Date.month, dd=Date.day), NDVI_file, method=2)
+                    destwvInst_MOD = RC.reproject_dataset_example(input_format_wv_inst_MOD.format(yyyy=Date.year, mm=Date.month, dd=Date.day), NDVI_file, method=6)
                     wv_inst_MOD = destwvInst_MOD.GetRasterBand(1).ReadAsArray()
                     
-                    destwvInst_MYD = RC.reproject_dataset_example(input_format_wv_inst_MYD.format(yyyy=Date.year, mm=Date.month, dd=Date.day), NDVI_file, method=2)
+                    destwvInst_MYD = RC.reproject_dataset_example(input_format_wv_inst_MYD.format(yyyy=Date.year, mm=Date.month, dd=Date.day), NDVI_file, method=6)
                     wv_inst_MYD = destwvInst_MYD.GetRasterBand(1).ReadAsArray()     
                     
                     wv_inst = np.where(Time<12, wv_inst_MOD, wv_inst_MYD)
@@ -870,7 +990,7 @@ def main(output_folder, Startdate, Enddate, latlim, lonlim, LandCover = "GlobCov
             if not os.path.exists(Tair_amp_file):
                 T_amplitude_global_temp_filename = os.path.join(output_folder_Tamp, "Temp_Amplitudes_global.tif")
                 if os.path.exists(T_amplitude_global_temp_filename):        
-                    desttairamp = RC.reproject_dataset_example(T_amplitude_global_temp_filename, NDVI_file, method=2)
+                    desttairamp = RC.reproject_dataset_example(T_amplitude_global_temp_filename, NDVI_file, method=6)
                     tair_amp = desttairamp.GetRasterBand(1).ReadAsArray()
                     DC.Save_as_tiff(Tair_amp_file, tair_amp, geo_ex, proj_ex)
                     
@@ -966,11 +1086,11 @@ def main(output_folder, Startdate, Enddate, latlim, lonlim, LandCover = "GlobCov
                             # Calculate the daily mean     
                             swgnet_mean = np.nanmean(swgnet, 2)
                             dest_swgnet_mean = DC.Save_as_MEM(swgnet_mean,geo_trans, proj_trans)
-                            destswgnet = RC.reproject_dataset_example(dest_swgnet_mean, NDVI_file, method=2)
+                            destswgnet = RC.reproject_dataset_example(dest_swgnet_mean, NDVI_file, method=6)
                             del geo_trans
                             
                         else:
-                            destswgnet = RC.reproject_dataset_example(os.path.join(folder_RAW_file_trans, filename_trans), NDVI_file, method=2)
+                            destswgnet = RC.reproject_dataset_example(os.path.join(folder_RAW_file_trans, filename_trans), NDVI_file, method=6)
                              
                         swgnet_one = destswgnet.GetRasterBand(1).ReadAsArray()
                         if i == 0:
@@ -1014,11 +1134,11 @@ def main(output_folder, Startdate, Enddate, latlim, lonlim, LandCover = "GlobCov
                         # Calculate the daily mean     
                         swgnet_mean = np.nanmean(swgnet, 2)
                         dest_swgnet_mean = DC.Save_as_MEM(swgnet_mean,geo_trans, proj_trans)
-                        destswgnet = RC.reproject_dataset_example(dest_swgnet_mean, NDVI_file, method=2)
+                        destswgnet = RC.reproject_dataset_example(dest_swgnet_mean, NDVI_file, method=6)
                         del geo_trans
                         
                     else:
-                        destswgnet = RC.reproject_dataset_example(os.path.join(folder_RAW_file_trans, filename_trans), NDVI_file, method=2)
+                        destswgnet = RC.reproject_dataset_example(os.path.join(folder_RAW_file_trans, filename_trans), NDVI_file, method=6)
                          
                     swgnet = destswgnet.GetRasterBand(1).ReadAsArray()
                     trans = swgnet / Ra24_flat
@@ -1030,7 +1150,7 @@ def main(output_folder, Startdate, Enddate, latlim, lonlim, LandCover = "GlobCov
             
     return()    
     
-def lapse_rate_temp(tair_file, dem_file):
+def lapse_rate_temp(tair_file, dem_file, lapse):
         
     destT_down = RC.reproject_dataset_example(tair_file, dem_file, 2)
     destDEM_up = RC.reproject_dataset_example(dem_file, tair_file, 4)
@@ -1047,7 +1167,7 @@ def lapse_rate_temp(tair_file, dem_file):
     DEM_up_ave[DEM_up_ave<=0]=0
     
     # 
-    Tdown = pyWAPOR.ETLook.meteo.disaggregate_air_temperature(T, DEM_down, DEM_up_ave)
+    Tdown = pyWAPOR.ETLook.meteo.disaggregate_air_temperature(T, DEM_down, DEM_up_ave, lapse)
 
     return(Tdown)
     
@@ -1104,19 +1224,26 @@ def Combine_LST(folders_input_RAW, Startdate, Enddate):
             
     return()
         
-def Calc_Composite_METEO(input_format, Date, example_file, method = "mean"):
+def Calc_Composite_METEO(input_format, Date, example_file, method = "mean", DEM_file = None, lapse = -0.006):
     
     dates_comp = pd.date_range(Date, Date + pd.DateOffset(days=7), freq = "D")
     i = 0
     
     for date_comp in dates_comp:
         print("Find %s" %input_format.format(yyyy=date_comp.year, mm=date_comp.month, dd=date_comp.day))
-        filename = glob.glob(input_format.format(yyyy=date_comp.year, mm=date_comp.month, dd=date_comp.day))[0]
-        dest_one = gdal.Open(filename)
-        Array = dest_one.GetRasterBand(1).ReadAsArray()
-        Array[Array==-9999] = np.nan
+        filename = glob.glob(input_format.format(yyyy=date_comp.year, mm=date_comp.month, dd=date_comp.day))[0]  
+        
+        if DEM_file != None:        
+            Array = lapse_rate_temp(filename, DEM_file, lapse)
+            proj_filename = DEM_file
+        else:
+            dest_one = gdal.Open(filename)
+            Array = dest_one.GetRasterBand(1).ReadAsArray()
+            Array[Array==-9999] = np.nan
+            proj_filename = filename
         
         if date_comp == dates_comp[0]:
+            dest_one = gdal.Open(proj_filename)
             Array_end = np.ones([8, dest_one.RasterYSize, dest_one.RasterXSize])
             geo = dest_one.GetGeoTransform()
             proj = dest_one.GetProjection()
@@ -1134,7 +1261,7 @@ def Calc_Composite_METEO(input_format, Date, example_file, method = "mean"):
         Array_end = np.nansum(Array_end, axis = 0)
         
     dest_mem = DC.Save_as_MEM(Array_end, geo, proj)
-    dest_rep = RC.reproject_dataset_example(dest_mem, example_file, 2)    
+    dest_rep = RC.reproject_dataset_example(dest_mem, example_file, 6)    
     Array_end = dest_rep.GetRasterBand(1).ReadAsArray()
     
     return(Array_end)
@@ -1165,7 +1292,7 @@ def Combine_LST_composite(folders_input_RAW, Startdate, Enddate):
             filename_lst_myd = glob.glob(format_lst_myd)[0]
                 
             dest_lst_mod = gdal.Open(filename_lst_mod)       
-            dest_lst_myd = gdal.Open(filename_lst_myd)              
+            dest_lst_myd = RC.reproject_dataset_example(filename_lst_myd, dest_lst_mod)        
      
             Array_lst_mod = dest_lst_mod.GetRasterBand(1).ReadAsArray()
             Array_lst_myd = dest_lst_myd.GetRasterBand(1).ReadAsArray()        
@@ -1186,7 +1313,205 @@ def Combine_LST_composite(folders_input_RAW, Startdate, Enddate):
         else:
             print("LST composite %s already exists" %Date)
             
-    return()        
+    return()     
+
+def Thermal_Sharpening_Linear_Forced(surface_temp_up, NDVI_up, NDVI, Box, dest_up, ndvi_fileName, dest_down, watermask = False):
+
+    
+    if watermask != False:
+       NDVI_up[watermask==1]=np.nan
+       surface_temp_up[watermask==1]=np.nan
+   
+    Buffer_area = int((Box-1)/2) 
+    NDVI_up_box =np.empty((Box**3, len(NDVI_up),len(NDVI_up[1]))) * np.nan
+    LST_up_box =np.empty((Box**3, len(NDVI_up),len(NDVI_up[1]))) * np.nan
+    NDVI_up_box[0, :,:] = NDVI_up
+    LST_up_box[0, :,:] = surface_temp_up  
+   
+    i = 1
+    for ypixel in range(0,Buffer_area + 1):
+
+        for xpixel in range(1,Buffer_area + 1):
+
+           if ypixel==0:
+                for xpixel in range(1,Buffer_area + 1):
+                    NDVI_up_box[int(i),:,0:-xpixel] = NDVI_up[:,xpixel:]
+                    LST_up_box[int(i),:,0:-xpixel] = surface_temp_up[:,xpixel:]
+                    
+                    NDVI_up_box[int(i+1),:,xpixel:] = NDVI_up[:,:-xpixel]
+                    LST_up_box[int(i+1),:,xpixel:] = surface_temp_up[:,:-xpixel]
+                    i += 2
+                    
+                for ypixel in range(1,Buffer_area + 1):
+
+                    NDVI_up_box[int(i), ypixel:,:] = NDVI_up[:-ypixel,:]
+                    LST_up_box[int(i), ypixel:,:] = surface_temp_up[:-ypixel,:]
+                    
+                    NDVI_up_box[int(i+1),0:-ypixel,:] = NDVI_up[ypixel:,:]
+                    LST_up_box[int(i+1),0:-ypixel,:] = surface_temp_up[ypixel:,:]                    
+
+                    i += 2
+                    
+                    
+                    
+           else:
+               NDVI_up_box[int(i),0:-xpixel,ypixel:] = NDVI_up[xpixel:,:-ypixel]
+               NDVI_up_box[int(i+1),xpixel:,ypixel:] = NDVI_up[:-xpixel,:-ypixel]
+               NDVI_up_box[int(i+2),0:-xpixel,0:-ypixel] = NDVI_up[xpixel:,ypixel:]
+               NDVI_up_box[int(i+3),xpixel:,0:-ypixel] = NDVI_up[:-xpixel,ypixel:]
+
+               LST_up_box[int(i),0:-xpixel,ypixel:] = surface_temp_up[xpixel:,:-ypixel]
+               LST_up_box[int(i+1),xpixel:,ypixel:] = surface_temp_up[:-xpixel,:-ypixel]
+               LST_up_box[int(i+2),0:-xpixel,0:-ypixel] = surface_temp_up[xpixel:,ypixel:]
+               LST_up_box[int(i+3),xpixel:,0:-ypixel] = surface_temp_up[:-xpixel,ypixel:]
+                    
+               i += 4
+
+    # Calculate coefficients
+    NDVI_up_low = np.nanpercentile(NDVI_up_box, 25, axis = (0))
+    NDVI_up_high = np.nanpercentile(NDVI_up_box, 75, axis = (0))
+    LST_up_low = np.nanpercentile(LST_up_box, 25, axis = (0))
+    LST_up_high = np.nanpercentile(LST_up_box, 75, axis = (0))
+    
+    # 
+    CoefA = (LST_up_low-LST_up_high)/(NDVI_up_high-NDVI_up_low)
+    CoefA = CoefA.clip(-30, 0)
+    CoefB = LST_up_high - NDVI_up_low * CoefA
+
+    # Define the shape of the surface temperature with the resolution of 400m
+    proj = dest_up.GetProjection()
+    geo = dest_up.GetGeoTransform()
+    
+    # Save the coefficients
+    CoefA_Downscale = DC.Save_as_MEM(CoefA, geo, proj)
+    CoefB_Downscale = DC.Save_as_MEM(CoefB, geo, proj)
+
+    # Downscale the fitted coefficients
+    CoefA_Downscale = RC.reproject_dataset_example(CoefA_Downscale, dest_down, 2)    
+    CoefB_Downscale = RC.reproject_dataset_example(CoefB_Downscale, dest_down, 2)
+    CoefA = CoefA_Downscale.GetRasterBand(1).ReadAsArray()
+    CoefB = CoefB_Downscale.GetRasterBand(1).ReadAsArray()
+
+    # Calculate the surface temperature based on the fitted coefficents and NDVI
+    temp_surface_sharpened=CoefA*NDVI+CoefB
+    temp_surface_sharpened[temp_surface_sharpened < 250] = np.nan
+    temp_surface_sharpened[temp_surface_sharpened > 400] = np.nan    
+
+    return(temp_surface_sharpened) 
+    
+
+
+
+def Thermal_Sharpening_Linear(surface_temp_up, NDVI_up, NDVI, Box, dest_up, ndvi_fileName, dest_down, watermask = False):
+
+    # Creating arrays to store the coefficients
+    CoefA=np.zeros((len(surface_temp_up),len(surface_temp_up[1])))
+    CoefB=np.zeros((len(surface_temp_up),len(surface_temp_up[1])))
+
+    # Fit a second polynominal fit to the NDVI and Thermal data and save the coefficients for each pixel
+    # NOW USING FOR LOOPS PROBABLY NOT THE FASTEST METHOD
+    for i in range(0,len(surface_temp_up)):
+        for j in range(0,len(surface_temp_up[1])):
+            if np.isnan(np.sum(surface_temp_up[i,j]))==False and np.isnan(np.sum(NDVI_up[i,j]))==False:
+                x_data = NDVI_up[int(np.maximum(0, i - (Box - 1) / 2)):int(np.minimum(len(surface_temp_up), i + (Box - 1) / 2 + 1)), int(np.maximum(0, j - (Box - 1) / 2)):int(np.minimum(len(surface_temp_up[1]), j + (Box - 1) / 2 + 1))][np.logical_and(np.logical_not(np.isnan(NDVI_up[int(np.maximum(0, i - (Box - 1) / 2)):int(np.minimum(len(surface_temp_up), i + (Box - 1) / 2 + 1)),int(np.maximum(0, j - (Box - 1) / 2)):int(np.minimum(len(surface_temp_up[1]), j + (Box - 1) / 2 + 1))])), np.logical_not(np.isnan(surface_temp_up[int(np.maximum(0, i - (Box - 1) / 2)):int(np.minimum(len(surface_temp_up), i + (Box - 1) / 2 + 1)),int(np.maximum(0, j - (Box - 1) / 2)):int(np.minimum(len(surface_temp_up[1]),j + (Box - 1) / 2 + 1))])))]
+                y_data = surface_temp_up[int(np.maximum(0, i - (Box - 1) / 2)):int(np.minimum(len(surface_temp_up), i + (Box - 1) / 2 + 1)), int(np.maximum(0, j - (Box - 1) / 2)):int(np.minimum(len(surface_temp_up[1]), j + (Box - 1) / 2 + 1))][np.logical_and(np.logical_not(np.isnan(NDVI_up[int(np.maximum(0, i - (Box - 1) / 2)):int(np.minimum(len(surface_temp_up), i + (Box - 1) / 2 + 1)),int(np.maximum(0, j - (Box - 1) / 2)):int(np.minimum(len(surface_temp_up[1]),j + (Box - 1) / 2 + 1))])), np.logical_not(np.isnan(surface_temp_up[int(np.maximum(0, i - (Box - 1) / 2)):int(np.minimum(len(surface_temp_up), i + (Box - 1) / 2 + 1)),int(np.maximum(0, j - (Box - 1) / 2)):int(np.minimum(len(surface_temp_up[1]), j + (Box - 1) / 2 + 1))])))]
+                if not watermask is False:
+                    wm_data = watermask[int(np.maximum(0, i - (Box - 1) / 2)):int(np.minimum(len(surface_temp_up), i + (Box - 1) / 2 + 1)), int(np.maximum(0, j - (Box - 1) / 2)):int(np.minimum(len(surface_temp_up[1]), j + (Box - 1) / 2 + 1))][np.logical_and(np.logical_not(np.isnan(NDVI_up[int(np.maximum(0, i - (Box - 1) / 2)):int(np.minimum(len(surface_temp_up), i + (Box - 1) / 2 + 1)),int(np.maximum(0, j - (Box - 1) / 2)):int(np.minimum(len(surface_temp_up[1]),j + (Box - 1) / 2 + 1))])), np.logical_not(np.isnan(surface_temp_up[int(np.maximum(0, i - (Box - 1) / 2)):int(np.minimum(len(surface_temp_up), i + (Box - 1) / 2 + 1)),int(np.maximum(0, j - (Box - 1) / 2)):int(np.minimum(len(surface_temp_up[1]), j + (Box - 1) / 2 + 1))])))]
+                    x_data = x_data[wm_data==0]
+                    y_data = y_data[wm_data==0]
+                x_data[~np.isnan(x_data)]
+                y_data[~np.isnan(y_data)]
+                if len(x_data)>1:
+                    coefs = poly.polyfit(x_data, y_data, 1)
+                    CoefA[i,j] = coefs[1]
+                    CoefB[i,j] = coefs[0]
+ 
+                else:
+                    CoefA[i,j] = np.nan
+                    CoefB[i,j] = np.nan
+            else:
+                CoefA[i,j] = np.nan
+                CoefB[i,j] = np.nan
+
+    # Define the shape of the surface temperature with the resolution of 400m
+    proj = dest_up.GetProjection()
+    geo = dest_up.GetGeoTransform()
+    
+    # Save the coefficients
+    CoefA_Downscale = DC.Save_as_MEM(CoefA, geo, proj)
+    CoefB_Downscale = DC.Save_as_MEM(CoefB, geo, proj)
+
+    # Downscale the fitted coefficients
+    CoefA_Downscale = RC.reproject_dataset_example(CoefA_Downscale, dest_down, 2)    
+    CoefB_Downscale = RC.reproject_dataset_example(CoefB_Downscale, dest_down, 2)
+    CoefA = CoefA_Downscale.GetRasterBand(1).ReadAsArray()
+    CoefB = CoefB_Downscale.GetRasterBand(1).ReadAsArray()
+
+    # Calculate the surface temperature based on the fitted coefficents and NDVI
+    temp_surface_sharpened=CoefA*NDVI+CoefB
+    temp_surface_sharpened[temp_surface_sharpened < 250] = np.nan
+    temp_surface_sharpened[temp_surface_sharpened > 400] = np.nan
+
+    return(temp_surface_sharpened) 
+
+def Thermal_Sharpening(surface_temp_up, NDVI_up, NDVI, Box, dest_up, output_folder, ndvi_fileName, dest_down, watermask = False):
+
+    # Creating arrays to store the coefficients
+    CoefA=np.zeros((len(surface_temp_up),len(surface_temp_up[1])))
+    CoefB=np.zeros((len(surface_temp_up),len(surface_temp_up[1])))
+    CoefC=np.zeros((len(surface_temp_up),len(surface_temp_up[1])))
+
+    # Fit a second polynominal fit to the NDVI and Thermal data and save the coefficients for each pixel
+    # NOW USING FOR LOOPS PROBABLY NOT THE FASTEST METHOD
+    for i in range(0,len(surface_temp_up)):
+        for j in range(0,len(surface_temp_up[1])):
+            if np.isnan(np.sum(surface_temp_up[i,j]))==False and np.isnan(np.sum(NDVI_up[i,j]))==False:
+                x_data = NDVI_up[int(np.maximum(0, i - (Box - 1) / 2)):int(np.minimum(len(surface_temp_up), i + (Box - 1) / 2 + 1)), int(np.maximum(0, j - (Box - 1) / 2)):int(np.minimum(len(surface_temp_up[1]), j + (Box - 1) / 2 + 1))][np.logical_and(np.logical_not(np.isnan(NDVI_up[int(np.maximum(0, i - (Box - 1) / 2)):int(np.minimum(len(surface_temp_up), i + (Box - 1) / 2 + 1)),int(np.maximum(0, j - (Box - 1) / 2)):int(np.minimum(len(surface_temp_up[1]), j + (Box - 1) / 2 + 1))])), np.logical_not(np.isnan(surface_temp_up[int(np.maximum(0, i - (Box - 1) / 2)):int(np.minimum(len(surface_temp_up), i + (Box - 1) / 2 + 1)),int(np.maximum(0, j - (Box - 1) / 2)):int(np.minimum(len(surface_temp_up[1]),j + (Box - 1) / 2 + 1))])))]
+                y_data = surface_temp_up[int(np.maximum(0, i - (Box - 1) / 2)):int(np.minimum(len(surface_temp_up), i + (Box - 1) / 2 + 1)), int(np.maximum(0, j - (Box - 1) / 2)):int(np.minimum(len(surface_temp_up[1]), j + (Box - 1) / 2 + 1))][np.logical_and(np.logical_not(np.isnan(NDVI_up[int(np.maximum(0, i - (Box - 1) / 2)):int(np.minimum(len(surface_temp_up), i + (Box - 1) / 2 + 1)),int(np.maximum(0, j - (Box - 1) / 2)):int(np.minimum(len(surface_temp_up[1]),j + (Box - 1) / 2 + 1))])), np.logical_not(np.isnan(surface_temp_up[int(np.maximum(0, i - (Box - 1) / 2)):int(np.minimum(len(surface_temp_up), i + (Box - 1) / 2 + 1)),int(np.maximum(0, j - (Box - 1) / 2)):int(np.minimum(len(surface_temp_up[1]), j + (Box - 1) / 2 + 1))])))]
+                if not watermask is False:
+                    wm_data = watermask[int(np.maximum(0, i - (Box - 1) / 2)):int(np.minimum(len(surface_temp_up), i + (Box - 1) / 2 + 1)), int(np.maximum(0, j - (Box - 1) / 2)):int(np.minimum(len(surface_temp_up[1]), j + (Box - 1) / 2 + 1))][np.logical_and(np.logical_not(np.isnan(NDVI_up[int(np.maximum(0, i - (Box - 1) / 2)):int(np.minimum(len(surface_temp_up), i + (Box - 1) / 2 + 1)),int(np.maximum(0, j - (Box - 1) / 2)):int(np.minimum(len(surface_temp_up[1]),j + (Box - 1) / 2 + 1))])), np.logical_not(np.isnan(surface_temp_up[int(np.maximum(0, i - (Box - 1) / 2)):int(np.minimum(len(surface_temp_up), i + (Box - 1) / 2 + 1)),int(np.maximum(0, j - (Box - 1) / 2)):int(np.minimum(len(surface_temp_up[1]), j + (Box - 1) / 2 + 1))])))]
+                    x_data = x_data[wm_data==0]
+                    y_data = y_data[wm_data==0]
+                x_data[~np.isnan(x_data)]
+                y_data[~np.isnan(y_data)]
+                if len(x_data)>6:
+                    coefs = poly.polyfit(x_data, y_data, 2)
+                    CoefA[i,j] = coefs[2]
+                    CoefB[i,j] = coefs[1]
+                    CoefC[i,j] = coefs[0]
+                else:
+                    CoefA[i,j] = np.nan
+                    CoefB[i,j] = np.nan
+                    CoefC[i,j] = np.nan
+            else:
+                CoefA[i,j] = np.nan
+                CoefB[i,j] = np.nan
+                CoefC[i,j] = np.nan
+
+    # Define the shape of the surface temperature with the resolution of 400m
+    proj = dest_up.GetProjection()
+    geo = dest_up.GetGeoTransform()
+    
+    # Save the coefficients
+    CoefA_Downscale = DC.Save_as_MEM(CoefA, geo, proj)
+    CoefB_Downscale = DC.Save_as_MEM(CoefB, geo, proj)
+    CoefC_Downscale = DC.Save_as_MEM(CoefC, geo, proj)
+
+    # Downscale the fitted coefficients
+    CoefA_Downscaled = RC.reproject_dataset_example(CoefA_Downscale, dest_down)            
+    CoefB_Downscaled = RC.reproject_dataset_example(CoefB_Downscale, dest_down)                       
+    CoefC_Downscaled = RC.reproject_dataset_example(CoefC_Downscale, dest_down) 
+                                        
+    CoefA = CoefA_Downscaled.GetRasterBand(1).ReadAsArray()
+    CoefB = CoefB_Downscaled.GetRasterBand(1).ReadAsArray()
+    CoefC = CoefC_Downscaled.GetRasterBand(1).ReadAsArray()
+
+    # Calculate the surface temperature based on the fitted coefficents and NDVI
+    temp_surface_sharpened=CoefA * NDVI**2 + CoefB * NDVI + CoefC
+    temp_surface_sharpened[temp_surface_sharpened < 250] = np.nan
+    temp_surface_sharpened[temp_surface_sharpened > 400] = np.nan
+
+    return(temp_surface_sharpened)
     
 def download_file_from_google_drive(id, destination):
     

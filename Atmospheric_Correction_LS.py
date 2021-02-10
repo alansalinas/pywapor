@@ -32,120 +32,121 @@ dates = [datetime.datetime.strptime(k.split("_")[3], "%Y%m%d") for k in files_LS
 
 for date in dates:
     
-    date_str = date.strftime("%Y%m%d")
-    os.chdir(LS_input_folder)
-    found = glob.glob("L*_*_%s_*_*_*.tar.gz" %date_str)
-    
-    if len(found) > 0:
+    if date.year == 2015:
+        date_str = date.strftime("%Y%m%d")
+        os.chdir(LS_input_folder)
+        found = glob.glob("L*_*_%s_*_*_*.tar.gz" %date_str)
         
-        for found_one in found:
+        if len(found) > 0:
             
-            LS_file = os.path.splitext(os.path.splitext(found_one)[0])[0] +"_MTL.txt"
-            Startdate_IrriEngine = datetime.datetime.strptime(LS_file.split("_")[3], "%Y%m%d")
-            Startdate_IrriEngine = Startdate_IrriEngine.strftime("%Y-%m-%d")
+            for found_one in found:
+                
+                LS_file = os.path.splitext(os.path.splitext(found_one)[0])[0] +"_MTL.txt"
+                Startdate_IrriEngine = datetime.datetime.strptime(LS_file.split("_")[3], "%Y%m%d")
+                Startdate_IrriEngine = Startdate_IrriEngine.strftime("%Y-%m-%d")
+                 
+                file_LS_Cloud = os.path.join(output_folder, "%s" %LS_file.split("_")[2], "%s"  %LS_file.split("_")[3], "LS_CLOUD_%s.tif" %("_".join(LS_file.split("_")[0:4])))
+                Tile_name = LS_file.split("_")[2]
+                
+                if not os.path.exists(file_LS_Cloud):
+     
+                    print("Process %s" %found_one)
+    
+                    LS_B1_filename = LS_file.replace("_MTL.txt", "_B1.tif")
+    
+                    if not os.path.exists(LS_B1_filename):
+                        # Extract zip file
+                        DC.Extract_Data_tar_gz(os.path.join(LS_input_folder,found_one), LS_input_folder)
              
-            file_LS_Cloud = os.path.join(output_folder, "%s" %LS_file.split("_")[2], "%s"  %LS_file.split("_")[3], "LS_CLOUD_%s.tif" %("_".join(LS_file.split("_")[0:4])))
-            Tile_name = LS_file.split("_")[2]
-            
-            if not os.path.exists(file_LS_Cloud):
- 
-                print("Process %s" %found_one)
-
-                LS_B1_filename = LS_file.replace("_MTL.txt", "_B1.tif")
-
-                if not os.path.exists(LS_B1_filename):
-                    # Extract zip file
-                    DC.Extract_Data_tar_gz(os.path.join(LS_input_folder,found_one), LS_input_folder)
-         
-                # Get LS_filename
-                print(found_one)
-                Landsat_nr = int(found_one[3])
-                
-                # read out the general info out of the MTL file
-                year, DOY, hour, minutes, UTM_Zone, Sun_elevation = SEBAL_LS.info_general_metadata(LS_file)     
-                UTM_Zone = int("326%02d" %UTM_Zone)#!!! nu alleen voor noord
-                folder_LS_RAW = os.path.join(LS_input_folder, "RAW")  
-                folder_LS_RAW_DEM = os.path.join(folder_LS_RAW, "%s" %(Tile_name))         
-                filename_DEM = os.path.join(folder_LS_RAW_DEM, "HydroSHED", "DEM", "DEM_HydroShed_m_3s.tif")
-                   
-                if not os.path.exists(filename_DEM):
+                    # Get LS_filename
+                    print(found_one)
+                    Landsat_nr = int(found_one[3])
                     
-                    if not os.path.exists(folder_LS_RAW_DEM):
-                        os.makedirs(folder_LS_RAW_DEM)
-                    
-                    # Get extend in degrees of tile
-                    dest = gdal.Open(os.path.join(LS_input_folder,LS_B1_filename))
-                    geo = dest.GetGeoTransform()
-                    epsg_from = Proj(init="epsg:%s" %UTM_Zone) 
-                    epsg_to = Proj(init="epsg:4326")
-                    x1 = geo[0]
-                    x2 = geo[0] + dest.RasterXSize*geo[1]
-                    y1 = geo[3]
-                    y2 = geo[3] + dest.RasterYSize * geo[5]
-                    x1_deg, y1_deg = transform(epsg_from, epsg_to, x1, y1)
-                    x2_deg, y2_deg = transform(epsg_from, epsg_to, x2, y2)
-                    
-                    watertools.Collect.DEM.HydroSHED(folder_LS_RAW_DEM, [y2_deg - 0.1, y1_deg + 0.1], [x1_deg - 0.1, x2_deg + 0.1])
-                    
-                else:
-                     # Get extend in degrees of tile
-                    dest = gdal.Open(os.path.join(LS_input_folder,LS_B1_filename))
-                    geo = dest.GetGeoTransform()
-                    epsg_from = Proj(init="epsg:%s" %UTM_Zone) 
-                    epsg_to = Proj(init="epsg:4326")
-                    x1 = geo[0]
-                    x2 = geo[0] + dest.RasterXSize*geo[1]
-                    y1 = geo[3]
-                    y2 = geo[3] + dest.RasterYSize * geo[5]
-                    x1_deg, y1_deg = transform(epsg_from, epsg_to, x1, y1)
-                    x2_deg, y2_deg = transform(epsg_from, epsg_to, x2, y2)
-                    
-                lon_ave = (x1_deg + x2_deg)/2  
-                    
-                GMT_offset = round(lon_ave * 24 / 360)
-                
-                # Find Time to take
-                time= hour + minutes/60
-                time_wheater_data = np.linspace(0,21,8) + 1.5
-
-                # Collect required METEO data
-                Time_Step = np.argwhere(time_wheater_data == Find_nearest_time(time_wheater_data, time))[0][0]
-                hour_take = Time_Step * 3
-                
-                temp_format_inst = os.path.join(folder_LS_RAW, "Weather_Data", "Model", "GLDAS", "three_hourly", "tair_f_inst", "Tair_GLDAS-NOAH_C_3hour_{yyyy}.{mm:02d}.{dd:02d}_{HH:02d}00.tif")
-                RH_format_inst = os.path.join(folder_LS_RAW, "Weather_Data", "Model", "GLDAS", "three_hourly", "rh_f_inst", "Hum_GLDAS-NOAH_percentage_3hour_{yyyy}.{mm:02d}.{dd:02d}_{HH:02d}00.tif")
-           
-                if not os.path.exists(temp_format_inst.format(yyyy=date.year, mm=date.month, dd=date.day, HH=hour_take)):
-                    watertools.Collect.GLDAS.three_hourly(folder_LS_RAW, ['tair_f_inst'], date, date, [y2_deg - 0.3, y1_deg + 0.3], [x1_deg - 0.3, x2_deg + 0.3], Periods = [int(Time_Step+1)])
-                                    
-                if not os.path.exists(RH_format_inst.format(yyyy=date.year, mm=date.month, dd=date.day, HH=hour_take)):          
-                     watertools.Collect.GLDAS.three_hourly(folder_LS_RAW, ['psurf_f_inst', 'qair_f_inst'], date, date, [y2_deg - 0.3, y1_deg + 0.3], [x1_deg - 0.3, x2_deg + 0.3], Periods = [int(Time_Step+1)])
-                     input_format_psurf = os.path.join(folder_LS_RAW, "Weather_Data", "Model", "GLDAS", "three_hourly", "psurf_f_inst", "P_GLDAS-NOAH_kpa_3hour_{yyyy}.{mm:02d}.{dd:02d}_{HH:02d}00.tif")
-                     input_format_qair = os.path.join(folder_LS_RAW, "Weather_Data", "Model", "GLDAS", "three_hourly", "qair_f_inst", "Hum_GLDAS-NOAH_kg-kg_3hour_{yyyy}.{mm:02d}.{dd:02d}_{HH:02d}00.tif")
-                     watertools.Products.RH.Use_Meteo.Calc_Humidity(temp_format_inst,
-                                                           input_format_psurf,
-                                                           input_format_qair,
-                                                           RH_format_inst,
-                                                           date, date+pd.DateOffset(days=1), freq = "3H")                
-                    
-                # Define output folders
-                folder_LS_NDVI = os.path.join(output_folder, "%s" %(Tile_name), "NDVI")
-                folder_LS_Albedo = os.path.join(output_folder, "%s" %(Tile_name), "Albedo")
-                folder_LS_VSDI = os.path.join(output_folder, "%s" %(Tile_name), "VSDI")
-                folder_LS_NDII = os.path.join(output_folder, "%s" %(Tile_name), "NDII")
-                folder_LS_B12 = os.path.join(output_folder, "%s" %(Tile_name), "B12")
-                folder_LS_LST = os.path.join(output_folder, "%s" %(Tile_name), "LST")
-                folder_LS_Cloud = os.path.join(output_folder, "%s" %(Tile_name), "CLOUD")
-                
-                # Save output folders
-                FOLDERS = [LS_input_folder, folder_LS_RAW, folder_LS_NDVI, folder_LS_Albedo, folder_LS_VSDI, folder_LS_NDII, folder_LS_B12, folder_LS_Cloud, folder_LS_LST]
-
-                for folder in FOLDERS:
-                    if not os.path.exists(folder) and folder != '':
-                        print("create input folder %s" %folder)
-                        os.makedirs(folder)
+                    # read out the general info out of the MTL file
+                    year, DOY, hour, minutes, UTM_Zone, Sun_elevation = SEBAL_LS.info_general_metadata(LS_file)     
+                    UTM_Zone = int("326%02d" %UTM_Zone)#!!! nu alleen voor noord
+                    folder_LS_RAW = os.path.join(LS_input_folder, "RAW")  
+                    folder_LS_RAW_DEM = os.path.join(folder_LS_RAW, "%s" %(Tile_name))         
+                    filename_DEM = os.path.join(folder_LS_RAW_DEM, "HydroSHED", "DEM", "DEM_HydroShed_m_3s.tif")
+                       
+                    if not os.path.exists(filename_DEM):
                         
-                Process_LS_Image(LS_file, FOLDERS, filename_DEM, UTM_Zone, Startdate_IrriEngine, GMT_offset)
+                        if not os.path.exists(folder_LS_RAW_DEM):
+                            os.makedirs(folder_LS_RAW_DEM)
+                        
+                        # Get extend in degrees of tile
+                        dest = gdal.Open(os.path.join(LS_input_folder,LS_B1_filename))
+                        geo = dest.GetGeoTransform()
+                        epsg_from = Proj(init="epsg:%s" %UTM_Zone) 
+                        epsg_to = Proj(init="epsg:4326")
+                        x1 = geo[0]
+                        x2 = geo[0] + dest.RasterXSize*geo[1]
+                        y1 = geo[3]
+                        y2 = geo[3] + dest.RasterYSize * geo[5]
+                        x1_deg, y1_deg = transform(epsg_from, epsg_to, x1, y1)
+                        x2_deg, y2_deg = transform(epsg_from, epsg_to, x2, y2)
+                        
+                        watertools.Collect.DEM.HydroSHED(folder_LS_RAW_DEM, [y2_deg - 0.1, y1_deg + 0.1], [x1_deg - 0.1, x2_deg + 0.1])
+                        
+                    else:
+                         # Get extend in degrees of tile
+                        dest = gdal.Open(os.path.join(LS_input_folder,LS_B1_filename))
+                        geo = dest.GetGeoTransform()
+                        epsg_from = Proj(init="epsg:%s" %UTM_Zone) 
+                        epsg_to = Proj(init="epsg:4326")
+                        x1 = geo[0]
+                        x2 = geo[0] + dest.RasterXSize*geo[1]
+                        y1 = geo[3]
+                        y2 = geo[3] + dest.RasterYSize * geo[5]
+                        x1_deg, y1_deg = transform(epsg_from, epsg_to, x1, y1)
+                        x2_deg, y2_deg = transform(epsg_from, epsg_to, x2, y2)
+                        
+                    lon_ave = (x1_deg + x2_deg)/2  
+                        
+                    GMT_offset = round(lon_ave * 24 / 360)
+                    
+                    # Find Time to take
+                    time= hour + minutes/60
+                    time_wheater_data = np.linspace(0,21,8) + 1.5
+    
+                    # Collect required METEO data
+                    Time_Step = np.argwhere(time_wheater_data == Find_nearest_time(time_wheater_data, time))[0][0]
+                    hour_take = Time_Step * 3
+                    
+                    temp_format_inst = os.path.join(folder_LS_RAW, "Weather_Data", "Model", "GLDAS", "three_hourly", "tair_f_inst", "Tair_GLDAS-NOAH_C_3hour_{yyyy}.{mm:02d}.{dd:02d}_{HH:02d}00.tif")
+                    RH_format_inst = os.path.join(folder_LS_RAW, "Weather_Data", "Model", "GLDAS", "three_hourly", "rh_f_inst", "Hum_GLDAS-NOAH_percentage_3hour_{yyyy}.{mm:02d}.{dd:02d}_{HH:02d}00.tif")
+               
+                    if not os.path.exists(temp_format_inst.format(yyyy=date.year, mm=date.month, dd=date.day, HH=hour_take)):
+                        watertools.Collect.GLDAS.three_hourly(folder_LS_RAW, ['tair_f_inst'], date, date, [y2_deg - 0.3, y1_deg + 0.3], [x1_deg - 0.3, x2_deg + 0.3], Periods = [int(Time_Step+1)])
+                                        
+                    if not os.path.exists(RH_format_inst.format(yyyy=date.year, mm=date.month, dd=date.day, HH=hour_take)):          
+                         watertools.Collect.GLDAS.three_hourly(folder_LS_RAW, ['psurf_f_inst', 'qair_f_inst'], date, date, [y2_deg - 0.3, y1_deg + 0.3], [x1_deg - 0.3, x2_deg + 0.3], Periods = [int(Time_Step+1)])
+                         input_format_psurf = os.path.join(folder_LS_RAW, "Weather_Data", "Model", "GLDAS", "three_hourly", "psurf_f_inst", "P_GLDAS-NOAH_kpa_3hour_{yyyy}.{mm:02d}.{dd:02d}_{HH:02d}00.tif")
+                         input_format_qair = os.path.join(folder_LS_RAW, "Weather_Data", "Model", "GLDAS", "three_hourly", "qair_f_inst", "Hum_GLDAS-NOAH_kg-kg_3hour_{yyyy}.{mm:02d}.{dd:02d}_{HH:02d}00.tif")
+                         watertools.Products.RH.Use_Meteo.Calc_Humidity(temp_format_inst,
+                                                               input_format_psurf,
+                                                               input_format_qair,
+                                                               RH_format_inst,
+                                                               date, date+pd.DateOffset(days=1), freq = "3H")                
+                        
+                    # Define output folders
+                    folder_LS_NDVI = os.path.join(output_folder, "%s" %(Tile_name), "NDVI")
+                    folder_LS_Albedo = os.path.join(output_folder, "%s" %(Tile_name), "Albedo")
+                    folder_LS_VSDI = os.path.join(output_folder, "%s" %(Tile_name), "VSDI")
+                    folder_LS_NDII = os.path.join(output_folder, "%s" %(Tile_name), "NDII")
+                    folder_LS_B12 = os.path.join(output_folder, "%s" %(Tile_name), "B12")
+                    folder_LS_LST = os.path.join(output_folder, "%s" %(Tile_name), "LST")
+                    folder_LS_Cloud = os.path.join(output_folder, "%s" %(Tile_name), "CLOUD")
+                    
+                    # Save output folders
+                    FOLDERS = [LS_input_folder, folder_LS_RAW, folder_LS_NDVI, folder_LS_Albedo, folder_LS_VSDI, folder_LS_NDII, folder_LS_B12, folder_LS_Cloud, folder_LS_LST]
+    
+                    for folder in FOLDERS:
+                        if not os.path.exists(folder) and folder != '':
+                            print("create input folder %s" %folder)
+                            os.makedirs(folder)
+                            
+                    Process_LS_Image(LS_file, FOLDERS, filename_DEM, UTM_Zone, Startdate_IrriEngine, GMT_offset)
                 
 
 def Find_nearest_time(Dates, Date):
@@ -246,17 +247,28 @@ def Process_LS_Image(LS_file, FOLDERS, filename_DEM, UTM_Zone, Startdate_IrriEng
             
             # Cloud Thresholds LS
             if Landsat_nr == 8:
-                Cloud_Treshold = np.array([1,2,2722,2720,2724,2728,2732])
+                Cloud_Treshold = np.array([1,2,2722,2720,2724,2728,2732,3744,3748,3752,3756])
+                Real_Clouds = np.array([2800,2804,2808,2812,6816,6820,6824,6828,6848,6852,6856,6860,6896,6900,6904,6908,7072,7076,7080,7084,7104,7108,7112,7116,7840,7844,7848,7852,7872,7872,7876,7880,7884]) 
             if Landsat_nr == 5 or Landsat_nr == 7:
-                Cloud_Treshold = np.array([1,672,676,680,684])
-             
+                Cloud_Treshold = np.array([1,672,676,680,684,1696,1700,1704,1708])
+                Real_Clouds = np.array([752,756,760,764]) 
+               
+            if Landsat_nr == 8:                
+                Cloud_Buffer_Area = np.where(np.isin(LS_BQA, Real_Clouds), 0, 1)
+            if Landsat_nr == 5 or Landsat_nr == 7:
+                Cloud_Buffer_Area = np.where(np.isin(LS_BQA, Real_Clouds), 0, 1)
+            Cloud_Buffer_Area = RC.Create_Buffer(Cloud_Buffer_Area, 3)
+            Cloud_Buffer_Area = np.where(Cloud_Buffer_Area==0, 1, 0)
+                
             print("create cloud array")     
-            QC_mask_Cloud = np.where(np.isin(LS_BQA, Cloud_Treshold), 0, 1)
+            QC_mask_Cloud_first = np.where(np.isin(LS_BQA, Cloud_Treshold), 1, np.nan)
             
             # Apply buffer around pixels
             print("apply buffer of 15 pixels of 30m around clouds")                 
-            QC_mask_Cloud = RC.Create_Buffer(QC_mask_Cloud, 15)
-            QC_mask_Cloud = np.where(QC_mask_Cloud == 1, np.nan, 1)
+            QC_mask_Cloud_second = RC.Create_Buffer(Cloud_Buffer_Area, 15)
+            QC_mask_Cloud_second = np.where(QC_mask_Cloud_second == 1, np.nan, 1)
+
+            QC_mask_Cloud = (QC_mask_Cloud_first + QC_mask_Cloud_second)/2
             QC_mask_Cloud[LS_BQA==1] = np.nan  
                        
             # Create 3D array to store Spectral radiance and Reflectivity for each band

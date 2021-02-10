@@ -1,6 +1,5 @@
 import numpy as np
 from pyWAPOR.ETLook import constants as con
-import warnings
 
 
 def longitude_rad(lon_deg):
@@ -285,7 +284,7 @@ def hour_angle(sc, dtime, lon=0):
     >>> solrad.hour_angle(sc=solrad.seasonal_correction(75), dtime=11.4)
     -0.19793970172084141
     """
-    dtime = dtime + (lon / (15*np.pi/180.0))
+    dtime = dtime #+ (lon / (15*np.pi/180.0))
     return (np.pi / 12.0) * (dtime + sc - 12.0)
 
 
