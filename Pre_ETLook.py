@@ -20,7 +20,7 @@ import watertools.General.raster_conversions as RC
 
 import pyWAPOR
 
-def main(output_folder, Startdate, Enddate, latlim, lonlim, LandCover = "GlobCover", Short_Downwards_Radiation = "MSGCCP", Satellite_folder = None, composite = False):
+def main(output_folder, Startdate, Enddate, latlim, lonlim, LandCover = "GlobCover", Short_Downwards_Radiation = "MSGCCP", RAW_folder = None, Satellite_folder = None, composite = False):
 
     ############################ Get General inputs ###############################
     
@@ -32,6 +32,9 @@ def main(output_folder, Startdate, Enddate, latlim, lonlim, LandCover = "GlobCov
         folders_input_RAW = os.path.join(output_folder, "RAW")
         folder_input_ETLook = os.path.join(output_folder, "ETLook_input")
         
+    if RAW_folder != None:
+        folders_input_RAW = RAW_folder 
+             
     # Create folders if not exists
     if not os.path.exists(folders_input_RAW):
         os.makedirs(folders_input_RAW)
@@ -186,8 +189,8 @@ def main(output_folder, Startdate, Enddate, latlim, lonlim, LandCover = "GlobCov
                 os.chdir(folder_NDVI_LS)
                 filename_NDVI = os.path.join(folder_NDVI_LS, glob.glob("*_%d%02d%02d.tif" %(Date.year, Date.month, Date.day))[0])
                 dest_rep = RC.reproject_dataset_example(filename_NDVI, dest_dem_ex, 2)
-                ndvi_rep, Geo_out = RC.clip_data(dest_rep, latlim, lonlim)            
-                DC.Save_as_tiff(NDVI_file, ndvi_rep, Geo_out, 4326)
+                ndvi_rep, Geo_out, Proj_out = RC.clip_data(dest_rep, latlim, lonlim)            
+                DC.Save_as_tiff(NDVI_file, ndvi_rep, Geo_out, Proj_out)
         
             # Get example files
             dest_ex = gdal.Open(NDVI_file)
@@ -595,10 +598,10 @@ def main(output_folder, Startdate, Enddate, latlim, lonlim, LandCover = "GlobCov
 
                 if composite == True:
 
-                    tair_inst_MOD = Calc_Composite_METEO(input_format_tair_inst_MOD, Date, NDVI_file, "max")
+                    tair_inst_MOD = Calc_Composite_METEO(input_format_tair_inst_MOD, Date, NDVI_file, "max", DEM_file = DEM_file, lapse = -0.006)
                     tair_inst_MOD[np.isnan(tair_inst_MOD)] = 0
                     
-                    tair_inst_MYD = Calc_Composite_METEO(input_format_tair_inst_MYD, Date, NDVI_file, "max")
+                    tair_inst_MYD = Calc_Composite_METEO(input_format_tair_inst_MYD, Date, NDVI_file, "max", DEM_file = DEM_file, lapse = -0.008)
                     tair_inst_MYD[np.isnan(tair_inst_MYD)] = 0                        
                     
                     tair_inst = np.where(Time<12, tair_inst_MOD, tair_inst_MYD)
@@ -623,7 +626,7 @@ def main(output_folder, Startdate, Enddate, latlim, lonlim, LandCover = "GlobCov
         
                 if composite == True:
                     
-                    tair_24 = Calc_Composite_METEO(input_format_tair_24, Date, NDVI_file, "max")
+                    tair_24 = Calc_Composite_METEO(input_format_tair_24, Date, NDVI_file, "max", DEM_file = DEM_file, lapse = -0.006)
                     tair_24[np.isnan(tair_24)] = 0                       
                     if np.nanmax(tair_24>270):
                         tair_24 = tair_24 -273.15
@@ -632,8 +635,7 @@ def main(output_folder, Startdate, Enddate, latlim, lonlim, LandCover = "GlobCov
                     
                 else:
 
-                    desttair24 = RC.reproject_dataset_example(input_format_tair_24.format(yyyy=Date.year, mm=Date.month, dd=Date.day), NDVI_file, method=2)
-                    tair_24 = desttair24.GetRasterBand(1).ReadAsArray()
+                    tair_24 = lapse_rate_temp(input_format_tair_24.format(yyyy=Date.year, mm=Date.month, dd=Date.day), DEM_file, lapse = -0.006)
                     if np.nanmax(tair_24>270):
                         tair_24 = tair_24 -273.15
 
@@ -642,7 +644,7 @@ def main(output_folder, Startdate, Enddate, latlim, lonlim, LandCover = "GlobCov
 
                 if composite == True:
                     
-                    tair_min_24 = Calc_Composite_METEO(input_format_tair_min_24, Date, NDVI_file, "max")
+                    tair_min_24 = Calc_Composite_METEO(input_format_tair_min_24, Date, NDVI_file, "max", DEM_file = DEM_file, lapse = 0.0)
                     tair_min_24[np.isnan(tair_min_24)] = 0                       
                     if np.nanmax(tair_min_24>270):
                         tair_min_24 = tair_min_24 -273.15
@@ -651,8 +653,7 @@ def main(output_folder, Startdate, Enddate, latlim, lonlim, LandCover = "GlobCov
                     
                 else:
 
-                    desttairmin24 = RC.reproject_dataset_example(input_format_tair_min_24.format(yyyy=Date.year, mm=Date.month, dd=Date.day), NDVI_file, method=2)
-                    tair_min_24 = desttairmin24.GetRasterBand(1).ReadAsArray()
+                    tair_min_24 = lapse_rate_temp(input_format_tair_min_24.format(yyyy=Date.year, mm=Date.month, dd=Date.day), DEM_file, lapse = 0.0)
                     if np.nanmax(tair_min_24>270):
                         tair_min_24 = tair_min_24 -273.15                    
                     DC.Save_as_tiff(Tair_min_24_file, tair_min_24, geo_ex, proj_ex)                    
@@ -660,7 +661,7 @@ def main(output_folder, Startdate, Enddate, latlim, lonlim, LandCover = "GlobCov
                     
                 if composite == True:
                     
-                    tair_max_24 = Calc_Composite_METEO(input_format_tair_max_24, Date, NDVI_file, "max")
+                    tair_max_24 = Calc_Composite_METEO(input_format_tair_max_24, Date, NDVI_file, "max", DEM_file = DEM_file, lapse = 0.0)
                     tair_max_24[np.isnan(tair_max_24)] = 0                       
                     if np.nanmax(tair_max_24>270):
                         tair_max_24 = tair_max_24 -273.15                       
@@ -668,8 +669,7 @@ def main(output_folder, Startdate, Enddate, latlim, lonlim, LandCover = "GlobCov
                     
                 else:
 
-                    desttairmax24 = RC.reproject_dataset_example(input_format_tair_max_24.format(yyyy=Date.year, mm=Date.month, dd=Date.day), NDVI_file, method=2)
-                    tair_max_24 = desttairmax24.GetRasterBand(1).ReadAsArray()
+                    tair_max_24 = lapse_rate_temp(input_format_tair_max_24.format(yyyy=Date.year, mm=Date.month, dd=Date.day), DEM_file, lapse = 0.0)
                     if np.nanmax(tair_max_24>270):
                         tair_max_24 = tair_max_24 -273.15                           
                     DC.Save_as_tiff(Tair_max_24_file, tair_max_24, geo_ex, proj_ex)                    
@@ -1030,7 +1030,7 @@ def main(output_folder, Startdate, Enddate, latlim, lonlim, LandCover = "GlobCov
             
     return()    
     
-def lapse_rate_temp(tair_file, dem_file):
+def lapse_rate_temp(tair_file, dem_file, lapse):
         
     destT_down = RC.reproject_dataset_example(tair_file, dem_file, 2)
     destDEM_up = RC.reproject_dataset_example(dem_file, tair_file, 4)
@@ -1047,10 +1047,10 @@ def lapse_rate_temp(tair_file, dem_file):
     DEM_up_ave[DEM_up_ave<=0]=0
     
     # 
-    Tdown = pyWAPOR.ETLook.meteo.disaggregate_air_temperature(T, DEM_down, DEM_up_ave)
+    Tdown = pyWAPOR.ETLook.meteo.disaggregate_air_temperature(T, DEM_down, DEM_up_ave, lapse)
 
     return(Tdown)
-    
+
 def Combine_LST(folders_input_RAW, Startdate, Enddate):
     
     Dates = pd.date_range(Startdate, Enddate, freq = "D")
@@ -1078,18 +1078,21 @@ def Combine_LST(folders_input_RAW, Startdate, Enddate):
             filename_lst_myd = glob.glob(format_lst_myd.format(time = "*"))[0]
                 
             dest_angle_mod = gdal.Open(filename_angle_mod)   
-            dest_angle_myd = gdal.Open(filename_angle_myd)        
+            dest_angle_myd = RC.reproject_dataset_example(filename_angle_myd, dest_angle_mod)
             dest_time_mod = gdal.Open(filename_time_mod)       
-            dest_time_myd = gdal.Open(filename_time_myd)  
+            dest_time_myd = RC.reproject_dataset_example(filename_time_myd, dest_time_mod) 
             dest_lst_mod = gdal.Open(filename_lst_mod)       
-            dest_lst_myd = gdal.Open(filename_lst_myd)              
+            dest_lst_myd = RC.reproject_dataset_example(filename_lst_myd, dest_lst_mod)      
 
             Array_angle_mod = dest_angle_mod.GetRasterBand(1).ReadAsArray()
             Array_angle_myd = dest_angle_myd.GetRasterBand(1).ReadAsArray()        
             Array_time_mod = dest_time_mod.GetRasterBand(1).ReadAsArray()        
             Array_time_myd = dest_time_myd.GetRasterBand(1).ReadAsArray()        
             Array_lst_mod = dest_lst_mod.GetRasterBand(1).ReadAsArray()
-            Array_lst_myd = dest_lst_myd.GetRasterBand(1).ReadAsArray()        
+            Array_lst_myd = dest_lst_myd.GetRasterBand(1).ReadAsArray() 
+            Array_lst_myd[Array_lst_myd==0] = np.nan
+            Array_time_myd[Array_time_myd==0] = np.nan
+            Array_angle_myd[Array_angle_myd==0] = np.nan
             
             LST = Array_lst_mod
             Time = Array_time_mod
@@ -1104,19 +1107,26 @@ def Combine_LST(folders_input_RAW, Startdate, Enddate):
             
     return()
         
-def Calc_Composite_METEO(input_format, Date, example_file, method = "mean"):
+def Calc_Composite_METEO(input_format, Date, example_file, method = "mean", DEM_file = None, lapse = -0.006):
     
     dates_comp = pd.date_range(Date, Date + pd.DateOffset(days=7), freq = "D")
     i = 0
     
     for date_comp in dates_comp:
         print("Find %s" %input_format.format(yyyy=date_comp.year, mm=date_comp.month, dd=date_comp.day))
-        filename = glob.glob(input_format.format(yyyy=date_comp.year, mm=date_comp.month, dd=date_comp.day))[0]
-        dest_one = gdal.Open(filename)
-        Array = dest_one.GetRasterBand(1).ReadAsArray()
-        Array[Array==-9999] = np.nan
+        filename = glob.glob(input_format.format(yyyy=date_comp.year, mm=date_comp.month, dd=date_comp.day))[0]  
+        
+        if DEM_file != None:        
+            Array = lapse_rate_temp(filename, DEM_file, lapse)
+            proj_filename = DEM_file
+        else:
+            dest_one = gdal.Open(filename)
+            Array = dest_one.GetRasterBand(1).ReadAsArray()
+            Array[Array==-9999] = np.nan
+            proj_filename = filename
         
         if date_comp == dates_comp[0]:
+            dest_one = gdal.Open(proj_filename)
             Array_end = np.ones([8, dest_one.RasterYSize, dest_one.RasterXSize])
             geo = dest_one.GetGeoTransform()
             proj = dest_one.GetProjection()
@@ -1134,7 +1144,7 @@ def Calc_Composite_METEO(input_format, Date, example_file, method = "mean"):
         Array_end = np.nansum(Array_end, axis = 0)
         
     dest_mem = DC.Save_as_MEM(Array_end, geo, proj)
-    dest_rep = RC.reproject_dataset_example(dest_mem, example_file, 2)    
+    dest_rep = RC.reproject_dataset_example(dest_mem, example_file, 6)    
     Array_end = dest_rep.GetRasterBand(1).ReadAsArray()
     
     return(Array_end)
@@ -1165,7 +1175,7 @@ def Combine_LST_composite(folders_input_RAW, Startdate, Enddate):
             filename_lst_myd = glob.glob(format_lst_myd)[0]
                 
             dest_lst_mod = gdal.Open(filename_lst_mod)       
-            dest_lst_myd = gdal.Open(filename_lst_myd)              
+            dest_lst_myd = RC.reproject_dataset_example(filename_lst_myd, dest_lst_mod)    
      
             Array_lst_mod = dest_lst_mod.GetRasterBand(1).ReadAsArray()
             Array_lst_myd = dest_lst_myd.GetRasterBand(1).ReadAsArray()        

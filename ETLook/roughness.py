@@ -254,5 +254,6 @@ def displacement_height(lai, z_obst, land_mask=1, c1=1):
     disp = np.where(land_mask == 1, disp_func(lai), disp)
     disp = np.where(land_mask == 2, 0, disp)
     disp = np.where(land_mask == 3, (2./3.)*z_obst, disp)
-
+    disp[np.isnan(disp)] = 0
+    
     return disp

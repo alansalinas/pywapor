@@ -51,6 +51,7 @@ def main(input_folder, output_folder, Date):
     Wind_inst_filename = os.path.join(input_folder_date, "wind_inst_%s.tif" %Date_str)
     WatCol_inst_filename = os.path.join(input_folder_date, "wv_inst_%s.tif" %Date_str)
     Trans_24_filename = os.path.join(input_folder_date, "Trans_24_%s.tif" %Date_str)
+    se_root_in_filename = os.path.join(input_folder_date, "se_root_%s.tif" %Date_str)
     
     ############################ Define outputs ###############################
 
@@ -58,6 +59,11 @@ def main(input_folder, output_folder, Date):
     output_folder_date = os.path.join(output_folder, Date_str)
     if not os.path.exists(output_folder_date):
         os.makedirs(output_folder_date)
+        
+    if os.path.exists(se_root_in_filename):
+        method = 2
+    else:
+        method = 1
 
     #output_files
     vc_filename = os.path.join(output_folder_date, "vc_%s.tif" %Date_str)
@@ -159,121 +165,140 @@ def main(input_folder, output_folder, Date):
     et_ref_24_mm_filename= os.path.join(output_folder_date, "et_ref_24_mm_%s.tif" %Date_str)
 
     ########################## Open input rasters #############################
-    dest_lst = gdal.Open(LST_filename)
-    lst = dest_lst.GetRasterBand(1).ReadAsArray()
-    lst[lst == -9999] = np.nan
 
+    if method == 1:
+
+        dest_lst = gdal.Open(LST_filename)
+        lst = dest_lst.GetRasterBand(1).ReadAsArray()
+        lst[lst == -9999] = np.nan   
+        
+        desttime = gdal.Open(Time_filename)
+        dtime = desttime.GetRasterBand(1).ReadAsArray()
+        dtime[np.isnan(lst)] = np.nan
+  
+        # Create QC array
+        QC = np.ones(lst.shape)
+        QC[np.isnan(lst)] = np.nan
+    
+    else:
+        
+        dest_seroot = gdal.Open(se_root_in_filename)
+        se_root = dest_seroot.GetRasterBand(1).ReadAsArray()
+        se_root[se_root == -9999] = np.nan   
+        
+        # Create QC array
+        QC = np.ones(se_root.shape)
+        QC[np.isnan(se_root)] = np.nan       
+           
     dest_albedo = gdal.Open(ALBEDO_filename)
     r0 = dest_albedo.GetRasterBand(1).ReadAsArray()
-    r0[np.isnan(lst)] = np.nan
+    r0[np.isnan(QC)] = np.nan
 
     dest_ndvi = gdal.Open(NDVI_filename)
     ndvi = dest_ndvi.GetRasterBand(1).ReadAsArray()
-    ndvi[np.isnan(lst)] = np.nan
-
-    desttime = gdal.Open(Time_filename)
-    dtime = desttime.GetRasterBand(1).ReadAsArray()
-    dtime[np.isnan(lst)] = np.nan
+    ndvi[np.isnan(QC)] = np.nan
 
     dest_lat = gdal.Open(Lat_filename)
     lat_deg = dest_lat.GetRasterBand(1).ReadAsArray()
-    lat_deg[np.isnan(lst)] = np.nan
+    lat_deg[np.isnan(QC)] = np.nan
 
     dest_lon = gdal.Open(Lon_filename)
     lon_deg = dest_lon.GetRasterBand(1).ReadAsArray()
-    lon_deg[np.isnan(lst)] = np.nan
+    lon_deg[np.isnan(QC)] = np.nan
 
     dest_dem = gdal.Open(DEM_filename)
     z = dest_dem.GetRasterBand(1).ReadAsArray()
-    z[np.isnan(lst)] = np.nan
+    z[np.isnan(QC)] = np.nan
 
     dest_slope = gdal.Open(Slope_filename)
     slope_deg = dest_slope.GetRasterBand(1).ReadAsArray()
-    slope_deg[np.isnan(lst)] = np.nan
+    slope_deg[np.isnan(QC)] = np.nan
 
     dest_aspect = gdal.Open(Aspect_filename)
     aspect_deg = dest_aspect.GetRasterBand(1).ReadAsArray()
-    aspect_deg[np.isnan(lst)] = np.nan
+    aspect_deg[np.isnan(QC)] = np.nan
 
     dest_lm = gdal.Open(LandMask_filename)
     land_mask = dest_lm.GetRasterBand(1).ReadAsArray()
-    land_mask[np.isnan(lst)] = np.nan
+    land_mask[np.isnan(QC)] = np.nan
 
     dest_bulk = gdal.Open(Bulk_filename)
     rs_min = dest_bulk.GetRasterBand(1).ReadAsArray()
 
     dest_maxobs = gdal.Open(MaxObs_filename)
     z_obst_max = dest_maxobs.GetRasterBand(1).ReadAsArray()
-    z_obst_max[np.isnan(lst)] = np.nan
+    z_obst_max[np.isnan(QC)] = np.nan
 
     dest_pairsea24 = gdal.Open(Pair_24_0_filename)
     p_air_0_24 = dest_pairsea24.GetRasterBand(1).ReadAsArray()
     p_air_0_24 = ETLook.meteo.air_pressure_kpa2mbar(p_air_0_24)
-    p_air_0_24[np.isnan(lst)] = np.nan
-
-    dest_pairseainst = gdal.Open(Pair_inst_0_filename)
-    p_air_0_i = dest_pairseainst.GetRasterBand(1).ReadAsArray()
-    p_air_0_i = ETLook.meteo.air_pressure_kpa2mbar(p_air_0_i)
-    p_air_0_i[np.isnan(lst)] = np.nan
-
-    dest_pairinst = gdal.Open(Pair_inst_filename)
-    p_air_i = dest_pairinst.GetRasterBand(1).ReadAsArray()
-    p_air_i = ETLook.meteo.air_pressure_kpa2mbar(p_air_i)
-    p_air_i[np.isnan(lst)] = np.nan
+    p_air_0_24[np.isnan(QC)] = np.nan
 
     dest_precip = gdal.Open(Pre_filename)
     P_24 = dest_precip.GetRasterBand(1).ReadAsArray()
-    P_24[np.isnan(lst)] = np.nan
+    P_24[np.isnan(QC)] = np.nan
 
     dest_hum24 = gdal.Open(Hum_24_filename)
     qv_24 = dest_hum24.GetRasterBand(1).ReadAsArray()
-    qv_24[np.isnan(lst)] = np.nan
-
-    dest_huminst = gdal.Open(Hum_inst_filename)
-    qv_i = dest_huminst.GetRasterBand(1).ReadAsArray()
-    qv_i[np.isnan(lst)] = np.nan
+    qv_24[np.isnan(QC)] = np.nan
 
     dest_tair24 = gdal.Open(Tair_24_filename)
     t_air_24 = dest_tair24.GetRasterBand(1).ReadAsArray()
     #t_air_24 = ETLook.meteo.disaggregate_air_temperature_daily(t_air_24_coarse, z, z_coarse, lapse)
-    t_air_24[np.isnan(lst)] = np.nan
+    t_air_24[np.isnan(QC)] = np.nan
 
     dest_tair24 = gdal.Open(Tair_max_24_filename)
     t_air_max_24 = dest_tair24.GetRasterBand(1).ReadAsArray()
-    t_air_max_24[np.isnan(lst)] = np.nan
+    t_air_max_24[np.isnan(QC)] = np.nan
 
     dest_tair24 = gdal.Open(Tair_min_24_filename)
     t_air_min_24 = dest_tair24.GetRasterBand(1).ReadAsArray()
-    t_air_min_24[np.isnan(lst)] = np.nan
-
-    dest_tairinst = gdal.Open(Tair_inst_filename)
-    t_air_i = dest_tairinst.GetRasterBand(1).ReadAsArray()
-    t_air_i[np.isnan(lst)] = np.nan
+    t_air_min_24[np.isnan(QC)] = np.nan
 
     dest_tairamp = gdal.Open(Tair_amp_filename)
     t_amp_year = dest_tairamp.GetRasterBand(1).ReadAsArray()
-    t_amp_year[np.isnan(lst)] = np.nan
+    t_amp_year[np.isnan(QC)] = np.nan
 
     dest_wind24 = gdal.Open(Wind_24_filename)
     u_24 = dest_wind24.GetRasterBand(1).ReadAsArray()
-    u_24[np.isnan(lst)] = np.nan
-
-    dest_windinst = gdal.Open(Wind_inst_filename)
-    u_i = dest_windinst.GetRasterBand(1).ReadAsArray()
-    u_i[np.isnan(lst)] = np.nan
-
-    dest_watcol = gdal.Open(WatCol_inst_filename)
-    wv_i = dest_watcol.GetRasterBand(1).ReadAsArray()
-    wv_i[np.isnan(lst)] = np.nan
+    u_24[np.isnan(QC)] = np.nan
 
     dest_trans = gdal.Open(Trans_24_filename)
     trans_24 = dest_trans.GetRasterBand(1).ReadAsArray()
-    trans_24[np.isnan(lst)] = np.nan
+    trans_24[np.isnan(QC)] = np.nan
 
     # example file
     geo_ex = dest_albedo.GetGeoTransform()
     proj_ex = dest_albedo.GetProjection()
 
+    if method == 1:
+        
+        dest_windinst = gdal.Open(Wind_inst_filename)
+        u_i = dest_windinst.GetRasterBand(1).ReadAsArray()
+        u_i[np.isnan(QC)] = np.nan
+      
+        dest_watcol = gdal.Open(WatCol_inst_filename)
+        wv_i = dest_watcol.GetRasterBand(1).ReadAsArray()
+        wv_i[np.isnan(QC)] = np.nan
+        
+        dest_tairinst = gdal.Open(Tair_inst_filename)
+        t_air_i = dest_tairinst.GetRasterBand(1).ReadAsArray()
+        t_air_i[np.isnan(QC)] = np.nan
+
+        dest_huminst = gdal.Open(Hum_inst_filename)
+        qv_i = dest_huminst.GetRasterBand(1).ReadAsArray()
+        qv_i[np.isnan(QC)] = np.nan
+            
+        dest_pairinst = gdal.Open(Pair_inst_filename)
+        p_air_i = dest_pairinst.GetRasterBand(1).ReadAsArray()
+        p_air_i = ETLook.meteo.air_pressure_kpa2mbar(p_air_i)
+        p_air_i[np.isnan(QC)] = np.nan          
+        
+        dest_pairseainst = gdal.Open(Pair_inst_0_filename)
+        p_air_0_i = dest_pairseainst.GetRasterBand(1).ReadAsArray()
+        p_air_0_i = ETLook.meteo.air_pressure_kpa2mbar(p_air_0_i)
+        p_air_0_i[np.isnan(QC)] = np.nan        
+            
     ########################## Open input constants ###########################
 
     doy = int(Date.strftime("%j"))
@@ -286,10 +311,6 @@ def main(input_folder, output_folder, Date):
     6. Calculate the porosity of a soil sample that has a bulk density of 1.35 g/cm3. Assume the particle density is 2.65 g/cm3.
     Porosity = (1-(r b/r d) x 100 = (1-(1.35/2.65)) x 100 = 49%
     '''
-
-    # Create QC array
-    QC = np.ones(lst.shape)
-    QC[np.isnan(lst)] = np.nan
 
     # page 31 flow diagram
 
@@ -512,181 +533,191 @@ def main(input_folder, output_folder, Date):
 
     # **canopy resistance***********************************************************
 
-    t_air_k_i = ETLook.meteo.air_temperature_kelvin_inst(t_air_i)
-    vp_i = ETLook.meteo.vapour_pressure_from_specific_humidity_inst(qv_i, p_air_i)
-    ad_moist_i = ETLook.meteo.moist_air_density_inst(vp_i, t_air_k_i)
-    ad_dry_i = ETLook.meteo.dry_air_density_inst(p_air_i, vp_i, t_air_k_i)
-    ad_i = ETLook.meteo.air_density_inst(ad_dry_i, ad_moist_i)
-    u_b_i_bare = ETLook.soil_moisture.wind_speed_blending_height_bare(u_i, z0m_bare, z_obs, z_b)
-    lon = ETLook.solar_radiation.longitude_rad(lon_deg)
-    ha = ETLook.solar_radiation.hour_angle(sc, dtime, lon)
-    I0 = ETLook.clear_sky_radiation.solar_constant()
-    ied = ETLook.clear_sky_radiation.inverse_earth_sun_distance(day_angle)
-    h0 = ETLook.clear_sky_radiation.solar_elevation_angle(lat, decl, ha)
-    h0ref = ETLook.clear_sky_radiation.solar_elevation_angle_refracted(h0)
-    m = ETLook.clear_sky_radiation.relative_optical_airmass(p_air_i, p_air_0_i, h0ref)
-    rotm = ETLook.clear_sky_radiation.rayleigh_optical_thickness(m)
-    Tl2 = ETLook.clear_sky_radiation.linke_turbidity(wv_i, aod550_i, p_air_i, p_air_0_i)
-    G0 = ETLook.clear_sky_radiation.extraterrestrial_irradiance_normal(I0, ied)
-    B0c = ETLook.clear_sky_radiation.beam_irradiance_normal_clear(G0, Tl2, m, rotm, h0)
-    Bhc = ETLook.clear_sky_radiation.beam_irradiance_horizontal_clear(B0c, h0)
-    Dhc = ETLook.clear_sky_radiation.diffuse_irradiance_horizontal_clear(G0, Tl2, h0)
-    ra_hor_clear_i = ETLook.clear_sky_radiation.ra_clear_horizontal(Bhc, Dhc)
-    emiss_atm_i = ETLook.soil_moisture.atmospheric_emissivity_inst(vp_i, t_air_k_i)
-    rn_bare = ETLook.soil_moisture.net_radiation_bare(ra_hor_clear_i, emiss_atm_i, t_air_k_i, lst, r0_bare)
-    rn_full = ETLook.soil_moisture.net_radiation_full(ra_hor_clear_i, emiss_atm_i, t_air_k_i, lst, r0_full)
-    h_bare = ETLook.soil_moisture.sensible_heat_flux_bare(rn_bare, fraction_h_bare)
-    h_full = ETLook.soil_moisture.sensible_heat_flux_full(rn_full, fraction_h_full)
-    u_b_i_full = ETLook.soil_moisture.wind_speed_blending_height_full_inst(u_i, z0m_full, z_obs, z_b)
-    u_star_i_bare = ETLook.soil_moisture.friction_velocity_bare_inst(u_b_i_bare, z0m_bare, disp_bare, z_b)
-    u_star_i_full = ETLook.soil_moisture.friction_velocity_full_inst(u_b_i_full, z0m_full, disp_full, z_b)
-    L_bare = ETLook.soil_moisture.monin_obukhov_length_bare(h_bare, ad_i, u_star_i_bare, t_air_k_i)
-    L_full = ETLook.soil_moisture.monin_obukhov_length_full(h_full, ad_i, u_star_i_full, t_air_k_i)
-    u_i_soil = ETLook.soil_moisture.wind_speed_soil_inst(u_i, L_bare, z_obs)
-    ras = ETLook.soil_moisture.aerodynamical_resistance_soil(u_i_soil)
-    raa = ETLook.soil_moisture.aerodynamical_resistance_bare(u_i, L_bare, z0m_bare, disp_bare, z_obs)
-    rac = ETLook.soil_moisture.aerodynamical_resistance_full(u_i, L_full, z0m_full, disp_full, z_obs)
-    t_max_bare = ETLook.soil_moisture.maximum_temperature_bare(ra_hor_clear_i, emiss_atm_i, t_air_k_i, ad_i, raa, ras, r0_bare)
-    t_max_full = ETLook.soil_moisture.maximum_temperature_full(ra_hor_clear_i, emiss_atm_i, t_air_k_i, ad_i, rac, r0_full)
-    w_i = ETLook.soil_moisture.dew_point_temperature_inst(vp_i)
-    t_dew_i = ETLook.soil_moisture.dew_point_temperature_inst(vp_i)
-    
-    #time1 = time.time()
-    #t_wet_i = ETLook.soil_moisture.wet_bulb_temperature_inst(t_air_i, t_dew_i, p_air_i)
-    #time2 = time.time()
-    t_wet_i = ETLook.soil_moisture.wet_bulb_temperature_inst_new(t_air_i, qv_i, p_air_i)
-    #time3 = time.time()
-    #t_wet_i_new2 = ETLook.soil_moisture.wet_bulb_temperature_inst_new2(t_air_i)
-    #time4 = time.time()
-    #print("Time method 1 = %s" %(time2-time1))
-    #print("Time method 2 = %s" %(time3-time2))    
-    #print("Time method 3 = %s" %(time4-time3))   
-    
-    t_wet_k_i = ETLook.meteo.wet_bulb_temperature_kelvin_inst(t_wet_i)
-    lst_max = ETLook.soil_moisture.maximum_temperature(t_max_bare, t_max_full, vc)
-    lst_min = ETLook.soil_moisture.minimum_temperature(t_wet_k_i, t_air_k_i, vc)
-    se_root = ETLook.soil_moisture.soil_moisture_from_maximum_temperature(lst_max, lst, lst_min)
+    if method == 1:
+ 
+        t_air_k_i = ETLook.meteo.air_temperature_kelvin_inst(t_air_i)
+        vp_i = ETLook.meteo.vapour_pressure_from_specific_humidity_inst(qv_i, p_air_i)
+        ad_moist_i = ETLook.meteo.moist_air_density_inst(vp_i, t_air_k_i)
+        ad_dry_i = ETLook.meteo.dry_air_density_inst(p_air_i, vp_i, t_air_k_i)
+        ad_i = ETLook.meteo.air_density_inst(ad_dry_i, ad_moist_i)
+        u_b_i_bare = ETLook.soil_moisture.wind_speed_blending_height_bare(u_i, z0m_bare, z_obs, z_b)
+        lon = ETLook.solar_radiation.longitude_rad(lon_deg)
+        ha = ETLook.solar_radiation.hour_angle(sc, dtime, lon)
+        I0 = ETLook.clear_sky_radiation.solar_constant()
+        ied = ETLook.clear_sky_radiation.inverse_earth_sun_distance(day_angle)
+        h0 = ETLook.clear_sky_radiation.solar_elevation_angle(lat, decl, ha)
+        h0ref = ETLook.clear_sky_radiation.solar_elevation_angle_refracted(h0)
+        m = ETLook.clear_sky_radiation.relative_optical_airmass(p_air_i, p_air_0_i, h0ref)
+        rotm = ETLook.clear_sky_radiation.rayleigh_optical_thickness(m)
+        Tl2 = ETLook.clear_sky_radiation.linke_turbidity(wv_i, aod550_i, p_air_i, p_air_0_i)
+        G0 = ETLook.clear_sky_radiation.extraterrestrial_irradiance_normal(I0, ied)
+        B0c = ETLook.clear_sky_radiation.beam_irradiance_normal_clear(G0, Tl2, m, rotm, h0)
+        Bhc = ETLook.clear_sky_radiation.beam_irradiance_horizontal_clear(B0c, h0)
+        Dhc = ETLook.clear_sky_radiation.diffuse_irradiance_horizontal_clear(G0, Tl2, h0)
+       
+        ra_hor_clear_i = ETLook.clear_sky_radiation.ra_clear_horizontal(Bhc, Dhc)
+        emiss_atm_i = ETLook.soil_moisture.atmospheric_emissivity_inst(vp_i, t_air_k_i)        
+     
+        rn_bare = ETLook.soil_moisture.net_radiation_bare(ra_hor_clear_i, emiss_atm_i, t_air_k_i, lst, r0_bare)
+        rn_full = ETLook.soil_moisture.net_radiation_full(ra_hor_clear_i, emiss_atm_i, t_air_k_i, lst, r0_full)
+        h_bare = ETLook.soil_moisture.sensible_heat_flux_bare(rn_bare, fraction_h_bare)
+        h_full = ETLook.soil_moisture.sensible_heat_flux_full(rn_full, fraction_h_full)
+        u_b_i_full = ETLook.soil_moisture.wind_speed_blending_height_full_inst(u_i, z0m_full, z_obs, z_b)
+
+        u_star_i_bare = ETLook.soil_moisture.friction_velocity_bare_inst(u_b_i_bare, z0m_bare, disp_bare, z_b)
+        u_star_i_full = ETLook.soil_moisture.friction_velocity_full_inst(u_b_i_full, z0m_full, disp_full, z_b)        
+        L_bare = ETLook.soil_moisture.monin_obukhov_length_bare(h_bare, ad_i, u_star_i_bare, t_air_k_i)
+        L_full = ETLook.soil_moisture.monin_obukhov_length_full(h_full, ad_i, u_star_i_full, t_air_k_i)
+        u_i_soil = ETLook.soil_moisture.wind_speed_soil_inst(u_i, L_bare, z_obs)
+        ras = ETLook.soil_moisture.aerodynamical_resistance_soil(u_i_soil)
+        raa = ETLook.soil_moisture.aerodynamical_resistance_bare(u_i, L_bare, z0m_bare, disp_bare, z_obs)
+        rac = ETLook.soil_moisture.aerodynamical_resistance_full(u_i, L_full, z0m_full, disp_full, z_obs)       
+
+        w_i = ETLook.soil_moisture.dew_point_temperature_inst(vp_i)
+        t_dew_i = ETLook.soil_moisture.dew_point_temperature_inst(vp_i)
+        
+        #time1 = time.time()
+        #t_wet_i = ETLook.soil_moisture.wet_bulb_temperature_inst(t_air_i, t_dew_i, p_air_i)
+        #time2 = time.time()
+        t_wet_i = ETLook.soil_moisture.wet_bulb_temperature_inst_new(t_air_i, qv_i, p_air_i)
+        #time3 = time.time()
+        #t_wet_i_new2 = ETLook.soil_moisture.wet_bulb_temperature_inst_new2(t_air_i)
+        #time4 = time.time()
+        #print("Time method 1 = %s" %(time2-time1))
+        #print("Time method 2 = %s" %(time3-time2))    
+        #print("Time method 3 = %s" %(time4-time3))   
+        
+        t_wet_k_i = ETLook.meteo.wet_bulb_temperature_kelvin_inst(t_wet_i)
+        
+        t_max_bare = ETLook.soil_moisture.maximum_temperature_bare(ra_hor_clear_i, emiss_atm_i, t_air_k_i, ad_i, raa, ras, r0_bare)
+        t_max_full = ETLook.soil_moisture.maximum_temperature_full(ra_hor_clear_i, emiss_atm_i, t_air_k_i, ad_i, rac, r0_full)
+        lst_max = ETLook.soil_moisture.maximum_temperature(t_max_bare, t_max_full, vc)
+        lst_min = ETLook.soil_moisture.minimum_temperature(t_wet_k_i, t_air_k_i, vc)
+        se_root = ETLook.soil_moisture.soil_moisture_from_maximum_temperature(lst_max, lst, lst_min)
+
+        # Save as tiff files
+        t_air_k_i[np.isnan(QC)] = np.nan
+        vp_i[np.isnan(QC)] = np.nan
+        ad_moist_i[np.isnan(QC)] = np.nan
+        ad_dry_i[np.isnan(QC)] = np.nan
+        ad_i[np.isnan(QC)] = np.nan
+        u_b_i_bare[np.isnan(QC)] = np.nan
+        lon[np.isnan(QC)] = np.nan
+        ha[np.isnan(QC)] = np.nan
+        h0[np.isnan(QC)] = np.nan
+        h0ref[np.isnan(QC)] = np.nan
+        m[np.isnan(QC)] = np.nan
+        rotm[np.isnan(QC)] = np.nan
+        Tl2[np.isnan(QC)] = np.nan
+        B0c[np.isnan(QC)] = np.nan
+        Bhc[np.isnan(QC)] = np.nan
+        Dhc[np.isnan(QC)] = np.nan
+        ra_hor_clear_i[np.isnan(QC)] = np.nan
+        emiss_atm_i[np.isnan(QC)] = np.nan
+        rn_bare[np.isnan(QC)] = np.nan
+        rn_full[np.isnan(QC)] = np.nan
+        u_b_i_full[np.isnan(QC)] = np.nan
+        u_star_i_bare[np.isnan(QC)] = np.nan
+        u_star_i_full[np.isnan(QC)] = np.nan
+        u_i_soil[np.isnan(QC)] = np.nan
+        ras[np.isnan(QC)] = np.nan
+        raa[np.isnan(QC)] = np.nan
+        rac[np.isnan(QC)] = np.nan
+        t_max_bare[np.isnan(QC)] = np.nan
+        t_max_full[np.isnan(QC)] = np.nan
+        w_i[np.isnan(QC)] = np.nan
+        t_dew_i[np.isnan(QC)] = np.nan
+        t_wet_i[np.isnan(QC)] = np.nan
+        t_wet_k_i[np.isnan(QC)] = np.nan
+        lst_max[np.isnan(QC)] = np.nan
+        se_root[np.isnan(QC)] = np.nan
+
+        if out.t_air_k_i == 1:
+            DC.Save_as_tiff(t_air_k_i_filename, t_air_k_i, geo_ex, proj_ex)
+        if out.vp_i == 1:
+            DC.Save_as_tiff(vp_i_filename, vp_i, geo_ex, proj_ex)
+        if out.ad_moist_i == 1:
+            DC.Save_as_tiff(ad_moist_i_filename, ad_moist_i, geo_ex, proj_ex)
+        if out.ad_dry_i == 1:
+            DC.Save_as_tiff(ad_dry_i_filename, ad_dry_i, geo_ex, proj_ex)
+        if out.ad_i == 1:
+            DC.Save_as_tiff(ad_i_filename, ad_i, geo_ex, proj_ex)
+        if out.u_b_i_bare == 1:
+            DC.Save_as_tiff(u_b_i_bare_filename, u_b_i_bare, geo_ex, proj_ex)
+        if out.lon == 1:
+            DC.Save_as_tiff(lon_filename, lon, geo_ex, proj_ex)
+        if out.ha == 1:
+            DC.Save_as_tiff(ha_filename, ha, geo_ex, proj_ex)
+        if out.ied == 1:
+            DC.Save_as_tiff(ied_filename, ied, geo_ex, proj_ex)
+        if out.h0 == 1:
+            DC.Save_as_tiff(h0_filename, h0, geo_ex, proj_ex)
+        if out.h0ref == 1:
+            DC.Save_as_tiff(h0ref_filename, h0ref, geo_ex, proj_ex)
+        if out.m == 1:
+            DC.Save_as_tiff(m_filename, m, geo_ex, proj_ex)
+        if out.rotm == 1:
+            DC.Save_as_tiff(rotm_filename, rotm, geo_ex, proj_ex)
+        if out.Tl2 == 1:
+            DC.Save_as_tiff(Tl2_filename, Tl2, geo_ex, proj_ex)
+        if out.B0c == 1:
+            DC.Save_as_tiff(B0c_filename, B0c, geo_ex, proj_ex)
+        if out.Bhc == 1:
+            DC.Save_as_tiff(Bhc_filename, Bhc, geo_ex, proj_ex)
+        if out.Dhc == 1:
+            DC.Save_as_tiff(Dhc_filename, Dhc, geo_ex, proj_ex)
+        if out.ra_hor_clear_i == 1:
+            DC.Save_as_tiff(ra_hor_clear_i_filename, ra_hor_clear_i, geo_ex, proj_ex)
+        if out.emiss_atm_i == 1:
+            DC.Save_as_tiff(emiss_atm_i_filename, emiss_atm_i, geo_ex, proj_ex)
+        if out.rn_bare == 1:
+            DC.Save_as_tiff(rn_bare_filename, rn_bare, geo_ex, proj_ex)
+        if out.rn_full == 1:
+            DC.Save_as_tiff(rn_full_filename, rn_full, geo_ex, proj_ex)
+        if out.u_b_i_full == 1:
+            DC.Save_as_tiff(u_b_i_full_filename, u_b_i_full, geo_ex, proj_ex)
+        if out.u_star_i_bare == 1:
+            DC.Save_as_tiff(u_star_i_bare_filename, u_star_i_bare, geo_ex, proj_ex)
+        if out.u_star_i_full == 1:
+            DC.Save_as_tiff(u_star_i_full_filename, u_star_i_full, geo_ex, proj_ex)
+        if out.u_i_soil == 1:
+            DC.Save_as_tiff(u_i_soil_filename, u_i_soil, geo_ex, proj_ex)
+        if out.ras == 1:
+            DC.Save_as_tiff(ras_filename, ras, geo_ex, proj_ex)
+        if out.raa == 1:
+            DC.Save_as_tiff(raa_filename, raa, geo_ex, proj_ex)
+        if out.rac == 1:
+            DC.Save_as_tiff(rac_filename, rac, geo_ex, proj_ex)
+        if out.t_max_bare == 1:
+            DC.Save_as_tiff(t_max_bare_filename, t_max_bare, geo_ex, proj_ex)
+        if out.t_max_full == 1:
+            DC.Save_as_tiff(t_max_full_filename, t_max_full, geo_ex, proj_ex)
+        if out.w_i == 1:
+            DC.Save_as_tiff(w_i_filename, w_i, geo_ex, proj_ex)
+        if out.t_dew_i == 1:
+            DC.Save_as_tiff(t_dew_i_filename, t_dew_i, geo_ex, proj_ex)
+        if out.t_wet_i == 1:
+            DC.Save_as_tiff(t_wet_i_filename, t_wet_i, geo_ex, proj_ex)
+        if out.t_wet_k_i == 1:
+            DC.Save_as_tiff(t_wet_k_i_filename, t_wet_k_i, geo_ex, proj_ex)
+        if out.lst_max == 1:
+            DC.Save_as_tiff(lst_max_filename, lst_max, geo_ex, proj_ex)
+        if out.se_root == 1:
+            DC.Save_as_tiff(se_root_filename, se_root, geo_ex, proj_ex)
+     
     stress_moist = ETLook.stress.stress_moisture(se_root, tenacity)
     r_canopy_0 = ETLook.resistance.atmospheric_canopy_resistance(lai_eff, stress_rad, stress_vpd, stress_temp, rs_min, rcan_max)
     r_canopy = ETLook.resistance.canopy_resistance(r_canopy_0, stress_moist, rcan_max)
 
-    # Save as tiff files
-    t_air_k_i[np.isnan(QC)] = np.nan
-    vp_i[np.isnan(QC)] = np.nan
-    ad_moist_i[np.isnan(QC)] = np.nan
-    ad_dry_i[np.isnan(QC)] = np.nan
-    ad_i[np.isnan(QC)] = np.nan
-    u_b_i_bare[np.isnan(QC)] = np.nan
-    lon[np.isnan(QC)] = np.nan
-    ha[np.isnan(QC)] = np.nan
-    h0[np.isnan(QC)] = np.nan
-    h0ref[np.isnan(QC)] = np.nan
-    m[np.isnan(QC)] = np.nan
-    rotm[np.isnan(QC)] = np.nan
-    Tl2[np.isnan(QC)] = np.nan
-    B0c[np.isnan(QC)] = np.nan
-    Bhc[np.isnan(QC)] = np.nan
-    Dhc[np.isnan(QC)] = np.nan
-    ra_hor_clear_i[np.isnan(QC)] = np.nan
-    emiss_atm_i[np.isnan(QC)] = np.nan
-    rn_bare[np.isnan(QC)] = np.nan
-    rn_full[np.isnan(QC)] = np.nan
-    u_b_i_full[np.isnan(QC)] = np.nan
-    u_star_i_bare[np.isnan(QC)] = np.nan
-    u_star_i_full[np.isnan(QC)] = np.nan
-    u_i_soil[np.isnan(QC)] = np.nan
-    ras[np.isnan(QC)] = np.nan
-    raa[np.isnan(QC)] = np.nan
-    rac[np.isnan(QC)] = np.nan
-    t_max_bare[np.isnan(QC)] = np.nan
-    t_max_full[np.isnan(QC)] = np.nan
-    w_i[np.isnan(QC)] = np.nan
-    t_dew_i[np.isnan(QC)] = np.nan
-    t_wet_i[np.isnan(QC)] = np.nan
-    t_wet_k_i[np.isnan(QC)] = np.nan
-    lst_max[np.isnan(QC)] = np.nan
-    se_root[np.isnan(QC)] = np.nan
     stress_moist[np.isnan(QC)] = np.nan
     r_canopy_0[np.isnan(QC)] = np.nan
     r_canopy[np.isnan(QC)] = np.nan
-    if out.t_air_k_i == 1:
-        DC.Save_as_tiff(t_air_k_i_filename, t_air_k_i, geo_ex, proj_ex)
-    if out.vp_i == 1:
-        DC.Save_as_tiff(vp_i_filename, vp_i, geo_ex, proj_ex)
-    if out.ad_moist_i == 1:
-        DC.Save_as_tiff(ad_moist_i_filename, ad_moist_i, geo_ex, proj_ex)
-    if out.ad_dry_i == 1:
-        DC.Save_as_tiff(ad_dry_i_filename, ad_dry_i, geo_ex, proj_ex)
-    if out.ad_i == 1:
-        DC.Save_as_tiff(ad_i_filename, ad_i, geo_ex, proj_ex)
-    if out.u_b_i_bare == 1:
-        DC.Save_as_tiff(u_b_i_bare_filename, u_b_i_bare, geo_ex, proj_ex)
-    if out.lon == 1:
-        DC.Save_as_tiff(lon_filename, lon, geo_ex, proj_ex)
-    if out.ha == 1:
-        DC.Save_as_tiff(ha_filename, ha, geo_ex, proj_ex)
-    if out.ied == 1:
-        DC.Save_as_tiff(ied_filename, ied, geo_ex, proj_ex)
-    if out.h0 == 1:
-        DC.Save_as_tiff(h0_filename, h0, geo_ex, proj_ex)
-    if out.h0ref == 1:
-        DC.Save_as_tiff(h0ref_filename, h0ref, geo_ex, proj_ex)
-    if out.m == 1:
-        DC.Save_as_tiff(m_filename, m, geo_ex, proj_ex)
-    if out.rotm == 1:
-        DC.Save_as_tiff(rotm_filename, rotm, geo_ex, proj_ex)
-    if out.Tl2 == 1:
-        DC.Save_as_tiff(Tl2_filename, Tl2, geo_ex, proj_ex)
-    if out.B0c == 1:
-        DC.Save_as_tiff(B0c_filename, B0c, geo_ex, proj_ex)
-    if out.Bhc == 1:
-        DC.Save_as_tiff(Bhc_filename, Bhc, geo_ex, proj_ex)
-    if out.Dhc == 1:
-        DC.Save_as_tiff(Dhc_filename, Dhc, geo_ex, proj_ex)
-    if out.ra_hor_clear_i == 1:
-        DC.Save_as_tiff(ra_hor_clear_i_filename, ra_hor_clear_i, geo_ex, proj_ex)
-    if out.emiss_atm_i == 1:
-        DC.Save_as_tiff(emiss_atm_i_filename, emiss_atm_i, geo_ex, proj_ex)
-    if out.rn_bare == 1:
-        DC.Save_as_tiff(rn_bare_filename, rn_bare, geo_ex, proj_ex)
-    if out.rn_full == 1:
-        DC.Save_as_tiff(rn_full_filename, rn_full, geo_ex, proj_ex)
-    if out.u_b_i_full == 1:
-        DC.Save_as_tiff(u_b_i_full_filename, u_b_i_full, geo_ex, proj_ex)
-    if out.u_star_i_bare == 1:
-        DC.Save_as_tiff(u_star_i_bare_filename, u_star_i_bare, geo_ex, proj_ex)
-    if out.u_star_i_full == 1:
-        DC.Save_as_tiff(u_star_i_full_filename, u_star_i_full, geo_ex, proj_ex)
-    if out.u_i_soil == 1:
-        DC.Save_as_tiff(u_i_soil_filename, u_i_soil, geo_ex, proj_ex)
-    if out.ras == 1:
-        DC.Save_as_tiff(ras_filename, ras, geo_ex, proj_ex)
-    if out.raa == 1:
-        DC.Save_as_tiff(raa_filename, raa, geo_ex, proj_ex)
-    if out.rac == 1:
-        DC.Save_as_tiff(rac_filename, rac, geo_ex, proj_ex)
-    if out.t_max_bare == 1:
-        DC.Save_as_tiff(t_max_bare_filename, t_max_bare, geo_ex, proj_ex)
-    if out.t_max_full == 1:
-        DC.Save_as_tiff(t_max_full_filename, t_max_full, geo_ex, proj_ex)
-    if out.w_i == 1:
-        DC.Save_as_tiff(w_i_filename, w_i, geo_ex, proj_ex)
-    if out.t_dew_i == 1:
-        DC.Save_as_tiff(t_dew_i_filename, t_dew_i, geo_ex, proj_ex)
-    if out.t_wet_i == 1:
-        DC.Save_as_tiff(t_wet_i_filename, t_wet_i, geo_ex, proj_ex)
-    if out.t_wet_k_i == 1:
-        DC.Save_as_tiff(t_wet_k_i_filename, t_wet_k_i, geo_ex, proj_ex)
-    if out.lst_max == 1:
-        DC.Save_as_tiff(lst_max_filename, lst_max, geo_ex, proj_ex)
-    if out.se_root == 1:
-        DC.Save_as_tiff(se_root_filename, se_root, geo_ex, proj_ex)
     if out.stress_moist == 1:
         DC.Save_as_tiff(stress_moist_filename, stress_moist, geo_ex, proj_ex)
     if out.r_canopy_0 == 1:
         DC.Save_as_tiff(r_canopy_0_filename, r_canopy_0, geo_ex, proj_ex)
     if out.r_canopy == 1:
-        DC.Save_as_tiff(r_canopy_filename, r_canopy, geo_ex, proj_ex)
+        DC.Save_as_tiff(r_canopy_filename, r_canopy, geo_ex, proj_ex)   
 
     # **initial canopy aerodynamic resistance***********************************************************
     dlat, dlon = watertools.Functions.Area_Conversions.Area_converter.Calc_dlat_dlon(geo_ex, ndvi.shape[1], ndvi.shape[0])
