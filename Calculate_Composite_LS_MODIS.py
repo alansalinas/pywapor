@@ -8,7 +8,6 @@ Created on Tue Nov  3 11:31:41 2020
 
 import os
 import gdal
-import glob
 import datetime
 import numpy as np
 

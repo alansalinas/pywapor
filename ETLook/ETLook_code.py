@@ -13,7 +13,8 @@ def main(input_folder, output_folder, Date):
     import pyWAPOR.ETLook.outputs as out
     import watertools
     import watertools.General.data_conversions as DC
-
+    import watertools.General.raster_conversions as RC
+    
     # Define Date string
     Date_str = "%d%02d%02d" %(Date.year, Date.month, Date.day)
 
@@ -130,6 +131,7 @@ def main(input_folder, output_folder, Date):
     t_wet_i_filename = os.path.join(output_folder_date, "t_wet_i_%s.tif" %Date_str)
     t_wet_k_i_filename = os.path.join(output_folder_date, "t_wet_k_i_%s.tif" %Date_str)
     lst_max_filename  = os.path.join(output_folder_date, "lst_max_%s.tif" %Date_str)
+    lst_min_filename  = os.path.join(output_folder_date, "lst_min_%s.tif" %Date_str)
     se_root_filename = os.path.join(output_folder_date, "se_root_%s.tif" %Date_str)
     stress_moist_filename= os.path.join(output_folder_date, "stress_moist_%s.tif" %Date_str)
     r_canopy_0_filename= os.path.join(output_folder_date, "r_canopy_0_%s.tif" %Date_str)
@@ -360,7 +362,7 @@ def main(input_folder, output_folder, Date):
     r0_bare = 0.42
     r0_bare_wet = 0.20
     r0_full = 0.18
-    tenacity = 1.5
+    tenacity = 1.0
     disp_bare = 0.0
     disp_full = 0.667
     fraction_h_bare = 0.65
@@ -591,10 +593,29 @@ def main(input_folder, output_folder, Date):
         ras = ETLook.soil_moisture.aerodynamical_resistance_soil(u_i_soil)
         raa = ETLook.soil_moisture.aerodynamical_resistance_bare(u_i, L_bare, z0m_bare, disp_bare, z_obs)
         rac = ETLook.soil_moisture.aerodynamical_resistance_full(u_i, L_full, z0m_full, disp_full, z_obs)
+        
+        # Create MEM file zones
+        size_y, size_x = QC.shape
+        size_y_zone = int(np.ceil(size_y/200))
+        size_x_zone = int(np.ceil(size_x/200)) 
+        array_fake = np.ones([size_y_zone, size_x_zone])
+        geo_new = tuple([geo_ex[0], geo_ex[1] * 200, geo_ex[2], geo_ex[3], geo_ex[4], geo_ex[5]*200])
+        MEM_file = DC.Save_as_MEM(array_fake, geo_new, proj_ex)
+        
+        dest_lst_zone_large = RC.reproject_dataset_example(LST_filename, MEM_file, 4)
+        lst_zone_mean_large = dest_lst_zone_large.GetRasterBand(1).ReadAsArray()
+        lst_zone_mean_large[lst_zone_mean_large==0] = -9999
+        lst_zone_mean_large[np.isnan(lst_zone_mean_large)] = -9999
+        lst_zone_mean_large = RC.gap_filling(lst_zone_mean_large, -9999, 1)
+        dest_lst_zone_large = DC.Save_as_MEM(lst_zone_mean_large, geo_new, proj_ex)
+        
+        dest_lst_zone = RC.reproject_dataset_example(dest_lst_zone_large, LST_filename, 6)
+        lst_zone_mean = dest_lst_zone.GetRasterBand(1).ReadAsArray()
+        
         t_max_bare = ETLook.soil_moisture.maximum_temperature_bare(ra_hor_clear_i, emiss_atm_i, t_air_k_i, ad_i, raa, ras, r0_bare)
         t_max_full = ETLook.soil_moisture.maximum_temperature_full(ra_hor_clear_i, emiss_atm_i, t_air_k_i, ad_i, rac, r0_full)
-        t_min_bare = ETLook.soil_moisture.minimum_temperature_bare(ra_hor_clear_i, emiss_atm_i, t_air_k_i, ad_i, raa, ras, lst, r0_bare_wet)
-        t_min_full = ETLook.soil_moisture.minimum_temperature_full(ra_hor_clear_i, emiss_atm_i, t_air_k_i, ad_i, rac, lst, r0_full)  
+        t_min_bare = ETLook.soil_moisture.minimum_temperature_bare(ra_hor_clear_i, emiss_atm_i, t_air_k_i, ad_i, raa, ras, lst_zone_mean, r0_bare_wet)
+        t_min_full = ETLook.soil_moisture.minimum_temperature_full(ra_hor_clear_i, emiss_atm_i, t_air_k_i, ad_i, rac, lst_zone_mean, r0_full)  
   
         w_i = ETLook.soil_moisture.dew_point_temperature_inst(vp_i)
         t_dew_i = ETLook.soil_moisture.dew_point_temperature_inst(vp_i)
@@ -728,6 +749,8 @@ def main(input_folder, output_folder, Date):
             DC.Save_as_tiff(t_wet_k_i_filename, t_wet_k_i, geo_ex, proj_ex)
         if out.lst_max == 1:
             DC.Save_as_tiff(lst_max_filename, lst_max, geo_ex, proj_ex)
+        if out.lst_min == 1:
+            DC.Save_as_tiff(lst_min_filename, lst_min, geo_ex, proj_ex)
         if out.se_root == 1:
             DC.Save_as_tiff(se_root_filename, se_root, geo_ex, proj_ex)
             

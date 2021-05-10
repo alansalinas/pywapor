@@ -21,7 +21,7 @@ import watertools.General.raster_conversions as RC
 
 import pyWAPOR
 
-def main(output_folder, Startdate, Enddate, latlim, lonlim, LandCover = "GlobCover", Short_Downwards_Radiation = "MSGCCP", thermal_ndvi_sharpening = False, Satellite_folder = None, composite = False, RAW_folder = None):
+def main(output_folder, Startdate, Enddate, latlim, lonlim, LandCover = "GlobCover", Short_Downwards_Radiation = "MSGCCP", thermal_ndvi_sharpening = False, Satellite_folder = None, composite = False, RAW_folder = None, latlim_all = None, lonlim_all = None):
 
     ############################ Get General inputs ###############################
     
@@ -29,6 +29,16 @@ def main(output_folder, Startdate, Enddate, latlim, lonlim, LandCover = "GlobCov
     if Satellite_folder != None:
         composite = False
  
+    if latlim_all != None:
+        latlim_down = latlim_all
+    else:
+        latlim_down = latlim
+    
+    if lonlim_all != None:
+        lonlim_down = lonlim_all
+    else:
+        lonlim_down = lonlim
+        
     # Define the input folders
     if composite == True:
         folders_input_RAW = os.path.join(output_folder, "RAW_composite")
@@ -63,31 +73,31 @@ def main(output_folder, Startdate, Enddate, latlim, lonlim, LandCover = "GlobCov
     if Satellite_folder == None:
         # Download LST data
         if composite == True:
-            watertools.Collect.MOD11.LST_8daily(folders_input_RAW, Startdate, Enddate, latlim, lonlim)
-            watertools.Collect.MYD11.LST_8daily(folders_input_RAW, Startdate, Enddate, latlim, lonlim)        
+            watertools.Collect.MOD11.LST_8daily(folders_input_RAW, Startdate, Enddate, latlim_down, lonlim_down)
+            watertools.Collect.MYD11.LST_8daily(folders_input_RAW, Startdate, Enddate, latlim_down, lonlim_down)        
             Combine_LST_composite(folders_input_RAW, Startdate, Enddate)
         else:
-            watertools.Collect.MOD11.LST_daily(folders_input_RAW, Startdate, Enddate, latlim, lonlim, angle_info = 1, time_info = 1)
-            watertools.Collect.MYD11.LST_daily(folders_input_RAW, Startdate, Enddate, latlim, lonlim, angle_info = 1, time_info = 1)   
+            watertools.Collect.MOD11.LST_daily(folders_input_RAW, Startdate, Enddate, latlim_down, lonlim_down, angle_info = 1, time_info = 1)
+            watertools.Collect.MYD11.LST_daily(folders_input_RAW, Startdate, Enddate, latlim_down, lonlim_down, angle_info = 1, time_info = 1)   
             Combine_LST(folders_input_RAW, Startdate, Enddate)
     
     ################## Download ALBEDO and NDVI MODIS data ########################
             
         # Download NDVI and ALBEDO data
-        watertools.Collect.MOD13.NDVI_16daily(folders_input_RAW, Startdate_NDVI_str, Enddate_NDVI_str, latlim, lonlim)
-        watertools.Collect.MYD13.NDVI_16daily(folders_input_RAW, Startdate_NDVI_str, Enddate_NDVI_str, latlim, lonlim)
+        watertools.Collect.MOD13.NDVI_16daily(folders_input_RAW, Startdate_NDVI_str, Enddate_NDVI_str, latlim_down, lonlim_down)
+        watertools.Collect.MYD13.NDVI_16daily(folders_input_RAW, Startdate_NDVI_str, Enddate_NDVI_str, latlim_down, lonlim_down)
         
         if composite == True:
             
             #for Date_albedo in Dates:
             #    watertools.Collect.MCD43.Albedo_daily(folders_input_RAW, Date_albedo, Date_albedo, latlim, lonlim)
                 
-            watertools.Collect.MCD19.Albedo_8daily(folders_input_RAW, Startdate_NDVI_str, Enddate_NDVI_str, latlim, lonlim)
+            watertools.Collect.MCD19.Albedo_8daily(folders_input_RAW, Startdate_NDVI_str, Enddate_NDVI_str, latlim_down, lonlim_down)
                 
                 
         else:     
             print("Download Albedo")
-            watertools.Collect.MCD43.Albedo_daily(folders_input_RAW, Startdate, Enddate, latlim, lonlim)
+            watertools.Collect.MCD43.Albedo_daily(folders_input_RAW, Startdate, Enddate, latlim_down, lonlim_down)
     
     ########################### Download CHIRPS data ################################    
 
@@ -95,29 +105,29 @@ def main(output_folder, Startdate, Enddate, latlim, lonlim, LandCover = "GlobCov
 
         ######################## Download Rainfall Data ###############################
         # Download CHIRPS data
-        watertools.Collect.CHIRPS.daily(folders_input_RAW, Startdate_NDVI_str, Enddate_NDVI_str, latlim, lonlim)
+        watertools.Collect.CHIRPS.daily(folders_input_RAW, Startdate_NDVI_str, Enddate_NDVI_str, latlim_down, lonlim_down)
                 
     else:     
 
         ######################## Download Rainfall Data ###############################
         print("Download CHIRPS")
         # Download CHIRPS data
-        watertools.Collect.CHIRPS.daily(folders_input_RAW, Startdate, Enddate, latlim, lonlim)    
+        watertools.Collect.CHIRPS.daily(folders_input_RAW, Startdate, Enddate, latlim_down, lonlim_down)    
 
     ########################### Download DEM data #################################
     
     # Download DEM data
-    watertools.Collect.DEM.SRTM(folders_input_RAW, latlim, lonlim)
+    watertools.Collect.DEM.SRTM(folders_input_RAW, latlim_down, lonlim_down)
     
     ############################ Download Landuse #################################
     if LandCover == "GlobCover":
         # Download Globcover data
-        watertools.Collect.Globcover.Landuse(folders_input_RAW, latlim, lonlim)
+        watertools.Collect.Globcover.Landuse(folders_input_RAW, latlim_down, lonlim_down)
         
     if LandCover == "WAPOR":
        
         # Download Globcover data
-        watertools.Collect.WAPOR.Get_Layer(folders_input_RAW, "%s-01-01"%(Startdate.split("-")[0]), "%s-12-31"%(Enddate.split("-")[0]), latlim, lonlim, "L1_LCC_A")        
+        watertools.Collect.WAPOR.Get_Layer(folders_input_RAW, "%s-01-01"%(Startdate.split("-")[0]), "%s-12-31"%(Enddate.split("-")[0]), latlim_down, lonlim_down, "L1_LCC_A")        
 
     ############################ Download Static Amplitude map #################################
     
@@ -526,9 +536,9 @@ def main(output_folder, Startdate, Enddate, latlim, lonlim, LandCover = "GlobCov
             #if Date < datetime.datetime(2016,1,1): 
                 # Test https://opendap.nccs.nasa.gov/dods/GEOS-5/MERRAero/hourly/tavg3hr_2d_asm_Nx.ascii?u10m[20:1:24][227:1:255][384:1:420]
             if Date < datetime.datetime(2000,1,1): 
-                watertools.Collect.MERRA.daily(folders_input_RAW, ['u2m', 'v2m', 'q2m', 'tpw', 'ps', 'slp'],StartTime, EndTime, latlim, lonlim)
-                watertools.Collect.MERRA.three_hourly(folders_input_RAW, ['t2m', 'u2m', 'v2m', 'q2m', 'tpw', 'ps', 'slp'], StartTime, EndTime, latlim, lonlim, [int(Period), int(Period+1)])
-                watertools.Collect.MERRA.daily(folders_input_RAW, ['t2m'], StartTime, EndTime, latlim, lonlim, data_type = ["mean", "min", "max"])
+                watertools.Collect.MERRA.daily(folders_input_RAW, ['u2m', 'v2m', 'q2m', 'tpw', 'ps', 'slp'],StartTime, EndTime, latlim_down, lonlim_down)
+                watertools.Collect.MERRA.three_hourly(folders_input_RAW, ['t2m', 'u2m', 'v2m', 'q2m', 'tpw', 'ps', 'slp'], StartTime, EndTime, latlim_down, lonlim_down, [int(Period), int(Period+1)])
+                watertools.Collect.MERRA.daily(folders_input_RAW, ['t2m'], StartTime, EndTime, latlim_down, lonlim_down, data_type = ["mean", "min", "max"])
          
                 str_METEO = "MERRA"
                 inst_name = "three_hourly"
@@ -540,9 +550,9 @@ def main(output_folder, Startdate, Enddate, latlim, lonlim, LandCover = "GlobCov
             #elif (Date >= datetime.datetime(2016,1,1) and Date < datetime.datetime(2017,12,1)):     
             elif (Date >= datetime.datetime(2000,1,1) and Date < datetime.datetime(2017,12,1)):     
 
-                watertools.Collect.MERRA.daily_MERRA2(folders_input_RAW, ['u2m', 'v2m', 'q2m', 'tpw', 'ps', 'slp'],StartTime, EndTime, latlim, lonlim)
-                watertools.Collect.MERRA.hourly_MERRA2(folders_input_RAW, ['t2m', 'u2m', 'v2m', 'q2m', 'tpw', 'ps', 'slp'], StartTime, EndTime, latlim, lonlim, [int(Period), int(Period+3)])
-                watertools.Collect.MERRA.daily_MERRA2(folders_input_RAW, ['t2m'], StartTime, EndTime, latlim, lonlim, data_type = ["mean", "min", "max"])
+                watertools.Collect.MERRA.daily_MERRA2(folders_input_RAW, ['u2m', 'v2m', 'q2m', 'tpw', 'ps', 'slp'],StartTime, EndTime, latlim_down, lonlim_down)
+                watertools.Collect.MERRA.hourly_MERRA2(folders_input_RAW, ['t2m', 'u2m', 'v2m', 'q2m', 'tpw', 'ps', 'slp'], StartTime, EndTime, latlim_down, lonlim_down, [int(Period), int(Period+3)])
+                watertools.Collect.MERRA.daily_MERRA2(folders_input_RAW, ['t2m'], StartTime, EndTime, latlim_down, lonlim_down, data_type = ["mean", "min", "max"])
                 str_METEO = "MERRA"   
                 inst_name = "hourly_MERRA2"
                 day_name = "daily_MERRA2"
@@ -551,9 +561,9 @@ def main(output_folder, Startdate, Enddate, latlim, lonlim, LandCover = "GlobCov
                 Periods_METEO = [int(Period), int(Period+3)]
                 
             else:
-                watertools.Collect.GEOS.daily(folders_input_RAW, ['u2m', 'v2m', 'qv2m', 'tqv', 'ps', 'slp'], StartTime, EndTime, latlim, lonlim)
-                watertools.Collect.GEOS.three_hourly(folders_input_RAW, ['t2m', 'u2m', 'v2m', 'qv2m', 'tqv', 'ps', 'slp'], StartTime, EndTime, latlim, lonlim, [int(Period), int(Period+1)])
-                watertools.Collect.GEOS.daily(folders_input_RAW, ['t2m'], StartTime, EndTime, latlim, lonlim, data_type = ["mean", "min", "max"])
+                watertools.Collect.GEOS.daily(folders_input_RAW, ['u2m', 'v2m', 'qv2m', 'tqv', 'ps', 'slp'], StartTime, EndTime, latlim_down, lonlim_down)
+                watertools.Collect.GEOS.three_hourly(folders_input_RAW, ['t2m', 'u2m', 'v2m', 'qv2m', 'tqv', 'ps', 'slp'], StartTime, EndTime, latlim_down, lonlim_down, [int(Period), int(Period+1)])
+                watertools.Collect.GEOS.daily(folders_input_RAW, ['t2m'], StartTime, EndTime, latlim_down, lonlim_down, data_type = ["mean", "min", "max"])
                 str_METEO = "GEOS"
                 inst_name = "three_hourly"
                 day_name = "daily"
@@ -1002,23 +1012,23 @@ def main(output_folder, Startdate, Enddate, latlim, lonlim, LandCover = "GlobCov
             # Download MSGCPP data
             #if Date < datetime.datetime(2016,1,1): 
             if Date < datetime.datetime(2002,1,1): 
-                watertools.Collect.MERRA.daily(folders_input_RAW, ['swgnet'],StartTime, EndTime, latlim, lonlim)
+                watertools.Collect.MERRA.daily(folders_input_RAW, ['swgnet'],StartTime, EndTime, latlim_down, lonlim_down)
                 str_TRANS = "MERRA"
                 day_name = "daily"
 
             elif (Date >= datetime.datetime(2002,1,1) and Date < datetime.datetime(2017,1,1)):        
             #elif (Date >= datetime.datetime(2016,1,1) and Date < datetime.datetime(2017,1,1)):
-                watertools.Collect.MERRA.daily_MERRA2(folders_input_RAW, ['swgnet'],StartTime, EndTime, latlim, lonlim)
+                watertools.Collect.MERRA.daily_MERRA2(folders_input_RAW, ['swgnet'],StartTime, EndTime, latlim_down, lonlim_down)
                 str_TRANS = "MERRA"    
                 day_name = "daily_MERRA2"
                 
             else:
                 if Short_Downwards_Radiation ==  "MSGCCP":
-                    watertools.Collect.MSGCPP.SDS(folders_input_RAW, StartTime, EndTime, latlim, lonlim)
+                    watertools.Collect.MSGCPP.SDS(folders_input_RAW, StartTime, EndTime, latlim_down, lonlim_down)
                     str_TRANS = "MSGCPP"
                     day_name = "daily"
                 if Short_Downwards_Radiation == "MERRA":
-                    watertools.Collect.MERRA.daily_MERRA2(folders_input_RAW, ['swgnet'],StartTime, EndTime, latlim, lonlim)
+                    watertools.Collect.MERRA.daily_MERRA2(folders_input_RAW, ['swgnet'],StartTime, EndTime, latlim_down, lonlim_down)
                     str_TRANS = "MERRA"    
                     day_name = "daily_MERRA2"            
                     

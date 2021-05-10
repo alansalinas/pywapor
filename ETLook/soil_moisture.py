@@ -1075,7 +1075,7 @@ def maximum_temperature_bare(
     return ts_max_num / ts_max_denom + t_air_k_i
 
 def minimum_temperature_full(
-        ra_hor_clear_i, emiss_atm_i, t_air_k_i, ad_i, rac, lst, r0_full=0.18
+        ra_hor_clear_i, emiss_atm_i, t_air_k_i, ad_i, rac, lst_zone_mean, r0_full=0.18
 ):
     r"""
     Computes the minimum temperature under fully vegetated conditions
@@ -1105,8 +1105,8 @@ def minimum_temperature_full(
         aerodynamical resistance
         :math:`r_{a,a}`
         [sm-1]
-    lst : float
-        land surface temperature
+    lst_zone_mean : float
+        land surface temperature zone mean
         [K]
     r0_full : float
         surface albedo full vegetation cover
@@ -1121,22 +1121,22 @@ def minimum_temperature_full(
         [K]
 
     """
-    
+
     emiss_full = 0.99
     g_rn_ratio = 0.0
-    LE_Rn_ratio = 0
+    LE_Rn_ratio = 1
     
     x_full = 1-g_rn_ratio-LE_Rn_ratio
-    c1 = x_full*emiss_full*0.0000000567*np.nanmean(lst)**3+(ad_i*c.sh)/rac
+    c1 = x_full*emiss_full*c.sb*lst_zone_mean**3+(ad_i*c.sh)/rac
     
-    ts_min_full = (x_full*(1-r0_full)*ra_hor_clear_i+x_full*emiss_atm_i*0.0000000567*t_air_k_i**4+(ad_i*c.sh*t_air_k_i)/rac)/c1
+    ts_min_full = (x_full*(1-r0_full)*ra_hor_clear_i+x_full*emiss_atm_i*c.sb*t_air_k_i**4+(ad_i*c.sh*t_air_k_i)/rac)/c1
 
     return ts_min_full
 
 
 
 def minimum_temperature_bare(
-        ra_hor_clear_i, emiss_atm_i, t_air_k_i, ad_i, raa, ras, lst, r0_bare_wet=0.15
+        ra_hor_clear_i, emiss_atm_i, t_air_k_i, ad_i, raa, ras, lst_zone_mean, r0_bare_wet=0.15
 ):
     r"""
     Computes the minimum temperature under dry bare soil conditions
@@ -1170,8 +1170,8 @@ def minimum_temperature_bare(
         aerodynamical resistance
         :math:`r_{a,a}`
         [sm-1]
-    lst : float
-        land surface temperature
+    lst_zone_mean : float
+        land surface temperature zone mean
         [K]
     r0_bare_wet : float
         wet bare soil surface albedo
@@ -1186,15 +1186,15 @@ def minimum_temperature_bare(
         [K]
 
     """
-    
+       
     emiss_bare = 0.95
     g_rn_ratio = 0.15
     LE_Rn_ratio = 1
     
     x_bare = 1-g_rn_ratio-LE_Rn_ratio
-    c1 = x_bare*emiss_bare*0.0000000567*np.nanmean(lst)**3+(ad_i*c.sh)/(raa + ras)
+    c1 = x_bare*emiss_bare*c.sb*lst_zone_mean**3+(ad_i*c.sh)/(raa + ras)
     
-    ts_min_bare = (x_bare*(1-r0_bare_wet)*ra_hor_clear_i+x_bare*emiss_atm_i*0.0000000567*t_air_k_i**4+(ad_i*c.sh*t_air_k_i)/(raa + ras))/c1
+    ts_min_bare = (x_bare*(1-r0_bare_wet)*ra_hor_clear_i+x_bare*emiss_atm_i*c.sb*t_air_k_i**4+(ad_i*c.sh*t_air_k_i)/(raa + ras))/c1
 
     return ts_min_bare
 
