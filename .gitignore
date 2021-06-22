@@ -45,3 +45,4 @@ Thumbs.db
 *.wmv
 *.tif.aux.xml
 
+tests/test_data/output

@@ -11,4 +11,4 @@ from pyWAPOR import Functions, ETLook, Pre_ETLook, Calculate_composite_LS, Calcu
 
 __all__ = ['Functions', 'ETLook', 'Pre_ETLook', 'Calculate_composite_LS', 'Calculate_composite_MODIS']
 
-__version__ = '0.1'
+__version__ = '2.0.2'
