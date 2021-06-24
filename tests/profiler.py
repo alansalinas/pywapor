@@ -6,8 +6,8 @@ import pyWAPOR.tests.general as gen
 
 data_folder = os.path.join(pyWAPOR.__path__[0], r"tests/test_data")
 
-function_path = ["pyWAPOR", "tests", "test_functions", "profiler_ETLook"]      
-function_inputs = "('{0}')".format(data_folder)
+function_path = ["pyWAPOR", "tests", "test_functions", "ETLook_main"]      
+function_inputs = "()"
 command = ".".join(function_path) + function_inputs
 stats_file = os.path.join(data_folder, "stats")
 
