@@ -276,8 +276,8 @@ Biomass Production (:mod:`ETLook.biomass`)
     biomass
     
 """
-from pyWAPOR.ETLook import ETLook_code, solar_radiation, clear_sky_radiation, meteo, radiation, evapotranspiration, soil_moisture, leaf, stress, resistance, roughness, neutral, unstable, outputs, biomass
+from pyWAPOR.ETLook import ETLook_code, solar_radiation, clear_sky_radiation, meteo, radiation, evapotranspiration, soil_moisture, leaf, stress, resistance, roughness, neutral, unstable, outputs, biomass, variables
 
-__all__ = ['ETLook_code', 'solar_radiation', 'clear_sky_radiation', 'meteo, radiation', 'evapotranspiration', 'soil_moisture', 'leaf', 'stress', 'resistance', 'roughness', 'neutral', 'unstable', 'outputs', 'biomass']
+__all__ = ['ETLook_code', 'solar_radiation', 'clear_sky_radiation', 'meteo', 'radiation', 'evapotranspiration', 'soil_moisture', 'leaf', 'stress', 'resistance', 'roughness', 'neutral', 'unstable', 'outputs', 'biomass', 'variables']
 
 __version__ = '0.1'
