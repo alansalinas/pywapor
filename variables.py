@@ -27,6 +27,7 @@ inputs = {
     "Trans_24":                 {"time": "daily", "array_name": "trans_24"},
     "se_root":                  {"time": "daily", "array_name": "se_root"},
     "Maximum_Obstacle_Height":  {"time": "yearly", "array_name": "z_obst_max"},
+    "Bulk_Stomatal_resistance": {"time": "yearly", "array_name": "rs_min"}
 }
 
 outputs = {
@@ -58,7 +59,6 @@ outputs = {
     'h_canopy_24_init':     {'file_name': 'h_canopy_24_init'},
     'h_soil_24_init':       {'file_name': 'h_soil_24_init'},
     'ha':                   {'file_name': 'ha'},
-    # 'ied':                  {'file_name': 'ied'},
     'int_mm':               {'file_name': 'int_mm'},
     'int_wm2':              {'file_name': 'int_wm2'},
     'l_net':                {'file_name': 'l_net'},
@@ -128,5 +128,7 @@ outputs = {
     'ws':                   {'file_name': 'ws'},
     'z0m':                  {'file_name': 'z0m'},
     'z_obst':               {'file_name': 'z_obst'},
-    'z_oro':                {'file_name': 'z_oro'}
+    'z_oro':                {'file_name': 'z_oro'},
+    'L_bare':               {'file_name': 'L_bare'},
+    'L_full':               {'file_name': 'L_full'},
 }
