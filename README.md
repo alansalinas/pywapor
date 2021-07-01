@@ -1,29 +1,72 @@
-### Computing Evapotranspiration of large areas using remote sensing data
+# pyWAPOR
 
-This repo hosts the algorithm, implemented in Python, and data manual 
-for the computation of evapotranspiration for large areas using remote sensing data
+This repository contains a Python implementation of the algorithm used to generate the [WaPOR](http://www.fao.org/in-action/remote-sensing-for-water-productivity/en/) [datasets](https://wapor.apps.fao.org/home/WAPOR_2/1). It can be used to calculate evaporation, transpiration and biomass production maps based on MODIS or Landsat data.
 
+## Installation
 
-[WaPOR portal](https://wapor.apps.fao.org/)
+Its recommended to install in a clean [conda environment](https://docs.conda.io/projects/conda/en/latest/user-guide/concepts/environments.html) and use [conda](https://docs.conda.io/projects/conda/en/latest/user-guide/install/) to install GDAL before installing pywapor.
 
-Version 2 on Collaboratory Jupiter
+ ```bash
+conda create -n my_pywapor_env python=3 pip
+conda activate my_pywapor_env
+conda install -c conda-forge gdal
+```
 
-[Try WaPOR-ETLook Version 2 on Collaboratory Jupyter](https://colab.research.google.com/drive/1wJz6sj9JhLUBk-Bnw1zACYE4P3XWExMa)
+Then use the package manager [pip](https://pip.pypa.io/en/stable/) to install pywapor.
 
-Data Manuals and algorithms for Version 2
+```bash
+pip install pywapor
+```
 
-[Download WaPOR-ETLook Version 2 Data Manual](https://bitbucket.org/cioapps/wapor-et-look/downloads/FRAME_ET_v2_data_manual_finaldraft_v2.2.pdf)
+## Usage
 
-[Download WaPOR-Biomass Production Version 2 Data Manual](https://bitbucket.org/cioapps/wapor-et-look/downloads/FRAME_NPP_v2_data_manual_finaldraft_v2.2.pdf)
+```python
+import os
+import pandas as pd
+import pywapor
 
-[C codes of algorithms for NPP and phenology](https://bitbucket.org/cioapps/wapor-et-look/downloads/FRAME-NPP-PHE.zip)
+# User Inputs.
+startdate = "2019-07-06"
+enddate = "2019-07-06"
+latlim = [28.5, 31.9]
+lonlim = [29.2, 32.5]
+output_folder = r"/path/to/local/folder"
+##############
 
-[python codes of algorithms for WaPOR-ETLook V2](https://bitbucket.org/cioapps/wapor-et-look/downloads/WaPOR-ETLook_v2.zip)
+dates = pd.date_range(startdate, enddate, freq = "D")
+raw_folder = os.path.join(output_folder, "RAW")
+model_input = os.path.join(output_folder, "ETLook_input")
+model_output = os.path.join(output_folder, "ETLook_output")
 
-Data Manuals and algorithms for Version 1
+# Download input data.
+pywapor.pre_et_look.main(
+                         output_folder, 
+                         startdate, 
+                         enddate, 
+                         latlim, 
+                         lonlim,
+                         RAW_folder= raw_folder,
+                       )
 
-[Download WaPOR-ETLook Version 1 Data Manual](https://bitbucket.org/cioapps/wapor-et-look/raw/9ec88e56769f49722c2d1165bb34547f5842b811/Docs/WaPOR_ET_data_manual_finaldraft-v1.2-for-distribution.pdf)
+# Run the model.
+for date in dates:
+    pywapor.et_look_code.main(model_input, model_output,
+                              dates)
+```
 
-Version 1 on Collaboratory Jupiter
+See the examples folder for more examples or check out the [Colab Notebook]().
 
-[Try WaPOR-ETLook Version 1 on Collaboratory Jupyter](https://colab.research.google.com/drive/1BH2uqzhUe3p2eRWJ0oheWE9W9irtrFYZ)
+## Documentation
+### WaPOR v2
+➡ [WaPOR-ETLook Data Manual](https://bitbucket.org/cioapps/wapor-et-look/downloads/FRAME_ET_v2_data_manual_finaldraft_v2.2.pdf)
+
+➡ [WaPOR-Biomass Data Manual](https://bitbucket.org/cioapps/wapor-et-look/downloads/FRAME_NPP_v2_data_manual_finaldraft_v2.2.pdf)
+
+### WaPOR v1
+➡ [WaPOR-ETLook Data Manual](https://bitbucket.org/cioapps/wapor-et-look/raw/9ec88e56769f49722c2d1165bb34547f5842b811/Docs/WaPOR_ET_data_manual_finaldraft-v1.2-for-distribution.pdf)
+
+## Acknowledgments
+The methodology for WaPOR was developed by the FRAME1 consortium, consisting of eLEAF, VITO, ITC, University of Twente and Waterwatch foundation, commissioned by and in partnership with the Land and Water Division of FAO.
+
+## License
+[APACHE](https://bitbucket.org/cioapps/wapor-et-look/src/dev/LICENSE)
