@@ -949,7 +949,7 @@ def main(output_folder, Startdate, Enddate, latlim, lonlim, LandCover = "GlobCov
                     LC[np.isnan(LC)] = -9999
                     
                     # import list with numbers to convert globcover into other maps
-                    import pywapor.functions.landcover_converter as LCC
+                    import pywapor.general.landcover_converter as LCC
                     
                     if LandCover == "GlobCover":
                         # Get conversion between globcover and landmask
@@ -1177,7 +1177,7 @@ def lapse_rate_temp(tair_file, dem_file, lapse):
     DEM_up_ave[DEM_up_ave<=0]=0
     
     # 
-    Tdown = pywapor.et_look.meteo.disaggregate_air_temperature(T, DEM_down, DEM_up_ave, lapse)
+    Tdown = pywapor.et_look_dev.meteo.disaggregate_air_temperature(T, DEM_down, DEM_up_ave, lapse)
 
     return(Tdown)
     
