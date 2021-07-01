@@ -31,6 +31,7 @@ enddate = "2019-07-06"
 latlim = [28.5, 31.9]
 lonlim = [29.2, 32.5]
 output_folder = r"/path/to/local/folder"
+etlook_version = "v2"
 ##############
 
 dates = pd.date_range(startdate, enddate, freq = "D")
@@ -51,7 +52,7 @@ pywapor.pre_et_look.main(
 # Run the model.
 for date in dates:
     pywapor.et_look_code.main(model_input, model_output,
-                              dates)
+                              dates, ETLook_version = etlook_version)
 ```
 
 See the examples folder for more examples or check out the [Colab Notebook]().
