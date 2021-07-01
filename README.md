@@ -6,7 +6,7 @@ This repository contains a Python implementation of the algorithm used to genera
 
 Its recommended to install in a clean [conda environment](https://docs.conda.io/projects/conda/en/latest/user-guide/concepts/environments.html) and use [conda](https://docs.conda.io/projects/conda/en/latest/user-guide/install/) to install GDAL before installing pywapor.
 
- ```bash
+```bash
 conda create -n my_pywapor_env python=3 pip
 conda activate my_pywapor_env
 conda install -c conda-forge gdal
