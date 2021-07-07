@@ -791,6 +791,8 @@ def evaporation(
         h = rn_24_soil - g0_24 - e
         epsilon = abs(h - h_start)
         h_start = h
+ 
+    e = e.clip(0, 100)
 
     return e
 
