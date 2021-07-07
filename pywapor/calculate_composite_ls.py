@@ -9,7 +9,7 @@ import os
 import sys
 import shutil
 import datetime
-import gdal
+from osgeo import gdal
 import requests
 import glob
 import pandas as pd
@@ -20,7 +20,7 @@ import watertools.General.data_conversions as DC
 import watertools.General.raster_conversions as RC
 
 import pywapor
-import watertools
+
 
 def main(output_folder, Startdate, Enddate, latlim, lonlim, LS_WAPOR_folder_in, LS_WAPOR_folder_out, LandCover = "GlobCover", Short_Downwards_Radiation = "MSGCCP", RAW_folder = None):
 

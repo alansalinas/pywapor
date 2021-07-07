@@ -6,11 +6,8 @@ Created on Mon Jan  4 12:22:19 2021
 """
 
 import os
-import sys
-import shutil
 import datetime
-import gdal
-import requests
+from osgeo import gdal
 import glob
 import pandas as pd
 import numpy as np
@@ -20,7 +17,6 @@ import watertools.General.data_conversions as DC
 import watertools.General.raster_conversions as RC
 
 import pywapor
-import watertools
 
 def main(output_folder, Startdate, Enddate, latlim, lonlim, MODIS_WAPOR_folder_in, MODIS_WAPOR_folder_out, LandCover = "GlobCover", Short_Downwards_Radiation = "MSGCCP", RAW_folder = None):
 
@@ -340,7 +336,7 @@ def main(output_folder, Startdate, Enddate, latlim, lonlim, MODIS_WAPOR_folder_i
                     LC[np.isnan(LC)] = -9999
                     
                     # import list with numbers to convert globcover into other maps
-                    import pywapor.functions.LandCover_Converter as LCC
+                    import pywapor.general.landcover_converter as LCC
                     
                     if LandCover == "GlobCover":
                         # Get conversion between globcover and landmask
