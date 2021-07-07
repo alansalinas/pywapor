@@ -1,13 +1,15 @@
-import pyWAPOR
+import pywapor
 import pandas as pd
 import os
 import shutil
 import gdal
 import numpy as np
+import pathlib
 
 def ETLook_main(asserts = False, ETLook_version = "dev"):
 
-    data_folder = os.path.join(pyWAPOR.__path__[0], "tests", "test_data")
+    data_folder = os.path.join(pathlib.Path(pywapor.__path__[0]).parent, 
+                                "tests", "test_data")
     input_folder = os.path.join(data_folder, "input")
     output_folder = os.path.join(data_folder, "output")
     if os.path.exists(output_folder):
@@ -16,7 +18,7 @@ def ETLook_main(asserts = False, ETLook_version = "dev"):
     date_string = "20190704"
     date = pd.Timestamp(date_string, freq="d")
 
-    pyWAPOR.ETLook_code.main(input_folder, output_folder, date, ETLook_version = ETLook_version)
+    pywapor.et_look_code.main(input_folder, output_folder, date, ETLook_version = ETLook_version)
 
     if asserts:
 
