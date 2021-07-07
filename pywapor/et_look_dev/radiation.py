@@ -224,7 +224,9 @@ def net_radiation(r0, ra_24, l_net, int_wm2):
     >>> rad.net_radiation(r0=0.10, ra_24=123., l_net=24., int_wm2=0)
     86.7
     """
-    return (1-r0)*ra_24-l_net-int_wm2
+    rn_24 = (1-r0)*ra_24-l_net-int_wm2
+    rn_24 = rn_24.clip(20, 2000)
+    return rn_24
 
 
 def net_radiation_canopy(rn_24, sf_soil):
