@@ -19,7 +19,7 @@ parameter in step 2. Step 3 will calculate the WAPOR results.
 import glob
 import os
 import datetime
-import pyWAPOR
+import pywapor
 
 # inputs
 latlim = [28.7698, 29.7576]
@@ -38,7 +38,7 @@ for Date in Dates:
     Enddate = Date.strftime("%Y-%m-%d")
     
     # Collect date for the LS day
-    pyWAPOR.Pre_ETLook.main(output_folder, 
+    pywapor.pre_et_look.main(output_folder, 
                             Startdate, 
                             Enddate, 
                             latlim, 
@@ -50,6 +50,6 @@ for Date in Dates:
                             RAW_folder= os.path.join(output_folder, "RAW"))
     
     # Run pyWAPOR model for LS day
-    pyWAPOR.ETLook.ETLook_code.main(os.path.join(output_folder, "ETLook_input"), 
+    pywapor.et_look_code.main(os.path.join(output_folder, "ETLook_input"), 
                                     os.path.join(output_folder, "ETLook_output"), 
                                     Date)

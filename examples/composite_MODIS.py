@@ -15,7 +15,7 @@ the interpolated data.
 import os 
 import pandas as pd
 import datetime
-import pyWAPOR
+import pywapor
 import watertools
 
 # inputs
@@ -31,7 +31,7 @@ Enddate = dates[-1].strftime("%Y-%m-%d")
 Startdate = dates[0].strftime("%Y-%m-%d")
 
 # Collect data for the whole daily MODIS period
-pyWAPOR.Pre_ETLook.main(
+pywapor.pre_et_look.main(
                         output_folder, 
                         Startdate, 
                         Enddate, 
@@ -47,11 +47,11 @@ pyWAPOR.Pre_ETLook.main(
 # Run pyWAPOR model over daily MODIS data
 print(dates)
 for date in dates:
-    pyWAPOR.ETLook.ETLook_code.main(os.path.join(output_folder, "ETLook_input"), 
+    pywapor.et_look_code.main(os.path.join(output_folder, "ETLook_input"), 
                                     os.path.join(output_folder, "ETLook_output"),
                                     date)
 
-pyWAPOR.Calculate_composite_MODIS.main(
+pywapor.calculate_composite_modis.main(
                                        output_folder, 
                                        Startdate,
                                        Enddate,
@@ -67,6 +67,6 @@ pyWAPOR.Calculate_composite_MODIS.main(
 dates_8d = watertools.Collect.MOD11.DataAccess.Make_TimeStamps(Startdate, Enddate)
 
 for date in dates_8d:
-    pyWAPOR.ETLook.ETLook_code.main(os.path.join(output_folder, "ETLook_input_composite_MODIS"), 
+    pywapor.et_look_code.main(os.path.join(output_folder, "ETLook_input_composite_MODIS"), 
                                     os.path.join(output_folder, "ETLook_output_composite_MODIS"),
                                     date)

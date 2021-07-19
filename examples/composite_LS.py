@@ -13,7 +13,7 @@ function as described in the Normal LS run.
 import glob
 import os
 import datetime
-import pyWAPOR
+import pywapor
 import watertools
 
 # inputs
@@ -35,7 +35,7 @@ for Date in Dates:
     Enddate = Date.strftime("%Y-%m-%d")
     
     # Collect data for 1 day LS run
-    pyWAPOR.Pre_ETLook.main(r"F:\Project_FAOJORDAN\Input_Data\Test", 
+    pywapor.pre_et_look.main(r"F:\Project_FAOJORDAN\Input_Data\Test", 
                             Startdate, 
                             Enddate, 
                             latlim,
@@ -47,7 +47,7 @@ for Date in Dates:
                             Satellite_folder = Satellite_folder)
     
     # Run pyWAPOR model for LS day
-    pyWAPOR.ETLook.ETLook_code.main(os.path.join(output_folder, "ETLook_input"), 
+    pywapor.et_look_code.main(os.path.join(output_folder, "ETLook_input"), 
                                     os.path.join(output_folder, "ETLook_output"), 
                                     Date)
 
@@ -55,7 +55,7 @@ Startdate_comp = ""
 Enddate_comp = ""
 
 # Collect data for composite LS run        
-pyWAPOR.Calculate_composite_LS.main(output_folder, 
+pywapor.calculate_composite_ls.main(output_folder, 
                                     Startdate_comp,
                                     Enddate_comp,
                                     latlim,
@@ -69,6 +69,6 @@ pyWAPOR.Calculate_composite_LS.main(output_folder,
 dates_8d = watertools.Collect.MOD11.DataAccess.Make_TimeStamps(Startdate_comp, Enddate_comp)
 
 for date in dates_8d:
-    pyWAPOR.ETLook.ETLook_code.main(os.path.join(output_folder, "ETLook_input_composite_LS"), 
+    pywapor.et_look_code.main(os.path.join(output_folder, "ETLook_input_composite_LS"), 
                                     os.path.join(output_folder, "ETLook_output_composite_LS_FRAME"),
                                     date)
