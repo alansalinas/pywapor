@@ -249,6 +249,14 @@ def main(input_folder, output_folder, Date, ETLook_version = "dev"):
             lst_zone_mean_large = dest_lst_zone_large.GetRasterBand(1).ReadAsArray()
             lst_zone_mean_large[lst_zone_mean_large==0] = -9999
             lst_zone_mean_large[np.isnan(lst_zone_mean_large)] = -9999
+
+            if np.nanmax(lst_zone_mean_large) == -9999:
+                for x in range(0, size_x_zone):
+                    print(x)
+                    for y in range(0, size_y_zone):
+                        lst_zone_mean_large[y, x] = np.nanmean(id["lst"][y*200:np.minimum((y+1)*200, size_y-1), x*200:np.minimum((x+1)*200, size_x-1)])
+                lst_zone_mean_large[np.isnan(lst_zone_mean_large)] = -9999
+
             lst_zone_mean_large = RC.gap_filling(lst_zone_mean_large, -9999, 1)
             dest_lst_zone_large = DC.Save_as_MEM(lst_zone_mean_large, geo_new, proj_ex)
             
