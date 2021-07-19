@@ -22,6 +22,8 @@
 *.code-workspace
 .vscode/
 
+devs/
+
 # Unit test reports
 TEST*.xml
 
