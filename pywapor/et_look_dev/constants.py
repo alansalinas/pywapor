@@ -43,7 +43,7 @@ porosity = 0.4
 
 # **effective_leaf_area_index**************************************************
 # constants or predefined:
-nd_min = 0.125
+nd_min = 0.1 # 0.125
 nd_max = 0.8
 vc_pow = 0.7
 vc_min = 0
@@ -70,10 +70,10 @@ int_max = 0.2
 
 # **canopy resistance***********************************************************
 # constants or predefined:
-r0_bare = 0.38
+r0_bare = 0.42 # 0.38
 r0_bare_wet = 0.20
 r0_full = 0.18
-tenacity = 1.5
+tenacity = 1.0
 disp_bare = 0.0
 disp_full = 0.667
 fraction_h_bare = 0.65
@@ -81,7 +81,7 @@ fraction_h_full = 0.95
 
 z_obs = 2
 z_b = 100
-z0m_bare = 0.001 # 0.0005 
+z0m_bare = 0.0005 # 0.001
 
 # **initial canopy aerodynamic resistance***********************************************************
 # constants or predefined:

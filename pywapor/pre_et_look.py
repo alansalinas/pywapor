@@ -207,17 +207,17 @@ def main(output_folder, Startdate, Enddate, latlim, lonlim, LandCover = "GlobCov
                         data, Geo_out, Proj_out = RC.clip_data(dest_ndvi, latlim, lonlim)
                         
                         DC.Save_as_tiff(NDVI_file, data, Geo_out, Proj_out)
-                         
+                            
                     elif os.path.exists(os.path.join(folder_RAW_file_NDVI, filename_NDVI).format(v="MYD")): 
                         
                         dest_ndvi = gdal.Open(os.path.join(folder_RAW_file_NDVI, filename_NDVI).format(v="MYD"))
                         data, Geo_out, Proj_out = RC.clip_data(dest_ndvi, latlim, lonlim)
                         
                         DC.Save_as_tiff(NDVI_file, data, Geo_out, Proj_out)
-                         
+                            
                     else:
                         print("NDVI is not available for date: %d%02d%02d" %(Date.year, Date.month, Date.day))
-           
+            
             else:
                 NDVI_file = os.path.join(folder_input_ETLook_Date, "NDVI_%d%02d%02d.tif" %(Date.year, Date.month, Date.day))
                 DEM_file = os.path.join(folders_input_RAW, "SRTM", "DEM", "DEM_SRTM_m_3s.tif")
@@ -258,9 +258,9 @@ def main(output_folder, Startdate, Enddate, latlim, lonlim, LandCover = "GlobCov
                 DC.Save_as_tiff(Lat_file, lat_deg, geo_ex, proj_ex)
             
             else:
-               dest_lon = gdal.Open(Lon_file)
-               lon_deg = dest_lon.GetRasterBand(1).ReadAsArray()
-               
+                dest_lon = gdal.Open(Lon_file)
+                lon_deg = dest_lon.GetRasterBand(1).ReadAsArray()
+                
             dlat, dlon = watertools.Functions.Area_Conversions.Area_converter.Calc_dlat_dlon(geo_ex, size_x_ex, size_y_ex)
             
             offset_GTM = int(round(lon_deg[int(lon_deg.shape[0]/2),int(lon_deg.shape[1]/2)] * 24 / 360))
@@ -331,9 +331,9 @@ def main(output_folder, Startdate, Enddate, latlim, lonlim, LandCover = "GlobCov
                             
                             Total_mask_thermal = np.where(Surface_temp<200, 1, Total_mask_thermal)
                             
-                        	# Upscale DEM
+                            # Upscale DEM
                             Box = 7
-         
+            
                             # Upscale NDVI data
                             dest_ndvi_up = RC.reproject_dataset_example(dest_down, dest_up)
                             NDVI_up = dest_ndvi_up.GetRasterBand(1).ReadAsArray()
@@ -381,15 +381,15 @@ def main(output_folder, Startdate, Enddate, latlim, lonlim, LandCover = "GlobCov
                 albedo[albedo<=-0.4] = -9999   
                 albedo[albedo==0] = -9999                   
                 DC.Save_as_tiff(ALBEDO_file, albedo, geo_ex, proj_ex)                     
-          
+            
                 LST_file = os.path.join(folder_input_ETLook_Date, "LST_%d%02d%02d.tif" %(Date.year, Date.month, Date.day))            
                 Time_file = os.path.join(folder_input_ETLook_Date, "Time_%d%02d%02d.tif" %(Date.year, Date.month, Date.day))  
 
                 folder_LST_LS = os.path.join(Satellite_folder, "LST")
                 os.chdir(folder_LST_LS)
-                lst_filename = glob.glob("*_LST_%d%02d%02d_*.tif" %(Date.year, Date.month, Date.day))[0]
+                lst_filename = glob.glob("*LST_*_%d%02d%02d_*.tif" %(Date.year, Date.month, Date.day))[0]
                 filename_LST = os.path.join(folder_LST_LS, lst_filename)
-                                   
+                                    
 
                 if thermal_ndvi_sharpening == False:
                     
@@ -423,9 +423,9 @@ def main(output_folder, Startdate, Enddate, latlim, lonlim, LandCover = "GlobCov
                     
                     Total_mask_thermal = np.where(Surface_temp<200, 1, Total_mask_thermal)
                     
-                	# Upscale DEM
+                    # Upscale DEM
                     Box = 4
- 
+
                     # Upscale NDVI data
                     dest_ndvi_up = RC.reproject_dataset_example(dest_down, dest_up)
                     NDVI_up = dest_ndvi_up.GetRasterBand(1).ReadAsArray()
@@ -469,7 +469,7 @@ def main(output_folder, Startdate, Enddate, latlim, lonlim, LandCover = "GlobCov
             if composite == True:
                 date_middle = Date + pd.DateOffset(days=4)             
                 doy = int(date_middle.strftime("%j"))
- 
+
             else:
                 doy = int(Date.strftime("%j"))
 
@@ -523,7 +523,7 @@ def main(output_folder, Startdate, Enddate, latlim, lonlim, LandCover = "GlobCov
                 folder_RAW_file_P = os.path.join(folders_input_RAW, "Precipitation", "CHIRPS", "Daily")                    
                 folder_RAW_file_P2 = os.path.join(folders_input_RAW, "Precipitation", "CHIRP", "Daily")   
                 if composite == True:
-       
+        
                     input_format = [os.path.join(folder_RAW_file_P, "P_CHIRPS.v2.0_mm-day-1_daily_{yyyy}.{mm:02d}.{dd:02d}.tif"), 
                                     os.path.join(folder_RAW_file_P2, "P_CHIRP.v2.0_mm-day-1_daily_{yyyy}.{mm:02d}.{dd:02d}.tif")]
                     P = Calc_Composite_METEO(input_format, Date, NDVI_file, "mean")
@@ -572,14 +572,14 @@ def main(output_folder, Startdate, Enddate, latlim, lonlim, LandCover = "GlobCov
                 DateTime = pd.date_range(StartTime, EndTime, freq="H") + pd.offsets.Minute(30)
                 Time_nearest = min(DateTime, key=lambda DateTime: abs(DateTime - NowTime_GMT)) 
                 Period = np.argwhere(DateTime ==Time_nearest)[0][0] + 1           
-    
+
             else:
                 # find nearest Meteo time        
                 DateTime = pd.date_range(StartTime, EndTime, freq="3H") + pd.offsets.Minute(90)
                 Time_nearest = min(DateTime, key=lambda DateTime: abs(DateTime - NowTime_GMT)) 
                 Period = np.argwhere(DateTime ==Time_nearest)[0][0] + 1
                     
-         
+            
             # Download METEO data
             #if Date < datetime.datetime(2016,1,1): 
                 # Test https://opendap.nccs.nasa.gov/dods/GEOS-5/MERRAero/hourly/tavg3hr_2d_asm_Nx.ascii?u10m[20:1:24][227:1:255][384:1:420]
@@ -587,14 +587,14 @@ def main(output_folder, Startdate, Enddate, latlim, lonlim, LandCover = "GlobCov
                 watertools.Collect.MERRA.daily(folders_input_RAW, ['u2m', 'v2m', 'q2m', 'tpw', 'ps', 'slp'],StartTime, EndTime, latlim_down, lonlim_down)
                 watertools.Collect.MERRA.three_hourly(folders_input_RAW, ['t2m', 'u2m', 'v2m', 'q2m', 'tpw', 'ps', 'slp'], StartTime, EndTime, latlim_down, lonlim_down, [int(Period), int(Period+1)])
                 watertools.Collect.MERRA.daily(folders_input_RAW, ['t2m'], StartTime, EndTime, latlim_down, lonlim_down, data_type = ["mean", "min", "max"])
-         
+            
                 str_METEO = "MERRA"
                 inst_name = "three_hourly"
                 day_name = "daily"
                 hour_steps = 3
                 file_time_inst = "3-hourly"
                 Periods_METEO = [int(Period), int(Period+1)]
-                 
+                    
             #elif (Date >= datetime.datetime(2016,1,1) and Date < datetime.datetime(2017,12,1)):     
 
             elif (Date >= datetime.datetime(2000,1,1) and Date < datetime.datetime(2021,4,1)):     
@@ -624,7 +624,7 @@ def main(output_folder, Startdate, Enddate, latlim, lonlim, LandCover = "GlobCov
             pair_inst_file = os.path.join(folder_input_ETLook_Date, "Pair_inst_%d%02d%02d.tif" %(Date.year, Date.month, Date.day))    
             pair_inst_0_file = os.path.join(folder_input_ETLook_Date, "Pair_inst_0_%d%02d%02d.tif" %(Date.year, Date.month, Date.day))    
             pair_24_0_file = os.path.join(folder_input_ETLook_Date, "Pair_24_0_%d%02d%02d.tif" %(Date.year, Date.month, Date.day))  
-                     
+                        
             if not (os.path.exists(pair_inst_file) and os.path.exists(pair_inst_0_file) and os.path.exists(pair_24_0_file)):
                 folder_RAW_file_pair_inst = os.path.join(folders_input_RAW, str_METEO, "Surface_Pressure", inst_name)      
                 folder_RAW_file_pair_inst_0 = os.path.join(folders_input_RAW, str_METEO, "Sea_Level_Pressure", inst_name)   
@@ -635,7 +635,7 @@ def main(output_folder, Startdate, Enddate, latlim, lonlim, LandCover = "GlobCov
                 input_format_pair_inst_MYD = os.path.join(folder_RAW_file_pair_inst, "ps_%s_kpa_%s_{yyyy}.{mm:02d}.{dd:02d}_H%02d.M00.tif" %(str_METEO, file_time_inst, HourPeriods[1]))
                     
                 if composite == True:
- 
+
                     pair_inst_MOD = Calc_Composite_METEO([input_format_pair_inst_MOD], Date, NDVI_file, "mean")
                     pair_inst_MOD[np.isnan(pair_inst_MOD)] = 0
                     
@@ -647,7 +647,7 @@ def main(output_folder, Startdate, Enddate, latlim, lonlim, LandCover = "GlobCov
                     DC.Save_as_tiff(pair_inst_file, pair_inst, geo_ex, proj_ex)  
                     
                 else:
-          
+            
                     destPairInst_MOD = RC.reproject_dataset_example(input_format_pair_inst_MOD.format(yyyy=Date.year, mm=Date.month, dd=Date.day), NDVI_file, method=6)
                     pair_inst_MOD = destPairInst_MOD.GetRasterBand(1).ReadAsArray()
 
@@ -657,7 +657,7 @@ def main(output_folder, Startdate, Enddate, latlim, lonlim, LandCover = "GlobCov
                     pair_inst = np.where(Time<12, pair_inst_MOD, pair_inst_MYD)
 
                     DC.Save_as_tiff(pair_inst_file, pair_inst, geo_ex, proj_ex)
- 
+
         
                 input_format_pair_inst_sea_MOD = os.path.join(folder_RAW_file_pair_inst_0, "slp_%s_kpa_%s_{yyyy}.{mm:02d}.{dd:02d}_H%02d.M00.tif" %(str_METEO, file_time_inst, HourPeriods[0]))
                 input_format_pair_inst_sea_MYD = os.path.join(folder_RAW_file_pair_inst_0, "slp_%s_kpa_%s_{yyyy}.{mm:02d}.{dd:02d}_H%02d.M00.tif" %(str_METEO, file_time_inst, HourPeriods[1]))
@@ -684,8 +684,8 @@ def main(output_folder, Startdate, Enddate, latlim, lonlim, LandCover = "GlobCov
                     Pair_inst_sea = np.where(Time<12, pair_inst_sea_MOD, pair_inst_sea_MYD)
 
                     DC.Save_as_tiff(pair_inst_0_file, Pair_inst_sea, geo_ex, proj_ex)                        
-  
-       
+
+        
                 input_format_pair_24_sea = os.path.join(folder_RAW_file_pair_24_0, "slp_%s_kpa_daily_{yyyy}.{mm:02d}.{dd:02d}.tif" %(str_METEO))                   
                 if composite == True:
                     
@@ -704,7 +704,7 @@ def main(output_folder, Startdate, Enddate, latlim, lonlim, LandCover = "GlobCov
             # Specific Humidity
             qv_inst_file = os.path.join(folder_input_ETLook_Date, "qv_inst_%d%02d%02d.tif" %(Date.year, Date.month, Date.day))    
             qv_24_file = os.path.join(folder_input_ETLook_Date, "qv_24_%d%02d%02d.tif" %(Date.year, Date.month, Date.day))  
-                     
+                        
             if not (os.path.exists(qv_inst_file) and os.path.exists(qv_24_file)):
                 folder_RAW_file_qv_inst = os.path.join(folders_input_RAW, str_METEO, "Specific_Humidity", inst_name)      
                 folder_RAW_file_qv_24 = os.path.join(folders_input_RAW, str_METEO, "Specific_Humidity", day_name) 
@@ -713,13 +713,13 @@ def main(output_folder, Startdate, Enddate, latlim, lonlim, LandCover = "GlobCov
                     para = "q2m"
                 else:
                     para = "qv2m"
- 
+
                 input_format_qv_inst_MOD = os.path.join(folder_RAW_file_qv_inst, "%s_%s_kg-kg-1_%s_{yyyy}.{mm:02d}.{dd:02d}_H%02d.M00.tif" %(para, str_METEO, file_time_inst, HourPeriods[0]))
                 input_format_qv_inst_MYD = os.path.join(folder_RAW_file_qv_inst, "%s_%s_kg-kg-1_%s_{yyyy}.{mm:02d}.{dd:02d}_H%02d.M00.tif" %(para, str_METEO, file_time_inst, HourPeriods[1]))
                 input_format_qv_24 = os.path.join(folder_RAW_file_qv_24, "%s_%s_kg-kg-1_daily_{yyyy}.{mm:02d}.{dd:02d}.tif" %(para, str_METEO))
 
                 if composite == True:
-   
+
                     qv_inst_MOD = Calc_Composite_METEO([input_format_qv_inst_MOD], Date, NDVI_file, "mean")
                     qv_inst_MOD[np.isnan(qv_inst_MOD)] = 0
                     
@@ -729,17 +729,17 @@ def main(output_folder, Startdate, Enddate, latlim, lonlim, LandCover = "GlobCov
                     qv_inst = np.where(Time<12, qv_inst_MOD, qv_inst_MYD)
                     
                     DC.Save_as_tiff(qv_inst_file, qv_inst, geo_ex, proj_ex)  
-             
+                
                 else:
-   
+
                     destqvInst_MOD = RC.reproject_dataset_example(input_format_qv_inst_MOD.format(yyyy=Date.year, mm=Date.month, dd=Date.day), NDVI_file, method=6)
                     qv_inst_MOD = destqvInst_MOD.GetRasterBand(1).ReadAsArray()
                     
                     destqvInst_MYD = RC.reproject_dataset_example(input_format_qv_inst_MYD.format(yyyy=Date.year, mm=Date.month, dd=Date.day), NDVI_file, method=6)
                     qv_inst_MYD = destqvInst_MYD.GetRasterBand(1).ReadAsArray()                    
- 
+
                     qv_inst = np.where(Time<12, qv_inst_MOD, qv_inst_MYD)
-                   
+                    
                     DC.Save_as_tiff(qv_inst_file, qv_inst, geo_ex, proj_ex)
 
                 if composite == True:
@@ -760,7 +760,7 @@ def main(output_folder, Startdate, Enddate, latlim, lonlim, LandCover = "GlobCov
             Tair_24_file = os.path.join(folder_input_ETLook_Date, "tair_24_%d%02d%02d.tif" %(Date.year, Date.month, Date.day))  
             Tair_max_24_file = os.path.join(folder_input_ETLook_Date, "tair_max_24_%d%02d%02d.tif" %(Date.year, Date.month, Date.day)) 
             Tair_min_24_file = os.path.join(folder_input_ETLook_Date, "tair_min_24_%d%02d%02d.tif" %(Date.year, Date.month, Date.day)) 
-                     
+                        
             if not (os.path.exists(Tair_inst_file) and os.path.exists(Tair_24_file) and os.path.exists(Tair_max_24_file) and os.path.exists(Tair_min_24_file)):
                 folder_RAW_file_tair_inst = os.path.join(folders_input_RAW, str_METEO, "Air_Temperature", inst_name)      
                 folder_RAW_file_tair_24 = os.path.join(folders_input_RAW, str_METEO, "Air_Temperature", day_name) 
@@ -793,7 +793,7 @@ def main(output_folder, Startdate, Enddate, latlim, lonlim, LandCover = "GlobCov
                     
                     #destTairInst_MYD = RC.reproject_dataset_example(input_format_tair_inst_MYD.format(yyyy=Date.year, mm=Date.month, dd=Date.day), NDVI_file, method=6)
                     tair_inst_MYD = lapse_rate_temp(input_format_tair_inst_MYD.format(yyyy=Date.year, mm=Date.month, dd=Date.day), DEM_file, lapse = -0.006)                 
- 
+
                     tair_inst = np.where(Time<12, tair_inst_MOD, tair_inst_MYD)
                     if np.nanmax(tair_inst>270):
                         tair_inst = tair_inst -273.15
@@ -825,7 +825,7 @@ def main(output_folder, Startdate, Enddate, latlim, lonlim, LandCover = "GlobCov
                     tair_min_24[np.isnan(tair_min_24)] = 0                       
                     if np.nanmax(tair_min_24>270):
                         tair_min_24 = tair_min_24 -273.15
-                                           
+                                            
                     DC.Save_as_tiff(Tair_min_24_file, tair_min_24, geo_ex, proj_ex)                   
                     
                 else:
@@ -857,7 +857,7 @@ def main(output_folder, Startdate, Enddate, latlim, lonlim, LandCover = "GlobCov
             # Wind Speed
             wind_inst_file = os.path.join(folder_input_ETLook_Date, "wind_inst_%d%02d%02d.tif" %(Date.year, Date.month, Date.day))    
             wind_24_file = os.path.join(folder_input_ETLook_Date, "wind_24_%d%02d%02d.tif" %(Date.year, Date.month, Date.day))  
-                     
+                        
             if not (os.path.exists(wind_inst_file) and os.path.exists(wind_24_file)):
                 
                 HourPeriods = hour_steps * (np.array(Periods_METEO) - 1)
@@ -919,24 +919,24 @@ def main(output_folder, Startdate, Enddate, latlim, lonlim, LandCover = "GlobCov
                     
                     u2_24= Calc_Composite_METEO([input_format_u2_24], Date, NDVI_file, "mean")
                     u2_24[np.isnan(u2_24)] = 0                       
- 
+
                     v2_24= Calc_Composite_METEO([input_format_v2_24], Date, NDVI_file, "mean")
                     v2_24[np.isnan(v2_24)] = 0    
                     
                     wind_24 = np.sqrt(u2_24**2 + v2_24 **2) 
-                     
+                        
                     DC.Save_as_tiff(wind_24_file, wind_24, geo_ex, proj_ex)                      
                     
                 else:
-                     
+                        
                     destu224 = RC.reproject_dataset_example(input_format_u2_24.format(yyyy=Date.year, mm=Date.month, dd=Date.day), NDVI_file, method=6)
                     u2_24 = destu224.GetRasterBand(1).ReadAsArray()
                     
                     destv224 = RC.reproject_dataset_example(input_format_v2_24.format(yyyy=Date.year, mm=Date.month, dd=Date.day), NDVI_file, method=6)
                     v2_24 = destv224.GetRasterBand(1).ReadAsArray()                    
- 
+
                     wind_24 = np.sqrt(u2_24**2 + v2_24 **2) 
-                   
+                    
                     DC.Save_as_tiff(wind_24_file, wind_24, geo_ex, proj_ex)
                     
             wv_inst_file = os.path.join(folder_input_ETLook_Date, "wv_inst_%d%02d%02d.tif" %(Date.year, Date.month, Date.day))           
@@ -947,7 +947,7 @@ def main(output_folder, Startdate, Enddate, latlim, lonlim, LandCover = "GlobCov
                     para = "tpw"
                 else:
                     para = "tqv"
-                                           
+                                            
                 folder_RAW_file_wv_inst = os.path.join(folders_input_RAW, str_METEO, "Total_Precipitable_Water_Vapor", inst_name) 
                 input_format_wv_inst_MOD = os.path.join(folder_RAW_file_wv_inst, "%s_%s_mm_%s_{yyyy}.{mm:02d}.{dd:02d}_H%02d.M00.tif" %(para, str_METEO, file_time_inst, HourPeriods[0]))
                 input_format_wv_inst_MYD = os.path.join(folder_RAW_file_wv_inst, "%s_%s_mm_%s_{yyyy}.{mm:02d}.{dd:02d}_H%02d.M00.tif" %(para, str_METEO, file_time_inst, HourPeriods[1]))
@@ -978,7 +978,7 @@ def main(output_folder, Startdate, Enddate, latlim, lonlim, LandCover = "GlobCov
                     
 
             ##################### Calculate Landmask ##############################
-                      
+                        
             LM_file = os.path.join(folder_input_ETLook_Static, "LandMask_%s.tif" %Date.year)   
             Bulk_file = os.path.join(folder_input_ETLook_Static, "Bulk_Stomatal_resistance_%s.tif" %Date.year)   
             MaxObs_file = os.path.join(folder_input_ETLook_Static, "Maximum_Obstacle_Height_%s.tif" %Date.year)  
@@ -1019,7 +1019,7 @@ def main(output_folder, Startdate, Enddate, latlim, lonlim, LandCover = "GlobCov
                     Bulk = np.ones([size_y_ex, size_x_ex]) * np.nan 
                     MaxObs = np.ones([size_y_ex, size_x_ex]) * np.nan 
                     LUEmax = np.ones([size_y_ex, size_x_ex]) * np.nan 
-                     
+                        
                     # Create LandMask 
                     for LU_LM_Class in LU_LM_Classes.keys():
                         Value_LM = LU_LM_Classes[LU_LM_Class]
@@ -1086,7 +1086,7 @@ def main(output_folder, Startdate, Enddate, latlim, lonlim, LandCover = "GlobCov
                     
             # yearly amplitude temperature air
             Trans_file = os.path.join(folder_input_ETLook_Date, "Trans_24_%d%02d%02d.tif" %(Date.year, Date.month, Date.day))   
-                     
+                        
             if not os.path.exists(Trans_file):
                 
                 # Calculate the extraterrestrial daily radiation
@@ -1156,7 +1156,7 @@ def main(output_folder, Startdate, Enddate, latlim, lonlim, LandCover = "GlobCov
                             
                         else:
                             destswgnet = RC.reproject_dataset_example(os.path.join(folder_RAW_file_trans, filename_trans), NDVI_file, method=6)
-                             
+                                
                         swgnet_one = destswgnet.GetRasterBand(1).ReadAsArray()
                         if i == 0:
                             swgnet = np.ones([8, destswgnet.RasterYSize, destswgnet.RasterXSize])
@@ -1205,11 +1205,11 @@ def main(output_folder, Startdate, Enddate, latlim, lonlim, LandCover = "GlobCov
                         
                     else:
                         destswgnet = RC.reproject_dataset_example(os.path.join(folder_RAW_file_trans, filename_trans), NDVI_file, method=6)
-                         
+                            
                     swgnet = destswgnet.GetRasterBand(1).ReadAsArray()
                     trans = swgnet / Ra24_flat
                     DC.Save_as_tiff(Trans_file, trans, geo_ex, proj_ex)
-                
+                    
         except Exception as e:
             print("No ETLook input dataset for %s" %Date)
             print(e)  
