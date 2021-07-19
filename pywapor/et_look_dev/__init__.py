@@ -1,18 +1,18 @@
 """
 ===========================================
-ETLook functions (:mod:`ETLook`)
+et_look_dev functions (:mod:`et_look_dev`)
 ===========================================
 
-.. currentmodule:: ETLook
+.. currentmodule:: et_look_dev
 
-Within the :mod:`ETLook` module all physical and empirical
+Within the :mod:`et_look_dev` module all physical and empirical
 functions related to the calculation of the soil moisture, interceptin,
 evaporation and transpiration are provided. These functions listed here
 can be used to build function chains.
 
-Instantaneous Radiation (:mod:`ETLook.clear_sky_radiation`)
+Instantaneous Radiation (:mod:`et_look_dev.clear_sky_radiation`)
 ==============================================================
-.. automodule:: ETLook.clear_sky_radiation
+.. automodule:: et_look_dev.clear_sky_radiation
 
 .. autosummary::
    :toctree: generated/
@@ -33,10 +33,10 @@ Instantaneous Radiation (:mod:`ETLook.clear_sky_radiation`)
    solar_elevation_angle
    solar_elevation_angle_refracted
 
-Evapotranspiration (:mod:`ETLook.evapotranspiration`)
+Evapotranspiration (:mod:`et_look_dev.evapotranspiration`)
 ===========================================================================
 
-.. automodule:: ETLook.evapotranspiration
+.. automodule:: et_look_dev.evapotranspiration
 
 .. autosummary::
     :toctree: generated/
@@ -46,10 +46,10 @@ Evapotranspiration (:mod:`ETLook.evapotranspiration`)
     et_reference_mm
     interception_mm
 
-Vegetation Cover (:mod:`ETLook.leaf`)
+Vegetation Cover (:mod:`et_look_dev.leaf`)
 ===========================================================
 
-.. automodule:: ETLook.leaf
+.. automodule:: et_look_dev.leaf
 
 .. autosummary::
    :toctree: generated/
@@ -58,10 +58,10 @@ Vegetation Cover (:mod:`ETLook.leaf`)
    leaf_area_index
    effective_leaf_area_index
 
-Meteorology (:mod:`ETLook.meteo`)
+Meteorology (:mod:`et_look_dev.meteo`)
 ==========================================================
 
-.. automodule:: ETLook.meteo
+.. automodule:: et_look_dev.meteo
 
 .. autosummary::
    :toctree: generated/
@@ -106,10 +106,10 @@ Meteorology (:mod:`ETLook.meteo`)
 
 
 
-Net Available Energy (:mod:`ETLook.radiation`)
+Net Available Energy (:mod:`et_look_dev.radiation`)
 =================================================================
 
-.. automodule:: ETLook.radiation
+.. automodule:: et_look_dev.radiation
 
 .. autosummary::
     :toctree: generated/
@@ -128,10 +128,10 @@ Net Available Energy (:mod:`ETLook.radiation`)
     soil_thermal_conductivity
     volumetric_heat_capacity
 
-Roughness (:mod:`ETLook.roughness`)
+Roughness (:mod:`et_look_dev.roughness`)
 =============================================
 
-.. automodule:: ETLook.roughness
+.. automodule:: et_look_dev.roughness
 
 .. autosummary::
    :toctree: generated/
@@ -140,10 +140,10 @@ Roughness (:mod:`ETLook.roughness`)
    obstacle_height
    displacement_height
 
-Solar radiation (:mod:`ETLook.solar_radiation`)
+Solar radiation (:mod:`et_look_dev.solar_radiation`)
 =================================================================
 
-.. automodule:: ETLook.solar_radiation
+.. automodule:: et_look_dev.solar_radiation
 
 .. autosummary::
     :toctree: generated/
@@ -164,10 +164,10 @@ Solar radiation (:mod:`ETLook.solar_radiation`)
     slope_rad
     sunset_hour_angle
 
-Plant stress (:mod:`ETLook.stress`)
+Plant stress (:mod:`et_look_dev.stress`)
 ===================================================
 
-.. automodule:: ETLook.stress
+.. automodule:: et_look_dev.stress
 
 .. autosummary::
     :toctree: generated/
@@ -179,10 +179,10 @@ Plant stress (:mod:`ETLook.stress`)
     epsilon_soil_moisture
     epsilon_autotrophic_respiration
     
-Canopy and Soil Resistance (:mod:`ETLook.resistance`)
+Canopy and Soil Resistance (:mod:`et_look_dev.resistance`)
 ===========================================================
 
-.. automodule:: ETLook.resistance
+.. automodule:: et_look_dev.resistance
 
 .. autosummary::
     :toctree: generated/
@@ -191,10 +191,10 @@ Canopy and Soil Resistance (:mod:`ETLook.resistance`)
     canopy_resistance
     soil_resistance
 
-Neutral Atmosphere (:mod:`ETLook.neutral`)
+Neutral Atmosphere (:mod:`et_look_dev.neutral`)
 =====================================================
 
-.. automodule:: ETLook.neutral
+.. automodule:: et_look_dev.neutral
 
 .. autosummary::
     :toctree: generated/
@@ -206,10 +206,10 @@ Neutral Atmosphere (:mod:`ETLook.neutral`)
     initial_daily_transpiration_mm
     initial_soil_aerodynamic_resistance
 
-Unstable Atmosphere (:mod:`ETLook.unstable`)
+Unstable Atmosphere (:mod:`et_look_dev.unstable`)
 =======================================================
 
-.. automodule:: ETLook.unstable
+.. automodule:: et_look_dev.unstable
 
 .. autosummary::
     :toctree: generated/
@@ -231,10 +231,10 @@ Unstable Atmosphere (:mod:`ETLook.unstable`)
     transpiration_mm
 
 
-Soil Moisture (:mod:`ETLook.soil_moisture`)
+Soil Moisture (:mod:`et_look_dev.soil_moisture`)
 ====================================================================
 
-.. automodule:: ETLook.soil_moisture
+.. automodule:: et_look_dev.soil_moisture
 
 .. autosummary::
     :toctree: generated/
@@ -263,10 +263,10 @@ Soil Moisture (:mod:`ETLook.soil_moisture`)
     wind_speed_blending_height_full_inst
     wind_speed_soil_inst
 
-Biomass Production (:mod:`ETLook.biomass`)
+Biomass Production (:mod:`et_look_dev.biomass`)
 ====================================================================
 
-.. automodule:: ETLook.biomass
+.. automodule:: et_look_dev.biomass
 
 .. autosummary::
     :toctree: generated/

@@ -55,8 +55,6 @@ def vegetation_cover(ndvi, nd_min=0.125, nd_max=0.8, vc_pow=0.7):
     >>> leaf.vegetation_cover(0.85)
     1
 
-    .. plot:: pyplots/leaf/plot_vegetation_cover.py
-
     """
 
     if np.isscalar(ndvi):
@@ -134,8 +132,6 @@ def leaf_area_index(vc, vc_min=0.0, vc_max=vegetation_cover(0.795), lai_pow=-0.4
     >>> leaf.leaf_area_index(1.0)
     7.6304274331264414
 
-    .. plot:: pyplots/leaf/plot_leaf_area_index.py
-
     """
 
     if np.isscalar(vc):
@@ -191,8 +187,6 @@ def effective_leaf_area_index(lai):
     1.4285714285714288
     >>> leaf.effective_leaf_area_index(5.0)
     1.8518518518518516
-
-    .. plot:: pyplots/leaf/plot_effective_leaf_area_index.py
 
     """
     lai_eff = lai / ((0.3 * lai) + 1.2)

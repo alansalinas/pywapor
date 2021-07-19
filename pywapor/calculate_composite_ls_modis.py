@@ -90,7 +90,7 @@ def main_et(Date, LS_folder, composite_folder, output_folder):
                         dest_up = DC.Save_as_MEM(dummy_array, geo_1000, 4326)
                         
                         # upscale LS
-                        dest_LS_up = RC.reproject_dataset_example(dest_LS_30, dest_up, 4)
+                        # dest_LS_up = RC.reproject_dataset_example(dest_LS_30, dest_up, 4)
             
                         # Get relative array
                         relMap_LS_one = Create_Relative_Map(Array_LS, 108, Include_NAN = 0)  
@@ -113,7 +113,7 @@ def main_et(Date, LS_folder, composite_folder, output_folder):
                     Continue = 0
                 else:
                     print("Still %s pixels to go" %Amount_Of_Pixels2Go)
-         
+
         if "dest_up" not in locals():
             
             DATE_LS_LVL3 = int(DATES_LS_LVL3[0])   

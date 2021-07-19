@@ -240,8 +240,6 @@ def psi_m(y):
     .. math ::
        \Psi_{0}=-\ln{a}+\sqrt{3}ba^{\frac{1}{3}}\frac{\pi}{6}
 
-    .. plot:: pyplots/soil_moisture/plot_psi_m.py
-
     Notes
     -----
     This function should not be used as an input function for a ETLook tool.
@@ -292,8 +290,6 @@ def psi_h(y):
     :math:`z` and :math:`d` are the
     measurement height and displacement height respectively. All aforementioned
     parameters are different for the bare soil and full canopy solutions.
-
-    .. plot:: pyplots/soil_moisture/plot_psi_h.py
 
     Notes
     -----

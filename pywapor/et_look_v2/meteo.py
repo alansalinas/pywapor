@@ -420,7 +420,6 @@ def saturated_vapour_pressure_average(svp_24_max, svp_24_min):
         daily saturated vapour pressure
         :math:`e_{s,24}`
         [mbar]
-
     """
     return (svp_24_max + svp_24_min)/2
 
@@ -478,7 +477,6 @@ def saturated_vapour_pressure(t_air):
     >>> meteo.saturated_vapour_pressure(20)
     23.382812709274457
 
-    .. plot:: pyplots/meteo/plot_saturated_vapour_pressure.py
     """
     return 6.108 * np.exp(((17.27 * t_air) / (237.3 + t_air)))
 
@@ -592,7 +590,6 @@ def slope_saturated_vapour_pressure(t_air):
     >>> meteo.slope_saturated_vapour_pressure(20)
     1.447401881124136
 
-    .. plot:: pyplots/meteo/plot_slope_saturated_vapour_pressure.py
     """
     svp = saturated_vapour_pressure(t_air)
     return (4098 * svp) / (237.3 + t_air) ** 2
@@ -748,7 +745,6 @@ def air_pressure(z, p_air_0=1013.25):
     >>> meteo.air_pressure(z=1000)
     900.5832172948869
 
-    .. plot:: pyplots/meteo/plot_air_pressure.py
     """
     return p_air_0 * ((c.t_ref + c.lapse * (z - c.z_ref)) / c.t_ref) ** c.power
 
@@ -816,8 +812,6 @@ def dry_air_density(p_air, vp, t_air_k):
     >>> from ETLook import meteo
     >>> meteo.dry_air_density(p_air=900, vp=17.5, t_air_k=293.15)
     1.0489213344656534
-
-    .. plot:: pyplots/meteo/plot_dry_air_density.py
 
     """
     return (p_air - vp) / (t_air_k * c.gc_dry)
@@ -916,8 +910,6 @@ def moist_air_density(vp, t_air_k):
     >>> meteo.moist_air_density(vp=17.5, t_air_k = 293.15)
     0.012949327800393881
 
-    .. plot:: pyplots/meteo/plot_moist_air_density.py
-
     """
     return vp / (t_air_k * c.gc_moist)
 
@@ -1006,8 +998,6 @@ def air_density(ad_dry, ad_moist):
     >>> ad_dry = meteo.dry_air_density(p_air=900, vp=17.5, t_air_k=293.15)
     >>> meteo.air_density(ad_dry=ad_dry, ad_moist=ad_moist)
     1.0618706622660472
-
-    .. plot:: pyplots/meteo/plot_air_density.py
 
     """
     return ad_dry + ad_moist
@@ -1102,7 +1092,6 @@ def latent_heat(t_air):
     >>> meteo.latent_heat(20)
     2453780.0
 
-    .. plot:: pyplots/meteo/plot_latent_heat.py
     """
     return c.lh_0 + c.lh_rate * t_air
 
@@ -1169,8 +1158,6 @@ def psychrometric_constant(p_air, lh):
     >>> meteo.psychrometric_constant(1003.0, 2500000.0)
     0.6475961414790997
 
-    .. plot:: pyplots/meteo/plot_psychrometric_constant.py
-
     """
     return (c.sh * p_air) / (c.r_mw * lh)
 
@@ -1236,8 +1223,6 @@ def wind_speed_blending_height(u, z_obs=2, z_b=100):
     >>> from ETLook import meteo
     >>> meteo.wind_speed_blending_height(u=3.0, z_obs=2, z_b=100)
     5.4646162953650572
-
-    .. plot:: pyplots/meteo/plot_wind_speed.py
 
     """
 

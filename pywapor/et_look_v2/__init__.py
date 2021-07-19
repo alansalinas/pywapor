@@ -1,18 +1,18 @@
 """
 ===========================================
-ETLook functions (:mod:`ETLook`)
+ pywapor.et_look_v2 functions (:mod:` pywapor.et_look_v2`)
 ===========================================
 
-.. currentmodule:: ETLook
+.. currentmodule::  pywapor.et_look_v2
 
-Within the :mod:`ETLook` module all physical and empirical
+Within the :mod:` pywapor.et_look_v2` module all physical and empirical
 functions related to the calculation of the soil moisture, interceptin,
 evaporation and transpiration are provided. These functions listed here
 can be used to build function chains.
 
-Instantaneous Radiation (:mod:`ETLook.clear_sky_radiation`)
+Instantaneous Radiation (:mod:` pywapor.et_look_v2.clear_sky_radiation`)
 ==============================================================
-.. automodule:: ETLook.clear_sky_radiation
+.. automodule::  pywapor.et_look_v2.clear_sky_radiation
 
 .. autosummary::
    :toctree: generated/
@@ -33,10 +33,10 @@ Instantaneous Radiation (:mod:`ETLook.clear_sky_radiation`)
    solar_elevation_angle
    solar_elevation_angle_refracted
 
-Evapotranspiration (:mod:`ETLook.evapotranspiration`)
+Evapotranspiration (:mod:` pywapor.et_look_v2.evapotranspiration`)
 ===========================================================================
 
-.. automodule:: ETLook.evapotranspiration
+.. automodule::  pywapor.et_look_v2.evapotranspiration
 
 .. autosummary::
     :toctree: generated/
@@ -46,10 +46,10 @@ Evapotranspiration (:mod:`ETLook.evapotranspiration`)
     et_reference_mm
     interception_mm
 
-Vegetation Cover (:mod:`ETLook.leaf`)
+Vegetation Cover (:mod:` pywapor.et_look_v2.leaf`)
 ===========================================================
 
-.. automodule:: ETLook.leaf
+.. automodule::  pywapor.et_look_v2.leaf
 
 .. autosummary::
    :toctree: generated/
@@ -58,10 +58,10 @@ Vegetation Cover (:mod:`ETLook.leaf`)
    leaf_area_index
    effective_leaf_area_index
 
-Meteorology (:mod:`ETLook.meteo`)
+Meteorology (:mod:` pywapor.et_look_v2.meteo`)
 ==========================================================
 
-.. automodule:: ETLook.meteo
+.. automodule::  pywapor.et_look_v2.meteo
 
 .. autosummary::
    :toctree: generated/
@@ -106,10 +106,10 @@ Meteorology (:mod:`ETLook.meteo`)
 
 
 
-Net Available Energy (:mod:`ETLook.radiation`)
+Net Available Energy (:mod:` pywapor.et_look_v2.radiation`)
 =================================================================
 
-.. automodule:: ETLook.radiation
+.. automodule::  pywapor.et_look_v2.radiation
 
 .. autosummary::
     :toctree: generated/
@@ -128,10 +128,10 @@ Net Available Energy (:mod:`ETLook.radiation`)
     soil_thermal_conductivity
     volumetric_heat_capacity
 
-Roughness (:mod:`ETLook.roughness`)
+Roughness (:mod:` pywapor.et_look_v2.roughness`)
 =============================================
 
-.. automodule:: ETLook.roughness
+.. automodule::  pywapor.et_look_v2.roughness
 
 .. autosummary::
    :toctree: generated/
@@ -140,10 +140,10 @@ Roughness (:mod:`ETLook.roughness`)
    obstacle_height
    displacement_height
 
-Solar radiation (:mod:`ETLook.solar_radiation`)
+Solar radiation (:mod:` pywapor.et_look_v2.solar_radiation`)
 =================================================================
 
-.. automodule:: ETLook.solar_radiation
+.. automodule::  pywapor.et_look_v2.solar_radiation
 
 .. autosummary::
     :toctree: generated/
@@ -164,10 +164,10 @@ Solar radiation (:mod:`ETLook.solar_radiation`)
     slope_rad
     sunset_hour_angle
 
-Plant stress (:mod:`ETLook.stress`)
+Plant stress (:mod:` pywapor.et_look_v2.stress`)
 ===================================================
 
-.. automodule:: ETLook.stress
+.. automodule::  pywapor.et_look_v2.stress
 
 .. autosummary::
     :toctree: generated/
@@ -177,10 +177,10 @@ Plant stress (:mod:`ETLook.stress`)
     stress_temperature
     stress_vpd
 
-Canopy and Soil Resistance (:mod:`ETLook.resistance`)
+Canopy and Soil Resistance (:mod:` pywapor.et_look_v2.resistance`)
 ===========================================================
 
-.. automodule:: ETLook.resistance
+.. automodule::  pywapor.et_look_v2.resistance
 
 .. autosummary::
     :toctree: generated/
@@ -189,10 +189,10 @@ Canopy and Soil Resistance (:mod:`ETLook.resistance`)
     canopy_resistance
     soil_resistance
 
-Neutral Atmosphere (:mod:`ETLook.neutral`)
+Neutral Atmosphere (:mod:` pywapor.et_look_v2.neutral`)
 =====================================================
 
-.. automodule:: ETLook.neutral
+.. automodule::  pywapor.et_look_v2.neutral
 
 .. autosummary::
     :toctree: generated/
@@ -204,10 +204,10 @@ Neutral Atmosphere (:mod:`ETLook.neutral`)
     initial_daily_transpiration_mm
     initial_soil_aerodynamic_resistance
 
-Unstable Atmosphere (:mod:`ETLook.unstable`)
+Unstable Atmosphere (:mod:` pywapor.et_look_v2.unstable`)
 =======================================================
 
-.. automodule:: ETLook.unstable
+.. automodule::  pywapor.et_look_v2.unstable
 
 .. autosummary::
     :toctree: generated/
@@ -229,10 +229,10 @@ Unstable Atmosphere (:mod:`ETLook.unstable`)
     transpiration_mm
 
 
-Soil Moisture (:mod:`ETLook.soil_moisture`)
+Soil Moisture (:mod:` pywapor.et_look_v2.soil_moisture`)
 ====================================================================
 
-.. automodule:: ETLook.soil_moisture
+.. automodule::  pywapor.et_look_v2.soil_moisture
 
 .. autosummary::
     :toctree: generated/

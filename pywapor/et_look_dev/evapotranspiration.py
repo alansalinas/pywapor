@@ -80,11 +80,6 @@ def interception_mm(P_24, vc, lai, int_max=0.2):
         :math:`I^*`
         [mm day :math:`^{-1}`]
 
-    Examples
-    --------
-
-    .. plot:: pyplots/evapotranspiration/plot_interception.py
-
     References
     ----------
     .. [Br1985] Braden, H., Energiehaushalts- und Verdunstungsmodell für Wasser- und
