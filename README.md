@@ -1,6 +1,6 @@
 # pyWAPOR
 ![downloads](https://img.shields.io/pypi/dw/pywapor)
-![version](https://img.shields.io/pypi/v/pywapor)
+[![version](https://img.shields.io/pypi/v/pywapor)](https://pypi.org/project/pywapor/)
 
 This repository contains a Python implementation of the algorithm used to generate the [WaPOR](http://www.fao.org/in-action/remote-sensing-for-water-productivity/en/) [datasets](https://wapor.apps.fao.org/home/WAPOR_2/1). It can be used to calculate evaporation, transpiration and biomass production maps based on MODIS or Landsat data.
 
@@ -11,7 +11,7 @@ Its recommended to install in a clean [conda environment](https://docs.conda.io/
 ```bash
 conda create -n my_pywapor_env python=3 pip
 conda activate my_pywapor_env
-conda install -c conda-forge gdal
+conda install -c conda-forge gdal=3.1.4
 ```
 
 Then use the package manager [pip](https://pip.pypa.io/en/stable/) to install pywapor.
