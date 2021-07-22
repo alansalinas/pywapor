@@ -1,5 +1,5 @@
 import os
-import gdal
+from osgeo import gdal
 import numpy as np
 import warnings
 import pywapor.et_look_dev as ETLook_dev
@@ -10,7 +10,7 @@ import watertools
 import watertools.General.data_conversions as DC
 import watertools.General.raster_conversions as RC
 
-def main(input_folder, output_folder, Date, ETLook_version = "dev"):
+def main(input_folder, output_folder, Date, ETLook_version = "v2"):
 
     if ETLook_version == "v2":
         ETLook = ETLook_v2
@@ -252,7 +252,6 @@ def main(input_folder, output_folder, Date, ETLook_version = "dev"):
 
             if np.nanmax(lst_zone_mean_large) == -9999:
                 for x in range(0, size_x_zone):
-                    print(x)
                     for y in range(0, size_y_zone):
                         lst_zone_mean_large[y, x] = np.nanmean(id["lst"][y*200:np.minimum((y+1)*200, size_y-1), x*200:np.minimum((x+1)*200, size_x-1)])
                 lst_zone_mean_large[np.isnan(lst_zone_mean_large)] = -9999
@@ -419,7 +418,7 @@ def main(input_folder, output_folder, Date, ETLook_version = "dev"):
             if vars.outputs[var]["output"]:
                 # print("saving '{0}'.".format(vars.outputs[var]["file_path"]))
                 DC.Save_as_tiff(vars.outputs[var]["file_path"], od[var], geo_ex, proj_ex)
-        else:
-            print("'{0}' not found.".format(var))
+        # else:
+        #     print("'{0}' not found.".format(var))
 
     return

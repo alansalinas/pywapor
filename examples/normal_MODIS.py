@@ -15,9 +15,10 @@ import pywapor
 
 # inputs
 Startdate = "2019-07-06"
-Enddate = "2019-07-07"
-latlim = [28.5, 31.9]
-lonlim = [29.2, 32.5]
+Enddate = "2019-07-06"
+
+latlim = [29.0, 29.6]
+lonlim = [30.3, 31.1]
 output_folder = r"/Users/hmcoerver/Downloads/normal_MODIS"
 
 dates = pd.date_range(Startdate, Enddate, freq = "D")

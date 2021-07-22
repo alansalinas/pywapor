@@ -8,7 +8,7 @@ Created on Fri Oct 30 09:43:42 2020
 #%%
 import re
 import os
-import osr
+from osgeo import osr
 import glob
 from osgeo import gdal
 import datetime 

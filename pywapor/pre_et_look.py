@@ -1213,7 +1213,9 @@ def main(output_folder, Startdate, Enddate, latlim, lonlim, LandCover = "GlobCov
         except Exception as e:
             print("No ETLook input dataset for %s" %Date)
             print(e)  
-            
+    
+    os.chdir(output_folder)
+    
     return()    
     
 def lapse_rate_temp(tair_file, dem_file, lapse):
