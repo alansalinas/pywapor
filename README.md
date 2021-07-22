@@ -1,4 +1,6 @@
 # pyWAPOR
+![downloads](https://img.shields.io/pypi/dw/pywapor)
+![version](https://img.shields.io/pypi/v/pywapor)
 
 This repository contains a Python implementation of the algorithm used to generate the [WaPOR](http://www.fao.org/in-action/remote-sensing-for-water-productivity/en/) [datasets](https://wapor.apps.fao.org/home/WAPOR_2/1). It can be used to calculate evaporation, transpiration and biomass production maps based on MODIS or Landsat data.
 
@@ -22,40 +24,28 @@ pip install pywapor
 
 ```python
 import os
-import pandas as pd
+import datetime as dt
 import pywapor
 
-# User Inputs.
-startdate = "2019-07-06"
-enddate = "2019-07-06"
-latlim = [28.5, 31.9]
-lonlim = [29.2, 32.5]
-output_folder = r"/path/to/local/folder"
-etlook_version = "v2"
-##############
-
-dates = pd.date_range(startdate, enddate, freq = "D")
-raw_folder = os.path.join(output_folder, "RAW")
-model_input = os.path.join(output_folder, "ETLook_input")
-model_output = os.path.join(output_folder, "ETLook_output")
+# User inputs.
+startdate = "2019-07-07"
+enddate = "2019-07-07"
+latlim = [29.0, 29.6]
+lonlim = [30.3, 31.1]
+project_folder = r"/my_first_ETLook_run/"
 
 # Download input data.
-pywapor.pre_et_look.main(
-                         output_folder, 
-                         startdate, 
-                         enddate, 
-                         latlim, 
-                         lonlim,
-                         RAW_folder= raw_folder,
-                       )
+pywapor.pre_et_look.main(project_folder, startdate, enddate, latlim, lonlim)
 
 # Run the model.
-for date in dates:
-    pywapor.et_look_code.main(model_input, model_output,
-                              dates, ETLook_version = etlook_version)
+ETLook_input_folder = os.path.join(project_folder, "ETLook_input_MODIS")
+ETLook_output_folder = os.path.join(project_folder, "ETLook_output_MODIS")
+date = dt.datetime.strptime(startdate, "%Y-%m-%d")
+
+pywapor.et_look_code.main(ETLook_input_folder, ETLook_output_folder, date)
 ```
 
-See the examples folder for more examples or check out the [Colab Notebook]().
+See the examples folder for more examples or check out the [Colab Notebook](https://colab.research.google.com/drive/1YEsCN6GnMGvOzXT4YaJ_jeu58mGIhhMq?usp=sharing).
 
 ## Documentation
 ### WaPOR v2
