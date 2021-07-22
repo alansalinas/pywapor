@@ -342,6 +342,10 @@ def main(input_folder, output_folder, Date, ETLook_version = "v2"):
     od["t_24"] = ETLook.unstable.transpiration(od["rn_24_canopy"], od["ssvp_24"], od["ad_24"], od["vpd_24"], od["psy_24"], od["r_canopy"], od["h_canopy_24_init"], od["t_air_k_24"], od["u_star_24_init"], od["z0m"], od["disp"], od["u_b_24"], c.z_obs, c.z_b, c.iter_h)
     od["t_24_mm"] = ETLook.unstable.transpiration_mm(od["t_24"], od["lh_24"])
 
+    if ETLook_version == "dev":
+        od["tpot_24"] = ETLook.unstable.transpiration(od["rn_24_canopy"], od["ssvp_24"], od["ad_24"], od["vpd_24"], od["psy_24"], od["r_canopy"] * od["stress_moist"], od["h_canopy_24_init"], od["t_air_k_24"], od["u_star_24_init"], od["z0m"], od["disp"], od["u_b_24"], c.z_obs, c.z_b, c.iter_h)
+        od["tpot_24_mm"] = ETLook.unstable.transpiration_mm(od["tpot_24"], od["lh_24"])
+
     # del od["rn_24_canopy"], od["r_canopy"], od["z0m"], od["u_star_24_init"], od["h_canopy_24_init"], od["t_24"]
 
     #*******EVAPORATION COMPONENT****************************************************************

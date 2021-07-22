@@ -103,6 +103,8 @@ outputs = {
     't_24':                 {'file_name': 't_24'},
     't_24_init':            {'file_name': 't_24_init'},
     't_24_mm':              {'file_name': 't_24_mm'},
+    'tpot_24':              {'file_name': 'tpot_24'},
+    'tpot_24_mm':           {'file_name': 'tpot_24_mm'},
     't_air_k_24':           {'file_name': 't_air_k_24'},
     't_air_k_i':            {'file_name': 't_air_k_i'},
     't_dew_i':              {'file_name': 't_dew_i'},
