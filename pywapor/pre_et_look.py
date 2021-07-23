@@ -1245,7 +1245,7 @@ def lapse_rate_temp(tair_file, dem_file, lapse):
     Tdown = pywapor.et_look_dev.meteo.disaggregate_air_temperature(T, DEM_down, DEM_up_ave, lapse)
 
     return(Tdown)
-    
+
 def Combine_LST(folders_input_RAW, Startdate, Enddate):
     
     Dates = pd.date_range(Startdate, Enddate, freq = "D")
@@ -1273,18 +1273,21 @@ def Combine_LST(folders_input_RAW, Startdate, Enddate):
             filename_lst_myd = glob.glob(format_lst_myd.format(time = "*"))[0]
                 
             dest_angle_mod = gdal.Open(filename_angle_mod)   
-            dest_angle_myd = gdal.Open(filename_angle_myd)        
+            dest_angle_myd = RC.reproject_dataset_example(filename_angle_myd, dest_angle_mod)
             dest_time_mod = gdal.Open(filename_time_mod)       
-            dest_time_myd = gdal.Open(filename_time_myd)  
+            dest_time_myd = RC.reproject_dataset_example(filename_time_myd, dest_time_mod) 
             dest_lst_mod = gdal.Open(filename_lst_mod)       
-            dest_lst_myd = gdal.Open(filename_lst_myd)              
+            dest_lst_myd = RC.reproject_dataset_example(filename_lst_myd, dest_lst_mod)      
 
             Array_angle_mod = dest_angle_mod.GetRasterBand(1).ReadAsArray()
             Array_angle_myd = dest_angle_myd.GetRasterBand(1).ReadAsArray()        
             Array_time_mod = dest_time_mod.GetRasterBand(1).ReadAsArray()        
             Array_time_myd = dest_time_myd.GetRasterBand(1).ReadAsArray()        
             Array_lst_mod = dest_lst_mod.GetRasterBand(1).ReadAsArray()
-            Array_lst_myd = dest_lst_myd.GetRasterBand(1).ReadAsArray()        
+            Array_lst_myd = dest_lst_myd.GetRasterBand(1).ReadAsArray() 
+            Array_lst_myd[Array_lst_myd==0] = np.nan
+            Array_time_myd[Array_time_myd==0] = np.nan
+            Array_angle_myd[Array_angle_myd==0] = np.nan
             
             LST = Array_lst_mod
             Time = Array_time_mod
