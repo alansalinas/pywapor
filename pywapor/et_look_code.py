@@ -1,6 +1,7 @@
 import os
 from osgeo import gdal
 import numpy as np
+import datetime
 import warnings
 import pywapor.et_look_dev as ETLook_dev
 import pywapor.et_look_v2 as ETLook_v2
@@ -17,6 +18,9 @@ def main(input_folder, output_folder, Date, ETLook_version = "v2"):
     elif ETLook_version == "dev":
         ETLook = ETLook_dev
     c = ETLook.constants
+
+    if isinstance(Date, str):
+        Date = datetime.datetime.strptime(Date, "%Y-%m-%d")
 
     # Do not show warnings
     warnings.filterwarnings('ignore')
