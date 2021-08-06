@@ -3,7 +3,7 @@
 Authors: Tim Hessels
 Module: Collect/SRTM
 """
-from pyWAPOR.Collect.WAPOR.DataAccess import DownloadData
+from pywapor.Collect.WAPOR.DataAccess import DownloadData
 import sys
 
 def main(Dir, Startdate, Enddate, latlim, lonlim, Waitbar = 1):

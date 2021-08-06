@@ -1,6 +1,6 @@
 import sys
 from pathlib import Path
-from pyWAPOR.Collect.PROBAV.DataAccess import download_data
+from pywapor.Collect.PROBAV.DataAccess import download_data
 
 
 def main(download_dir, start_date, end_date, latitude_extent, longitude_extent, username,

@@ -16,7 +16,7 @@ from netCDF4 import Dataset
 def DownloadData(Dir, Var, Startdate, Enddate, latlim, lonlim, TimeStep, Period, username, password, Waitbar):
 
 	# WAPOR modules
-    import pyWAPOR.Functions.Processing_Functions as PF
+    import pywapor.Functions.Processing_Functions as PF
 	
     # Check the latitude and longitude and otherwise set lat or lon on greatest extent
     if latlim[0] < -90 or latlim[1] > 90:
@@ -68,7 +68,7 @@ def DownloadData(Dir, Var, Startdate, Enddate, latlim, lonlim, TimeStep, Period,
         
     # Create Waitbar
     if Waitbar == 1:
-        import pyWAPOR.Functions.WaitbarConsole as WaitbarConsole
+        import pywapor.Functions.WaitbarConsole as WaitbarConsole
         total_amount = len(Dates)
         amount = 0
         WaitbarConsole.printWaitBar(amount, total_amount, prefix = 'Progress:', suffix = 'Complete', length = 50)
@@ -171,8 +171,8 @@ def DownloadData(Dir, Var, Startdate, Enddate, latlim, lonlim, TimeStep, Period,
                             try:
                                 y = requests.get(x.headers['location'], auth = (username, password))
                             except:
-                                from requests.packages.urllib3.exceptions import InsecureRequestWarning
-                                requests.packages.urllib3.disable_warnings(InsecureRequestWarning)
+                                # from requests.packages.urllib3.exceptions import InsecureRequestWarning
+                                # requests.packages.urllib3.disable_warnings(InsecureRequestWarning)
                                 y = requests.get(x.headers['location'], auth = (username, password), verify = False)
     
                             

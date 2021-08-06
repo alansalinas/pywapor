@@ -1,5 +1,5 @@
 import sys
-from pyWAPOR.Collect.MOD13.DataAccess import DownloadData
+from pywapor.Collect.MOD13.DataAccess import DownloadData
 
 def main(Dir, Startdate, Enddate, latlim, lonlim, username, password, Waitbar = 1, hdf_library = None, remove_hdf = 1):
 

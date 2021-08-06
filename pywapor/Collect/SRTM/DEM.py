@@ -4,7 +4,7 @@ Authors: Tim Hessels
 Module: Collect/SRTM
 """
 import os
-from pyWAPOR.Collect.SRTM.DataAccess import DownloadData
+from pywapor.Collect.SRTM.DataAccess import DownloadData
 import sys
 
 
@@ -35,7 +35,7 @@ def main(Dir, latlim, lonlim, Waitbar = 1):
         # Create Waitbar
         if Waitbar == 1:
             print('\nDownload SRTM altitude map with a resolution of 3s')
-            import pyWAPOR.Functions.WaitbarConsole as WaitbarConsole
+            import pywapor.Functions.WaitbarConsole as WaitbarConsole
             total_amount = 1
             amount = 0
             WaitbarConsole.printWaitBar(amount, total_amount, prefix = 'Progress:', suffix = 'Complete', length = 50)

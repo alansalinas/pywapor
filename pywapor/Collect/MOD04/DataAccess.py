@@ -37,7 +37,7 @@ def DownloadData(Dir, Startdate, Enddate, latlim, lonlim, username, password, Wa
     Waitbar -- 1 (Default) will print a waitbar
     """
 	# WAPOR modules
-    import pyWAPOR.Collect.MOD11 as MOD11
+    import pywapor.Collect.MOD11 as MOD11
     
     # Check start and end date and otherwise set the date to max
     if not Startdate:
@@ -50,7 +50,7 @@ def DownloadData(Dir, Startdate, Enddate, latlim, lonlim, username, password, Wa
 
     # Create Waitbar
     if Waitbar == 1:
-        import pyWAPOR.Functions.WaitbarConsole as WaitbarConsole
+        import pywapor.Functions.WaitbarConsole as WaitbarConsole
         total_amount = len(Dates)
         amount = 0
         WaitbarConsole.printWaitBar(amount, total_amount, prefix = 'Progress:', suffix = 'Complete', length = 50)
@@ -105,7 +105,7 @@ def RetrieveData(Date, args):
     Date -- 'yyyy-mm-dd'
     args -- A list of parameters defined in the DownloadData function.
     """
-    import pyWAPOR.Functions.Processing_Functions as PF
+    import pywapor.Functions.Processing_Functions as PF
     
     # Argument
     [output_folder, TilesVertical, TilesHorizontal, latlim, lonlim, username, password, hdf_library] = args
@@ -219,8 +219,8 @@ def Collect_data(TilesHorizontal,TilesVertical,Date, username, password, output_
                                     try:
                                         y = requests.get(x.headers['location'], auth = (username, password))
                                     except:
-                                        from requests.packages.urllib3.exceptions import InsecureRequestWarning
-                                        requests.packages.urllib3.disable_warnings(InsecureRequestWarning)
+                                        # from requests.packages.urllib3.exceptions import InsecureRequestWarning
+                                        # requests.packages.urllib3.disable_warnings(InsecureRequestWarning)
 
                                         y = requests.get(x.headers['location'], auth = (username, password), verify = False)
                                     z = open(file_name, 'wb')

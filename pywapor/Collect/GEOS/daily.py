@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 import sys
-from pyWAPOR.Collect.GEOS.DataAccess import DownloadData
+from pywapor.Collect.GEOS.DataAccess import DownloadData
 
 
 def main(Dir, Vars, Startdate, Enddate, latlim, lonlim, Waitbar = 1):

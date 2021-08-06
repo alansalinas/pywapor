@@ -13,7 +13,7 @@ import numpy as np
 
 def DownloadData(output_folder, Startdate, Enddate, latlim, lonlim, Waitbar = 1):
 
-    import pyWAPOR.Functions.Processing_Functions as PF
+    import pywapor.Functions.Processing_Functions as PF
     
     output_folder_Tot = os.path.join(output_folder, "WAPOR", "LandCover")
     if not os.path.exists(output_folder_Tot):
@@ -24,7 +24,7 @@ def DownloadData(output_folder, Startdate, Enddate, latlim, lonlim, Waitbar = 1)
  
     # Create Waitbar
     if Waitbar == 1:
-        import pyWAPOR.Functions.WaitbarConsole as WaitbarConsole
+        import pywapor.Functions.WaitbarConsole as WaitbarConsole
         total_amount = len(Dates)
         amount = 0
         WaitbarConsole.printWaitBar(amount, total_amount, prefix = 'Progress:', suffix = 'Complete', length = 50)    

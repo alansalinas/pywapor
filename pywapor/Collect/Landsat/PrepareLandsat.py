@@ -1,5 +1,5 @@
 import sys
-from pyWAPOR.Collect.Landsat.PreprocessLandsat import PreprocessLandsat
+from pywapor.Collect.Landsat.PreprocessLandsat import PreprocessLandsat
 
 
 def main(data_dir, output_dir):

@@ -36,7 +36,7 @@ def DownloadData(Dir, Startdate, Enddate, latlim, lonlim, username, password, Wa
                     define directory to the data here
     remove_hdf -- 1 (Default), if 1 remove all the downloaded hdf files in the end    
     """
-    import pyWAPOR.Collect.MOD11 as MOD11
+    import pywapor.Collect.MOD11 as MOD11
 
     # Check start and end date and otherwise set the date to max
     if not Startdate:
@@ -49,7 +49,7 @@ def DownloadData(Dir, Startdate, Enddate, latlim, lonlim, username, password, Wa
 
     # Create Waitbar
     if Waitbar == 1:
-        import pyWAPOR.Functions.WaitbarConsole as WaitbarConsole
+        import pywapor.Functions.WaitbarConsole as WaitbarConsole
         total_amount = len(Dates)
         amount = 0
         WaitbarConsole.printWaitBar(amount, total_amount, prefix = 'Progress:', suffix = 'Complete', length = 50)
@@ -105,7 +105,7 @@ def RetrieveData(Date, args):
     """
     
     # WAPOR modules
-    import pyWAPOR.Functions.Processing_Functions as PF
+    import pywapor.Functions.Processing_Functions as PF
     
     # Argument
     [output_folder, TilesVertical, TilesHorizontal,lonlim, latlim, username, password, hdf_library] = args
@@ -245,8 +245,8 @@ def Collect_data(TilesHorizontal, TilesVertical, Date, username, password, outpu
                                     try:
                                         y = requests.get(x.headers['location'], auth = (username, password))
                                     except:
-                                        from requests.packages.urllib3.exceptions import InsecureRequestWarning
-                                        requests.packages.urllib3.disable_warnings(InsecureRequestWarning)
+                                        # from requests.packages.urllib3.exceptions import InsecureRequestWarning
+                                        # requests.packages.urllib3.disable_warnings(InsecureRequestWarning)
 
                                         y = requests.get(x.headers['location'], auth = (username, password), verify = False)
                                         
