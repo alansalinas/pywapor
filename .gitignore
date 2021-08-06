@@ -23,6 +23,7 @@
 .vscode/
 
 devs/
+dist/
 
 # Unit test reports
 TEST*.xml
