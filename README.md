@@ -24,7 +24,6 @@ pip install pywapor
 
 ```python
 import os
-import datetime as dt
 import pywapor
 
 # User inputs.
@@ -40,9 +39,8 @@ pywapor.pre_et_look.main(project_folder, startdate, enddate, latlim, lonlim)
 # Run the model.
 ETLook_input_folder = os.path.join(project_folder, "ETLook_input_MODIS")
 ETLook_output_folder = os.path.join(project_folder, "ETLook_output_MODIS")
-date = dt.datetime.strptime(startdate, "%Y-%m-%d")
 
-pywapor.et_look_code.main(ETLook_input_folder, ETLook_output_folder, date)
+pywapor.et_look_code.main(ETLook_input_folder, ETLook_output_folder, startdate)
 ```
 
 See the examples folder for more examples or check out the [Colab Notebook](https://colab.research.google.com/drive/1YEsCN6GnMGvOzXT4YaJ_jeu58mGIhhMq?usp=sharing).
