@@ -2,7 +2,7 @@ from setuptools import setup, find_packages
 
 setup(
     name = 'pywapor',
-    version = '2.1.0',
+    version = '2.1.1',
     url = 'https://bitbucket.org/cioapps/wapor-et-look/src/master/',
     author = "FAO",
     summary = "Python implementation of the algorithm used to generate the WaPOR datasets.",

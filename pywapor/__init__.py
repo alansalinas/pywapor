@@ -11,4 +11,4 @@ from pywapor import general, et_look_dev, et_look_v2, pre_et_look, calculate_com
 
 __all__ = ['general', 'et_look_dev', 'et_look_v2', 'pre_et_look', 'calculate_composite_ls', 'calculate_composite_modis', 'et_look_code', 'calculate_composite_ls_modis']
 
-__version__ = '2.1.0'
+__version__ = '2.1.1'
