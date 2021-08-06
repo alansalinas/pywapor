@@ -53,6 +53,7 @@ def main(input_folder, output_folder, Date, ETLook_version = "v2"):
 
     # Create QC array
     fp = create_fp("LST", vars.inputs["LST"])
+    # fp = create_fp("NDVI", vars.inputs["NDVI"])
     init = create_array(fp)
     QC = np.ones(init.shape)
     QC[init == -9999] = np.nan
@@ -88,6 +89,9 @@ def main(input_folder, output_folder, Date, ETLook_version = "v2"):
         "{0}_{1}.tif".format(value["file_name"], Date_str))
 
     od = dict()
+
+    if "se_root" in id.keys():
+        od["se_root"] = id["se_root"]
 
     id["p_air_0_24"] = ETLook.meteo.air_pressure_kpa2mbar(id["p_air_0_24"])
 
