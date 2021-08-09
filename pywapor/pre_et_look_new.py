@@ -120,22 +120,6 @@ def prepare_level1(output_folder, startdate, enddate, latlim, lonlim, username, 
     prepare_level1_level2(output_folder, startdate, enddate, latlim, lonlim, username, password,
                           template_file, "level_1", LandCover=landcover)
 
-#%%
-startdate = "2019-07-06"
-enddate = "2019-07-06"
-
-latlim = [29.0, 29.6]
-lonlim = [30.3, 31.1]
-
-username = "broodj3ham"
-password = "N0tmyrealpassword"
-
-output_folder = r"/Users/hmcoerver/Downloads/normal_MODIS"
-
-prepare_level1(output_folder, startdate, enddate, latlim, lonlim, username, password,
-                   landcover="GlobCover")
-
-#%%
 
 def prepare_level2(output_folder, startdate, enddate, latlim, lonlim, username_vito, password_vito,
                    username_earthdata, password_earthdata, landcover="GlobCover"):
@@ -330,6 +314,11 @@ def prepare_level1_level2(output_folder, Startdate, Enddate, latlim, lonlim, use
     proj_ex = dest_ex.GetProjection()
     size_x_ex = dest_ex.RasterXSize
     size_y_ex = dest_ex.RasterYSize
+
+    folder_input_ETLook_static = os.path.join(folder_input_ETLook, "Static")
+    if not os.path.exists(folder_input_ETLook_static):
+        os.makedirs(folder_input_ETLook_static)
+
     for Date in Dates:
 
         # try:
@@ -361,14 +350,14 @@ def prepare_level1_level2(output_folder, Startdate, Enddate, latlim, lonlim, use
                 destVZA = PF.reproject_dataset_example(os.path.join(folder_RAW_file_LST, filename_VZA), template_file, method=1)
                 VZA = destVZA.GetRasterBand(1).ReadAsArray()
                 VZA[LST==0.0] = -9999
-                PF.Save_as_tiff(VZA_file, VZA, geo_ex, proj_ex)
+                # PF.Save_as_tiff(VZA_file, VZA, geo_ex, proj_ex)
             else:
                 print("LST is not available for date: %d%02d%02d" %(Date.year, Date.month, Date.day))
 
         ####################### Create lat and lon rasters ############################
 
-        Lon_file = os.path.join(folder_input_ETLook_Date, "Lon_%d%02d%02d.tif" %(Date.year, Date.month, Date.day))
-        Lat_file = os.path.join(folder_input_ETLook_Date, "Lat_%d%02d%02d.tif" %(Date.year, Date.month, Date.day))
+        Lon_file = os.path.join(folder_input_ETLook_static, "Lon.tif")
+        Lat_file = os.path.join(folder_input_ETLook_static, "Lat.tif")
         if not (os.path.exists(Lon_file) or os.path.exists(Lat_file)):
             lon_deg = np.array([geo_ex[0] + np.arange(0,size_x_ex) * geo_ex[1]]*size_y_ex)
             lat_deg = np.array([geo_ex[3] + np.arange(0,size_y_ex) * geo_ex[5]]*size_x_ex).transpose()
@@ -394,7 +383,7 @@ def prepare_level1_level2(output_folder, Startdate, Enddate, latlim, lonlim, use
         ####################### Create DEM rasters ############################
 
         # Create DEM files for ETLook
-        DEM_file = os.path.join(folder_input_ETLook_Date, "DEM.tif")
+        DEM_file = os.path.join(folder_input_ETLook_static, "DEM.tif")
         if not os.path.exists(DEM_file):
             folder_RAW_file_DEM = os.path.join(folders_input_RAW, "SRTM", "DEM")
             filename_DEM = "DEM_SRTM_m_3s.tif"
@@ -407,8 +396,8 @@ def prepare_level1_level2(output_folder, Startdate, Enddate, latlim, lonlim, use
                 print("DEM is not available")
 
         ##################### Calculate SLope and Aspect ##############################
-        Slope_file = os.path.join(folder_input_ETLook_Date, "Slope.tif")
-        Aspect_file = os.path.join(folder_input_ETLook_Date, "Aspect.tif")
+        Slope_file = os.path.join(folder_input_ETLook_static, "Slope.tif")
+        Aspect_file = os.path.join(folder_input_ETLook_static, "Aspect.tif")
         if not (os.path.exists(Slope_file) and os.path.exists(Aspect_file)):
 
             # open DEM
@@ -659,10 +648,11 @@ def prepare_level1_level2(output_folder, Startdate, Enddate, latlim, lonlim, use
 
         ##################### Calculate Landmask ##############################
 
-        LM_file = os.path.join(folder_input_ETLook_Date, "LandMask.tif")
-        Bulk_file = os.path.join(folder_input_ETLook_Date, "Bulk_Stomatal_resistance.tif")
-        MaxObs_file = os.path.join(folder_input_ETLook_Date, "Maximum_Obstacle_Height.tif")
-        if not (os.path.exists(LM_file) and os.path.exists(Bulk_file) and os.path.exists(MaxObs_file)):
+        LM_file = os.path.join(folder_input_ETLook_static, "LandMask_{0}.tif".format(Date.year))
+        Bulk_file = os.path.join(folder_input_ETLook_static, "Bulk_Stomatal_resistance_{0}.tif".format(Date.year))
+        MaxObs_file = os.path.join(folder_input_ETLook_static, "Maximum_Obstacle_Height_{0}.tif".format(Date.year))
+        LUEmax_file = os.path.join(folder_input_ETLook_static, "LUEmax_{0}.tif".format(Date.year))
+        if not (os.path.exists(LM_file) and os.path.exists(Bulk_file) and os.path.exists(MaxObs_file) and os.path.exists(LUEmax_file)):
 
             if LandCover == "GlobCover":
                 folder_RAW_file_LC = os.path.join(folders_input_RAW, "GlobCover", "Landuse")
@@ -684,31 +674,37 @@ def prepare_level1_level2(output_folder, Startdate, Enddate, latlim, lonlim, use
                     LU_LM_Classes = LCC.Globcover_LM()
                     LU_Bulk_Classes = LCC.Globcover_Bulk()
                     LU_MaxObs_Classes = LCC.Globcover_MaxObs()
+                    LU_LUEmax_Classes = LCC.Globcover_LUEmax()
 
                 if LandCover == "WAPOR":
                     # Get conversion between globcover and landmask
-                    LU_LM_Classes = LCC.WAPOR_LM_LM()
-                    LU_Bulk_Classes = LCC.WAPOR_Bulk_Bulk()
-                    LU_MaxObs_Classes = LCC.WAPOR_MaxObs_MaxObs()
+                    LU_LM_Classes = LCC.WAPOR_LM()
+                    LU_Bulk_Classes = LCC.WAPOR_Bulk()
+                    LU_MaxObs_Classes = LCC.WAPOR_MaxObs()
+                    LU_LUEmax_Classes = LCC.WAPOR_LUEmax()
 
                 # Create Array for LandMask
                 LM = np.ones([size_y_ex, size_x_ex]) * np.nan
                 Bulk = np.ones([size_y_ex, size_x_ex]) * np.nan
                 MaxObs = np.ones([size_y_ex, size_x_ex]) * np.nan
+                LUEmax = np.ones([size_y_ex, size_x_ex]) * np.nan
 
                 # Create LandMask
                 for LU_LM_Class in LU_LM_Classes.keys():
                     Value_LM = LU_LM_Classes[LU_LM_Class]
                     Value_Bulk = LU_Bulk_Classes[LU_LM_Class]
                     Value_MaxObs = LU_MaxObs_Classes[LU_LM_Class]
+                    Value_LUEmax = LU_LUEmax_Classes[LU_LM_Class]
                     LM[LC == LU_LM_Class] = Value_LM
                     Bulk[LC == LU_LM_Class] = Value_Bulk
                     MaxObs[LC  == LU_LM_Class] = Value_MaxObs
+                    LUEmax[LC == LU_LM_Class] = Value_LUEmax
 
                 # Save as tiff files
                 PF.Save_as_tiff(LM_file, LM, geo_ex, proj_ex)
                 PF.Save_as_tiff(Bulk_file, Bulk, geo_ex, proj_ex)
                 PF.Save_as_tiff(MaxObs_file, MaxObs, geo_ex, proj_ex)
+                PF.Save_as_tiff(LUEmax_file, LUEmax, geo_ex, proj_ex)
 
             else:
                 print("LandCover is not available")
@@ -718,7 +714,7 @@ def prepare_level1_level2(output_folder, Startdate, Enddate, latlim, lonlim, use
         pywapor.Collect.MERRA.yearly_T_Amplitude(folders_input_RAW, [Date.year],latlim, lonlim)
 
         # yearly amplitude temperature air
-        Tair_amp_file = os.path.join(folder_input_ETLook_Date, "Tair_amp_%d%02d%02d.tif" %(Date.year, Date.month, Date.day))
+        Tair_amp_file = os.path.join(folder_input_ETLook_static, "Tair_amp_{0}.tif".format(Date.year))
 
         if not os.path.exists(Tair_amp_file):
             folder_RAW_file_Tair_amp = os.path.join(folders_input_RAW, "MERRA", "Temperature_Amplitude", "yearly")
