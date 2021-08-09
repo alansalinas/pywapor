@@ -18,7 +18,7 @@ from pywapor.Functions.Swets_Filter import swets_filter
 from pathlib import Path
 
 def prepare_level1(output_folder, startdate, enddate, latlim, lonlim, username, password,
-                   landcover="GlobCover"):
+                   landcover="GlobCover", auth_token = None):
 
     # Define the input folders
     folders_input_RAW = os.path.join(output_folder, "RAW")
@@ -118,7 +118,7 @@ def prepare_level1(output_folder, startdate, enddate, latlim, lonlim, username, 
 
     # Download and create all other Level 1 inputs
     prepare_level1_level2(output_folder, startdate, enddate, latlim, lonlim, username, password,
-                          template_file, "level_1", LandCover=landcover)
+                          template_file, "level_1", LandCover=landcover, auth_token = auth_token)
 
 
 def prepare_level2(output_folder, startdate, enddate, latlim, lonlim, username_vito, password_vito,
@@ -267,7 +267,7 @@ def prepare_level2(output_folder, startdate, enddate, latlim, lonlim, username_v
 
 # Preparation of input data which is common for Level 1 and Level 2
 def prepare_level1_level2(output_folder, Startdate, Enddate, latlim, lonlim, username, password,
-                          template_file, level, LandCover="GlobCover"):
+                          template_file, level, LandCover="GlobCover", auth_token = None):
 
     # Define the input folders
     folders_input_RAW = os.path.join(output_folder, "RAW")
@@ -305,7 +305,8 @@ def prepare_level1_level2(output_folder, Startdate, Enddate, latlim, lonlim, use
         pywapor.Collect.Globcover.Landuse(folders_input_RAW, latlim, lonlim)
     if LandCover == "WAPOR":
         # Download Globcover data
-        pywapor.Collect.WAPOR.LandCover(folders_input_RAW, "%s-01-01" % (Startdate.split("-")[0]), "%s-12-31" % (Enddate.split("-")[0]), latlim, lonlim)
+        pywapor.Collect.WAPOR.Get_Layer(os.path.join(folders_input_RAW, "WAPOR"), "%s-01-01" % (Startdate.split("-")[0]), "%s-12-31" % (Enddate.split("-")[0]), latlim, lonlim, 'L1_LCC_A', auth_token)
+        # pywapor.Collect.WAPOR.LandCover(folders_input_RAW, "%s-01-01" % (Startdate.split("-")[0]), "%s-12-31" % (Enddate.split("-")[0]), latlim, lonlim)
     ############### Loop over days for the dynamic data ###############################
 
     # Create the inputs of MODIS for all the Dates
@@ -658,8 +659,8 @@ def prepare_level1_level2(output_folder, Startdate, Enddate, latlim, lonlim, use
                 folder_RAW_file_LC = os.path.join(folders_input_RAW, "GlobCover", "Landuse")
                 filename_LC = "LC_GLOBCOVER_V2.3.tif"
             if LandCover == "WAPOR":
-                folder_RAW_file_LC = os.path.join(folders_input_RAW, "WAPOR", "LandCover")
-                filename_LC = "LC_WAPOR_%s.01.01.tif" %(Date.year)
+                folder_RAW_file_LC = os.path.join(folders_input_RAW, "WAPOR", "L1_LCC_A")
+                filename_LC = "L1_LCC_A_WAPOR_YEAR_%s.01.01.tif" %(Date.year)
 
             if os.path.exists(os.path.join(folder_RAW_file_LC, filename_LC)):
                 destLC = PF.reproject_dataset_example(os.path.join(folder_RAW_file_LC, filename_LC), template_file, method=1)
