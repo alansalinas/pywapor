@@ -241,7 +241,7 @@ def get_temp_input_data_reqs():
         "time": "instanteneous",
         "filepath": "{input_folder}/{year}{month}{day}/wind_inst_{year}{month}{day}.tif"},
 
-        {"name": "Total Precipitable Water Vapout", "unit": "[mm]",
+        {"name": "Total Precipitable Water Vapour", "unit": "[mm]",
         "quantity": "Total Precipitable Water Vapour",
         "level": "column",
         "time": "instanteneous",
