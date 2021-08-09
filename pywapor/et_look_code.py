@@ -29,9 +29,9 @@ def main(input_folder, output_folder, Date, ETLook_version = "v2"):
     Date_str = "%d%02d%02d" %(Date.year, Date.month, Date.day)
 
     # Input folder Date
-    input_folder_date = os.path.join(input_folder, Date_str)
-    input_folder_static = os.path.join(input_folder, "Static")
-    
+    input_folder_date = os.path.join(input_folder, "level_1", Date_str)
+    input_folder_static = os.path.join(input_folder, "level_1", "Static")
+
     ############################ Define inputs ################################
 
     folders = {"daily": input_folder_date,
@@ -53,7 +53,12 @@ def main(input_folder, output_folder, Date, ETLook_version = "v2"):
             print("ERROR: invalid value")
 
         fn = "{0}{1}.tif".format(key, date)
-        return os.path.join(folders[value["time"]], fn)
+        fp = os.path.join(folders[value["time"]], fn)
+
+        if not os.path.isfile(fp):
+            print(f"WARNING: {fp} does not exists")
+
+        return fp
 
     # Create QC array
     fp = create_fp("LST", vars.inputs["LST"])
