@@ -95,13 +95,13 @@ Maximum Obstacle Height | m | from Landcover
 #### 🛰️ Sources
 | Source | Temporal Availability | Spatial Resolution | Used For |
 | ------ | ------ | ------ | ------ |
-| MODIS | | | NDVI, Albedo, LST |
-|GEOS-5 | | | Meteo |
-|MERRA-2 | | | Meteo | 
-|CHIRPS | | | Precipitation |
-|WaPOR | | | Landcover |
-|GlobCover | | | Landcover |
-|SRTM | | | DEM |
+| [MODIS](https://modis.gsfc.nasa.gov) | 2000-02-18 - ongoing | ~250m, ~500m, ~1000m | NDVI, Albedo, LST |
+| [GEOS-5](https://geos5.org) | 2017-12-01 - ongoing | 0.25° | Meteo |
+| [MERRA-2](https://gmao.gsfc.nasa.gov/reanalysis/MERRA-2/) | 1980-01-01 - ongoing | 0.625°×0.5° | Meteo | 
+| [CHIRPS](https://www.chc.ucsb.edu/data/chirps) |  1981-01-01 - ongoing | 0.05° | Precipitation |
+| [WaPOR](https://wapor.apps.fao.org/catalog/WAPOR_2/1/L1_LCC_A) | 2009 - 2020 | ~250m | Landcover |
+| [GlobCover](http://due.esrin.esa.int/page_globcover.php) | 2009 | ~250m | Landcover |
+| [SRTM](https://srtm.csi.cgiar.org) | 2009 | ~90m | DEM |
 
 ## Documentation
 ### WaPOR v2
