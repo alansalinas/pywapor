@@ -24,6 +24,8 @@ pip install pywapor
 
 ## Usage
 
+To run the model for one day (2019-07-07 in this case) for the Fayoum irrigation scheme in Egypt (but feel free to change the [boundingbox](http://bboxfinder.com) defined by `latlim` and `lonlim`) using MODIS data, use the following code. 
+
 ```python
 import os
 import pywapor
@@ -45,7 +47,7 @@ ETLook_output_folder = os.path.join(project_folder, "ETLook_output_MODIS")
 pywapor.et_look_code.main(ETLook_input_folder, ETLook_output_folder, startdate)
 ```
 
-See the examples folder for more examples or check out the [Colab Notebook](https://colab.research.google.com/drive/1YEsCN6GnMGvOzXT4YaJ_jeu58mGIhhMq?usp=sharing).
+See the `examples` folder for more examples or check out the [Colab Notebook](https://colab.research.google.com/drive/1YEsCN6GnMGvOzXT4YaJ_jeu58mGIhhMq?usp=sharing).
 
 ## Data Sources
 
