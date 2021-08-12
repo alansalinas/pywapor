@@ -1,7 +1,5 @@
 # pyWAPOR
-![downloads](https://img.shields.io/pypi/dw/pywapor)
-[![version](https://img.shields.io/pypi/v/pywapor)](https://pypi.org/project/pywapor/)
-[![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/drive/1YEsCN6GnMGvOzXT4YaJ_jeu58mGIhhMq?usp=sharing)
+![downloads](https://img.shields.io/pypi/dw/pywapor) [![version](https://img.shields.io/pypi/v/pywapor)](https://pypi.org/project/pywapor/) [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/drive/1YEsCN6GnMGvOzXT4YaJ_jeu58mGIhhMq?usp=sharing)
 
 
 This repository contains a Python implementation of the algorithm used to generate the [WaPOR](http://www.fao.org/in-action/remote-sensing-for-water-productivity/en/) [datasets](https://wapor.apps.fao.org/home/WAPOR_2/1). It can be used to calculate evaporation, transpiration and biomass production maps based on MODIS or Landsat data.
@@ -51,31 +49,25 @@ See the `examples` folder for more examples or check out the [Colab Notebook](ht
 
 ## Data Sources
 
-To run the ETLook model, two types of spatial data are required, temporal and static data. **Each of these variables can be collected from whichever source you wish to use**, as long as you make sure the units are correct, the data is stored as a GeoTIFF (1 band per file, 1 file for each variable and date), the files all have the same no-data-value and they all have the same projection and resolution. The `tests/test_data/input/` folder contains an example input dataset.
+To run the ETLook model, two types of spatial variables are required, temporal and static data. **Each of these variables can be collected from whichever source you wish to use**, as long as you make sure the units are correct, the data is stored as a GeoTIFF (1 band per file, 1 file for each variable and date), the files all have the same no-data-value and they all have the same projection and resolution. The `tests/test_data/input/` folder contains an example input dataset.
 
 **For your convenience, the pyWAPOR package has a function that can collect all this data from selected sources** and make sure the data is stored in the correct format and folder structure.
 
 #### Temporal Data
-| Variable | Unit | Selected Sources |
-| ------ | ------ | ------ |
-| Albedo | - | MODIS, *️⃣ |
-| Land Surface Temperature | K | MODIS, *️⃣ |
-| Normalized Difference Vegetation Index | - | MODIS, *️⃣ |
-| Air Pressure at sea level (daily average) | kPa | MERRA-2, GEOS-5 |
-| Air Pressure at sea level (instanteneous) | kPa | MERRA-2, GEOS-5 |
-| Air Pressure at surface level (instanteneous) | kPa | MERRA-2, GEOS-5 |
-| Precipitation | mm/day | CHIRPS |
-| Specific Humidity (daily average) | kg/kg | MERRA-2, GEOS-5 |
-| Specific Humidity (instanteneous) | kg/kg | MERRA-2, GEOS-5 |
-| Air Temperature (daily average) | °C | MERRA-2, GEOS-5 |
-| Air Temperature (instanteneous) | °C | MERRA-2, GEOS-5 |
-| Air Temperature (daily maximum) | °C | MERRA-2, GEOS-5 |
-| Air Temperature (daily minimum) | °C | MERRA-2, GEOS-5 |
-| Transmissivity | - | MERRA-2 |
-| Windspeed (daily average) | m/s | MERRA-2, GEOS-5 |
-| Windspeed (instanteneous) | m/s | MERRA-2, GEOS-5 |
-| Total Precipitable Water Vapout | mm | MERRA-2, GEOS-5 |
-| Instantaneous Data Time | hour | n/a
+| Variable | Aggregate | Unit | Selected Sources |
+| ------ | ------ | ------ | ------ |
+| Albedo | instant | - | MODIS, *️⃣ |
+| Land Surface Temperature | instant  | K | MODIS, *️⃣ |
+| Normalized Difference Vegetation Index | instant  | - | MODIS, *️⃣ |
+| Precipitation | instant  | mm/day | CHIRPS |
+| Air Pressure at sea level | instant, mean  | kPa | MERRA-2, GEOS-5 |
+| Air Pressure at surface level | instant  | kPa | MERRA-2, GEOS-5 |
+| Specific Humidity | instant, mean  | kg/kg | MERRA-2, GEOS-5 |
+| Air Temperature | instant, mean, min, max  | °C | MERRA-2, GEOS-5 |
+| Windspeed (daily average) | instant, mean  | m/s | MERRA-2, GEOS-5 |
+| Total Precipitable Water Vapour | instant  | mm | MERRA-2, GEOS-5 |
+| Transmissivity | instant  | - | MERRA-2 |
+| Instantaneous Data Time | instant  | hour | from Albedo
 
 *️⃣ PROBA-V and LandSat support in development.
 
@@ -84,7 +76,7 @@ To run the ETLook model, two types of spatial data are required, temporal and st
 | ------ | ------ | ------ |
 Landcover | - | WaPOR, GlobCover
 Digital Elevation Model | m.a.s.l | SRTM
-Air Temperature (yearly amplitude) | K | MERRA-2
+Air Temperature (yearly amplitude) | K | GLDAS
 Latitude | DD | from Albedo
 Longitude | DD | from Albedo
 Slope | ° | from Elevation
@@ -92,7 +84,7 @@ Slope Aspect | ° | from Elevation
 Bulk Stomatal Resistance | s/m | from Landcover
 Landmask | - | from Landcover
 Maximum Light Use Efficiency | gr/MJ | from Landcover
-Maximum Obstacle Height | m | from Landcover
+Maximum Obstacle Height | m | from Landcover 
 
 #### 🛰️ Sources
 | Source | Temporal Availability | Spatial Resolution | Used For |
