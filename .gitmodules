@@ -1,0 +1,3 @@
+[submodule "pywapor/collect/PROBAV/vito-download"]
+	path = pywapor/collect/PROBAV/vito-download
+	url = https://github.com/DHI-GRAS/vito-download.git
