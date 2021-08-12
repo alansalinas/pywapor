@@ -9,20 +9,23 @@ https://www.vito-eodata.be/PDF/datapool/.
 You need to register as a user (which is free) to use this module
 
 """
-import os
-from .PROBAV_S5 import main as PROBAV_S5
-import inspect
+from inspect import getsourcefile
+import sys
 from pathlib import Path
-# import pywapor.collect.PROBAV as probav
 
-probav_module_path = Path(inspect.getfile(PROBAV_S5)).parent
-sub_module_path = Path.joinpath(probav_module_path, "vito-download")
-current_workdir = os.getcwd()
-os.chdir(sub_module_path)
-import vito_download as vito
-os.chdir(current_workdir)
+probav_init_path = getsourcefile(lambda:0)
+probav_module_path = Path(probav_init_path).parent
 
-print(vito)
+vito_download_path = Path.joinpath(probav_module_path, "vito-download")
+itsybitsy_path = Path.joinpath(probav_module_path, "itsybitsy")
+
+# Add paths for Gitmodules to sys.path
+sys.path.append(vito_download_path.as_posix())
+sys.path.append(itsybitsy_path.as_posix())
+
+# print(sys.path)
+
+from .PROBAV_S5 import main as PROBAV_S5
 
 __all__ = ["PROBAV_S5"]
 
