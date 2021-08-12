@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 import sys
-from pywapor.Collect.CHIRPS.DataAccess import DownloadData
+from pywapor.collect.CHIRPS.DataAccess import DownloadData
 
 
 def main(Dir, Startdate='', Enddate='',

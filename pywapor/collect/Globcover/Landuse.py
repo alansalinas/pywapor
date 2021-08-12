@@ -3,7 +3,7 @@
 Authors: Tim Hessels
 Module: Collect/Globcover
 """
-from pywapor.Collect.Globcover.DataAccess import DownloadData
+from pywapor.collect.Globcover.DataAccess import DownloadData
 import sys
 
 
@@ -21,7 +21,7 @@ def main(Dir, latlim, lonlim, Waitbar = 1):
     # Create Waitbar
     if Waitbar == 1:
         print('\nDownload Globcover landcover map')
-        import pywapor.Functions.WaitbarConsole as WaitbarConsole
+        import pywapor.functions.WaitbarConsole as WaitbarConsole
         total_amount = 1
         amount = 0
         WaitbarConsole.printWaitBar(amount, total_amount, prefix = 'Progress:', suffix = 'Complete', length = 50)

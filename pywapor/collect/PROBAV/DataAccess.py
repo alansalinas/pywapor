@@ -13,18 +13,18 @@ import rasterio.merge
 
 import numpy as np
 import xarray as xr
-import vito_download as vito
+# import vito_download as vito
 
 from tqdm import tqdm
 from pathlib import Path
-from geojson import Polygon
+# from geojson import Polygon
 from requests.exceptions import HTTPError
 from datetime import datetime, timedelta
-from aiohttp import ClientResponseError, ServerDisconnectedError
+# from aiohttp import ClientResponseError, ServerDisconnectedError
 from asyncio import TimeoutError
 # Required for Python 3.6 and 3.7
-import nest_asyncio
-nest_asyncio.apply()
+# import nest_asyncio
+# nest_asyncio.apply()
 
 
 def download_data(download_dir, start_date, end_date, latitude_extent, longitude_extent, username,

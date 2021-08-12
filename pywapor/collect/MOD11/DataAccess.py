@@ -48,7 +48,7 @@ def DownloadData(Dir, Startdate, Enddate, latlim, lonlim, username, password, Wa
 
     # Create Waitbar
     if Waitbar == 1:
-        import pywapor.Functions.WaitbarConsole as WaitbarConsole
+        import pywapor.functions.WaitbarConsole as WaitbarConsole
         total_amount = len(Dates)
         amount = 0
         WaitbarConsole.printWaitBar(amount, total_amount, prefix = 'Progress:', suffix = 'Complete', length = 50)
@@ -104,7 +104,7 @@ def RetrieveData(Date, args):
     """
     
 	# WAPOR modules
-    import pywapor.Functions.Processing_Functions as PF
+    import pywapor.functions.Processing_Functions as PF
     
     # Argument
     [output_folder, TilesVertical, TilesHorizontal,lonlim, latlim, username, password, hdf_library] = args

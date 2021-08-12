@@ -11,9 +11,9 @@ from tqdm import tqdm
 from pathlib import Path
 from datetime import datetime
 from datetime import timedelta
-from pywapor.Functions.nspi import nspi
-from pywapor.Functions.SavGol_Filter import savgol_reconstruct
-from pywapor.Pre_ETLook import _get_dekadal_date
+from pywapor.functions.nspi import nspi
+from pywapor.functions.SavGol_Filter import savgol_reconstruct
+from pywapor.pre_et_look import _get_dekadal_date
 
 def PreprocessLandsat(landsat_dir, output_dir):
 

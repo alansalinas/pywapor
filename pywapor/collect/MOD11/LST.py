@@ -5,7 +5,7 @@ Module: Collect/MOD11
 """
 
 import sys
-from pywapor.Collect.MOD11.DataAccess import DownloadData
+from pywapor.collect.MOD11.DataAccess import DownloadData
 
 def main(Dir, Startdate, Enddate, latlim, lonlim, username, password, Waitbar = 1, hdf_library = None, remove_hdf = 1):
     """

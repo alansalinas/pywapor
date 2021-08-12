@@ -5,7 +5,7 @@ Created on Wed Sep  9 10:10:43 2020
 @author: timhe
 """
 import sys
-from pywapor.Collect.WAPOR.DataAccess import WAPOR
+from pywapor.collect.WAPOR.DataAccess import WAPOR
 
 def main(output_folder, Startdate, Enddate, latlim, lonlim, Parameter, auth_token, Area = None, Version = "2"):
     

@@ -5,7 +5,7 @@ Module: Collect/MSGCPP
 """
 
 import sys
-from pywapor.Collect.MSGCPP.DataAccess import DownloadData
+from pywapor.collect.MSGCPP.DataAccess import DownloadData
 
 def main(Dir, Startdate, Enddate, latlim, lonlim, Time = '', Waitbar = 1):
     """
