@@ -81,6 +81,9 @@ def Save_as_tiff(name='', data='', geo='', projection=''):
     """
     # Change no data values
     data[np.isnan(data)] = -9999
+
+    if not os.path.exists(os.path.split(name)[0]):
+        os.makedirs(os.path.split(name)[0])
     
     # save as a geotiff
     driver = gdal.GetDriverByName("GTiff")
@@ -268,6 +271,25 @@ def reproject_dataset_example(dataset, dataset_example, method=1):
         gdal.ReprojectImage(g, dest, wgs84.ExportToWkt(), osng.ExportToWkt(), gdal.GRA_Lanczos)
     if method is 4:
         gdal.ReprojectImage(g, dest, wgs84.ExportToWkt(), osng.ExportToWkt(), gdal.GRA_Average)
+    if method == 5:
+        gdal.ReprojectImage(g, dest, wgs84.ExportToWkt(), osng.ExportToWkt(), gdal.GRA_Cubic)
+    if method == 6:
+        gdal.ReprojectImage(g, dest, wgs84.ExportToWkt(), osng.ExportToWkt(), gdal.GRA_CubicSpline)
+    if method == 7:
+        gdal.ReprojectImage(g, dest, wgs84.ExportToWkt(), osng.ExportToWkt(), gdal.GRA_Mode)
+    if method == 8:
+        gdal.ReprojectImage(g, dest, wgs84.ExportToWkt(), osng.ExportToWkt(), gdal.GRA_Max)
+    if method == 9:
+        gdal.ReprojectImage(g, dest, wgs84.ExportToWkt(), osng.ExportToWkt(), gdal.GRA_Min)
+    if method == 10:
+        gdal.ReprojectImage(g, dest, wgs84.ExportToWkt(), osng.ExportToWkt(), gdal.GRA_Med)
+    if method == 11:
+        gdal.ReprojectImage(g, dest, wgs84.ExportToWkt(), osng.ExportToWkt(), gdal.GRA_Q1)
+    if method == 12:
+        gdal.ReprojectImage(g, dest, wgs84.ExportToWkt(), osng.ExportToWkt(), gdal.GRA_Q3)
+    if method == 13:
+        gdal.ReprojectImage(g, dest, wgs84.ExportToWkt(), osng.ExportToWkt(), gdal.GRA_Sum)
+        
     return(dest)
 
 def Get_epsg(g):
