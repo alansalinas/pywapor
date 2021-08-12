@@ -50,8 +50,9 @@ def DownloadData(Dir, Startdate, Enddate, latlim, lonlim, Time = '', Waitbar = 1
 
         if not os.path.exists(filename_out):
         
-            # define url
-            url = r"http://msgcpp-ogc-archive.knmi.nl/msgar.cgi?&service=wcs&version=1.0.0&request=getcoverage&coverage=surface_downwelling_shortwave_flux_in_air&FORMAT=GeoTIFF&CRS=EPSG%%3A4326&BBOX=%s,%s,%s,%s&RESX=0.04310344827586207&RESY=0.04418103448275862&time=%d-%02d-%02dT%02d%%3A%02d%%3A00Z" %(lonlim[0],latlim[0], lonlim[1], latlim[1], Date.year, Date.month, Date.day, Date.hour, Date.minute)
+            # define url https://msgcpp.knmi.nl
+            url =  r"http://msgcpp-ogc-archive.knmi.nl/msgar.cgi?&service=wcs&version=1.0.0&request=getcoverage&coverage=surface_downwelling_shortwave_flux_in_air&FORMAT=GeoTIFF&CRS=EPSG%%3A4326&BBOX=%s,%s,%s,%s&RESX=0.04310344827586207&RESY=0.04418103448275862&time=%d-%02d-%02dT%02d%%3A%02d%%3A00Z" %(lonlim[0],latlim[0], lonlim[1], latlim[1], Date.year, Date.month, Date.day, Date.hour, Date.minute)
+            # url = r"https://msgcpp-adaguc.knmi.nl/adaguc-server/?dataset=msgrt&service=wcs&request=getcoverage&coverage=surface_downwelling_shortwave_flux_in_air&FORMAT=GeoTIFF&CRS=EPSG%%3A4326&BBOX=%s,%s,%s,%s&RESX=0.04310344827586207&RESY=0.04418103448275862&time=%d-%02d-%02dT%02d%%3A%02d%%3A00Z" %(lonlim[0],latlim[0], lonlim[1], latlim[1], Date.year, Date.month, Date.day, Date.hour, Date.minute)
             urllib.request.urlretrieve(url, filename=filename_out)
         
         if Waitbar == 1:

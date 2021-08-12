@@ -160,7 +160,8 @@ def RetrieveData(Date, args):
 def Collect_data(TilesHorizontal, TilesVertical, Date, username, password, output_folder, hdf_library):
     '''
     This function downloads all the needed MODIS tiles from https://e4ftl01.cr.usgs.gov/MOLT/MOD11A1.006/ as a hdf file.
-
+    See documenation here: https://lpdaac.usgs.gov/products/mod11a1v006/
+    
     Keywords arguments:
     TilesHorizontal -- [TileMin,TileMax] max and min horizontal tile number
     TilesVertical -- [TileMin,TileMax] max and min vertical tile number
@@ -292,8 +293,11 @@ def Collect_data(TilesHorizontal, TilesVertical, Date, username, password, outpu
                     # get the projection value
                     proj = sds[idx].GetProjection()
 
+                # LST_Day_1km	Daytime Land Surface Temperature	Kelvin	16-bit unsigned integer	0	N/A	7500 to 65535	0.02	N/A
                 data = sds[0].ReadAsArray()
+                # Day_view_time	Local time of day observation	Hours	8-bit unsigned integer	255	N/A	0 to 240	0.1	N/A
                 data_time = sds_time[0].ReadAsArray()
+                # Day_view_angl	View zenith angle of day observation	Degree	8-bit unsigned integer	255	N/A	0 to 130	N/A	-65
                 data_obsang = sds_obsang[0].ReadAsArray()
 
                 
