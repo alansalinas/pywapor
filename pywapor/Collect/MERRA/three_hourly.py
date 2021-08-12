@@ -17,8 +17,6 @@ def main(Dir, Vars, Startdate, Enddate, latlim, lonlim, Periods = [1,2,3,4,5,6,7
 	Periods -- [1,2,3,4,5,6,7,8] Period that needs to be downloaded. 1 period is 3 hour starting from noon
     Waitbar -- 1 (Default) Will print a waitbar
     """
-    username = ""
-    password = ""
     
     for Var in Vars:
 
@@ -28,7 +26,7 @@ def main(Dir, Vars, Startdate, Enddate, latlim, lonlim, Periods = [1,2,3,4,5,6,7
                 print('\nDownloading 3-hourly MERRA %s data for the period %s till %s, Period = %s' %(Var, Startdate, Enddate, Period))
 
             # Download data
-            DownloadData(Dir, Var, Startdate, Enddate, latlim, lonlim, "three_hourly", Period, username, password, Waitbar)
+            DownloadData(Dir, Var, Startdate, Enddate, latlim, lonlim, "three_hourly", Period, Waitbar, data_type = ["mean"])
 
 if __name__ == '__main__':
     main(sys.argv)
