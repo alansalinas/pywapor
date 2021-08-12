@@ -9,6 +9,7 @@ from osgeo import gdal
 import pandas as pd
 import numpy as np
 import rasterio as rio
+import requests
 
 import pywapor
 import pywapor.Functions.Processing_Functions as PF
@@ -359,10 +360,11 @@ def prepare_level1_level2(output_folder, Startdate, Enddate, latlim, lonlim, use
 
         Lon_file = os.path.join(folder_input_ETLook_static, "Lon.tif")
         Lat_file = os.path.join(folder_input_ETLook_static, "Lat.tif")
-        if not (os.path.exists(Lon_file) or os.path.exists(Lat_file)):
-            lon_deg = np.array([geo_ex[0] + np.arange(0,size_x_ex) * geo_ex[1]]*size_y_ex)
-            lat_deg = np.array([geo_ex[3] + np.arange(0,size_y_ex) * geo_ex[5]]*size_x_ex).transpose()
 
+        lon_deg = np.array([geo_ex[0] + np.arange(0,size_x_ex) * geo_ex[1]]*size_y_ex)
+        lat_deg = np.array([geo_ex[3] + np.arange(0,size_y_ex) * geo_ex[5]]*size_x_ex).transpose()
+
+        if not (os.path.exists(Lon_file) or os.path.exists(Lat_file)):
             # save as tiff
             PF.Save_as_tiff(Lon_file, lon_deg, geo_ex, proj_ex)
             PF.Save_as_tiff(Lat_file, lat_deg, geo_ex, proj_ex)
@@ -370,14 +372,21 @@ def prepare_level1_level2(output_folder, Startdate, Enddate, latlim, lonlim, use
         ########################## Create Time rasters ################################
 
         # calculate overall time
+        # Local time of MOD11 day observation
         dest_time = gdal.Open(Time_file)
         Time_array = dest_time.GetRasterBand(1).ReadAsArray()
         Time_array[Time_array==-9999] = np.nan
         dtime = np.nanmean(Time_array)
         if np.isnan(dtime):
             dtime = 12
-        NowTime = datetime.datetime(Date.year, Date.month, Date.day, int(np.floor(dtime)), int((dtime - np.floor(dtime))*60))
+        
+        # NowTime =     datetime.datetime(Date.year, Date.month, Date.day, int(np.floor(dtime)), int((dtime - np.floor(dtime))*60))
 
+        offset_GTM = int(round(lon_deg[int(lon_deg.shape[0]/2),int(lon_deg.shape[1]/2)] * 24 / 360))
+        
+        # Convert local time to UTC time.
+        NowTime = datetime.datetime(Date.year, Date.month, Date.day, int(np.floor(dtime)), int((dtime - np.floor(dtime))*60)) - pd.DateOffset(hours = offset_GTM) 
+            
         # Get DOY
         doy = int(Date.strftime("%j"))
 
@@ -406,10 +415,14 @@ def prepare_level1_level2(output_folder, Startdate, Enddate, latlim, lonlim, use
             DEM = destDEM.GetRasterBand(1).ReadAsArray()
 
             # constants
-            pixel_spacing = 1000
+
+            dlat, dlon = Calc_dlat_dlon(geo_ex, size_x_ex, size_y_ex)            
+
+            pixel_spacing = (np.nanmean(dlon) +np.nanmean(dlat))/2
             deg2rad = np.pi / 180.0  # Factor to transform from degree to rad
             rad2deg = 180.0 / np.pi  # Factor to transform from rad to degree
 
+            # The slope output raster map contains slope values, stated in degrees of inclination from the horizontal
             # Calculate slope
             x, y = np.gradient(DEM, pixel_spacing, pixel_spacing)
             hypotenuse_array = np.hypot(x,y)
@@ -428,7 +441,7 @@ def prepare_level1_level2(output_folder, Startdate, Enddate, latlim, lonlim, use
         if not os.path.exists(P_file):
             folder_RAW_file_P = os.path.join(folders_input_RAW, "Precipitation", "CHIRPS")
             filename_P = "P_CHIRPS.v2.0_mm-day-1_daily_%d.%02d.%02d.tif" %(Date.year, Date.month, Date.day)
-            destP = PF.reproject_dataset_example(os.path.join(folder_RAW_file_P, filename_P), template_file, method=2)
+            destP = PF.reproject_dataset_example(os.path.join(folder_RAW_file_P, filename_P), template_file, method=6)
             P = destP.GetRasterBand(1).ReadAsArray()
             PF.Save_as_tiff(P_file, P, geo_ex, proj_ex)
 
@@ -439,41 +452,62 @@ def prepare_level1_level2(output_folder, Startdate, Enddate, latlim, lonlim, use
         StartTime = datetime.datetime(Date.year, Date.month, Date.day, 0, 0)
         EndTime = datetime.datetime(Date.year, Date.month, Date.day, 23, 59)
 
-        if (Date >= datetime.datetime(2016,1,1) and Date < datetime.datetime(2017,12,1)):
-            # find nearest Meteo time
+        # # if (Date >= datetime.datetime(2000,1,1) and Date < datetime.datetime(2021,4,1)):
+        # if (Date >= datetime.datetime(2016,1,1) and Date < datetime.datetime(2017,12,1)):
+        #     # find nearest Meteo time
+        #     DateTime = pd.date_range(StartTime, EndTime, freq="H") + pd.offsets.Minute(30)
+        #     Time_nearest = min(DateTime, key=lambda DateTime: abs(DateTime - NowTime))
+        #     Period = np.argwhere(DateTime ==Time_nearest)[0][0] + 1
+
+        # else:
+        #     # find nearest Meteo time
+        #     DateTime = pd.date_range(StartTime, EndTime, freq="3H") + pd.offsets.Minute(90)
+        #     Time_nearest = min(DateTime, key=lambda DateTime: abs(DateTime - NowTime))
+        #     Period = np.argwhere(DateTime ==Time_nearest)[0][0] + 1
+
+        # print("PERIOD = ", Period, NowTime, DateTime)
+
+        # Download METEO data
+
+        # if Date < datetime.datetime(2016,1,1):
+        # # if Date < datetime.datetime(2000,1,1):
+        #     pywapor.Collect.MERRA.daily(folders_input_RAW, ['t2m', 'u2m', 'v2m', 'q2m', 'tpw', 'ps', 'slp'], StartTime, EndTime, latlim, lonlim)
+        #     pywapor.Collect.MERRA.three_hourly(folders_input_RAW, ['t2m', 'u2m', 'v2m', 'q2m', 'tpw', 'ps', 'slp'], StartTime, EndTime, latlim, lonlim, [int(Period)])
+        #     str_METEO = "MERRA"
+        #     inst_name = "three_hourly"
+        #     day_name = "daily"
+        #     hour_steps = 3
+        #     file_time_inst = "3-hourly"
+
+        # elif (Date >= datetime.datetime(2000,1,1) and Date < datetime.datetime(2021,4,1)):     
+        # elif (Date >= datetime.datetime(2016,1,1) and Date < datetime.datetime(2017,12,1)):
+        
+        meteo = "GEOS"
+        
+        if meteo == "MERRA":
+
             DateTime = pd.date_range(StartTime, EndTime, freq="H") + pd.offsets.Minute(30)
             Time_nearest = min(DateTime, key=lambda DateTime: abs(DateTime - NowTime))
             Period = np.argwhere(DateTime ==Time_nearest)[0][0] + 1
 
-        else:
-            # find nearest Meteo time
-            DateTime = pd.date_range(StartTime, EndTime, freq="3H") + pd.offsets.Minute(90)
-            Time_nearest = min(DateTime, key=lambda DateTime: abs(DateTime - NowTime))
-            Period = np.argwhere(DateTime ==Time_nearest)[0][0] + 1
-
-
-        # Download METEO data
-        if Date < datetime.datetime(2016,1,1):
-        # if Date < datetime.datetime(2000,1,1):
-            pywapor.Collect.MERRA.daily(folders_input_RAW, ['t2m', 'u2m', 'v2m', 'q2m', 'tpw', 'ps', 'slp'], StartTime, EndTime, latlim, lonlim)
-            pywapor.Collect.MERRA.three_hourly(folders_input_RAW, ['t2m', 'u2m', 'v2m', 'q2m', 'tpw', 'ps', 'slp'], StartTime, EndTime, latlim, lonlim, [int(Period)])
-            str_METEO = "MERRA"
-            inst_name = "three_hourly"
-            day_name = "daily"
-            hour_steps = 3
-            file_time_inst = "3-hourly"
-
-        # elif (Date >= datetime.datetime(2000,1,1) and Date < datetime.datetime(2021,4,1)):     
-        elif (Date >= datetime.datetime(2016,1,1) and Date < datetime.datetime(2017,12,1)):
             pywapor.Collect.MERRA.daily_MERRA2(folders_input_RAW, ['t2m', 'u2m', 'v2m', 'q2m', 'tpw', 'ps', 'slp'],StartTime, EndTime, latlim, lonlim, username, password)
-            pywapor.Collect.MERRA.hourly_MERRA2(folders_input_RAW, ['t2m', 'u2m', 'v2m', 'q2m', 'tpw', 'ps', 'slp'], StartTime, EndTime, latlim, lonlim, [int(Period)], username, password)
+            pywapor.Collect.MERRA.hourly_MERRA2(folders_input_RAW, ['t2m', 'u2m', 'v2m', 'q2m', 'tpw', 'ps', 'slp'], StartTime, EndTime, latlim, lonlim, username, password, [int(Period)])
+            pywapor.Collect.MERRA.daily_MERRA2(folders_input_RAW, ['t2m'], StartTime, EndTime, latlim, lonlim, username, password, data_type = ["mean", "min", "max"])
             str_METEO = "MERRA"
             inst_name = "hourly_MERRA2"
             day_name = "daily_MERRA2"
             hour_steps = 1
             file_time_inst = "hourly"
 
-        else:
+        elif meteo == "GEOS":
+
+            # Period =  {1: (0,3), 2: (3,6), 3: (6,9), 4:(9,12), 5:(12,15), 
+            # 6:(15,18), 7:(18,21), 8:(21,24)}
+
+            DateTime = pd.date_range(StartTime, EndTime, freq="3H") + pd.offsets.Minute(90)
+            Time_nearest = min(DateTime, key=lambda DateTime: abs(DateTime - NowTime))
+            Period = np.argwhere(DateTime ==Time_nearest)[0][0] + 1
+
             pywapor.Collect.GEOS.daily(folders_input_RAW, ['t2m', 'u2m', 'v2m', 'qv2m', 'tqv', 'ps', 'slp'],StartTime, EndTime, latlim, lonlim)
             pywapor.Collect.GEOS.three_hourly(folders_input_RAW, ['t2m', 'u2m', 'v2m', 'qv2m', 'tqv', 'ps', 'slp'], StartTime, EndTime, latlim, lonlim, [int(Period)])
             str_METEO = "GEOS"
@@ -495,7 +529,7 @@ def prepare_level1_level2(output_folder, Startdate, Enddate, latlim, lonlim, use
 
             filename_pair_inst = "ps_%s_kpa_%s_%d.%02d.%02d_H%02d.M00.tif"  %(str_METEO, file_time_inst, Date.year, Date.month, Date.day, HourPeriod)
             if os.path.exists(os.path.join(folder_RAW_file_pair_inst, filename_pair_inst)):
-                destPairInst = PF.reproject_dataset_example(os.path.join(folder_RAW_file_pair_inst, filename_pair_inst), template_file, method=2)
+                destPairInst = PF.reproject_dataset_example(os.path.join(folder_RAW_file_pair_inst, filename_pair_inst), template_file, method=6)
                 Pair_inst = destPairInst.GetRasterBand(1).ReadAsArray()
                 PF.Save_as_tiff(pair_inst_file, Pair_inst, geo_ex, proj_ex)
 
@@ -504,7 +538,7 @@ def prepare_level1_level2(output_folder, Startdate, Enddate, latlim, lonlim, use
 
             filename_pair_inst_sea = "slp_%s_kpa_%s_%d.%02d.%02d_H%02d.M00.tif"  %(str_METEO, file_time_inst, Date.year, Date.month, Date.day, HourPeriod)
             if os.path.exists(os.path.join(folder_RAW_file_pair_inst_0, filename_pair_inst_sea)):
-                destPairInstSea = PF.reproject_dataset_example(os.path.join(folder_RAW_file_pair_inst_0, filename_pair_inst_sea), template_file, method=2)
+                destPairInstSea = PF.reproject_dataset_example(os.path.join(folder_RAW_file_pair_inst_0, filename_pair_inst_sea), template_file, method=6)
                 Pair_inst_sea = destPairInstSea.GetRasterBand(1).ReadAsArray()
                 PF.Save_as_tiff(pair_inst_0_file, Pair_inst_sea, geo_ex, proj_ex)
 
@@ -513,7 +547,7 @@ def prepare_level1_level2(output_folder, Startdate, Enddate, latlim, lonlim, use
 
             filename_pair_24_sea = "slp_%s_kpa_daily_%d.%02d.%02d.tif"  %(str_METEO, Date.year, Date.month, Date.day)
             if os.path.exists(os.path.join(folder_RAW_file_pair_24_0, filename_pair_24_sea)):
-                destPair24Sea = PF.reproject_dataset_example(os.path.join(folder_RAW_file_pair_24_0, filename_pair_24_sea), template_file, method=2)
+                destPair24Sea = PF.reproject_dataset_example(os.path.join(folder_RAW_file_pair_24_0, filename_pair_24_sea), template_file, method=6)
                 Pair_24_sea = destPair24Sea.GetRasterBand(1).ReadAsArray()
                 PF.Save_as_tiff(pair_24_0_file, Pair_24_sea, geo_ex, proj_ex)
 
@@ -535,7 +569,7 @@ def prepare_level1_level2(output_folder, Startdate, Enddate, latlim, lonlim, use
 
             filename_qv_inst = "%s_%s_kg-kg-1_%s_%d.%02d.%02d_H%02d.M00.tif" %(para, str_METEO, file_time_inst, Date.year, Date.month, Date.day, HourPeriod)
             if os.path.exists(os.path.join(folder_RAW_file_qv_inst, filename_qv_inst)):
-                destqvInst = PF.reproject_dataset_example(os.path.join(folder_RAW_file_qv_inst, filename_qv_inst), template_file, method=2)
+                destqvInst = PF.reproject_dataset_example(os.path.join(folder_RAW_file_qv_inst, filename_qv_inst), template_file, method=6)
                 qv_inst = destqvInst.GetRasterBand(1).ReadAsArray()
                 PF.Save_as_tiff(qv_inst_file, qv_inst, geo_ex, proj_ex)
 
@@ -545,7 +579,7 @@ def prepare_level1_level2(output_folder, Startdate, Enddate, latlim, lonlim, use
 
             filename_qv_24 = "%s_%s_kg-kg-1_daily_%d.%02d.%02d.tif"  %(para, str_METEO, Date.year, Date.month, Date.day)
             if os.path.exists(os.path.join(folder_RAW_file_qv_24, filename_qv_24)):
-                destqv24 = PF.reproject_dataset_example(os.path.join(folder_RAW_file_qv_24, filename_qv_24), template_file, method=2)
+                destqv24 = PF.reproject_dataset_example(os.path.join(folder_RAW_file_qv_24, filename_qv_24), template_file, method=6)
                 qv_24 = destqv24.GetRasterBand(1).ReadAsArray()
                 PF.Save_as_tiff(qv_24_file, qv_24, geo_ex, proj_ex)
 
@@ -574,17 +608,34 @@ def prepare_level1_level2(output_folder, Startdate, Enddate, latlim, lonlim, use
             if os.path.exists(os.path.join(folder_RAW_file_tair_24, filename_tair_24)):
                 tair_24 = lapse_rate_temp(os.path.join(folder_RAW_file_tair_24, filename_tair_24), DEM_file)
                 PF.Save_as_tiff(Tair_24_file, tair_24, geo_ex, proj_ex)
-            # Also save the maximum and minimum daily temperatures
-            Tair_24_file = os.path.join(folder_input_ETLook_Date, "tair_max_24_%d%02d%02d.tif" %(Date.year, Date.month, Date.day))
-            filename_tair_max_24 = "t2m_%s_K_daily_max_%d.%02d.%02d.tif"  %(str_METEO, Date.year, Date.month, Date.day)
-            if os.path.exists(os.path.join(folder_RAW_file_tair_24, filename_tair_max_24)):
-                tair_24 = lapse_rate_temp(os.path.join(folder_RAW_file_tair_24, filename_tair_max_24), DEM_file)
-                PF.Save_as_tiff(Tair_24_file, tair_24, geo_ex, proj_ex)
-            Tair_24_file = os.path.join(folder_input_ETLook_Date, "tair_min_24_%d%02d%02d.tif" %(Date.year, Date.month, Date.day))
-            filename_tair_min_24 = "t2m_%s_K_daily_min_%d.%02d.%02d.tif"  %(str_METEO, Date.year, Date.month, Date.day)
-            if os.path.exists(os.path.join(folder_RAW_file_tair_24, filename_tair_min_24)):
-                tair_24 = lapse_rate_temp(os.path.join(folder_RAW_file_tair_24, filename_tair_min_24), DEM_file)
-                PF.Save_as_tiff(Tair_24_file, tair_24, geo_ex, proj_ex)
+
+            if str_METEO == "MERRA":
+                Tair_max_24_file = os.path.join(folder_RAW_file_tair_24, "t2mmax_MERRA_K_daily_%d.%02d.%02d.tif" %(Date.year, Date.month, Date.day))
+                Tair_min_24_file = os.path.join(folder_RAW_file_tair_24, "t2mmin_MERRA_K_daily_%d.%02d.%02d.tif" %(Date.year, Date.month, Date.day))
+                # filename_tair_max_24 = "t2m_%s_K_daily_max_%d.%02d.%02d.tif"  %(str_METEO, Date.year, Date.month, Date.day)
+                filename_tair_max_24 = os.path.join(folder_input_ETLook_Date, "tair_max_24_%d%02d%02d.tif" %(Date.year, Date.month, Date.day))
+                filename_tair_min_24 = os.path.join(folder_input_ETLook_Date, "tair_min_24_%d%02d%02d.tif" %(Date.year, Date.month, Date.day))
+            elif str_METEO == "GEOS":
+                # Also save the maximum and minimum daily temperatures t2mmax_MERRA_K_daily_2019.07.04  
+                Tair_max_24_file = os.path.join(folder_RAW_file_tair_24, "t2m_GEOS_K_daily_max_%d.%02d.%02d.tif" %(Date.year, Date.month, Date.day))
+                Tair_min_24_file = os.path.join(folder_RAW_file_tair_24, "t2m_GEOS_K_daily_min_%d.%02d.%02d.tif" %(Date.year, Date.month, Date.day))
+                # filename_tair_max_24 = "t2m_%s_K_daily_max_%d.%02d.%02d.tif"  %(str_METEO, Date.year, Date.month, Date.day)
+                filename_tair_max_24 = os.path.join(folder_input_ETLook_Date, "tair_max_24_%d%02d%02d.tif" %(Date.year, Date.month, Date.day))
+                filename_tair_min_24 = os.path.join(folder_input_ETLook_Date, "tair_min_24_%d%02d%02d.tif" %(Date.year, Date.month, Date.day))
+            
+            if os.path.exists(Tair_max_24_file):
+                tair_24 = lapse_rate_temp(Tair_max_24_file, DEM_file)
+                PF.Save_as_tiff(filename_tair_max_24, tair_24, geo_ex, proj_ex)
+
+            if os.path.exists(Tair_min_24_file):
+                tair_24 = lapse_rate_temp(Tair_min_24_file, DEM_file)
+                PF.Save_as_tiff(filename_tair_min_24, tair_24, geo_ex, proj_ex)
+
+            # Tair_24_file = os.path.join(folder_input_ETLook_Date, "tair_min_24_%d%02d%02d.tif" %(Date.year, Date.month, Date.day))
+            # filename_tair_min_24 = "t2m_%s_K_daily_min_%d.%02d.%02d.tif"  %(str_METEO, Date.year, Date.month, Date.day)
+            # if os.path.exists(os.path.join(folder_RAW_file_tair_24, filename_tair_min_24)):
+            #     tair_24 = lapse_rate_temp(os.path.join(folder_RAW_file_tair_24, filename_tair_min_24), DEM_file)
+            #     PF.Save_as_tiff(Tair_24_file, tair_24, geo_ex, proj_ex)
 
             else:
                 print("daily Tair is not available")
@@ -604,8 +655,8 @@ def prepare_level1_level2(output_folder, Startdate, Enddate, latlim, lonlim, use
             filename_u2_inst = "u2m_%s_m-s-1_%s_%d.%02d.%02d_H%02d.M00.tif"  %(str_METEO, file_time_inst, Date.year, Date.month, Date.day, HourPeriod)
             filename_v2_inst = "v2m_%s_m-s-1_%s_%d.%02d.%02d_H%02d.M00.tif"  %(str_METEO, file_time_inst, Date.year, Date.month, Date.day, HourPeriod)
             if (os.path.exists(os.path.join(folder_RAW_file_u2_inst, filename_u2_inst)) and os.path.exists(os.path.join(folder_RAW_file_v2_inst, filename_v2_inst))):
-                destu2inst = PF.reproject_dataset_example(os.path.join(folder_RAW_file_u2_inst, filename_u2_inst), template_file, method=2)
-                destv2inst = PF.reproject_dataset_example(os.path.join(folder_RAW_file_v2_inst, filename_v2_inst), template_file, method=2)
+                destu2inst = PF.reproject_dataset_example(os.path.join(folder_RAW_file_u2_inst, filename_u2_inst), template_file, method=6)
+                destv2inst = PF.reproject_dataset_example(os.path.join(folder_RAW_file_v2_inst, filename_v2_inst), template_file, method=6)
                 u2_inst = destu2inst.GetRasterBand(1).ReadAsArray()
                 v2_inst = destv2inst.GetRasterBand(1).ReadAsArray()
                 wind_inst = np.sqrt(u2_inst**2 + v2_inst **2)
@@ -617,8 +668,8 @@ def prepare_level1_level2(output_folder, Startdate, Enddate, latlim, lonlim, use
             filename_u2_24 = "u2m_%s_m-s-1_daily_%d.%02d.%02d.tif"  %(str_METEO, Date.year, Date.month, Date.day)
             filename_v2_24 = "v2m_%s_m-s-1_daily_%d.%02d.%02d.tif"  %(str_METEO, Date.year, Date.month, Date.day)
             if (os.path.exists(os.path.join(folder_RAW_file_u2_24, filename_u2_24)) and os.path.exists(os.path.join(folder_RAW_file_v2_24, filename_v2_24))):
-                destu224 = PF.reproject_dataset_example(os.path.join(folder_RAW_file_u2_24, filename_u2_24), template_file, method=2)
-                destv224 = PF.reproject_dataset_example(os.path.join(folder_RAW_file_v2_24, filename_v2_24), template_file, method=2)
+                destu224 = PF.reproject_dataset_example(os.path.join(folder_RAW_file_u2_24, filename_u2_24), template_file, method=6)
+                destv224 = PF.reproject_dataset_example(os.path.join(folder_RAW_file_v2_24, filename_v2_24), template_file, method=6)
                 u2_24 = destu224.GetRasterBand(1).ReadAsArray()
                 v2_24 = destv224.GetRasterBand(1).ReadAsArray()
                 wind_24 = np.sqrt(u2_24**2 + v2_24 **2)
@@ -640,7 +691,7 @@ def prepare_level1_level2(output_folder, Startdate, Enddate, latlim, lonlim, use
 
             filename_wv_inst = "%s_%s_mm_%s_%d.%02d.%02d_H%02d.M00.tif"  %(para, str_METEO, file_time_inst, Date.year, Date.month, Date.day, HourPeriod)
             if os.path.exists(os.path.join(folder_RAW_file_wv_inst, filename_wv_inst)):
-                destwvinst = PF.reproject_dataset_example(os.path.join(folder_RAW_file_wv_inst, filename_wv_inst), template_file, method=2)
+                destwvinst = PF.reproject_dataset_example(os.path.join(folder_RAW_file_wv_inst, filename_wv_inst), template_file, method=6)
                 wv_inst = destwvinst.GetRasterBand(1).ReadAsArray()
                 PF.Save_as_tiff(wv_inst_file, wv_inst, geo_ex, proj_ex)
 
@@ -712,23 +763,46 @@ def prepare_level1_level2(output_folder, Startdate, Enddate, latlim, lonlim, use
 
         ########################### Download amplitude ################################
 
-        pywapor.Collect.MERRA.yearly_T_Amplitude(folders_input_RAW, [Date.year],latlim, lonlim)
+        # pywapor.Collect.MERRA.yearly_T_Amplitude(folders_input_RAW, [Date.year],latlim, lonlim)
+
+        print("download temperature amplitudes from google drive")       
+        output_folder_Tamp = os.path.join(folders_input_RAW, "GLDAS")
+        if not os.path.exists(output_folder_Tamp):
+            os.makedirs(output_folder_Tamp)
+        
+        T_amplitude_global_temp_filename = os.path.join(output_folder_Tamp, "Temp_Amplitudes_global.tif")
+        if not os.path.exists(T_amplitude_global_temp_filename):
+            download_file_from_google_drive("1pqZnCn-1xkUC7o1csG24hwg22fV57gCH", T_amplitude_global_temp_filename)
+
+        # # yearly amplitude temperature air
+        # Tair_amp_file = os.path.join(folder_input_ETLook_static, "Tair_amp_{0}.tif".format(Date.year))
+
+        # if not os.path.exists(Tair_amp_file):
+        #     folder_RAW_file_Tair_amp = os.path.join(folders_input_RAW, "MERRA", "Temperature_Amplitude", "yearly")
+
+        #     filename_Tair_amp = "Tamp_MERRA_K_yearly_%d.01.01.tif"  %(Date.year)
+        #     if os.path.exists(os.path.join(folder_RAW_file_Tair_amp, filename_Tair_amp)):
+        #         desttairamp = PF.reproject_dataset_example(os.path.join(folder_RAW_file_Tair_amp, filename_Tair_amp), template_file, method=2)
+        #         tair_amp = desttairamp.GetRasterBand(1).ReadAsArray()
+        #         PF.Save_as_tiff(Tair_amp_file, tair_amp, geo_ex, proj_ex)
+
+        #     else:
+        #         print("Yearly Tair amplitude is not available")
 
         # yearly amplitude temperature air
-        Tair_amp_file = os.path.join(folder_input_ETLook_static, "Tair_amp_{0}.tif".format(Date.year))
-
+        Tair_amp_file = os.path.join(folder_input_ETLook_static, "Tair_amp_%d.tif" %(Date.year))     
+        # output_folder_Tamp = os.path.join(folders_input_RAW, "GLDAS")       
+        
         if not os.path.exists(Tair_amp_file):
-            folder_RAW_file_Tair_amp = os.path.join(folders_input_RAW, "MERRA", "Temperature_Amplitude", "yearly")
-
-            filename_Tair_amp = "Tamp_MERRA_K_yearly_%d.01.01.tif"  %(Date.year)
-            if os.path.exists(os.path.join(folder_RAW_file_Tair_amp, filename_Tair_amp)):
-                desttairamp = PF.reproject_dataset_example(os.path.join(folder_RAW_file_Tair_amp, filename_Tair_amp), template_file, method=2)
+            T_amplitude_global_temp_filename = os.path.join(output_folder_Tamp, "Temp_Amplitudes_global.tif")
+            if os.path.exists(T_amplitude_global_temp_filename):        
+                desttairamp = PF.reproject_dataset_example(T_amplitude_global_temp_filename, template_file, method=6)
                 tair_amp = desttairamp.GetRasterBand(1).ReadAsArray()
                 PF.Save_as_tiff(Tair_amp_file, tair_amp, geo_ex, proj_ex)
-
+                
             else:
-                print("Yearly Tair amplitude is not available")
-
+                print("Yearly Tair amplitude is not available")    
+    
         ######################## Download Transmissivity ##############################
 
         # Download MSGCPP data
@@ -808,10 +882,10 @@ def prepare_level1_level2(output_folder, Startdate, Enddate, latlim, lonlim, use
                 # Calculate the daily mean
                 swgnet_mean = np.nanmean(swgnet, 2)
                 dest_swgnet_mean = PF.Save_as_MEM(swgnet_mean,geo_trans, proj_trans)
-                destswgnet = PF.reproject_dataset_example(dest_swgnet_mean, template_file, method=2)
+                destswgnet = PF.reproject_dataset_example(dest_swgnet_mean, template_file, method=6)
 
             else:
-                destswgnet = PF.reproject_dataset_example(os.path.join(folder_RAW_file_trans, filename_trans), template_file, method=2)
+                destswgnet = PF.reproject_dataset_example(os.path.join(folder_RAW_file_trans, filename_trans), template_file, method=6)
 
             swgnet = destswgnet.GetRasterBand(1).ReadAsArray()
             trans = swgnet / Ra24_flat
@@ -933,4 +1007,84 @@ def _numeric_nd_indexing(array, idx):
         composite[idx == n] = array[n, ...][idx == n]
     return composite
 
+def download_file_from_google_drive(id, destination):
+    
+    URL = "https://docs.google.com/uc?export=download"
+
+    session = requests.Session()
+
+    response = session.get(URL, params = { 'id' : id }, stream = True)
+    token = get_confirm_token(response)
+
+    if token:
+        params = { 'id' : id, 'confirm' : token }
+        response = session.get(URL, params = params, stream = True)
+
+    save_response_content(response, destination)            
+
+def get_confirm_token(response):
+    for key, value in response.cookies.items():
+        if key.startswith('download_warning'):
+            return value
+
+    return None
+
+def save_response_content(response, destination):
+    CHUNK_SIZE = 32768
+
+    with open(destination, "wb") as f:
+        for chunk in response.iter_content(CHUNK_SIZE):
+            if chunk: # filter out keep-alive new chunks
+                f.write(chunk) 
+
+def Calc_dlat_dlon(geo_out, size_X, size_Y):
+    """
+    This functions calculated the distance between each pixel in meter.
+
+    Parameters
+    ----------
+    geo_out: array
+        geo transform function of the array
+    size_X: int
+        size of the X axis
+    size_Y: int
+        size of the Y axis
+
+    Returns
+    -------
+    dlat: array
+        Array containing the vertical distance between each pixel in meters
+    dlon: array
+        Array containing the horizontal distance between each pixel in meters
+    """
+
+    # Create the lat/lon rasters
+    lon = np.arange(size_X + 1)*geo_out[1]+geo_out[0] - 0.5 * geo_out[1]
+    lat = np.arange(size_Y + 1)*geo_out[5]+geo_out[3] - 0.5 * geo_out[5]
+
+    dlat_2d = np.array([lat,]*int(np.size(lon,0))).transpose()
+    dlon_2d =  np.array([lon,]*int(np.size(lat,0)))
+
+    # Radius of the earth in meters
+    R_earth = 6371000
+
+    # Calculate the lat and lon in radians
+    lonRad = dlon_2d * np.pi/180
+    latRad = dlat_2d * np.pi/180
+
+    # Calculate the difference in lat and lon
+    lonRad_dif = abs(lonRad[:,1:] - lonRad[:,:-1])
+    latRad_dif = abs(latRad[:-1] - latRad[1:])
+
+    # Calculate the distance between the upper and lower pixel edge
+    a = np.sin(latRad_dif[:,:-1]/2) * np.sin(latRad_dif[:,:-1]/2)
+    clat = 2 * np.arctan2(np.sqrt(a), np.sqrt(1-a));
+    dlat = R_earth * clat
+
+    # Calculate the distance between the eastern and western pixel edge
+    b = np.cos(latRad[1:,:-1]) * np.cos(latRad[:-1,:-1]) * np.sin(lonRad_dif[:-1,:]/2) * np.sin(lonRad_dif[:-1,:]/2)
+    clon = 2 * np.arctan2(np.sqrt(b), np.sqrt(1-b));
+    dlon = R_earth * clon
+
+    return(dlat, dlon)
 # %%
