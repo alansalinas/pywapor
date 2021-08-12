@@ -49,3 +49,6 @@ Thumbs.db
 *.tif.aux.xml
 
 tests/test_data/output
+tests/test_data/RAW
+
+password.py
