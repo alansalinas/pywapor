@@ -12,9 +12,9 @@ import rasterio as rio
 import requests
 
 import pywapor
-import pywapor.Functions.Processing_Functions as PF
+import pywapor.functions.Processing_Functions as PF
 
-from pywapor.Functions.Swets_Filter import swets_filter
+from pywapor.functions.Swets_Filter import swets_filter
 
 from pathlib import Path
 
@@ -719,7 +719,7 @@ def prepare_level1_level2(output_folder, Startdate, Enddate, latlim, lonlim, use
                 LC[np.isnan(LC)] = -9999
 
                 # import list with numbers to convert globcover into other maps
-                import pywapor.Functions.LandCover_Converter as LCC
+                import pywapor.functions.LandCover_Converter as LCC
 
                 if LandCover == "GlobCover":
                     # Get conversion between globcover and landmask
@@ -900,7 +900,7 @@ def prepare_level1_level2(output_folder, Startdate, Enddate, latlim, lonlim, use
 def lapse_rate_temp(tair_file, dem_file):
 
     import pywapor
-    import pywapor.Functions.Processing_Functions as PF
+    import pywapor.functions.Processing_Functions as PF
 
     destT_down = PF.reproject_dataset_example(tair_file, dem_file, 2)
     destDEM_up = PF.reproject_dataset_example(dem_file, tair_file, 4)
@@ -923,7 +923,7 @@ def lapse_rate_temp(tair_file, dem_file):
 
 def Combine_LST(folders_input_RAW, Startdate, Enddate):
 
-    import pywapor.Functions.Processing_Functions as PF
+    import pywapor.functions.Processing_Functions as PF
 
     Dates = pd.date_range(Startdate, Enddate, freq = "D")
 

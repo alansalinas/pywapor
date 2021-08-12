@@ -4,7 +4,7 @@ Authors: Tim Hessels
 Module: WAPOR/Functions
 """
 
-from pywapor.Functions import WaitbarConsole, Processing_Functions, LandCover_Converter, Swets_Filter, nspi, \
+from pywapor.functions import WaitbarConsole, Processing_Functions, LandCover_Converter, Swets_Filter, nspi, \
     landsat_modis_fusion, SavGol_Filter
 
 __all__ = ['WaitbarConsole', 'Processing_Functions', 'LandCover_Converter', 'Swets_Filter', 'nspi',
