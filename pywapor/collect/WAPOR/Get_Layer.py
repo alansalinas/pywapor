@@ -6,6 +6,8 @@ Created on Wed Sep  9 10:10:43 2020
 """
 import sys
 from pywapor.collect.WAPOR.DataAccess import WAPOR
+import os
+import glob
 
 def main(output_folder, Startdate, Enddate, latlim, lonlim, Parameter, auth_token, Area = None, Version = "2"):
     
@@ -27,6 +29,11 @@ def main(output_folder, Startdate, Enddate, latlim, lonlim, Parameter, auth_toke
     
     print('\nDownload WAPOR %s data for period %s till %s' %(Parameter, Startdate, Enddate))
     WAPOR(output_folder, Startdate, Enddate, latlim, lonlim, Parameter, auth_token, Area = Area, Version = Version)
+
+    output_folder_para = os.path.join(output_folder, "WAPOR", "*.tif")
+    output_files = glob.glob(output_folder_para)
+
+    return output_files
 
 if __name__ == '__main__':
     main(sys.argv)   

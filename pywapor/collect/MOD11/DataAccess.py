@@ -74,8 +74,10 @@ def DownloadData(Dir, Startdate, Enddate, latlim, lonlim, username, password, Wa
     
     # Pass variables to parallel function and run
     args = [output_folder, TilesVertical, TilesHorizontal,lonlim, latlim, username, password, hdf_library]
+    all_dl_files = dict()
     for Date in Dates:
-        RetrieveData(Date, args)
+        dl_files = RetrieveData(Date, args)
+        all_dl_files[Date.date()] = dl_files
         if Waitbar == 1:
             amount += 1
             WaitbarConsole.printWaitBar(amount, total_amount, prefix = 'Progress:', suffix = 'Complete', length = 50)
@@ -91,7 +93,7 @@ def DownloadData(Dir, Startdate, Enddate, latlim, lonlim, username, password, Wa
         except:
             pass
 
-    return()
+    return all_dl_files
 
 def RetrieveData(Date, args):
     """
@@ -116,46 +118,42 @@ def RetrieveData(Date, args):
 
     if not (os.path.exists(LSTfileName) and os.path.exists(TimefileName) and os.path.exists(OnsangfileName)):
 
-        # Collect the data from the MODIS webpage and returns the data and lat and long in meters of those tiles
-        try:
-            Collect_data(TilesHorizontal, TilesVertical, Date, username, password, output_folder, hdf_library)
-        
-            # Define the output name of the collect data function
-            name_collect = os.path.join(output_folder, 'Merged.tif')
-            name_collect_time = os.path.join(output_folder, 'Merged_Time.tif')
-            name_collect_obsang = os.path.join(output_folder, 'Merged_Obsang.tif')
-            
-            # Reproject the MODIS product to epsg_to
-            epsg_to ='4326'
-            name_reprojected = PF.reproject_MODIS(name_collect, epsg_to)
-            name_reprojected_time = PF.reproject_MODIS(name_collect_time, epsg_to)
-            name_reprojected_obsang = PF.reproject_MODIS(name_collect_obsang, epsg_to)
-            
-            # Clip the data to the users extend
-            data, geo = PF.clip_data(name_reprojected, latlim, lonlim)
-            data_time, geo = PF.clip_data(name_reprojected_time, latlim, lonlim)
-            data_obsang, geo = PF.clip_data(name_reprojected_obsang, latlim, lonlim)
-            
-            # remove wrong values
-            data[data==0.] = -9999
-            data_time[data_time==25.5] = -9999
-           
-            # Save results as Gtiff 
-            PF.Save_as_tiff(name=LSTfileName, data=data, geo=geo, projection='WGS84')
-            PF.Save_as_tiff(name=TimefileName, data=data_time, geo=geo, projection='WGS84')
-            PF.Save_as_tiff(name=OnsangfileName, data=data_obsang, geo=geo, projection='WGS84')
-             
-            # remove the side products
-            os.remove(name_collect)
-            os.remove(name_reprojected)
-            os.remove(name_collect_time)
-            os.remove(name_reprojected_time) 
-            os.remove(name_collect_obsang)
-            os.remove(name_reprojected_obsang)             
-        except:
-            print("Was not able to download the file")
+        Collect_data(TilesHorizontal, TilesVertical, Date, username, password, output_folder, hdf_library)
     
-    return True
+        # Define the output name of the collect data function
+        name_collect = os.path.join(output_folder, 'Merged.tif')
+        name_collect_time = os.path.join(output_folder, 'Merged_Time.tif')
+        name_collect_obsang = os.path.join(output_folder, 'Merged_Obsang.tif')
+        
+        # Reproject the MODIS product to epsg_to
+        epsg_to ='4326'
+        name_reprojected = PF.reproject_MODIS(name_collect, epsg_to)
+        name_reprojected_time = PF.reproject_MODIS(name_collect_time, epsg_to)
+        name_reprojected_obsang = PF.reproject_MODIS(name_collect_obsang, epsg_to)
+        
+        # Clip the data to the users extend
+        data, geo = PF.clip_data(name_reprojected, latlim, lonlim)
+        data_time, geo = PF.clip_data(name_reprojected_time, latlim, lonlim)
+        data_obsang, geo = PF.clip_data(name_reprojected_obsang, latlim, lonlim)
+        
+        # remove wrong values
+        data[data==0.] = -9999
+        data_time[data_time==25.5] = -9999
+        
+        # Save results as Gtiff 
+        PF.Save_as_tiff(name=LSTfileName, data=data, geo=geo, projection='WGS84')
+        PF.Save_as_tiff(name=TimefileName, data=data_time, geo=geo, projection='WGS84')
+        PF.Save_as_tiff(name=OnsangfileName, data=data_obsang, geo=geo, projection='WGS84')
+            
+        # remove the side products
+        os.remove(name_collect)
+        os.remove(name_reprojected)
+        os.remove(name_collect_time)
+        os.remove(name_reprojected_time) 
+        os.remove(name_collect_obsang)
+        os.remove(name_reprojected_obsang)             
+
+    return (LSTfileName, TimefileName, OnsangfileName)
 
 def Collect_data(TilesHorizontal, TilesVertical, Date, username, password, output_folder, hdf_library):
     '''

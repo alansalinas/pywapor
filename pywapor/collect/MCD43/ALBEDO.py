@@ -1,6 +1,7 @@
 import sys
 from pywapor.collect.MCD43.DataAccess import DownloadData
-
+import os
+import glob
 
 def main(Dir, Startdate, Enddate, latlim, lonlim, username, password, Waitbar = 1, hdf_library = None, remove_hdf = 1):
     """
@@ -22,6 +23,10 @@ def main(Dir, Startdate, Enddate, latlim, lonlim, username, password, Waitbar = 
     """
     print('\nDownload daily MODIS Albedo data for period %s till %s' %(Startdate, Enddate))
     DownloadData(Dir, Startdate, Enddate, latlim, lonlim, username, password, Waitbar, hdf_library, remove_hdf)
+
+    output_files = glob.glob(os.path.join(Dir, 'MODIS', 'MCD43', "*.tif"))
+
+    return output_files
 
 if __name__ == '__main__':
     main(sys.argv)

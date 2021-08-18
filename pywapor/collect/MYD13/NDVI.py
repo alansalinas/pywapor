@@ -1,6 +1,8 @@
 import sys
 from pywapor.collect.MYD13.DataAccess import DownloadData
-
+from datetime import date
+import glob
+import os
 
 def main(Dir, Startdate, Enddate, latlim, lonlim, username, password, Waitbar = 1, hdf_library = None, remove_hdf = 1):
     """
@@ -9,8 +11,8 @@ def main(Dir, Startdate, Enddate, latlim, lonlim, username, password, Waitbar = 
 
     Keyword arguments:
     Dir -- 'C:/file/to/path/'
-    Startdate -- 'yyyy-mm-dd'
-    Enddate -- 'yyyy-mm-dd'
+    Startdate -- 'yyyy-mm-dd' or datetime.date
+    Enddate -- 'yyyy-mm-dd' or datetime.date
     latlim -- [ymin, ymax]
     lonlim -- [xmin, xmax]
     username -- "" string giving the username of your NASA account (https://urs.earthdata.nasa.gov/)
@@ -20,8 +22,17 @@ def main(Dir, Startdate, Enddate, latlim, lonlim, username, password, Waitbar = 
                     define directory to the data here
     remove_hdf -- 1 (Default), if 1 remove all the downloaded hdf files in the end    
     """
+    if isinstance(Startdate, date):
+        Startdate = Startdate.strftime("%Y-%m-%d")
+    
+    if isinstance(Enddate, date):
+        Enddate = Enddate.strftime("%Y-%m-%d")
+
     print('\nDownload 16-daily MODIS NDVI data for period %s till %s' %(Startdate, Enddate))
     DownloadData(Dir, Startdate, Enddate, latlim, lonlim, username, password, Waitbar, hdf_library, remove_hdf)
+
+    return glob.glob(os.path.join(Dir, "MODIS", "MYD13", "*.tif"))
+
 
 if __name__ == '__main__':
     main(sys.argv)

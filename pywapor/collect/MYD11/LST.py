@@ -28,7 +28,9 @@ def main(Dir, Startdate, Enddate, latlim, lonlim, username, password, Waitbar = 
 
     print('\nDownload daily MODIS land surface temperature data for period %s till %s' %(Startdate, Enddate))
     
-    DownloadData(Dir, Startdate, Enddate, latlim, lonlim, username, password, Waitbar, hdf_library, remove_hdf)
+    files = DownloadData(Dir, Startdate, Enddate, latlim, lonlim, username, password, Waitbar, hdf_library, remove_hdf)
+
+    return files
 
 if __name__ == '__main__':
     main(sys.argv)

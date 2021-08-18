@@ -71,7 +71,8 @@ def WAPOR(output_folder, Startdate, Enddate, latlim, lonlim, Parameter, auth_tok
     dimension = VariablesInfo.dimensions[Parameter]
     version = VariablesInfo.versions[Version]
 
-    output_folder_para = os.path.join(output_folder, Parameter.format(AREA = Area)) 
+    # output_folder_para = os.path.join(output_folder, Parameter.format(AREA = Area)) 
+    output_folder_para = os.path.join(output_folder, "WAPOR") 
     if not os.path.exists(output_folder_para):
         os.makedirs(output_folder_para)
     

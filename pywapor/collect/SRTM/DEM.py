@@ -51,5 +51,7 @@ def main(Dir, latlim, lonlim, Waitbar = 1):
         if Waitbar == 1:
             print("\nSRTM altitude map (3s) already exists in output folder")
 
+    return nameEnd
+
 if __name__ == '__main__':
     main(sys.argv)

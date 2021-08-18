@@ -5,7 +5,7 @@ Module: Collect/Globcover
 """
 from pywapor.collect.Globcover.DataAccess import DownloadData
 import sys
-
+import os
 
 def main(Dir, latlim, lonlim, Waitbar = 1):
     """
@@ -32,6 +32,10 @@ def main(Dir, latlim, lonlim, Waitbar = 1):
     if Waitbar == 1:
         amount = 1
         WaitbarConsole.printWaitBar(amount, total_amount, prefix = 'Progress:', suffix = 'Complete', length = 50)
+
+    outpath = os.path.join(Dir, "GlobCover", "Landuse", "LC_GLOBCOVER_V2.3.tif")
+
+    return outpath
 
 if __name__ == '__main__':
     main(sys.argv)

@@ -118,28 +118,28 @@ def RetrieveData(Date, args):
     if not os.path.exists(NDVIfileName): 
     
         # Collect the data from the MODIS webpage and returns the data and lat and long in meters of those tiles
-        try:
-            Collect_data(TilesHorizontal, TilesVertical, Date, username, password, output_folder, hdf_library)
+        # try:
+        Collect_data(TilesHorizontal, TilesVertical, Date, username, password, output_folder, hdf_library)
+        
+        # Define the output name of the collect data function
+        name_collect = os.path.join(output_folder, 'Merged.tif')
+    
+        # Reproject the MODIS product to epsg_to
+        epsg_to ='4326'
+        name_reprojected = PF.reproject_MODIS(name_collect, epsg_to)
+    
+        # Clip the data to the users extend
+        data, geo = PF.clip_data(name_reprojected, latlim, lonlim)
+    
+        # Save results as Gtiff
+        PF.Save_as_tiff(name=NDVIfileName, data=data, geo=geo, projection='WGS84')
+    
+        # remove the side products
+        os.remove(name_collect)
+        os.remove(name_reprojected)
             
-            # Define the output name of the collect data function
-            name_collect = os.path.join(output_folder, 'Merged.tif')
-        
-            # Reproject the MODIS product to epsg_to
-            epsg_to ='4326'
-            name_reprojected = PF.reproject_MODIS(name_collect, epsg_to)
-        
-            # Clip the data to the users extend
-            data, geo = PF.clip_data(name_reprojected, latlim, lonlim)
-        
-            # Save results as Gtiff
-            PF.Save_as_tiff(name=NDVIfileName, data=data, geo=geo, projection='WGS84')
-        
-            # remove the side products
-            os.remove(name_collect)
-            os.remove(name_reprojected)
-            
-        except:
-            print("Was not able to download the file")
+        # except:
+        #     print("Was not able to download the file")
 
 
     return True

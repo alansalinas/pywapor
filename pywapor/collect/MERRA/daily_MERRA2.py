@@ -1,7 +1,9 @@
 # -*- coding: utf-8 -*-
 import sys
 from pywapor.collect.MERRA.DataAccess import DownloadData
-
+from pywapor.collect.MERRA.DataAccess import VariablesInfo
+import os
+import glob
 
 def main(Dir, Vars, Startdate, Enddate, latlim, lonlim, username, password, Waitbar = 1, data_type = ["mean"]):
     """
@@ -17,6 +19,8 @@ def main(Dir, Vars, Startdate, Enddate, latlim, lonlim, username, password, Wait
     lonlim -- [xmin, xmax]
     Waitbar -- 1 (Default) Will print a waitbar
     """
+    all_files = list()
+
     for Var in Vars:
 
         if Waitbar == 1:
@@ -24,6 +28,15 @@ def main(Dir, Vars, Startdate, Enddate, latlim, lonlim, username, password, Wait
 
         # Download data
         DownloadData(Dir, Var, Startdate, Enddate, latlim, lonlim, "daily_MERRA2", '', username, password, Waitbar = 1, data_type = data_type)
+
+        TimeStep = "daily_MERRA2"
+        VarInfo = VariablesInfo(TimeStep)
+        Parameter = VarInfo.names[Var]
+
+        files = glob.glob(os.path.join(Dir, "MERRA", Parameter, TimeStep, "*.tif") )
+        all_files.append(files)
+
+    return all_files
 
 if __name__ == '__main__':
     main(sys.argv)

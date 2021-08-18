@@ -1,7 +1,8 @@
 # -*- coding: utf-8 -*-
 import sys
 from pywapor.collect.CHIRPS.DataAccess import DownloadData
-
+import glob
+import os
 
 def main(Dir, Startdate='', Enddate='',
 			latlim=[-50, 50], lonlim=[-180, 180], Waitbar = 1):
@@ -20,6 +21,8 @@ def main(Dir, Startdate='', Enddate='',
 
 	# Download data
 	DownloadData(Dir, Startdate, Enddate, latlim, lonlim, Waitbar)
+
+	return glob.glob(os.path.join(Dir, "Precipitation", "CHIRPS", "*.tif"))
 
 if __name__ == '__main__':
     main(sys.argv)
