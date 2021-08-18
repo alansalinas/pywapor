@@ -233,6 +233,8 @@ def reproject_dataset_example(dataset, dataset_example, method=1):
             g = dataset
     epsg_from = Get_epsg(g)
 
+    ndv = g.GetRasterBand(1).GetNoDataValue()
+
     #exceptions
     if epsg_from == 9001:
         epsg_from = 5070
@@ -261,6 +263,11 @@ def reproject_dataset_example(dataset, dataset_example, method=1):
     dest = mem_drv.Create('', col, rows, 1, gdal.GDT_Float32)
     dest.SetGeoTransform(geo_land)
     dest.SetProjection(osng.ExportToWkt())
+
+    # https://gis.stackexchange.com/questions/158503/9999-no-data-value-becomes-0-when-writing-array-to-gdal-memory-file
+    band = dest.GetRasterBand(1)
+    band.SetNoDataValue(ndv)
+    band.Fill(ndv, 0.0)
 
     # Perform the projection/resampling
     if method is 1:
