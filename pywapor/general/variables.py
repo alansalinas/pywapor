@@ -1,3 +1,5 @@
+import datetime
+
 inputs = {
     "ALBEDO":                   {"time": "daily", "array_name": "r0"},
     "NDVI":                     {"time": "daily", "array_name": "ndvi"}, 
@@ -134,6 +136,107 @@ outputs = {
     'L_bare':               {'file_name': 'L_bare'},
     'L_full':               {'file_name': 'L_full'},
 }
+
+def get_raw_meteo_paths():
+
+    meteo_raw_paths_GEOS = {
+        "Pair_24_0":    ("{raw_folder}", "GEOS", "Sea_Level_Pressure", "daily", "slp_GEOS_kpa_daily_{date}.tif"),
+        "Pair_inst_0":  ("{raw_folder}", "GEOS", "Sea_Level_Pressure", "three_hourly", "slp_GEOS_kpa_3-hourly_{date}_H{hour}.M00.tif"),
+        "Pair_inst":    ("{raw_folder}", "GEOS", "Surface_Pressure", "three_hourly", "ps_GEOS_kpa_3-hourly_{date}_H{hour}.M00.tif"),
+        "qv_24":        ("{raw_folder}", "GEOS", "Specific_Humidity", "daily", "qv2m_GEOS_kg-kg-1_daily_{date}.tif"),
+        "qv_inst":      ("{raw_folder}", "GEOS", "Specific_Humidity", "three_hourly", "qv2m_GEOS_kg-kg-1_3-hourly_{date}_H{hour}.M00.tif"),
+        "tair_24":      ("{raw_folder}", "GEOS", "Air_Temperature", "daily", "t2m_GEOS_K_daily_{date}.tif"),
+        "tair_inst":    ("{raw_folder}", "GEOS", "Air_Temperature", "three_hourly", "t2m_GEOS_K_3-hourly_{date}_H{hour}.M00.tif"),
+        "tair_max_24":  ("{raw_folder}", "GEOS", "Air_Temperature", "daily", "t2m_GEOS_K_daily_max_{date}.tif"),
+        "tair_min_24":  ("{raw_folder}", "GEOS", "Air_Temperature", "daily", "t2m_GEOS_K_daily_min_{date}.tif"),
+        "wv_inst":      ("{raw_folder}", "GEOS", "Total_Precipitable_Water_Vapor", "three_hourly", "tqv_GEOS_mm_3-hourly_{date}_H{hour}.M00.tif"),
+        "wind_inst":    (["{raw_folder}", "GEOS", "Northward_Wind", "three_hourly", "v2m_GEOS_m-s-1_3-hourly_{date}_H{hour}.M00.tif"],
+                         ["{raw_folder}", "GEOS", "Eastward_Wind", "three_hourly", "u2m_GEOS_m-s-1_3-hourly_{date}_H{hour}.M00.tif"]),
+        "wind_24":      (["{raw_folder}", "GEOS", "Northward_Wind", "daily", "v2m_GEOS_m-s-1_daily_{date}.tif"],
+                         ["{raw_folder}", "GEOS", "Eastward_Wind", "daily", "u2m_GEOS_m-s-1_daily_{date}.tif"]),
+    }
+
+    meteo_raw_paths_MERRA = {
+        "Pair_24_0":    (["{raw_folder}", "MERRA", "Sea_Level_Pressure", "daily_MERRA2", "slp_MERRA_kpa_daily_{date}.tif"]),
+        "Pair_inst_0":  (["{raw_folder}", "MERRA", "Sea_Level_Pressure", "hourly_MERRA2", "slp_MERRA_kpa_hourly_{date}_H{hour}.M00.tif"]),
+        "Pair_inst":    (["{raw_folder}", "MERRA", "Surface_Pressure", "hourly_MERRA2", "ps_MERRA_kpa_hourly_{date}_H{hour}.M00.tif"]),
+        "qv_24":        (["{raw_folder}", "MERRA", "Specific_Humidity", "daily_MERRA2", "q2m_MERRA_kg-kg-1_daily_{date}.tif"]),
+        "qv_inst":      (["{raw_folder}", "MERRA", "Specific_Humidity", "hourly_MERRA2", "q2m_MERRA_kg-kg-1_hourly_{date}_H{hour}.M00.tif"]),
+        "tair_24":      (["{raw_folder}", "MERRA", "Air_Temperature", "daily_MERRA2", "t2m_MERRA_K_daily_{date}.tif"]),
+        "tair_inst":    (["{raw_folder}", "MERRA", "Air_Temperature", "hourly_MERRA2", "t2m_MERRA_K_hourly_{date}_H{hour}.M00.tif"]),
+        "tair_max_24":  (["{raw_folder}", "MERRA", "Air_Temperature", "daily_MERRA2", "t2mmax_MERRA_K_daily_{date}.tif"]),
+        "tair_min_24":  (["{raw_folder}", "MERRA", "Air_Temperature", "daily_MERRA2", "t2mmin_MERRA_K_daily_{date}.tif"]),
+        "wv_inst":      (["{raw_folder}", "MERRA", "Total_Precipitable_Water_Vapor", "hourly_MERRA2", "tpw_MERRA_mm_hourly_{date}_H{hour}.M00.tif"]),
+        "wind_inst":    (["{raw_folder}", "MERRA", "Northward_Wind", "hourly_MERRA2", "v2m_MERRA_m-s-1_hourly_{date}_H{hour}.M00.tif"],
+                         ["{raw_folder}", "MERRA", "Eastward_Wind", "hourly_MERRA2", "u2m_MERRA_m-s-1_hourly_{date}_H{hour}.M00.tif"]),
+        "wind_24":      (["{raw_folder}", "MERRA", "Northward_Wind", "daily_MERRA2", "v2m_MERRA_m-s-1_daily_{date}.tif"],
+                         ["{raw_folder}", "MERRA", "Eastward_Wind", "daily_MERRA2", "u2m_MERRA_m-s-1_daily_{date}.tif"]),
+    }
+
+    raw_meteo_paths = {"MERRA2": meteo_raw_paths_MERRA,
+                       "GEOS5": meteo_raw_paths_GEOS}
+
+    return raw_meteo_paths
+
+def get_source_validations():
+    
+    valid_sources = {
+        "METEO": ["GEOS5", "MERRA2"],
+        "NDVI": ["MOD13", "MYD13", "PROBAV"],
+        "ALBEDO": ["MDC43", "PROBAV"],
+        "LST": ["MOD11", "MYD11"],
+        "LULC": ["GLOBCOVER", "WAPOR"],
+        "DEM": ["SRTM",],
+        "PRECIPITATION": ["CHIRPS",],
+        "TRANS": ["MERRA2"],
+    }
+
+    valid_dates = {
+        "GEOS5": (datetime.date(2017,12,1), datetime.date.today()),
+        "MERRA2": (datetime.date(1980,1,1), datetime.date.today()),
+        "MOD13": (datetime.date(2000,2,18), datetime.date.today()),
+        "MYD13": (datetime.date(2002,7,4), datetime.date.today()),
+        "PROBAV": (datetime.date(2014,3,11), datetime.date.today()),
+        "MDC43": (datetime.date(2000,2,16), datetime.date.today()),
+        "MOD11": (datetime.date(2000,2,24), datetime.date.today()),
+        "MYD11": (datetime.date(2002,7,4), datetime.date.today()),
+        "GLOBCOVER": (datetime.date(2009,1,1), datetime.date(2009,1,1)),
+        "WAPOR": (datetime.date(2009,1,1), datetime.date(2020,1,1)),
+        "CHIRPS": (datetime.date(1981,1,1), datetime.date.today()),
+        "SRTM": (datetime.date(2009,1,1), datetime.date(2009,1,1)),
+    }
+
+    return valid_sources, valid_dates
+
+def get_source_level_selections():
+
+    source_selection_level2 = {
+        "METEO": ["GEOS5"],
+        "NDVI": ["PROBAV"],
+        "ALBEDO": ["PROBAV"],
+        "LST": ["MOD11", "MYD11"],
+        "LULC": ["WAPOR"],
+        "DEM": ["SRTM"],
+        "PRECIPITATION": ["CHIRPS"],
+        "TRANS": ["MERRA2"],
+    }
+
+    source_selection_level1 = {
+        "METEO": ["GEOS5"],
+        "NDVI": ["MOD13", "MYD13"],
+        "ALBEDO": ["MDC43"],
+        "LST": ["MOD11", "MYD11"],
+        "LULC": ["WAPOR"],
+        "DEM": ["SRTM"],
+        "PRECIPITATION": ["CHIRPS"],
+        "TRANS": ["MERRA2"],
+    }
+
+    levels = {"level_1": source_selection_level1, 
+              "level_2": source_selection_level2}
+
+    return levels
+           
 
 def get_temp_input_data_reqs():
     temporal_input_data_req = [
