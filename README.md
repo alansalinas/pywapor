@@ -67,7 +67,7 @@ To run the ETLook model, two types of spatial variables are required, temporal a
 | Windspeed (daily average) | instant, mean  | m/s | MERRA-2, GEOS-5 |
 | Total Precipitable Water Vapour | instant  | mm | MERRA-2, GEOS-5 |
 | Transmissivity | instant  | - | MERRA-2 |
-| Instantaneous Data Time | instant  | hour | from Albedo
+| Instantaneous Data Time | instant  | hour | from LST
 
 *️⃣ PROBA-V and LandSat support in development.
 
@@ -77,8 +77,8 @@ To run the ETLook model, two types of spatial variables are required, temporal a
 Landcover | - | WaPOR, GlobCover
 Digital Elevation Model | m.a.s.l | SRTM
 Air Temperature (yearly amplitude) | K | GLDAS
-Latitude | DD | from Albedo
-Longitude | DD | from Albedo
+Latitude | DD | from NDVI
+Longitude | DD | from NDVI
 Slope | ° | from Elevation
 Slope Aspect | ° | from Elevation
 Bulk Stomatal Resistance | s/m | from Landcover
