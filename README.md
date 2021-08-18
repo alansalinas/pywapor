@@ -89,9 +89,11 @@ Maximum Obstacle Height | m | from Landcover
 #### 🛰️ Sources
 | Source | Temporal Availability | Temporal Resolution |Spatial Resolution | Used For |
 | ------ | ------ | ------ | ------ | ------ |
-|[MOD13](https://lpdaac.usgs.gov/products/mod13q1v006/) & [MYD13](https://lpdaac.usgs.gov/products/myd13q1v006/) | 2000-02-18 - ongoing & 2002-07-04 - ongoing | 16-Daily |250m|NDVI|
-|[MCD43](https://lpdaac.usgs.gov/products/mcd43a1v006/)|2000-02-16 - ongoing|Daily|500m|Albedo|
-|[MOD11A1](https://lpdaac.usgs.gov/products/mod11a1v006/) & [MYD11A1](https://lpdaac.usgs.gov/products/myd11a1v006/)| 2000-02-24 - ongoing & 2002-07-04 - ongoing | Daily | 1000m | LST |
+|[MOD13Q1](https://lpdaac.usgs.gov/products/mod13q1v006/) | 2000-02-18 - ongoing | 16-Daily |250m|NDVI|
+|[MYD13Q1](https://lpdaac.usgs.gov/products/myd13q1v006/) | 2002-07-04 - ongoing | 16-Daily |250m|NDVI|
+|[MCD43A1](https://lpdaac.usgs.gov/products/mcd43a1v006/)|2000-02-16 - ongoing|Daily|500m|Albedo|
+|[MOD11A1](https://lpdaac.usgs.gov/products/mod11a1v006/) | 2000-02-24 - ongoing | Daily | 1000m | LST |
+|[MYD11A1](https://lpdaac.usgs.gov/products/myd11a1v006/)| 2002-07-04 - ongoing | Daily | 1000m | LST |
 |[PROBA-V-S5](https://www.vito-eodata.be/collectioncatalogue/srv/eng/catalog.search#/metadata/urn:ogc:def:EOP:VITO:PROBAV_S5-TOC_100M_V001)|2014-03-11 - ongoing|5-Daily|100m|NDVI, Albedo|
 | [GEOS-5](https://geos5.org) | 2017-12-01 - ongoing | 3-Hourly |0.3125°×0.25° | Meteo |
 | [MERRA-2](https://gmao.gsfc.nasa.gov/reanalysis/MERRA-2/) | 1980-01-01 - ongoing | Hourly | 0.625°×0.5° | Meteo | 
@@ -99,6 +101,7 @@ Maximum Obstacle Height | m | from Landcover
 | [WaPOR](https://wapor.apps.fao.org/catalog/WAPOR_2/1/L1_LCC_A) | 2009 - 2020 | Yearly |~250m | Landcover |
 | [GlobCover](http://due.esrin.esa.int/page_globcover.php) | 2009 | Single| ~250m | Landcover |
 | [SRTM](https://srtm.csi.cgiar.org) | 2009 | Single | ~90m | DEM |
+
 ## Documentation
 ### WaPOR v2
 ➡ [WaPOR-ETLook Data Manual](https://bitbucket.org/cioapps/wapor-et-look/downloads/FRAME_ET_v2_data_manual_finaldraft_v2.2.pdf)
