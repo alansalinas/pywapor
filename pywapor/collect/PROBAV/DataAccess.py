@@ -55,6 +55,12 @@ def download_data(download_dir, start_date, end_date, latitude_extent, longitude
     for i in tqdm(range(delta.days + 1)):
         date = start_date + timedelta(days=i)
 
+        template = os.path.join(download_dir, "{v}", "{v}_{d_str}.tif")
+        fh1 = template.format(v = "NDVI", d_str = date.strftime("%Y.%m.%d"))
+        fh2 = template.format(v = "ALBEDO", d_str = date.strftime("%Y.%m.%d"))
+        if np.all([os.path.isfile(fh1), os.path.isfile(fh2)]):
+            continue
+
         # retrieve vito URL
         url = vito.build_url(product=dataset, year=date.year, month=date.month, day=date.day,
                              extent={'xmin': longitude_extent[0], 'xmax': longitude_extent[1],
@@ -127,7 +133,7 @@ def download_data(download_dir, start_date, end_date, latitude_extent, longitude
 
         for product in ['NDVI', 'ALBEDO']:
             output_file = str(download_dir /
-                              ('%s/%s_%s.tif' % (product, product, date.strftime("%Y-%m-%d"))))
+                              ('%s/%s_%s.tif' % (product, product, date.strftime("%Y.%m.%d"))))
             data_files = _preprocess_inputs(input_files, product)
 
             # merge files and clip to extent, save as tif
@@ -212,7 +218,8 @@ def _merge_and_save_tifs(input_files, output_file, latitude_extent, longitude_ex
         'count': 1,
         'dtype': str(mosaic.dtype),
         'crs': crs,
-        'transform': mosaic_trans
+        'transform': mosaic_trans,
+        'nodata': -9999
     }
 
     if not os.path.exists(os.path.dirname(output_file)):
