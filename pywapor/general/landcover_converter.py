@@ -198,3 +198,16 @@ def WAPOR_LUEmax(version = '1.0'):
     Classes_LUEmax['1.0'] = ETlook_Classes
 
     return Classes_LUEmax[version]
+
+def get_lulc_values():
+    lulc_values = {"GLOBCOVER": {"LandMask": Globcover_LM(),
+                                "Bulk_Stomatal_resistance": Globcover_Bulk(),
+                                "Maximum_Obstacle_Height": Globcover_MaxObs(),
+                                "LUEmax": Globcover_LUEmax()},
+                    "WAPOR":     {"LandMask": WAPOR_LM(),
+                                "Bulk_Stomatal_resistance": WAPOR_Bulk(),
+                                "Maximum_Obstacle_Height": WAPOR_MaxObs(),
+                                "LUEmax": WAPOR_LUEmax()}
+                            }
+
+    return lulc_values
