@@ -26,9 +26,11 @@ nest_asyncio.apply()
 
 import vito_download as vito
 
+# http://www.vito-eodata.be/PDF/datapool/Free_Data/PROBA-V_100m/S5_TOC_100_m_C1/2019/7/11/?coord=30.3,29.0,31.1,29.6
+# /Users/hmcoerver/Git/wapor-et-look/tests/test_data/RAW/PROBAV/PROBAV_S5_TOC_X21Y04_20190711_100M_V101.HDF5
 
 def download_data(download_dir, start_date, end_date, latitude_extent, longitude_extent, username,
-                  password):
+                  password, buffer_dates = True):
 
     # setup
     max_retries = 5
@@ -36,16 +38,17 @@ def download_data(download_dir, start_date, end_date, latitude_extent, longitude
     delete_tif = True
     dataset = 'Proba-V-S5-TOC'
 
-    if not os.path.isdir(download_dir):
-        os.mkdir(download_dir)
+    if not os.path.exists(download_dir):
+        os.makedirs(download_dir)
 
     start_date = datetime.strptime(start_date, "%Y-%m-%d")
     end_date = datetime.strptime(end_date, "%Y-%m-%d")
 
     # Buffer the download to make sure that a decadal composite can be produced regarding of start
     # and end dates
-    start_date = start_date - timedelta(days=14)
-    end_date = end_date + timedelta(days=8)
+    if buffer_dates:
+        start_date = start_date - timedelta(days=14)
+        end_date = end_date + timedelta(days=8)
     delta = end_date - start_date
 
     # Loop over all dates
