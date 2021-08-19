@@ -13,7 +13,6 @@ import pywapor
 import pywapor.functions.Processing_Functions as PF
 from pywapor.functions.Swets_Filter import swets_filter
 from pathlib import Path
-import password as passwords
 
 def check_source_selection(source_selection, startdate, enddate):
 
@@ -55,6 +54,11 @@ def check_source_selection(source_selection, startdate, enddate):
 
     return results, succes
 
+def get_sources(source_selection):
+    def _flatten(regular_list):
+        return [item for sublist in regular_list for item in sublist]
+    return np.unique(_flatten([v for v in source_selection.values()]))
+
 def prepare_et_look_input(project_folder, startdate, enddate, latlim, lonlim, level = "level_1"):
 
     sdate = dat.strptime(startdate, "%Y-%m-%d").date()
@@ -72,14 +76,19 @@ def prepare_et_look_input(project_folder, startdate, enddate, latlim, lonlim, le
 
     source_selection = levels[level]
     succes = check_source_selection(source_selection, sdate, edate)[1]
+    sources = get_sources(source_selection)
     assert succes, "invalid source_selection"
 
     raw_folder = os.path.join(project_folder, "RAW")
     level_folder = os.path.join(project_folder, level)
 
-    un_nasa, pw_nasa = passwords.passes["NASA"]
-    un_vito, pw_vito = passwords.passes["VITO"]
-    wapor_token = passwords.passes["WAPOR"][1]
+    nasa = ["MOD13", "MYD13", "MCD43", "MOD11", "MYD11", "MERRA2"]
+    if any(map(lambda v: v in sources, nasa)):
+        un_nasa, pw_nasa = pywapor.collect.get_pw_un.get("NASA")
+    if "PROBAV" in sources:
+        un_vito, pw_vito = pywapor.collect.get_pw_un.get("VITO")
+    if "WAPOR" in sources:
+        wapor_token = pywapor.collect.get_pw_un.get("WAPOR")[0]
 
     #### NDVI #### 
     raw_ndvi_files = list()
