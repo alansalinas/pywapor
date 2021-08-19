@@ -12,6 +12,7 @@ import pywapor.general.processing_functions as PF
 import pywapor.collect as c
 import pywapor.general as g
 from pathlib import Path
+import json
 
 def main(project_folder, startdate, enddate, latlim, lonlim, level = "level_1"):
 
@@ -178,6 +179,10 @@ def main(project_folder, startdate, enddate, latlim, lonlim, level = "level_1"):
     raw_temp_ampl_files = [(year, raw_temp_ampl_file) for year in range(sdate.year, edate.year + 1)]
     for year, raw_file in raw_temp_ampl_files:
         unraw(raw_file, temp_ampl_file_template.format(year = year), template_file, 6)
+
+    json_file = os.path.join(level_folder, f"sources_{level}.json")
+    with open(json_file, 'w+') as f:
+        json.dump(source_selection, f, indent = 4 )
 
 def unraw_all(variable, unraw_file_templates, raw_files, template_file, method):
     unraw_files = [unraw_file.format(var = variable) for unraw_file in unraw_file_templates]

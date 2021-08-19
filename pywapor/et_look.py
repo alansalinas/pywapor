@@ -9,26 +9,26 @@ import pywapor.general.outputs as out
 import pywapor.general.variables as vars
 import pywapor.general.processing_functions as PF
 
-def main(input_folder, output_folder, Date, ETLook_version = "v2"):
+def main(project_folder, date, level = "level_1", et_look_version = "v2"):
 
-    if ETLook_version == "v2":
+    if et_look_version == "v2":
         ETLook = ETLook_v2
-    elif ETLook_version == "dev":
+    elif et_look_version == "dev":
         ETLook = ETLook_dev
     c = ETLook.constants
 
-    if isinstance(Date, str):
-        Date = datetime.datetime.strptime(Date, "%Y-%m-%d")
+    if isinstance(date, str):
+        date = datetime.datetime.strptime(date, "%Y-%m-%d")
 
     # Do not show warnings
     warnings.filterwarnings('ignore')
 
-    # Define Date string
-    Date_str = "%d%02d%02d" %(Date.year, Date.month, Date.day)
+    # Define date string
+    date_str = "%d%02d%02d" %(date.year, date.month, date.day)
 
-    # Input folder Date
-    input_folder_date = os.path.join(input_folder, "level_1", Date_str)
-    input_folder_static = os.path.join(input_folder, "level_1", "Static")
+    # Input folder date
+    input_folder_date = os.path.join(project_folder, level, date_str)
+    input_folder_static = os.path.join(project_folder, level, "Static")
 
     ############################ Define inputs ################################
 
@@ -40,13 +40,13 @@ def main(input_folder, output_folder, Date, ETLook_version = "v2"):
         ds = gdal.Open(fp)
         return ds.GetRasterBand(1).ReadAsArray()
 
-    def create_fp(key, value, folders = folders):
+    def create_fp(key, value, date, folders = folders):
         if value["time"] == "daily":
-            date = "_" + Date_str
+            date = "_" + date_str
         elif value["time"] == "static":
             date = ""
         elif value["time"] == "yearly":
-            date = "_" + str(Date.year)
+            date = "_" + str(date.year)
         else:
             print("ERROR: invalid value")
 
@@ -59,14 +59,14 @@ def main(input_folder, output_folder, Date, ETLook_version = "v2"):
         return fp
 
     # Create QC array
-    fp = create_fp("LST", vars.inputs["LST"])
+    fp = create_fp("LST", vars.inputs["LST"], date)
     # fp = create_fp("NDVI", vars.inputs["NDVI"])
     init = create_array(fp)
     QC = np.ones(init.shape)
     QC[init == -9999] = np.nan
 
-    def open_array(key, value, folders = folders, mask = QC):
-        fp = create_fp(key, value, folders = folders)
+    def open_array(key, value, date, folders = folders, mask = QC):
+        fp = create_fp(key, value, date, folders = folders)
         if os.path.exists(fp):
             array = create_array(fp)
             array[np.isnan(mask)] = np.nan
@@ -76,12 +76,12 @@ def main(input_folder, output_folder, Date, ETLook_version = "v2"):
             return None
 
     # Input Data
-    id = {v["array_name"]: open_array(k, v) for k, v in vars.inputs.items()}
+    id = {v["array_name"]: open_array(k, v, date) for k, v in vars.inputs.items()}
 
     ############################ Define outputs ###############################
 
-    # Output folder Date
-    output_folder_date = os.path.join(output_folder, Date_str)
+    # Output folder date
+    output_folder_date = os.path.join(project_folder, f"out_{level}", date_str)
     if not os.path.exists(output_folder_date):
         os.makedirs(output_folder_date)
 
@@ -93,7 +93,7 @@ def main(input_folder, output_folder, Date, ETLook_version = "v2"):
     for key, value in vars.outputs.items():
         value["output"] = bool(getattr(out, key))
         value["file_path"] = os.path.join(output_folder_date, 
-        "{0}_{1}.tif".format(value["file_name"], Date_str))
+        "{0}_{1}.tif".format(value["file_name"], date_str))
 
     od = dict()
 
@@ -116,19 +116,19 @@ def main(input_folder, output_folder, Date, ETLook_version = "v2"):
 
     if method == 1:
 
-        if ETLook_version == "dev":
+        if et_look_version == "dev":
             id["t_air_i"][id["t_air_i"] < -270] = np.nan
         id["p_air_i"] = ETLook.meteo.air_pressure_kpa2mbar(id["p_air_i"])
         id["p_air_0_i"] = ETLook.meteo.air_pressure_kpa2mbar(id["p_air_0_i"])
 
-    doy = int(Date.strftime("%j"))
+    doy = int(date.strftime("%j"))
 
-    if ETLook_version == "dev":
-        example_filepath = create_fp("ALBEDO", vars.inputs["ALBEDO"])
+    if et_look_version == "dev":
+        example_filepath = create_fp("ALBEDO", vars.inputs["ALBEDO"], date)
         dem_resolution, geo_ex, proj_ex = get_geoinfo(example_filepath)
         id["rs_min"] = np.where(id["land_mask"] == 3, 400, 100)
         z0m_full = 0.04 + 0.01 * (dem_resolution - 30)/(250-30)
-    elif ETLook_version == "v2":
+    elif et_look_version == "v2":
         z0m_full = 0.1
 
     ######################## MODEL ETLOOK #########################################
@@ -152,10 +152,10 @@ def main(input_folder, output_folder, Date, ETLook_version = "v2"):
     sc_v2 =  0.1645 * np.sin(2 * b2) - 0.1255 * np.cos(b2) - 0.025 * np.sin(b2)
     if sc == sc_dev:
         print("USING ETLOOK_dev")
-        assert ETLook_version == "dev", "using wrong ETLook import."
+        assert et_look_version == "dev", "using wrong ETLook import."
     elif sc == sc_v2:
         print("USING ETLook_v2")
-        assert ETLook_version == "v2", "using wrong ETLook import."
+        assert et_look_version == "v2", "using wrong ETLook import."
 
     day_angle = ETLook.clear_sky_radiation.day_angle(doy)
     
@@ -245,7 +245,7 @@ def main(input_folder, output_folder, Date, ETLook_version = "v2"):
         od["rac"] = ETLook.soil_moisture.aerodynamical_resistance_full(id["u_i"], od["L_full"], z0m_full, c.disp_full, c.z_obs)
         
         # Create MEM file zones
-        if ETLook_version == "dev":
+        if et_look_version == "dev":
 
             size_y, size_x = QC.shape
             size_y_zone = int(np.ceil(size_y/200))
@@ -254,7 +254,7 @@ def main(input_folder, output_folder, Date, ETLook_version = "v2"):
             geo_new = tuple([geo_ex[0], geo_ex[1] * 200, geo_ex[2], geo_ex[3], geo_ex[4], geo_ex[5]*200])
             MEM_file = PF.Save_as_MEM(array_fake, geo_new, proj_ex)
 
-            LST_filename = create_fp("LST", vars.inputs["LST"])
+            LST_filename = create_fp("LST", vars.inputs["LST"], date)
             
             dest_lst_zone_large = PF.reproject_dataset_example(LST_filename, MEM_file, 4)
             lst_zone_mean_large = dest_lst_zone_large.GetRasterBand(1).ReadAsArray()
@@ -285,10 +285,10 @@ def main(input_folder, output_folder, Date, ETLook_version = "v2"):
    
         od["lst_max"] = ETLook.soil_moisture.maximum_temperature(od["t_max_bare"], od["t_max_full"], od["vc"])
 
-        if ETLook_version == "v2":
+        if et_look_version == "v2":
             od["t_wet_k_i"] = ETLook.meteo.wet_bulb_temperature_kelvin_inst(od["t_wet_i"])
             od["lst_min"] = ETLook.soil_moisture.minimum_temperature(od["t_wet_k_i"], od["t_air_k_i"], od["vc"])
-        elif ETLook_version == "dev":
+        elif et_look_version == "dev":
             od["t_min_bare"] = ETLook.soil_moisture.minimum_temperature_bare(od["ra_hor_clear_i"], od["emiss_atm_i"], od["t_air_k_i"], od["ad_i"], od["raa"], od["ras"], od["lst_zone_mean"], c.r0_bare_wet)
             od["t_min_full"] = ETLook.soil_moisture.minimum_temperature_full(od["ra_hor_clear_i"], od["emiss_atm_i"], od["t_air_k_i"], od["ad_i"], od["rac"], od["lst_zone_mean"], c.r0_full)  
             od["lst_min"] = ETLook.soil_moisture.maximum_temperature(od["t_min_bare"], od["t_min_full"], od["vc"])
@@ -307,12 +307,12 @@ def main(input_folder, output_folder, Date, ETLook_version = "v2"):
     # **initial canopy aerodynamic resistance***********************************************************
     
     # find water region using ndvi
-    if ETLook_version == "dev":
+    if et_look_version == "dev":
         if dem_resolution < 250:
             id["land_mask"] = np.where(id["land_mask"] == 2, 1, id["land_mask"])
             id["land_mask"] = np.where(id["ndvi"] < 0, 2, id["land_mask"])
-    elif ETLook_version == "v2":
-        example_filepath = create_fp("ALBEDO", vars.inputs["ALBEDO"])
+    elif et_look_version == "v2":
+        example_filepath = create_fp("ALBEDO", vars.inputs["ALBEDO"], date)
         geo_ex, proj_ex = get_geoinfo(example_filepath)[1:3]
         dlat, dlon = PF.calc_dlat_dlon(geo_ex, id["ndvi"].shape[1], id["ndvi"].shape[0])
         dem_resolution = (np.nanmean(dlon) +np.nanmean(dlat))/2
@@ -353,7 +353,7 @@ def main(input_folder, output_folder, Date, ETLook_version = "v2"):
     od["t_24"] = ETLook.unstable.transpiration(od["rn_24_canopy"], od["ssvp_24"], od["ad_24"], od["vpd_24"], od["psy_24"], od["r_canopy"], od["h_canopy_24_init"], od["t_air_k_24"], od["u_star_24_init"], od["z0m"], od["disp"], od["u_b_24"], c.z_obs, c.z_b, c.iter_h)
     od["t_24_mm"] = ETLook.unstable.transpiration_mm(od["t_24"], od["lh_24"])
 
-    if ETLook_version == "dev":
+    if et_look_version == "dev":
         od["tpot_24"] = ETLook.unstable.transpiration(od["rn_24_canopy"], od["ssvp_24"], od["ad_24"], od["vpd_24"], od["psy_24"], od["r_canopy"] * od["stress_moist"], od["h_canopy_24_init"], od["t_air_k_24"], od["u_star_24_init"], od["z0m"], od["disp"], od["u_b_24"], c.z_obs, c.z_b, c.iter_h)
         od["tpot_24_mm"] = ETLook.unstable.transpiration_mm(od["tpot_24"], od["lh_24"])
 
@@ -369,9 +369,9 @@ def main(input_folder, output_folder, Date, ETLook_version = "v2"):
     
     # **ETLook.resistance.soil_resistance***********************************************************
 
-    if ETLook_version == "dev":
+    if et_look_version == "dev":
         od["r_soil"] = ETLook.resistance.soil_resistance(od["se_root"], id["land_mask"], c.r_soil_pow, c.r_soil_min) #se_root was se_top
-    elif ETLook_version == "v2":
+    elif et_look_version == "v2":
         od["r_soil"] = ETLook.resistance.soil_resistance(c.se_top, id["land_mask"], c.r_soil_pow, c.r_soil_min) #se_root was se_top
 
     # del od["se_root"]
@@ -402,7 +402,7 @@ def main(input_folder, output_folder, Date, ETLook_version = "v2"):
     od["e_24_mm"] = ETLook.unstable.evaporation_mm(od["e_24"], od["lh_24"])
     od["et_24_mm"] = ETLook.evapotranspiration.et_actual_mm(od["e_24_mm"], od["t_24_mm"])
     
-    if ETLook_version == "dev":
+    if et_look_version == "dev":
         od["e_24_mm"][od["e_24_mm"] < 0] = 0
         od["et_24_mm"][od["et_24_mm"] < 0] = 0
 
@@ -413,12 +413,12 @@ def main(input_folder, output_folder, Date, ETLook_version = "v2"):
     od["et_ref_24"] = ETLook.evapotranspiration.et_reference(od["rn_24_grass"], od["ad_24"], od["psy_24"], od["vpd_24"], od["ssvp_24"], id["u_24"])
     od["et_ref_24_mm"] = ETLook.evapotranspiration.et_reference_mm(od["et_ref_24"], od["lh_24"])
 
-    if ETLook_version == "v2":
+    if et_look_version == "v2":
         od["et_ref_24_mm"][od["et_ref_24_mm"] < 0] = 0
 
     # del od["vpd_24"], od["l_net"], od["ad_24"], od["psy_24"], od["ssvp_24"], od["rn_24_grass"], od["et_ref_24"], od["et_ref_24_mm"]
     
-    if ETLook_version == "dev":
+    if et_look_version == "dev":
         #ef_24 = ETLook.evapotranspiration.evaporative_fraction(et_24_mm, lh_24, rn_24, g0_24)    
         #eps_w = ETLook.stress.epsilon_soil_moisture(ef_24)    
         eps_a = ETLook.stress.epsilon_autotrophic_respiration()     
