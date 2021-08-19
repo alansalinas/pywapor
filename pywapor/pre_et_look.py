@@ -3,59 +3,15 @@
 """
 import os
 from datetime import datetime as dat
-from datetime import timedelta as deltat
 from osgeo import gdal
 import pandas as pd
 import numpy as np
 import requests
 import pywapor
 import pywapor.general.processing_functions as PF
+import pywapor.collect as c
+import pywapor.general as g
 from pathlib import Path
-
-def check_source_selection(source_selection, startdate, enddate):
-
-    valid_sources, valid_dates = pywapor.general.variables.get_source_validations()
-
-    temporal_sources = ["METEO", "NDVI", "ALBEDO", "LST", 
-                    "PRECIPITATION", "TRANS"]
-
-    check_keys = np.all([key in valid_sources.keys() for key in source_selection.keys()])
-    assert check_keys, "invalid key in source_selection"
-
-    assert len(source_selection["DEM"]) == 1, "only one DEM source can be selected"
-    assert len(source_selection["METEO"]) == 1, "only one METEO source can be selected"
-    assert len(source_selection["PRECIPITATION"]) == 1, "only one PRECIPITATION source can be selected"
-    assert len(source_selection["LULC"]) == 1, "only one LULC source can be selected"
-    assert len(source_selection["TRANS"]) == 1, "only one TRANS source can be selected"
-
-    results = dict()
-    all_results = list()
-
-    for var, sources in source_selection.items():
-
-        check1 = [source in valid_sources[var] for source in sources]
-        if var in temporal_sources:
-            check2 = [startdate >= valid_dates[source][0] for source in sources]
-            check3 = [enddate <= valid_dates[source][1] for source in sources]
-        else:
-            check2 = [True]
-            check3 = [True]
-
-        results[var] = {source: {"valid_source:": check1[i],
-                                 "valid_startdate:": check2[i],
-                                 "valid_enddate:": check3[i],
-                                } for i, source in enumerate(sources)}
-
-        all_results.append(np.all([check1, check2, check3]))
-    
-    succes = np.all(all_results)
-
-    return results, succes
-
-def get_sources(source_selection):
-    def _flatten(regular_list):
-        return [item for sublist in regular_list for item in sublist]
-    return np.unique(_flatten([v for v in source_selection.values()]))
 
 def main(project_folder, startdate, enddate, latlim, lonlim, level = "level_1"):
 
@@ -63,7 +19,7 @@ def main(project_folder, startdate, enddate, latlim, lonlim, level = "level_1"):
     edate = dat.strptime(enddate, "%Y-%m-%d").date()
 
     #### Check if selected sources and dates are valid
-    levels = pywapor.general.variables.get_source_level_selections()
+    levels = g.variables.get_source_level_selections()
 
     if isinstance(level, dict):
         level_name = "custom"
@@ -73,84 +29,63 @@ def main(project_folder, startdate, enddate, latlim, lonlim, level = "level_1"):
         level = level_name
 
     source_selection = levels[level]
-    succes = check_source_selection(source_selection, sdate, edate)[1]
-    sources = get_sources(source_selection)
+    succes = g.tests.check_source_selection(source_selection, sdate, edate)[1]
     assert succes, "invalid source_selection"
 
     raw_folder = os.path.join(project_folder, "RAW")
     level_folder = os.path.join(project_folder, level)
 
-    #### Retrieve required passwords
-    nasa = ["MOD13", "MYD13", "MCD43", "MOD11", "MYD11", "MERRA2"]
-    if any(map(lambda v: v in sources, nasa)):
-        un_nasa, pw_nasa = pywapor.collect.get_pw_un.get("NASA")
-    vito = ["PROBAV"]
-    if any(map(lambda v: v in sources, vito)):
-        un_vito, pw_vito = pywapor.collect.get_pw_un.get("VITO")
-    wapor = ["WAPOR"]
-    if any(map(lambda v: v in sources, wapor)):
-        wapor_token = pywapor.collect.get_pw_un.get("WAPOR")[0]
+    dl_args = (raw_folder, latlim, lonlim, startdate, enddate)
+
+    unraw_file_templates = unraw_filepaths(startdate, enddate, level_folder, "{var}")
 
     #### NDVI #### 
     raw_ndvi_files = list()
     # Order is important! PROBV gets priority over MOD13, and MOD13 over MYD13.
     if "PROBAV" in source_selection["NDVI"]:
-        raw_ndvi_files += pywapor.collect.PROBAV.PROBAV_S5(raw_folder, startdate, enddate, latlim, lonlim, un_vito, pw_vito, buffer_dates=False)[0]
+        raw_ndvi_files += c.PROBAV.PROBAV_S5(*dl_args)[0]
     if "MOD13" in source_selection["NDVI"]:
-        dt = deltat(days = 8)
-        raw_ndvi_files += pywapor.collect.MOD13.NDVI(raw_folder, sdate - dt, edate + dt, latlim, lonlim, un_nasa, pw_nasa)
+        raw_ndvi_files += c.MOD13.NDVI(*dl_args)
     if "MYD13" in source_selection["NDVI"]:
-        dt = deltat(days = 8)
-        raw_ndvi_files += pywapor.collect.MYD13.NDVI(raw_folder, sdate - dt, edate + dt, latlim, lonlim, un_nasa, pw_nasa)
+        raw_ndvi_files += c.MYD13.NDVI(*dl_args)
 
     template_file = select_template(raw_ndvi_files)
 
-    ndvi_files = unraw_filepaths(startdate, enddate, level_folder, "NDVI")
-    matched_raw_ndvi_files = match_to_nearest(raw_ndvi_files, ndvi_files)
-    for raw_file, unraw_file in zip(matched_raw_ndvi_files, ndvi_files):
-        unraw(raw_file, unraw_file, template_file, 1)
+    unraw_all("NDVI", unraw_file_templates, raw_ndvi_files, template_file, 1)
 
     #### ALBEDO ####
     raw_albedo_files = list()
     # Order is important! PROBV gets priority over MDC43.
     if "PROBAV" in source_selection["ALBEDO"]:
-        raw_albedo_files += pywapor.collect.PROBAV.PROBAV_S5(raw_folder, startdate, enddate, latlim, lonlim, un_vito, pw_vito, buffer_dates=False)[1]
+        raw_albedo_files += c.PROBAV.PROBAV_S5(*dl_args)[1]
     if "MDC43" in source_selection["ALBEDO"]:
-        raw_albedo_files += pywapor.collect.MCD43.ALBEDO(raw_folder, startdate, enddate, latlim, lonlim, un_nasa, pw_nasa)
+        raw_albedo_files += c.MCD43.ALBEDO(*dl_args)
 
-    albedo_files = unraw_filepaths(startdate, enddate, level_folder, "ALBEDO")
-    matched_raw_albedo_files = match_to_nearest(raw_albedo_files, albedo_files)
-    for raw_file, unraw_file in zip(matched_raw_albedo_files, albedo_files):
-        unraw(raw_file, unraw_file, template_file, 1)
-   
+    unraw_all("ALBEDO", unraw_file_templates, raw_albedo_files, template_file, 1)
+
     #### LST ####
     raw_lst_files = list()
     if "MOD11" in source_selection["LST"]:
-        raw_lst_files.append(pywapor.collect.MOD11.LST(raw_folder, startdate, enddate, latlim, lonlim, un_nasa, pw_nasa))
+        raw_lst_files.append(c.MOD11.LST(*dl_args))
     if "MYD11" in source_selection["LST"]:
-        raw_lst_files.append(pywapor.collect.MYD11.LST(raw_folder, startdate, enddate, latlim, lonlim, un_nasa, pw_nasa))
+        raw_lst_files.append(c.MYD11.LST(*dl_args))
+    
     raw_lst_files, raw_time_files = combine_lst(raw_lst_files)
 
-    lst_files = unraw_filepaths(startdate, enddate, level_folder, "LST")
-    for raw_file, unraw_file in zip(raw_lst_files, lst_files):
-        unraw(raw_file, unraw_file, template_file, 2)
+    unraw_all("LST", unraw_file_templates, raw_lst_files, template_file, 2)
 
     #### TIME ####
-    time_files = unraw_filepaths(startdate, enddate, level_folder, "Time")
-    for raw_file, unraw_file in zip(raw_time_files, time_files):
-        unraw(raw_file, unraw_file, template_file, 1)
+    time_files = unraw_all("Time", unraw_file_templates, raw_time_files, template_file, 1)
 
     #### PRECIPITATION ####
     if "CHIRPS" in source_selection["PRECIPITATION"]:
-        raw_precip_files = pywapor.collect.CHIRPS.daily(raw_folder, startdate, enddate, latlim, lonlim)
-    
-    precip_files = unraw_filepaths(startdate, enddate, level_folder, "Precipitation")
-    for raw_file, unraw_file in zip(raw_precip_files, precip_files):
-        unraw(raw_file, unraw_file, template_file, 6)
+        raw_precip_files = c.CHIRPS.daily(*dl_args)
+
+    unraw_all("Precipitation", unraw_file_templates, raw_precip_files, template_file, 6)
 
     #### DEM ####
     if "SRTM" in source_selection["DEM"]:
-        raw_dem_file = pywapor.collect.SRTM.DEM(raw_folder, latlim, lonlim)
+        raw_dem_file = c.SRTM.DEM(*dl_args[:3])
     
     dem_file = unraw_filepaths("", "", level_folder, "DEM", static = True)[0]
     unraw(raw_dem_file, dem_file, template_file, 4)
@@ -160,13 +95,13 @@ def main(project_folder, startdate, enddate, latlim, lonlim, level = "level_1"):
 
     #### LULC ####
     if "GLOBCOVER" in source_selection["LULC"]:
-        raw_lulc_file = pywapor.collect.Globcover.Landuse(raw_folder, latlim, lonlim)
+        raw_lulc_file = c.Globcover.Landuse(*dl_args[:3])
         raw_lulc_files = [(year, raw_lulc_file) for year in range(sdate.year, edate.year + 1)]
     elif "WAPOR" in source_selection["LULC"]:
-        raw_lulc_files = pywapor.collect.WAPOR.Get_Layer(raw_folder, sdate.strftime("%Y-01-01"), edate.strftime("%Y-12-31"), latlim, lonlim, 'L1_LCC_A', wapor_token)
+        raw_lulc_files = c.WAPOR.Get_Layer(*dl_args[:3], sdate.strftime("%Y-01-01"), edate.strftime("%Y-12-31"), 'L1_LCC_A')
         raw_lulc_files = [(dat.strptime(os.path.split(fp)[-1], "L1_LCC_A_WAPOR_YEAR_%Y.%m.%d.tif").year, fp) for fp in raw_lulc_files]
 
-    lulc_values = pywapor.general.landcover_converter.get_lulc_values()
+    lulc_values = g.landcover_converter.get_lulc_values()
     
     lulc_file_template = unraw_filepaths("", "", level_folder, "{var}_{year}", static = True)[0]
     for year, raw_file in raw_lulc_files:
@@ -179,21 +114,21 @@ def main(project_folder, startdate, enddate, latlim, lonlim, level = "level_1"):
         freq = "H"
         periods = calc_periods(time_files, freq)
         meteo_vars = ['t2m', 'u2m', 'v2m', 'q2m', 'tpw', 'ps', 'slp']
-        pywapor.collect.MERRA.daily_MERRA2(raw_folder, meteo_vars, startdate, enddate, latlim, lonlim, un_nasa, pw_nasa)
-        pywapor.collect.MERRA.daily_MERRA2(raw_folder, ['t2m'], startdate, enddate, latlim, lonlim, un_nasa, pw_nasa, data_type = ["mean", "min", "max"])
+        c.MERRA.daily_MERRA2(*dl_args, meteo_vars)
+        c.MERRA.daily_MERRA2(*dl_args, ['t2m'], data_type = ["mean", "min", "max"])
         for sd, ed, period in periods:
-            pywapor.collect.MERRA.hourly_MERRA2(raw_folder, meteo_vars, sd, ed, latlim, lonlim, un_nasa, pw_nasa, [int(period)])
+            c.MERRA.hourly_MERRA2(*dl_args[:3], sd, ed, meteo_vars, [int(period)])
     elif "GEOS5" in source_selection["METEO"]:
         freq = "3H"
         periods = calc_periods(time_files, freq)
         meteo_vars = ['t2m', 'u2m', 'v2m', 'qv2m', 'tqv', 'ps', 'slp']
-        pywapor.collect.GEOS.daily(raw_folder, meteo_vars, startdate, enddate, latlim, lonlim)
+        c.GEOS.daily(*dl_args, meteo_vars)
         for sd, ed, period in periods:
-            pywapor.collect.GEOS.three_hourly(raw_folder, meteo_vars, sd, ed, latlim, lonlim, [int(period)])
+            c.GEOS.three_hourly(*dl_args[:3], sd, ed, meteo_vars, [int(period)])
 
     meteo_files_template = unraw_filepaths(startdate, enddate, level_folder, "{var}")
     
-    raw_meteo_paths = pywapor.general.variables.get_raw_meteo_paths()
+    raw_meteo_paths = g.variables.get_raw_meteo_paths()
 
     for meteo_file_template in meteo_files_template:
         date = dat.strptime(os.path.split(meteo_file_template)[-1], "{var}_%Y%m%d.tif")
@@ -206,15 +141,15 @@ def main(project_folder, startdate, enddate, latlim, lonlim, level = "level_1"):
             if "wind" in key:
                 raw_file_u = os.path.join(*path[0]).format(raw_folder = raw_folder, date = date_str, hour = hour_str)
                 raw_file_v = os.path.join(*path[1]).format(raw_folder = raw_folder, date = date_str, hour = hour_str)
-                u_wind = reproj_file(raw_file_u, template_file, 6)
-                v_wind = reproj_file(raw_file_v, template_file, 6)
+                u_wind = PF.reproj_file(raw_file_u, template_file, 6)
+                v_wind = PF.reproj_file(raw_file_v, template_file, 6)
                 wind = np.sqrt(u_wind**2 + v_wind**2)
-                geo_ex, proj_ex = get_geoinfo(template_file)[0:2]
+                geo_ex, proj_ex = PF.get_geoinfo(template_file)[0:2]
                 PF.Save_as_tiff(unraw_file, wind, geo_ex, proj_ex)
             elif "tair" in key:
                 raw_file = os.path.join(*path).format(raw_folder = raw_folder, date = date_str, hour = hour_str)
                 tair = lapse_rate_temp(raw_file, dem_file)
-                geo_ex, proj_ex = get_geoinfo(template_file)[0:2]
+                geo_ex, proj_ex = PF.get_geoinfo(template_file)[0:2]
                 PF.Save_as_tiff(unraw_file, tair, geo_ex, proj_ex)
             else:
                 raw_file = os.path.join(*path).format(raw_folder = raw_folder, date = date_str, hour = hour_str)
@@ -225,15 +160,15 @@ def main(project_folder, startdate, enddate, latlim, lonlim, level = "level_1"):
 
     #### TRANS ####
     if "MERRA2" in source_selection["TRANS"]:
-        raw_trans_files = pywapor.collect.MERRA.daily_MERRA2(raw_folder, ['swgnet'], startdate, enddate, latlim, lonlim, un_nasa, pw_nasa)[0]
+        raw_trans_files = c.MERRA.daily_MERRA2(*dl_args, ['swgnet'])[0]
     
     trans_files = unraw_filepaths(startdate, enddate, level_folder, "Trans")
     trans_files = [(int(dat.strptime(os.path.split(fp)[-1], "Trans_%Y%m%d.tif").strftime("%j")), fp) for fp in trans_files]
 
     for (doy, unraw_file), raw_file in zip(trans_files, raw_trans_files):
         ra24_flat = calc_ra24_flat(lat_file, doy)
-        array = reproj_file(raw_file, template_file, 6) / ra24_flat
-        geo_ex, proj_ex = get_geoinfo(template_file)[0:2]
+        array = PF.reproj_file(raw_file, template_file, 6) / ra24_flat
+        geo_ex, proj_ex = PF.get_geoinfo(template_file)[0:2]
         PF.Save_as_tiff(unraw_file, array, geo_ex, proj_ex)
 
     #### TEMP. AMPLITUDE ####
@@ -243,6 +178,16 @@ def main(project_folder, startdate, enddate, latlim, lonlim, level = "level_1"):
     raw_temp_ampl_files = [(year, raw_temp_ampl_file) for year in range(sdate.year, edate.year + 1)]
     for year, raw_file in raw_temp_ampl_files:
         unraw(raw_file, temp_ampl_file_template.format(year = year), template_file, 6)
+
+def unraw_all(variable, unraw_file_templates, raw_files, template_file, method):
+    unraw_files = [unraw_file.format(var = variable) for unraw_file in unraw_file_templates]
+    if len(raw_files) != len(unraw_files):
+        matched_raw_files = match_to_nearest(raw_files, unraw_files)
+    else:
+        matched_raw_files = raw_files
+    for raw_file, unraw_file in zip(matched_raw_files, unraw_files):
+        unraw(raw_file, unraw_file, template_file, method)
+    return unraw_files
 
 def match_to_nearest(raw_files, files):
     raw_dates = [dat.strptime(os.path.split(fp)[-1].split("_")[-1], "%Y.%m.%d.tif") for fp in raw_files]
@@ -296,7 +241,7 @@ def slope_aspect(dem_file, project_folder, template_file):
         dem = PF.open_as_array(dem_file)
 
         # constants
-        geo_ex, proj_ex, size_x_ex, size_y_ex = get_geoinfo(template_file)
+        geo_ex, proj_ex, size_x_ex, size_y_ex = PF.get_geoinfo(template_file)
         dlat, dlon = PF.calc_dlat_dlon(geo_ex, size_x_ex, size_y_ex)            
 
         pixel_spacing = (np.nanmean(dlon) + np.nanmean(dlat)) / 2
@@ -323,7 +268,7 @@ def lat_lon(project_folder, template_file):
     lat_file = unraw_filepaths("", "", project_folder, "Lat", static = True)[0]
     lon_file = unraw_filepaths("", "", project_folder, "Lon", static = True)[0]
 
-    geo_ex, proj_ex, size_x_ex, size_y_ex = get_geoinfo(template_file)
+    geo_ex, proj_ex, size_x_ex, size_y_ex = PF.get_geoinfo(template_file)
 
     lon_deg = np.array([geo_ex[0] + np.arange(0,size_x_ex) * geo_ex[1]]*size_y_ex)
     lat_deg = np.array([geo_ex[3] + np.arange(0,size_y_ex) * geo_ex[5]]*size_x_ex).transpose()
@@ -337,7 +282,7 @@ def lat_lon(project_folder, template_file):
 
 def calc_periods(time_files, freq):
 
-    geo_ex, proj_ex, size_x_ex, size_y_ex = get_geoinfo(time_files[0])
+    geo_ex, proj_ex, size_x_ex, size_y_ex = PF.get_geoinfo(time_files[0])
     periods = list()
 
     for time_file in time_files:
@@ -383,36 +328,23 @@ def unraw_filepaths(startdate, enddate, project_folder, var, static = False):
 
 def unraw(raw_file, unraw_file, template_file, method):
     if not os.path.exists(unraw_file) and os.path.exists(raw_file):
-        geo_ex, proj_ex = get_geoinfo(template_file)[0:2]
-        array = reproj_file(raw_file, template_file, method)
+        geo_ex, proj_ex = PF.get_geoinfo(template_file)[0:2]
+        array = PF.reproj_file(raw_file, template_file, method)
         if unraw_file != "":
             PF.Save_as_tiff(unraw_file, array, geo_ex, proj_ex)
         return array
-
-def reproj_file(file, template, method):
-    ds = PF.reproject_dataset_example(file, template, method = method)
-    array = PF.open_as_array(ds)
-    return array
-
-def get_geoinfo(template_file):
-    ds = gdal.Open(template_file)
-    geo_ex = ds.GetGeoTransform()
-    proj_ex = ds.GetProjection()
-    size_x_ex = ds.RasterXSize
-    size_y_ex = ds.RasterYSize
-    return (geo_ex, proj_ex, size_x_ex, size_y_ex)
 
 def unraw_replace_values(raw_file, unraw_file, replace_values, template_file):
 
     if not os.path.exists(unraw_file) and os.path.exists(raw_file):
 
-        array = reproj_file(raw_file, template_file, 1)
+        array = PF.reproj_file(raw_file, template_file, 1)
 
         replaced_array = np.ones_like(array) * np.nan
         for key, value in replace_values.items():
             replaced_array[array == key] = value
 
-        geo_ex, proj_ex = get_geoinfo(template_file)[0:2]
+        geo_ex, proj_ex = PF.get_geoinfo(template_file)[0:2]
         PF.Save_as_tiff(unraw_file, replaced_array, geo_ex, proj_ex)
 
 def lapse_rate_temp(tair_file, dem_file):
@@ -438,19 +370,9 @@ def lapse_rate_temp(tair_file, dem_file):
 
     return tdown
 
-def combine_dicts(dicts):
-    new_dict = dict()
-    for d in dicts:
-        for key, value in d.items():
-            if key in new_dict.keys():
-                new_dict[key].append(value)
-            else:
-                new_dict[key] = [value]
-    return new_dict
-
 def combine_lst(raw_files):
 
-    new_dict = combine_dicts(raw_files)
+    new_dict = PF.combine_dicts(raw_files)
 
     lst_files = list()
     time_files = list()
@@ -476,11 +398,11 @@ def combine_lst(raw_files):
 
         idxs = np.argmin(vzas, axis = 0)
 
-        lst = apply_mask(lsts, idxs, axis = 0)
-        time = apply_mask(times, idxs, axis = 0)
+        lst = PF.apply_mask(lsts, idxs, axis = 0)
+        time = PF.apply_mask(times, idxs, axis = 0)
 
         template = scene[0]
-        geo_ex, proj_ex = get_geoinfo(template)[0:2]
+        geo_ex, proj_ex = PF.get_geoinfo(template)[0:2]
 
         out_folder = os.path.join(str(Path(template).parent.parent), "LST") 
         out_file_lst = os.path.join(out_folder, f"LST_MCD11A1_K_daily_{date_str}.tif")
@@ -493,16 +415,6 @@ def combine_lst(raw_files):
         PF.Save_as_tiff(out_file_time, time, geo_ex, proj_ex)
 
     return lst_files, time_files
-
-def apply_mask(a, indices, axis):
-    """
-    https://stackoverflow.com/questions/15469302/numpy-3d-to-2d-transformation-based-on-2d-mask-array
-    # replace with np.take(....)?
-    """
-    magic_index = [np.arange(i) for i in indices.shape]
-    magic_index = np.ix_(*magic_index)
-    magic_index = magic_index[:axis] + (indices,) + magic_index[axis:]
-    return a[magic_index]
 
 def download_file_from_google_drive(id, destination):
     
