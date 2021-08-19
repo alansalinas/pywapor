@@ -3,8 +3,10 @@ from pywapor.collect.MOD13.DataAccess import DownloadData
 from datetime import date
 import glob
 import os
+import pywapor
 
-def main(Dir, Startdate, Enddate, latlim, lonlim, username, password, Waitbar = 1, hdf_library = None, remove_hdf = 1):
+def main(Dir, latlim, lonlim, Startdate, Enddate, Waitbar = 1, 
+        hdf_library = None, remove_hdf = 1, buffer_dates = True):
 
     """
     This function downloads MOD13 16-daily data for the specified time
@@ -28,11 +30,14 @@ def main(Dir, Startdate, Enddate, latlim, lonlim, username, password, Waitbar = 
     
     if isinstance(Enddate, date):
         Enddate = Enddate.strftime("%Y-%m-%d")
-        
+    
+    username, password = pywapor.collect.get_pw_un.get("NASA")
+
     print('\nDownload 16-daily MODIS NDVI data for period %s till %s' %(Startdate, Enddate))
-    DownloadData(Dir, Startdate, Enddate, latlim, lonlim, username, password, Waitbar, hdf_library, remove_hdf)
+    DownloadData(Dir, Startdate, Enddate, latlim, lonlim, username, password, 
+                Waitbar, hdf_library, remove_hdf, buffer_dates = buffer_dates)
 
     return glob.glob(os.path.join(Dir, "MODIS", "MOD13", "*.tif"))
 
 if __name__ == '__main__':
-    main(sys.argv)
+    main(sys.argv) 

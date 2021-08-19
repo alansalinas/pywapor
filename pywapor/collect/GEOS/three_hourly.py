@@ -2,7 +2,7 @@
 import sys
 from pywapor.collect.GEOS.DataAccess import DownloadData
 
-def main(Dir, Vars, Startdate, Enddate, latlim, lonlim, Periods = [1,2,3,4,5,6,7,8], Waitbar = 1):
+def main(Dir, latlim, lonlim, Startdate, Enddate, Vars, Periods = [1,2,3,4,5,6,7,8], Waitbar = 1):
     """
     This function downloads GEOS inst data for a given variable, time
     interval, and spatial extent.

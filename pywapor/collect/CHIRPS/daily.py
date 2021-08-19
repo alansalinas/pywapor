@@ -4,8 +4,7 @@ from pywapor.collect.CHIRPS.DataAccess import DownloadData
 import glob
 import os
 
-def main(Dir, Startdate='', Enddate='',
-			latlim=[-50, 50], lonlim=[-180, 180], Waitbar = 1):
+def main(Dir, latlim, lonlim, Startdate, Enddate, Waitbar = 1):
 	"""
 	This function downloads daily CHIRPS data
 

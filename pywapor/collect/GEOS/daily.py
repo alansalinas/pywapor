@@ -4,7 +4,7 @@ from pywapor.collect.GEOS.DataAccess import DownloadData
 import os
 import glob
 
-def main(Dir, Vars, Startdate, Enddate, latlim, lonlim, Waitbar = 1):
+def main(Dir, latlim, lonlim, Startdate, Enddate, Vars, Waitbar = 1):
     """
     This function downloads GEOS daily data for a given variable, time
     interval, and spatial extent.

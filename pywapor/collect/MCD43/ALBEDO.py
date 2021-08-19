@@ -2,8 +2,9 @@ import sys
 from pywapor.collect.MCD43.DataAccess import DownloadData
 import os
 import glob
+import pywapor
 
-def main(Dir, Startdate, Enddate, latlim, lonlim, username, password, Waitbar = 1, hdf_library = None, remove_hdf = 1):
+def main(Dir, latlim, lonlim, Startdate, Enddate, Waitbar = 1, hdf_library = None, remove_hdf = 1):
     """
     This function downloads MCD43 albedo daily data for the specified time
     interval, and spatial extent.
@@ -21,6 +22,8 @@ def main(Dir, Startdate, Enddate, latlim, lonlim, username, password, Waitbar = 
                     define directory to the data here
     remove_hdf -- 1 (Default), if 1 remove all the downloaded hdf files in the end    
     """
+    username, password = pywapor.collect.get_pw_un.get("NASA")
+
     print('\nDownload daily MODIS Albedo data for period %s till %s' %(Startdate, Enddate))
     DownloadData(Dir, Startdate, Enddate, latlim, lonlim, username, password, Waitbar, hdf_library, remove_hdf)
 

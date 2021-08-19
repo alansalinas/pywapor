@@ -1,10 +1,6 @@
 # -*- coding: utf-8 -*-
 """
-WaterSat
-author: Tim Martijn Hessels
-Created on Fri Feb 15 09:14:33 2019
 """
-
 import os
 from osgeo import osr
 from osgeo import gdal
@@ -12,6 +8,39 @@ import gzip
 import zipfile
 import numpy as np
 import scipy
+
+def apply_mask(a, indices, axis):
+    """
+    https://stackoverflow.com/questions/15469302/numpy-3d-to-2d-transformation-based-on-2d-mask-array
+    # replace with np.take(....)?
+    """
+    magic_index = [np.arange(i) for i in indices.shape]
+    magic_index = np.ix_(*magic_index)
+    magic_index = magic_index[:axis] + (indices,) + magic_index[axis:]
+    return a[magic_index]
+
+def reproj_file(file, template, method):
+    ds = reproject_dataset_example(file, template, method = method)
+    array = open_as_array(ds)
+    return array
+
+def combine_dicts(dicts):
+    new_dict = dict()
+    for d in dicts:
+        for key, value in d.items():
+            if key in new_dict.keys():
+                new_dict[key].append(value)
+            else:
+                new_dict[key] = [value]
+    return new_dict
+
+def get_geoinfo(template_file):
+    ds = gdal.Open(template_file)
+    geo_ex = ds.GetGeoTransform()
+    proj_ex = ds.GetProjection()
+    size_x_ex = ds.RasterXSize
+    size_y_ex = ds.RasterYSize
+    return (geo_ex, proj_ex, size_x_ex, size_y_ex)
 
 def Extract_Data_gz(zip_filename, outfilename):
     """

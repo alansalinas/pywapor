@@ -1,14 +1,16 @@
 import sys
 from pathlib import Path
 from pywapor.collect.PROBAV.DataAccess import download_data
+import pywapor
 import glob
 import os
 
-def main(download_dir, start_date, end_date, latitude_extent, longitude_extent, username,
-         password, buffer_dates = True):
+def main(download_dir, latitude_extent, longitude_extent, start_date, end_date, 
+        buffer_dates = True):
     """
 
     """
+    username, password = pywapor.collect.get_pw_un.get("VITO")
 
     download_data(download_dir/Path("PROBAV"), start_date, end_date, latitude_extent,
                   longitude_extent, username, password, buffer_dates = buffer_dates)

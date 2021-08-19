@@ -8,8 +8,9 @@ import sys
 from pywapor.collect.WAPOR.DataAccess import WAPOR
 import os
 import glob
+import pywapor
 
-def main(output_folder, Startdate, Enddate, latlim, lonlim, Parameter, auth_token, Area = None, Version = "2"):
+def main(output_folder, latlim, lonlim, Startdate, Enddate, Parameter, Area = None, Version = "2"):
     
     """
     This function downloads WAPOR data for the specified time
@@ -26,7 +27,8 @@ def main(output_folder, Startdate, Enddate, latlim, lonlim, Parameter, auth_toke
     -- version: (string) default is 2, but if version 1 is required use this parameter (options are "1" or "2")
 
     """
-    
+    auth_token = pywapor.collect.get_pw_un.get("WAPOR")[0]
+
     print('\nDownload WAPOR %s data for period %s till %s' %(Parameter, Startdate, Enddate))
     WAPOR(output_folder, Startdate, Enddate, latlim, lonlim, Parameter, auth_token, Area = Area, Version = Version)
 

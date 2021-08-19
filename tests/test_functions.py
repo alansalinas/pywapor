@@ -12,7 +12,7 @@ def ETLook_main(asserts = False, ETLook_version = "dev"):
 
     data_folder = os.path.join(pathlib.Path(pywapor.__path__[0]).parent, 
                                 "tests", "test_data")
-    input_folder = os.path.join(data_folder, "input")
+    input_folder = os.path.join(data_folder, "input_ref")
     output_folder = os.path.join(data_folder, "output")
     if os.path.exists(output_folder):
         shutil.rmtree(output_folder)
@@ -81,7 +81,6 @@ def test_collect():
 
     # un_vito = passwords.passes["VITO"][0]
     # pw_vito = passwords.passes["VITO"][1]
-
 
     # pywapor.collect.PROBAV.PROBAV_S5(folders_input_RAW, startdate, enddate, 
     # latlim, lonlim, un_vito, pw_vito, buffer_dates = False)

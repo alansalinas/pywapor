@@ -2,6 +2,47 @@ import requests
 import pywapor
 import os
 import time
+import numpy as np
+
+def check_source_selection(source_selection, startdate, enddate):
+
+    valid_sources, valid_dates = pywapor.general.variables.get_source_validations()
+
+    temporal_sources = ["METEO", "NDVI", "ALBEDO", "LST", 
+                    "PRECIPITATION", "TRANS"]
+
+    check_keys = np.all([key in valid_sources.keys() for key in source_selection.keys()])
+    assert check_keys, "invalid key in source_selection"
+
+    assert len(source_selection["DEM"]) == 1, "only one DEM source can be selected"
+    assert len(source_selection["METEO"]) == 1, "only one METEO source can be selected"
+    assert len(source_selection["PRECIPITATION"]) == 1, "only one PRECIPITATION source can be selected"
+    assert len(source_selection["LULC"]) == 1, "only one LULC source can be selected"
+    assert len(source_selection["TRANS"]) == 1, "only one TRANS source can be selected"
+
+    results = dict()
+    all_results = list()
+
+    for var, sources in source_selection.items():
+
+        check1 = [source in valid_sources[var] for source in sources]
+        if var in temporal_sources:
+            check2 = [startdate >= valid_dates[source][0] for source in sources]
+            check3 = [enddate <= valid_dates[source][1] for source in sources]
+        else:
+            check2 = [True]
+            check3 = [True]
+
+        results[var] = {source: {"valid_source:": check1[i],
+                                 "valid_startdate:": check2[i],
+                                 "valid_enddate:": check3[i],
+                                } for i, source in enumerate(sources)}
+
+        all_results.append(np.all([check1, check2, check3]))
+    
+    succes = np.all(all_results)
+
+    return results, succes
 
 def nasa_account(user_pw = None):
 

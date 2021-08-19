@@ -4,8 +4,9 @@ from pywapor.collect.MERRA.DataAccess import DownloadData
 from pywapor.collect.MERRA.DataAccess import VariablesInfo
 import os
 import glob
+import pywapor
 
-def main(Dir, Vars, Startdate, Enddate, latlim, lonlim, username, password, Waitbar = 1, data_type = ["mean"]):
+def main(Dir, latlim, lonlim, Startdate, Enddate, Vars, Waitbar = 1, data_type = ["mean"]):
     """
     This function downloads MERRA daily data for a given variable, time
     interval, and spatial extent.
@@ -20,6 +21,8 @@ def main(Dir, Vars, Startdate, Enddate, latlim, lonlim, username, password, Wait
     Waitbar -- 1 (Default) Will print a waitbar
     """
     all_files = list()
+
+    username, password = pywapor.collect.get_pw_un.get("NASA")
 
     for Var in Vars:
 

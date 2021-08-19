@@ -3,11 +3,11 @@
 Authors: Tim Hessels
 Module: Collect/MYD11
 """
-
+import pywapor
 import sys
 from pywapor.collect.MYD11.DataAccess import DownloadData
 
-def main(Dir, Startdate, Enddate, latlim, lonlim, username, password, Waitbar = 1, hdf_library = None, remove_hdf = 1):
+def main(Dir, latlim, lonlim, Startdate, Enddate, Waitbar = 1, hdf_library = None, remove_hdf = 1):
     """
     This function downloads MYD11 daily data for the specified time
     interval, and spatial extent.
@@ -25,6 +25,7 @@ def main(Dir, Startdate, Enddate, latlim, lonlim, username, password, Waitbar = 
                     define directory to the data here
     remove_hdf -- 1 (Default), if 1 remove all the downloaded hdf files in the end
     """
+    username, password = pywapor.collect.get_pw_un.get("NASA")
 
     print('\nDownload daily MODIS land surface temperature data for period %s till %s' %(Startdate, Enddate))
     

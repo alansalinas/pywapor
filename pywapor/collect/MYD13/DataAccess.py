@@ -24,7 +24,8 @@ if sys.version_info[0] == 2:
     import urlparse
     import urllib2
 
-def DownloadData(Dir, Startdate, Enddate, latlim, lonlim, username, password, Waitbar, hdf_library, remove_hdf):
+def DownloadData(Dir, Startdate, Enddate, latlim, lonlim, username, 
+                password, Waitbar, hdf_library, remove_hdf, buffer_dates = False):
     """
     This function downloads MYD13 16-daily data
 
@@ -45,6 +46,13 @@ def DownloadData(Dir, Startdate, Enddate, latlim, lonlim, username, password, Wa
         Startdate = pd.Timestamp('2000-02-18')
     if not Enddate:
         Enddate = pd.Timestamp('Now')
+
+    if buffer_dates:
+        dt = datetime.timedelta(days=8)
+        Startdate = datetime.datetime.strptime(Startdate, "%Y-%m-%d") - dt
+        Enddate = datetime.datetime.strptime(Enddate, "%Y-%m-%d") + dt
+        Startdate = Startdate.strftime("%Y-%m-%d")
+        Enddate = Enddate.strftime("%Y-%m-%d")
 
     # Make an array of the days of which the NDVI is taken
     Dates = Make_TimeStamps(Startdate,Enddate)
