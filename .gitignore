@@ -51,4 +51,5 @@ Thumbs.db
 tests/test_data/output
 tests/test_data/RAW
 
-password.py
+keys.json
+secret.txt
