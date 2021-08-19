@@ -19,3 +19,11 @@ def tif(tif_file, quantity = None, unit = None):
     plt.colorbar(label = f"{quantity} {unit}", extend = "both")
     plt.title(fn)
     plt.gca().set_facecolor("lightgray")
+
+def prettyprint(d, indent=0):
+   for key, value in d.items():
+      print('\t' * indent + str(key))
+      if isinstance(value, dict):
+         prettyprint(value, indent+1)
+      else:
+         print('\t' * (indent) + " " + str(value))

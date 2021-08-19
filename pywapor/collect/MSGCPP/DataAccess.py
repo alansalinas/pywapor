@@ -33,7 +33,7 @@ def DownloadData(Dir, Startdate, Enddate, latlim, lonlim, Time = '', Waitbar = 1
     
     # Create Waitbar
     if Waitbar == 1:
-        import pywapor.functions.WaitbarConsole as WaitbarConsole
+        import pywapor.general.waitbar_console as WaitbarConsole
         total_amount = len(Dates)
         amount = 0
         WaitbarConsole.printWaitBar(amount, total_amount, prefix = 'Progress:', suffix = 'Complete', length = 50)
@@ -41,7 +41,7 @@ def DownloadData(Dir, Startdate, Enddate, latlim, lonlim, Time = '', Waitbar = 1
     # Loop over dates
     for Date in Dates:
         
-        if Time is not '':
+        if Time != '':
             Hour = int(Time.split(':')[0])
             Minute = int(Time.split(':')[1])        
             Date = datetime.datetime(Date.year, Date.month, Date.day, Hour, Minute)

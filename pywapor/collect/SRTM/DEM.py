@@ -35,7 +35,7 @@ def main(Dir, latlim, lonlim, Waitbar = 1):
         # Create Waitbar
         if Waitbar == 1:
             print('\nDownload SRTM altitude map with a resolution of 3s')
-            import pywapor.functions.WaitbarConsole as WaitbarConsole
+            import pywapor.general.waitbar_console as WaitbarConsole
             total_amount = 1
             amount = 0
             WaitbarConsole.printWaitBar(amount, total_amount, prefix = 'Progress:', suffix = 'Complete', length = 50)

@@ -11,6 +11,7 @@ from osgeo import gdal
 import gzip
 import zipfile
 import numpy as np
+import scipy
 
 def Extract_Data_gz(zip_filename, outfilename):
     """
@@ -270,13 +271,13 @@ def reproject_dataset_example(dataset, dataset_example, method=1):
     band.Fill(ndv, 0.0)
 
     # Perform the projection/resampling
-    if method is 1:
+    if method == 1:
         gdal.ReprojectImage(g, dest, wgs84.ExportToWkt(), osng.ExportToWkt(), gdal.GRA_NearestNeighbour)
-    if method is 2:
+    if method == 2:
         gdal.ReprojectImage(g, dest, wgs84.ExportToWkt(), osng.ExportToWkt(), gdal.GRA_Bilinear)
-    if method is 3:
+    if method == 3:
         gdal.ReprojectImage(g, dest, wgs84.ExportToWkt(), osng.ExportToWkt(), gdal.GRA_Lanczos)
-    if method is 4:
+    if method == 4:
         gdal.ReprojectImage(g, dest, wgs84.ExportToWkt(), osng.ExportToWkt(), gdal.GRA_Average)
     if method == 5:
         gdal.ReprojectImage(g, dest, wgs84.ExportToWkt(), osng.ExportToWkt(), gdal.GRA_Cubic)
@@ -349,7 +350,161 @@ def Show_tif(image_file, Limits = None, Color = None):
     
     return()
 
+def open_as_array(input):
+    if isinstance(input, str):
+        ds = gdal.Open(input)
+    elif isinstance(input, gdal.Dataset):
+        ds = input
+    array = ds.GetRasterBand(1).ReadAsArray()
+    ndv = ds.GetRasterBand(1).GetNoDataValue()
+    array[array == ndv] = np.nan
+    return array  
+
+def Open_tiff_array(filename='', band=''):
+    """
+    Opening a tiff array.
+
+    Keyword Arguments:
+    filename -- 'C:/file/to/path/file.tif' or a gdal file (gdal.Open(filename))
+        string that defines the input tiff file or gdal file
+    band -- integer
+        Defines the band of the tiff that must be opened.
+    """
+    f = gdal.Open(filename)
+    if f is None:
+        print('%s does not exists' %filename)
+    else:
+        if band == '':
+            band = 1
+        Data = f.GetRasterBand(band).ReadAsArray()
+    return(Data)
+
+def Open_array_info(filename=''):
+    """
+    Opening a tiff info, for example size of array, projection and transform matrix.
+
+    Keyword Arguments:
+    filename -- 'C:/file/to/path/file.tif' or a gdal file (gdal.Open(filename))
+        string that defines the input tiff file or gdal file
+
+    """
+    try:
+        if filename.split('.')[-1] == 'tif':
+            f = gdal.Open(r"%s" %filename)
+        else:
+            f = filename
+    except:
+            f = filename       
+    try:
+        geo_out = f.GetGeoTransform()
+        proj = f.GetProjection()
+        size_X = f.RasterXSize
+        size_Y = f.RasterYSize
+        f = None
+    except:
+        print('%s does not exists' %filename)
+        
+    return(geo_out, proj, size_X, size_Y)
+
+def gap_filling(dataset, NoDataValue, method = 1):
+    """
+    This function fills the no data gaps in a numpy array
+
+    Keyword arguments:
+    dataset -- 'C:/'  path to the source data (dataset that must be filled)
+    NoDataValue -- Value that must be filled
+    """
+    try:
+        if dataset.split('.')[-1] == 'tif':
+            # Open the numpy array
+            data = Open_tiff_array(dataset)
+            Save_as_tiff_bool = 1
+        else:
+            data = dataset
+            Save_as_tiff_bool = 0
+    except:
+        data = dataset
+        Save_as_tiff_bool = 0
+
+    # fill the no data values
+    if NoDataValue == np.nan:
+        mask = ~(np.isnan(data))
+    else:
+        mask = ~(data==NoDataValue)
+    xx, yy = np.meshgrid(np.arange(data.shape[1]), np.arange(data.shape[0]))
+    xym = np.vstack( (np.ravel(xx[mask]), np.ravel(yy[mask])) ).T
+    data0 = np.ravel( data[:,:][mask] )
+
+    if method == 1:
+        interp0 = scipy.interpolate.NearestNDInterpolator( xym, data0 )
+        data_end = interp0(np.ravel(xx), np.ravel(yy)).reshape( xx.shape )
+
+    if method == 2:
+        interp0 = scipy.interpolate.LinearNDInterpolator( xym, data0 )
+        data_end = interp0(np.ravel(xx), np.ravel(yy)).reshape( xx.shape )
+
+    if Save_as_tiff_bool == 1:
+        EndProduct=dataset[:-4] + '_GF.tif'
+
+        # collect the geoinformation
+        geo_out, proj, size_X, size_Y = Open_array_info(dataset)
+
+        # Save the filled array as geotiff
+        Save_as_tiff(name=EndProduct, data=data_end, geo=geo_out, projection=proj)
+
+    else:
+        EndProduct = data_end
+
+    return (EndProduct)  
     
-    
-    
+def calc_dlat_dlon(geo_out, size_X, size_Y):
+    """
+    This functions calculated the distance between each pixel in meter.
+
+    Parameters
+    ----------
+    geo_out: array
+        geo transform function of the array
+    size_X: int
+        size of the X axis
+    size_Y: int
+        size of the Y axis
+
+    Returns
+    -------
+    dlat: array
+        Array containing the vertical distance between each pixel in meters
+    dlon: array
+        Array containing the horizontal distance between each pixel in meters
+    """
+
+    # Create the lat/lon rasters
+    lon = np.arange(size_X + 1)*geo_out[1]+geo_out[0] - 0.5 * geo_out[1]
+    lat = np.arange(size_Y + 1)*geo_out[5]+geo_out[3] - 0.5 * geo_out[5]
+
+    dlat_2d = np.array([lat,]*int(np.size(lon,0))).transpose()
+    dlon_2d =  np.array([lon,]*int(np.size(lat,0)))
+
+    # Radius of the earth in meters
+    R_earth = 6371000
+
+    # Calculate the lat and lon in radians
+    lonRad = dlon_2d * np.pi/180
+    latRad = dlat_2d * np.pi/180
+
+    # Calculate the difference in lat and lon
+    lonRad_dif = abs(lonRad[:,1:] - lonRad[:,:-1])
+    latRad_dif = abs(latRad[:-1] - latRad[1:])
+
+    # Calculate the distance between the upper and lower pixel edge
+    a = np.sin(latRad_dif[:,:-1]/2) * np.sin(latRad_dif[:,:-1]/2)
+    clat = 2 * np.arctan2(np.sqrt(a), np.sqrt(1-a))
+    dlat = R_earth * clat
+
+    # Calculate the distance between the eastern and western pixel edge
+    b = np.cos(latRad[1:,:-1]) * np.cos(latRad[:-1,:-1]) * np.sin(lonRad_dif[:-1,:]/2) * np.sin(lonRad_dif[:-1,:]/2)
+    clon = 2 * np.arctan2(np.sqrt(b), np.sqrt(1-b))
+    dlon = R_earth * clon
+
+    return(dlat, dlon)  
     

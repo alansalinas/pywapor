@@ -23,7 +23,7 @@ def DownloadData(output_folder, latlim, lonlim):
     """
     
     # WA+ modules
-    import pywapor.functions.Processing_Functions as PF
+    import pywapor.general.processing_functions as PF
     
    # Check the latitude and longitude and otherwise set lat or lon on greatest extent
     if latlim[0] < -60 or latlim[1] > 60:

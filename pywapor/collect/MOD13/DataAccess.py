@@ -51,7 +51,7 @@ def DownloadData(Dir, Startdate, Enddate, latlim, lonlim, username, password, Wa
 
     # Create Waitbar
     if Waitbar == 1:
-        import pywapor.functions.WaitbarConsole as WaitbarConsole
+        import pywapor.general.waitbar_console as WaitbarConsole
         total_amount = len(Dates)
         amount = 0
         WaitbarConsole.printWaitBar(amount, total_amount, prefix = 'Progress:', suffix = 'Complete', length = 50)
@@ -106,7 +106,7 @@ def RetrieveData(Date, args):
     args -- A list of parameters defined in the DownloadData function.
     """
     # WAPOR modules
-    import pywapor.functions.Processing_Functions as PF
+    import pywapor.general.processing_functions as PF
     
     # Argument
     [output_folder, TilesVertical, TilesHorizontal, latlim, lonlim, username, password, hdf_library] = args
@@ -179,23 +179,23 @@ def Make_TimeStamps(Startdate,Enddate):
     # If the startday is not in the same year as the enddate
     if AmountOfYear > 0:
         for i in range(0, AmountOfYear+1):
-            if i is 0:
+            if i == 0:
                 Startdate1 = Startdate
                 Enddate1 = YearEndDate[0]
                 Dates = pd.date_range(Startdate1, Enddate1, freq = '16D')
-            if i is AmountOfYear:
+            if i == AmountOfYear:
                 Startdate1 = YearStartDate[-1]
                 Enddate1 = Enddate
                 Dates1 = pd.date_range(Startdate1, Enddate1, freq = '16D')
                 Dates = Dates.union(Dates1)
-            if (i is not AmountOfYear and i is not 0):
+            if (i != AmountOfYear and i != 0):
                 Startdate1 = YearStartDate[i-AmountOfYear-1]
                 Enddate1 = YearEndDate[i]
                 Dates1 = pd.date_range(Startdate1, Enddate1, freq = '16D')
                 Dates = Dates.union(Dates1)
 
     # If the startday is in the same year as the enddate
-    if AmountOfYear is 0:
+    if AmountOfYear == 0:
         Dates = pd.date_range(Startdate, Enddate, freq = '16D')
 
     return(Dates)

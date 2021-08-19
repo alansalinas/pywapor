@@ -7,9 +7,7 @@ import pywapor.et_look_dev as ETLook_dev
 import pywapor.et_look_v2 as ETLook_v2
 import pywapor.general.outputs as out
 import pywapor.general.variables as vars
-import watertools
-import watertools.General.data_conversions as DC
-import watertools.General.raster_conversions as RC
+import pywapor.general.processing_functions as PF
 
 def main(input_folder, output_folder, Date, ETLook_version = "v2"):
 
@@ -112,7 +110,7 @@ def main(input_folder, output_folder, Date, ETLook_version = "v2"):
         proj_ex = ds.GetProjection()
         xsize = ds.RasterXSize
         ysize = ds.RasterYSize
-        dlat, dlon = watertools.Functions.Area_Conversions.Area_converter.Calc_dlat_dlon(geo_ex, xsize, ysize)
+        dlat, dlon = PF.calc_dlat_dlon(geo_ex, xsize, ysize)
         dem_resolution = (np.nanmean(dlon) + np.nanmean(dlat))/2
         return dem_resolution, geo_ex, proj_ex
 
@@ -254,11 +252,11 @@ def main(input_folder, output_folder, Date, ETLook_version = "v2"):
             size_x_zone = int(np.ceil(size_x/200)) 
             array_fake = np.ones([size_y_zone, size_x_zone])
             geo_new = tuple([geo_ex[0], geo_ex[1] * 200, geo_ex[2], geo_ex[3], geo_ex[4], geo_ex[5]*200])
-            MEM_file = DC.Save_as_MEM(array_fake, geo_new, proj_ex)
+            MEM_file = PF.Save_as_MEM(array_fake, geo_new, proj_ex)
 
             LST_filename = create_fp("LST", vars.inputs["LST"])
             
-            dest_lst_zone_large = RC.reproject_dataset_example(LST_filename, MEM_file, 4)
+            dest_lst_zone_large = PF.reproject_dataset_example(LST_filename, MEM_file, 4)
             lst_zone_mean_large = dest_lst_zone_large.GetRasterBand(1).ReadAsArray()
             lst_zone_mean_large[lst_zone_mean_large==0] = -9999
             lst_zone_mean_large[np.isnan(lst_zone_mean_large)] = -9999
@@ -269,10 +267,10 @@ def main(input_folder, output_folder, Date, ETLook_version = "v2"):
                         lst_zone_mean_large[y, x] = np.nanmean(id["lst"][y*200:np.minimum((y+1)*200, size_y-1), x*200:np.minimum((x+1)*200, size_x-1)])
                 lst_zone_mean_large[np.isnan(lst_zone_mean_large)] = -9999
 
-            lst_zone_mean_large = RC.gap_filling(lst_zone_mean_large, -9999, 1)
-            dest_lst_zone_large = DC.Save_as_MEM(lst_zone_mean_large, geo_new, proj_ex)
+            lst_zone_mean_large = PF.gap_filling(lst_zone_mean_large, -9999, 1)
+            dest_lst_zone_large = PF.Save_as_MEM(lst_zone_mean_large, geo_new, proj_ex)
             
-            dest_lst_zone = RC.reproject_dataset_example(dest_lst_zone_large, LST_filename, 6)
+            dest_lst_zone = PF.reproject_dataset_example(dest_lst_zone_large, LST_filename, 6)
             od["lst_zone_mean"] = dest_lst_zone.GetRasterBand(1).ReadAsArray()
 
         od["t_max_bare"] = ETLook.soil_moisture.maximum_temperature_bare(od["ra_hor_clear_i"], od["emiss_atm_i"], od["t_air_k_i"], od["ad_i"], od["raa"], od["ras"], c.r0_bare)
@@ -316,7 +314,7 @@ def main(input_folder, output_folder, Date, ETLook_version = "v2"):
     elif ETLook_version == "v2":
         example_filepath = create_fp("ALBEDO", vars.inputs["ALBEDO"])
         geo_ex, proj_ex = get_geoinfo(example_filepath)[1:3]
-        dlat, dlon = watertools.Functions.Area_Conversions.Area_converter.Calc_dlat_dlon(geo_ex, id["ndvi"].shape[1], id["ndvi"].shape[0])
+        dlat, dlon = PF.calc_dlat_dlon(geo_ex, id["ndvi"].shape[1], id["ndvi"].shape[0])
         dem_resolution = (np.nanmean(dlon) +np.nanmean(dlat))/2
     
     od["z_obst"] = ETLook.roughness.obstacle_height(id["ndvi"], id["z_obst_max"], c.ndvi_obs_min, c.ndvi_obs_max, c.obs_fr)
@@ -434,7 +432,7 @@ def main(input_folder, output_folder, Date, ETLook_version = "v2"):
             od[var][np.isnan(QC)] = np.nan
             if vars.outputs[var]["output"]:
                 # print("saving '{0}'.".format(vars.outputs[var]["file_path"]))
-                DC.Save_as_tiff(vars.outputs[var]["file_path"], od[var], geo_ex, proj_ex)
+                PF.Save_as_tiff(vars.outputs[var]["file_path"], od[var], geo_ex, proj_ex)
         # else:
         #     print("'{0}' not found.".format(var))
 

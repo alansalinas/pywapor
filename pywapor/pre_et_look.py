@@ -7,11 +7,9 @@ from datetime import timedelta as deltat
 from osgeo import gdal
 import pandas as pd
 import numpy as np
-import rasterio as rio
 import requests
 import pywapor
-import pywapor.functions.Processing_Functions as PF
-from pywapor.functions.Swets_Filter import swets_filter
+import pywapor.general.processing_functions as PF
 from pathlib import Path
 
 def check_source_selection(source_selection, startdate, enddate):
@@ -59,14 +57,14 @@ def get_sources(source_selection):
         return [item for sublist in regular_list for item in sublist]
     return np.unique(_flatten([v for v in source_selection.values()]))
 
-def prepare_et_look_input(project_folder, startdate, enddate, latlim, lonlim, level = "level_1"):
+def main(project_folder, startdate, enddate, latlim, lonlim, level = "level_1"):
 
     sdate = dat.strptime(startdate, "%Y-%m-%d").date()
     edate = dat.strptime(enddate, "%Y-%m-%d").date()
 
+    #### Check if selected sources and dates are valid
     levels = pywapor.general.variables.get_source_level_selections()
-    lulc_values = pywapor.general.landcover_converter.get_lulc_values()
-    
+
     if isinstance(level, dict):
         level_name = "custom"
         if "name" in level.keys():
@@ -82,12 +80,15 @@ def prepare_et_look_input(project_folder, startdate, enddate, latlim, lonlim, le
     raw_folder = os.path.join(project_folder, "RAW")
     level_folder = os.path.join(project_folder, level)
 
+    #### Retrieve required passwords
     nasa = ["MOD13", "MYD13", "MCD43", "MOD11", "MYD11", "MERRA2"]
     if any(map(lambda v: v in sources, nasa)):
         un_nasa, pw_nasa = pywapor.collect.get_pw_un.get("NASA")
-    if "PROBAV" in sources:
+    vito = ["PROBAV"]
+    if any(map(lambda v: v in sources, vito)):
         un_vito, pw_vito = pywapor.collect.get_pw_un.get("VITO")
-    if "WAPOR" in sources:
+    wapor = ["WAPOR"]
+    if any(map(lambda v: v in sources, wapor)):
         wapor_token = pywapor.collect.get_pw_un.get("WAPOR")[0]
 
     #### NDVI #### 
@@ -165,6 +166,8 @@ def prepare_et_look_input(project_folder, startdate, enddate, latlim, lonlim, le
         raw_lulc_files = pywapor.collect.WAPOR.Get_Layer(raw_folder, sdate.strftime("%Y-01-01"), edate.strftime("%Y-12-31"), latlim, lonlim, 'L1_LCC_A', wapor_token)
         raw_lulc_files = [(dat.strptime(os.path.split(fp)[-1], "L1_LCC_A_WAPOR_YEAR_%Y.%m.%d.tif").year, fp) for fp in raw_lulc_files]
 
+    lulc_values = pywapor.general.landcover_converter.get_lulc_values()
+    
     lulc_file_template = unraw_filepaths("", "", level_folder, "{var}_{year}", static = True)[0]
     for year, raw_file in raw_lulc_files:
         for key, replace_values in lulc_values[source_selection["LULC"][0]].items():
@@ -256,7 +259,7 @@ def select_template(fhs):
 def calc_ra24_flat(lat_file, doy):
 
     ## latitude
-    lat = open_as_array(lat_file)
+    lat = PF.open_as_array(lat_file)
 
     Gsc = 1367        # Solar constant (W / m2)
     deg2rad = np.pi / 180.0
@@ -290,11 +293,11 @@ def slope_aspect(dem_file, project_folder, template_file):
 
     if not os.path.exists(slope_file) or not os.path.exists(aspect_file):
 
-        dem = open_as_array(dem_file)
+        dem = PF.open_as_array(dem_file)
 
         # constants
         geo_ex, proj_ex, size_x_ex, size_y_ex = get_geoinfo(template_file)
-        dlat, dlon = calc_dlat_dlon(geo_ex, size_x_ex, size_y_ex)            
+        dlat, dlon = PF.calc_dlat_dlon(geo_ex, size_x_ex, size_y_ex)            
 
         pixel_spacing = (np.nanmean(dlon) + np.nanmean(dlat)) / 2
         rad2deg = 180.0 / np.pi  # Factor to transform from rad to degree
@@ -339,7 +342,7 @@ def calc_periods(time_files, freq):
 
     for time_file in time_files:
 
-        array = open_as_array(time_file)
+        array = PF.open_as_array(time_file)
         dtime = np.nanmean(array)
         if np.isnan(dtime):
             dtime = 12
@@ -388,18 +391,8 @@ def unraw(raw_file, unraw_file, template_file, method):
 
 def reproj_file(file, template, method):
     ds = PF.reproject_dataset_example(file, template, method = method)
-    array = open_as_array(ds)
+    array = PF.open_as_array(ds)
     return array
-
-def open_as_array(input):
-    if isinstance(input, str):
-        ds = gdal.Open(input)
-    elif isinstance(input, gdal.Dataset):
-        ds = input
-    array = ds.GetRasterBand(1).ReadAsArray()
-    ndv = ds.GetRasterBand(1).GetNoDataValue()
-    array[array == ndv] = np.nan
-    return array  
 
 def get_geoinfo(template_file):
     ds = gdal.Open(template_file)
@@ -430,12 +423,12 @@ def lapse_rate_temp(tair_file, dem_file):
 
     # Open Arrays
     # T = ds_t_down.GetRasterBand(1).ReadAsArray()
-    tempe = open_as_array(ds_t_down)
+    tempe = PF.open_as_array(ds_t_down)
     # destDEM_down = gdal.Open(dem_file)
     # dem_down = destDEM_down.GetRasterBand(1).ReadAsArray()
-    dem_down = open_as_array(dem_file)
+    dem_down = PF.open_as_array(dem_file)
     # dem_up_ave = ds_dem_up_down.GetRasterBand(1).ReadAsArray()
-    dem_up_ave = open_as_array(ds_dem_up_down)
+    dem_up_ave = PF.open_as_array(ds_dem_up_down)
 
     # correct wrong values
     dem_down[dem_down <= 0] = 0
@@ -468,9 +461,9 @@ def combine_lst(raw_files):
 
         for i, scene in enumerate(scenes):
 
-            lst = open_as_array(scene[0])
-            time = open_as_array(scene[1])
-            vza = np.abs(open_as_array(scene[2]))
+            lst = PF.open_as_array(scene[0])
+            time = PF.open_as_array(scene[1])
+            vza = np.abs(PF.open_as_array(scene[2]))
 
             if i == 0:
                 lsts = np.array([lst])
@@ -543,55 +536,4 @@ def save_response_content(response, destination):
     with open(destination, "wb") as f:
         for chunk in response.iter_content(CHUNK_SIZE):
             if chunk: # filter out keep-alive new chunks
-                f.write(chunk) 
-
-def calc_dlat_dlon(geo_out, size_X, size_Y):
-    """
-    This functions calculated the distance between each pixel in meter.
-
-    Parameters
-    ----------
-    geo_out: array
-        geo transform function of the array
-    size_X: int
-        size of the X axis
-    size_Y: int
-        size of the Y axis
-
-    Returns
-    -------
-    dlat: array
-        Array containing the vertical distance between each pixel in meters
-    dlon: array
-        Array containing the horizontal distance between each pixel in meters
-    """
-
-    # Create the lat/lon rasters
-    lon = np.arange(size_X + 1)*geo_out[1]+geo_out[0] - 0.5 * geo_out[1]
-    lat = np.arange(size_Y + 1)*geo_out[5]+geo_out[3] - 0.5 * geo_out[5]
-
-    dlat_2d = np.array([lat,]*int(np.size(lon,0))).transpose()
-    dlon_2d =  np.array([lon,]*int(np.size(lat,0)))
-
-    # Radius of the earth in meters
-    R_earth = 6371000
-
-    # Calculate the lat and lon in radians
-    lonRad = dlon_2d * np.pi/180
-    latRad = dlat_2d * np.pi/180
-
-    # Calculate the difference in lat and lon
-    lonRad_dif = abs(lonRad[:,1:] - lonRad[:,:-1])
-    latRad_dif = abs(latRad[:-1] - latRad[1:])
-
-    # Calculate the distance between the upper and lower pixel edge
-    a = np.sin(latRad_dif[:,:-1]/2) * np.sin(latRad_dif[:,:-1]/2)
-    clat = 2 * np.arctan2(np.sqrt(a), np.sqrt(1-a))
-    dlat = R_earth * clat
-
-    # Calculate the distance between the eastern and western pixel edge
-    b = np.cos(latRad[1:,:-1]) * np.cos(latRad[:-1,:-1]) * np.sin(lonRad_dif[:-1,:]/2) * np.sin(lonRad_dif[:-1,:]/2)
-    clon = 2 * np.arctan2(np.sqrt(b), np.sqrt(1-b))
-    dlon = R_earth * clon
-
-    return(dlat, dlon)
+                f.write(chunk)

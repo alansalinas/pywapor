@@ -10,7 +10,6 @@ setup(
     packages = find_packages(include = ['pywapor', 'pywapor.*']),
     install_requires = [
         'gdal<=3.1.4',
-        'watertools<=0.0.28',
         'numpy',
         'pandas',
         'requests',
