@@ -180,6 +180,8 @@ def main(project_folder, startdate, enddate, latlim, lonlim, level = "level_1"):
     for year, raw_file in raw_temp_ampl_files:
         unraw(raw_file, temp_ampl_file_template.format(year = year), template_file, 6)
 
+    #### METADATA ####
+    source_selection["template_file"] = template_file
     json_file = os.path.join(level_folder, f"sources_{level}.json")
     with open(json_file, 'w+') as f:
         json.dump(source_selection, f, indent = 4 )
