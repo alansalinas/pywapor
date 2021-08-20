@@ -37,7 +37,7 @@ def DownloadData(Dir, Var, Startdate, Enddate, latlim, lonlim, TimeStep, Period,
         Parameter = "Temperature_Amplitude"
     
     # Create output folder
-    output_folder = os.path.join(Dir, "MERRA", Parameter, TimeStep) 
+    output_folder = os.path.join(Dir, "MERRA2", Parameter, TimeStep) 
     if not os.path.exists(output_folder):
         os.makedirs(output_folder)
     
@@ -77,7 +77,7 @@ def DownloadData(Dir, Var, Startdate, Enddate, latlim, lonlim, TimeStep, Period,
         if TimeStep == "hourly_MERRA2":
             Hour = int((Period - 1) * 1)
             output_name = os.path.join(output_folder, "%s_MERRA_%s_hourly_%d.%02d.%02d_H%02d.M00.tif"%(Var, unit, Date.year, Date.month, Date.day, Hour))
-            output_folder_temp = os.path.join(Dir, "MERRA", "Temp")
+            output_folder_temp = os.path.join(Dir, "MERRA2", "Temp")
             if not os.path.exists(output_folder_temp):
                 os.makedirs(output_folder_temp)
             year = Date.year
@@ -101,7 +101,7 @@ def DownloadData(Dir, Var, Startdate, Enddate, latlim, lonlim, TimeStep, Period,
             else:
                 output_name_max = output_folder
                 
-            output_folder_temp = os.path.join(Dir, "MERRA", "Temp")
+            output_folder_temp = os.path.join(Dir, "MERRA2", "Temp")
             if not os.path.exists(output_folder_temp):
                 os.makedirs(output_folder_temp)            
             year = Date.year

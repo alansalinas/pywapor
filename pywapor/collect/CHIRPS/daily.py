@@ -21,7 +21,7 @@ def main(Dir, latlim, lonlim, Startdate, Enddate, Waitbar = 1):
 	# Download data
 	DownloadData(Dir, Startdate, Enddate, latlim, lonlim, Waitbar)
 
-	return glob.glob(os.path.join(Dir, "Precipitation", "CHIRPS", "*.tif"))
+	return glob.glob(os.path.join(Dir, "CHIRPS", "Precipitation", "*.tif"))
 
 if __name__ == '__main__':
     main(sys.argv)

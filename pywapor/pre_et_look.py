@@ -181,10 +181,23 @@ def main(project_folder, startdate, enddate, latlim, lonlim, level = "level_1"):
         unraw(raw_file, temp_ampl_file_template.format(year = year), template_file, 6)
 
     #### METADATA ####
-    source_selection["template_file"] = template_file
-    json_file = os.path.join(level_folder, f"sources_{level}.json")
+    metadata = dict()
+    metadata["pywapor_version"] = pywapor.__version__
+    metadata["created"] = dat.now().strftime("%m/%d/%Y, %H:%M:%S")
+    metadata["template_file"] = template_file
+    metadata["geotransform"] = "[{0}, {1}, {2}, {3}, {4}, {5}]".format(*PF.get_geoinfo(template_file)[0])
+    metadata["resolution"] = "[{0}, {1}]".format(*PF.get_geoinfo(template_file)[2:])
+    metadata["inputs"] = dict()
+    metadata["inputs"]["latlim"] = "[{0}, {1}]".format(*latlim)
+    metadata["inputs"]["lonlim"] = "[{0}, {1}]".format(*lonlim)
+    metadata["inputs"]["startdate"] = startdate
+    metadata["inputs"]["enddate"] = enddate
+    metadata["inputs"]["source_selection_name"] = level
+    metadata["inputs"]["project_folder"] = project_folder
+    metadata["sources"] = source_selection
+    json_file = os.path.join(level_folder, f"metadata_{level}.json")
     with open(json_file, 'w+') as f:
-        json.dump(source_selection, f, indent = 4 )
+        json.dump(metadata, f, indent = 4 )
 
 def unraw_all(variable, unraw_file_templates, raw_files, template_file, method):
     unraw_files = [unraw_file.format(var = variable) for unraw_file in unraw_file_templates]

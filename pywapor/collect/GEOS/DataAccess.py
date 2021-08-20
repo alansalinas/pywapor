@@ -32,7 +32,7 @@ def DownloadData(Dir, Var, Startdate, Enddate, latlim, lonlim, TimeStep, Period,
     types  = VarInfo.types[Var]
 
     # Create output folder
-    output_folder = os.path.join(Dir, "GEOS", Parameter, TimeStep)
+    output_folder = os.path.join(Dir, "GEOS5", Parameter, TimeStep)
     if not os.path.exists(output_folder):
         os.makedirs(output_folder)
 

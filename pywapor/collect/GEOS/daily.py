@@ -26,7 +26,7 @@ def main(Dir, latlim, lonlim, Startdate, Enddate, Vars, Waitbar = 1):
         # Download data
         DownloadData(Dir, Var, Startdate, Enddate, latlim, lonlim, "daily", Period = '', Waitbar = 1)
 
-    output_folder = os.path.join(Dir, "GEOS", "**", "**", "*.tif")
+    output_folder = os.path.join(Dir, "GEOS5", "**", "**", "*.tif")
     return glob.glob(output_folder)
 
 if __name__ == '__main__':

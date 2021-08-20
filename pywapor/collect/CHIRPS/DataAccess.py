@@ -28,7 +28,7 @@ def DownloadData(Dir, Startdate, Enddate, latlim, lonlim, Waitbar):
     """
 	
     # Define timestep for the timedates
-    output_folder = os.path.join(Dir, 'Precipitation', 'CHIRPS')
+    output_folder = os.path.join(Dir, "CHIRPS", "Precipitation")
 
     # make directory if it not exists
     if not os.path.exists(output_folder):

@@ -26,7 +26,7 @@ def DownloadData(output_folder, latlim, lonlim):
         lonlim[1] = np.min(lonlim[1], 180)  
         
     # Check output path and create if not exists
-    output_folder_end = os.path.join(output_folder, "GlobCover", "Landuse")
+    output_folder_end = os.path.join(output_folder, "GLOBCOVER", "Landuse")
     if not os.path.exists(output_folder_end):
         os.makedirs(output_folder_end)
 

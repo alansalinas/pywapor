@@ -33,7 +33,7 @@ def main(Dir, latlim, lonlim, Waitbar = 1):
         amount = 1
         WaitbarConsole.printWaitBar(amount, total_amount, prefix = 'Progress:', suffix = 'Complete', length = 50)
 
-    outpath = os.path.join(Dir, "GlobCover", "Landuse", "LC_GLOBCOVER_V2.3.tif")
+    outpath = os.path.join(Dir, "GLOBCOVER", "Landuse", "LC_GLOBCOVER_V2.3.tif")
 
     return outpath
 
