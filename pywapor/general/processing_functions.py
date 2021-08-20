@@ -7,7 +7,7 @@ from osgeo import gdal
 import gzip
 import zipfile
 import numpy as np
-import scipy
+from scipy.interpolate import NearestNDInterpolator, LinearNDInterpolator
 
 def apply_mask(a, indices, axis):
     """
@@ -263,8 +263,6 @@ def reproject_dataset_example(dataset, dataset_example, method=1):
             g = dataset
     epsg_from = Get_epsg(g)
 
-    ndv = g.GetRasterBand(1).GetNoDataValue()
-
     #exceptions
     if epsg_from == 9001:
         epsg_from = 5070
@@ -295,6 +293,7 @@ def reproject_dataset_example(dataset, dataset_example, method=1):
     dest.SetProjection(osng.ExportToWkt())
 
     # https://gis.stackexchange.com/questions/158503/9999-no-data-value-becomes-0-when-writing-array-to-gdal-memory-file
+    ndv = g.GetRasterBand(1).GetNoDataValue()
     band = dest.GetRasterBand(1)
     band.SetNoDataValue(ndv)
     band.Fill(ndv, 0.0)
@@ -465,11 +464,11 @@ def gap_filling(dataset, NoDataValue, method = 1):
     data0 = np.ravel( data[:,:][mask] )
 
     if method == 1:
-        interp0 = scipy.interpolate.NearestNDInterpolator( xym, data0 )
+        interp0 = NearestNDInterpolator( xym, data0 )
         data_end = interp0(np.ravel(xx), np.ravel(yy)).reshape( xx.shape )
 
     if method == 2:
-        interp0 = scipy.interpolate.LinearNDInterpolator( xym, data0 )
+        interp0 = LinearNDInterpolator( xym, data0 )
         data_end = interp0(np.ravel(xx), np.ravel(yy)).reshape( xx.shape )
 
     if Save_as_tiff_bool == 1:
