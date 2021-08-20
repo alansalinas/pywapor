@@ -19,6 +19,7 @@ from requests.exceptions import HTTPError
 from datetime import datetime, timedelta
 from aiohttp import ClientResponseError, ServerDisconnectedError
 from asyncio import TimeoutError
+import pywapor.general.processing_functions as PF
 
 # Required for Python 3.6 and 3.7
 import nest_asyncio
@@ -138,8 +139,9 @@ def download_data(download_dir, start_date, end_date, latitude_extent, longitude
 
             # merge files and clip to extent, save as tif
             if data_files:
-                _merge_and_save_tifs(data_files, output_file, latitude_extent, longitude_extent,
-                                     delete_input=delete_tif)
+                _merge_and_save_tifs(data_files, output_file, 
+                                    latitude_extent, longitude_extent,
+                                    delete_input=delete_tif)
 
         if delete_tif:
             for file in input_files:
@@ -205,7 +207,7 @@ def _merge_and_save_tifs(input_files, output_file, latitude_extent, longitude_ex
 
         src_files_to_mosaic.append(rasterio.open(file))
 
-    mosaic, mosaic_trans = rasterio.merge.merge(src_files_to_mosaic, bounds=bbox)
+    mosaic, mosaic_trans = rasterio.merge.merge(src_files_to_mosaic, bounds=bbox, target_aligned_pixels = True)
     mosaic = np.squeeze(mosaic)
 
     # Do not check if we have data in aoi
