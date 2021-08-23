@@ -19,6 +19,9 @@ def check_source_selection(source_selection, startdate, enddate):
     assert len(source_selection["PRECIPITATION"]) == 1, "only one PRECIPITATION source can be selected"
     assert len(source_selection["LULC"]) == 1, "only one LULC source can be selected"
     assert len(source_selection["TRANS"]) == 1, "only one TRANS source can be selected"
+    assert len(source_selection["NDVI"]) >= 1, "only one TRANS source can be selected"
+    assert len(source_selection["ALBEDO"]) >= 1, "only one TRANS source can be selected"
+    assert len(source_selection["LST"]) >= 1, "only one TRANS source can be selected"
 
     results = dict()
     all_results = list()

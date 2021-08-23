@@ -163,8 +163,8 @@ def main(project_folder, startdate, enddate, latlim, lonlim, level = "level_1"):
     if "MERRA2" in source_selection["TRANS"]:
         raw_trans_files = c.MERRA.daily_MERRA2(*dl_args, ['swgnet'])[0]
     
-    trans_files = unraw_filepaths(startdate, enddate, level_folder, "Trans")
-    trans_files = [(int(dat.strptime(os.path.split(fp)[-1], "Trans_%Y%m%d.tif").strftime("%j")), fp) for fp in trans_files]
+    trans_files = unraw_filepaths(startdate, enddate, level_folder, "Trans_24")
+    trans_files = [(int(dat.strptime(os.path.split(fp)[-1], "Trans_24_%Y%m%d.tif").strftime("%j")), fp) for fp in trans_files]
 
     for (doy, unraw_file), raw_file in zip(trans_files, raw_trans_files):
         ra24_flat = calc_ra24_flat(lat_file, doy)
@@ -198,6 +198,8 @@ def main(project_folder, startdate, enddate, latlim, lonlim, level = "level_1"):
     json_file = os.path.join(level_folder, f"metadata_{level}.json")
     with open(json_file, 'w+') as f:
         json.dump(metadata, f, indent = 4 )
+
+    os.chdir(project_folder)
 
 def unraw_all(variable, unraw_file_templates, raw_files, template_file, method):
     unraw_files = [unraw_file.format(var = variable) for unraw_file in unraw_file_templates]

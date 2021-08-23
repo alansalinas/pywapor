@@ -28,7 +28,7 @@ def main(project_folder, date, level = "level_1", et_look_version = "v2"):
 
     # Input folder date
     input_folder_date = os.path.join(project_folder, level, date_str)
-    input_folder_static = os.path.join(project_folder, level, "Static")
+    input_folder_static = os.path.join(project_folder, level, "static")
 
     ############################ Define inputs ################################
 
@@ -59,11 +59,16 @@ def main(project_folder, date, level = "level_1", et_look_version = "v2"):
         return fp
 
     # Create QC array
-    fp = create_fp("LST", vars.inputs["LST"], date)
-    # fp = create_fp("NDVI", vars.inputs["NDVI"])
-    init = create_array(fp)
-    QC = np.ones(init.shape)
-    QC[init == -9999] = np.nan
+    fp1 = create_fp("LST", vars.inputs["LST"], date)
+    fp2 = create_fp("ALBEDO", vars.inputs["ALBEDO"], date)
+    fp3 = create_fp("NDVI", vars.inputs["NDVI"], date)
+    init1 = create_array(fp1)
+    init2 = create_array(fp2)
+    init3 = create_array(fp3)
+    QC = np.ones(init1.shape)
+    QC[init1 == -9999] = np.nan
+    QC[init2 == -9999] = np.nan
+    QC[init3 == -9999] = np.nan
 
     def open_array(key, value, date, folders = folders, mask = QC):
         fp = create_fp(key, value, date, folders = folders)

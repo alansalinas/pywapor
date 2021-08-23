@@ -36,7 +36,7 @@ def main(Dir, latlim, lonlim, Startdate, Enddate, Vars, Waitbar = 1, data_type =
         VarInfo = VariablesInfo(TimeStep)
         Parameter = VarInfo.names[Var]
 
-        files = glob.glob(os.path.join(Dir, "MERRA", Parameter, TimeStep, "*.tif") )
+        files = glob.glob(os.path.join(Dir, "MERRA2", Parameter, TimeStep, "*.tif") )
         all_files.append(files)
 
     return all_files
