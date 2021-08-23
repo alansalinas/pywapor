@@ -3,8 +3,14 @@ import pywapor
 import os
 import time
 import numpy as np
+from datetime import datetime as dat
 
 def check_source_selection(source_selection, startdate, enddate):
+
+    if isinstance(startdate, str):
+        startdate = dat.strptime(startdate, "%Y-%m-%d").date()
+    if isinstance(enddate, str):
+        enddate = dat.strptime(enddate, "%Y-%m-%d").date()
 
     valid_sources, valid_dates = pywapor.general.variables.get_source_validations()
 

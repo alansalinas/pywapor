@@ -1,5 +1,5 @@
 # pyWAPOR
-![downloads](https://img.shields.io/pypi/dw/pywapor) [![version](https://img.shields.io/pypi/v/pywapor)](https://pypi.org/project/pywapor/) [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/drive/1YEsCN6GnMGvOzXT4YaJ_jeu58mGIhhMq?usp=sharing)
+![downloads](https://img.shields.io/pypi/dw/pywapor) [![version](https://img.shields.io/pypi/v/pywapor)](https://pypi.org/project/pywapor/) [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/drive/19oYdrrXFsXWAMDa2x56yvvWUGxNHPYek?usp=sharing)
 
 
 This repository contains a Python implementation of the algorithm used to generate the [WaPOR](http://www.fao.org/in-action/remote-sensing-for-water-productivity/en/) [datasets](https://wapor.apps.fao.org/home/WAPOR_2/1). It can be used to calculate evaporation, transpiration and biomass production maps based on MODIS or Landsat data.
@@ -41,7 +41,7 @@ pywapor.pre_et_look.main(project_folder, startdate, enddate, latlim, lonlim)
 pywapor.et_look.main(project_folder, startdate)
 ```
 
-See the `examples` folder for more examples or check out the [Colab Notebook](https://colab.research.google.com/drive/1YEsCN6GnMGvOzXT4YaJ_jeu58mGIhhMq?usp=sharing).
+See the `examples` folder for more examples or check out the [Colab Notebook](https://colab.research.google.com/drive/19oYdrrXFsXWAMDa2x56yvvWUGxNHPYek?usp=sharing).
 
 ## Data Sources
 

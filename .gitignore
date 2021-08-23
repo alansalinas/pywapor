@@ -24,6 +24,9 @@
 
 devs/
 dist/
+build/
+pywapor_test.egg-info/
+pywapor.egg-info/
 
 # Unit test reports
 TEST*.xml
