@@ -11,4 +11,4 @@ from pywapor import general, et_look_dev, et_look_v2, pre_et_look, et_look, coll
 
 __all__ = ['general', 'et_look_dev', 'et_look_v2', 'pre_et_look', 'et_look', 'collect']
 
-__version__ = '2.1.1'
+__version__ = '2.2.0'
