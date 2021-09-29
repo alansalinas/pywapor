@@ -10,6 +10,7 @@ from osgeo import gdal
 import numpy as np
 import pandas as pd
 from ftplib import FTP
+import datetime
 
 def DownloadData(Dir, Startdate, Enddate, latlim, lonlim, Waitbar):
     """
@@ -130,32 +131,32 @@ def RetrieveData(Date, args):
     	# create all the input name (filename) and output (outfilename, filetif, DiFileEnd) names
         filename = 'chirps-v2.0.%s.%02s.%02s.tif.gz' %(Date.strftime('%Y'), Date.strftime('%m'), Date.strftime('%d'))
         outfilename = os.path.join(output_folder,'chirps-v2.0.%s.%02s.%02s.tif' %(Date.strftime('%Y'), Date.strftime('%m'), Date.strftime('%d')))
-    
+
         # download the global rainfall file
-        try:
+
+        # unzip the file if necessary
+        # Files after 2021-6-1 are not zipped for some reason (Bert, 29-9-2021)
+        if Date >= datetime.datetime(2021, 6, 1):
+            filename = filename.replace(".gz", "")
+            with open(outfilename, "wb") as lf:
+                ftp.retrbinary("RETR " + filename, lf.write, 8192)
+        else:
             local_filename = os.path.join(output_folder, filename)
-            lf = open(local_filename, "wb")
-            ftp.retrbinary("RETR " + filename, lf.write, 8192)
-            lf.close()
-    
-            # unzip the file
-            zip_filename = os.path.join(output_folder, filename)
-            PF.Extract_Data_gz(zip_filename, outfilename)
-    
-            # open tiff file
-            dest = gdal.Open(outfilename)
-            dataset = dest.GetRasterBand(1).ReadAsArray()
-    
-            # clip dataset to the given extent
-            data = dataset[yID[0]:yID[1], xID[0]:xID[1]]
-            data[data < 0] = -9999
-    
-            # save dataset as geotiff file
-            geo = [lonlim[0], 0.05, 0, latlim[1], 0, -0.05]
-            
-            PF.Save_as_tiff(name=DirFileEnd, data=data, geo=geo, projection="WGS84")
-    
-        except:
-            print("file not exists")
+            with open(local_filename, "wb") as lf:
+                ftp.retrbinary("RETR " + filename, lf.write, 8192) 
+            PF.Extract_Data_gz(local_filename, outfilename)
+
+        # open tiff file
+        dest = gdal.Open(outfilename)
+        dataset = dest.GetRasterBand(1).ReadAsArray()
+
+        # clip dataset to the given extent
+        data = dataset[yID[0]:yID[1], xID[0]:xID[1]]
+        data[data < 0] = -9999
+
+        # save dataset as geotiff file
+        geo = [lonlim[0], 0.05, 0, latlim[1], 0, -0.05]
         
+        PF.Save_as_tiff(name=DirFileEnd, data=data, geo=geo, projection="WGS84")
+    
     return True
