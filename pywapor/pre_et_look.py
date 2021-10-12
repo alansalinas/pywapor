@@ -100,7 +100,8 @@ def main(project_folder, startdate, enddate, latlim, lonlim, level = "level_1"):
         raw_lulc_files = [(year, raw_lulc_file) for year in range(sdate.year, edate.year + 1)]
     elif "WAPOR" in source_selection["LULC"]:
         raw_lulc_files = c.WAPOR.Get_Layer(*dl_args[:3], sdate.strftime("%Y-01-01"), edate.strftime("%Y-12-31"), 'L1_LCC_A')
-        raw_lulc_files = [(dat.strptime(os.path.split(fp)[-1], "L1_LCC_A_WAPOR_YEAR_%Y.%m.%d.tif").year, fp) for fp in raw_lulc_files]
+        years = np.array([dat.strptime(os.path.split(fp)[-1], "L1_LCC_A_WAPOR_YEAR_%Y.%m.%d.tif").year for fp in raw_lulc_files])
+        raw_lulc_files = [(year, raw_lulc_files[np.argmin(np.abs(years - year))]) for year in range(sdate.year, edate.year + 1)]        
 
     lulc_values = g.landcover_converter.get_lulc_values()
     

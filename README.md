@@ -66,7 +66,7 @@ To run the ETLook model, two types of spatial variables are required, temporal a
 | Air Pressure at surface level | instant  | kPa | MERRA-2, GEOS-5 |
 | Specific Humidity | instant, mean  | kg/kg | MERRA-2, GEOS-5 |
 | Air Temperature | instant, mean, min, max  | °C | MERRA-2, GEOS-5 |
-| Windspeed (daily average) | instant, mean  | m/s | MERRA-2, GEOS-5 |
+| Windspeed | instant, mean  | m/s | MERRA-2, GEOS-5 |
 | Total Precipitable Water Vapour | instant  | mm | MERRA-2, GEOS-5 |
 | Transmissivity | instant  | - | MERRA-2 |
 | Instantaneous Data Time | instant  | hour | from LST

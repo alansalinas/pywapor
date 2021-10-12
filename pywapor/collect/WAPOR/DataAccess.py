@@ -11,6 +11,8 @@ import os
 import urllib
 import datetime
 from pyproj import Proj, transform
+import numpy as np
+from datetime import timedelta
 
 # import watertools
 
@@ -20,12 +22,7 @@ def WAPOR(output_folder, Startdate, Enddate, latlim, lonlim, Parameter, auth_tok
     level = Parameter.split("_")[0]
     
     # Find the time frequency of the parameter
-    if time_steps == "A":
-        freq = "AS"
-    if time_steps == "M":
-        freq = "MS"    
-    if time_steps == "D":
-        freq = "MS"    
+    freq = {"A": "AS", "M": "MS", "D": "MS", "E": "D"}[time_steps]
     
     # Find LEVEL type
     if level == "L3":
@@ -34,7 +31,30 @@ def WAPOR(output_folder, Startdate, Enddate, latlim, lonlim, Parameter, auth_tok
         Version = "1" # LEVEL 3 is only available in Version 1 dataset
     
     # Define dates
-    Dates = pd.date_range(Startdate, Enddate, freq = freq)
+    if time_steps == "A":
+
+        # Available annual data range.
+        min_date = datetime.datetime(2009,1,1)
+        max_date = datetime.datetime(2020,12,31)
+
+        sdate = datetime.datetime.strptime(Startdate, "%Y-%m-%d")
+        edate = datetime.datetime.strptime(Enddate, "%Y-%m-%d")
+
+        Dates = pd.date_range(sdate.strftime("%Y-01-01"), 
+                              edate.strftime("%Y-01-01"), freq=freq)
+
+        Dates = Dates[np.all([Dates >= min_date, Dates <= max_date], axis = 0)]
+        
+        # If selected dates are before or after available, take closest.
+        if Dates.size == 0 and edate < min_date:
+            Dates = pd.date_range(min_date.strftime("%Y-01-01"), 
+                                  min_date.strftime("%Y-01-01"), freq="AS")
+        elif Dates.size == 0 and sdate > max_date:
+            Dates = pd.date_range(max_date.strftime("%Y-01-01"), 
+                                  max_date.strftime("%Y-01-01"), freq="AS")
+
+    else:
+        Dates = pd.date_range(Startdate, Enddate, freq = freq)
     
     if time_steps == "D":
         for Date in Dates:
@@ -127,7 +147,13 @@ def WAPOR(output_folder, Startdate, Enddate, latlim, lonlim, Parameter, auth_tok
             Start_day_payload = Date_end.day
             End_day_payload = 1
             End_month_payload = 1
-            End_year_payload = Date_end.year + 1        
+            End_year_payload = Date_end.year + 1
+
+        if time_steps == "E":
+            Start_day_payload = Date_end.day
+            End_day_payload = (Date_end + timedelta(days = 1)).day
+            End_month_payload = (Date_end + timedelta(days = 1)).month
+            End_year_payload = (Date_end + timedelta(days = 1)).year
 
         file_name_temp = os.path.join(output_folder_para, "%s_WAPOR_%s_%s.%02d.%02d.tif" %(Parameter, dimension, Date_end.year, Date_end.month, Start_day_payload))
     

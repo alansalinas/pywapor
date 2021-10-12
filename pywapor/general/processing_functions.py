@@ -239,7 +239,35 @@ def Extract_Data(input_file, output_folder):
     z = zipfile.ZipFile(input_file, 'r')
     z.extractall(output_folder)
     z.close()    
+
+def reproj_ds(source_file, example_file, ndv = -9999, override_dtype = True):
     
+    source_ds = gdal.Open(source_file)
+
+    example_ds = gdal.Open(example_file)
+    example_xsize = example_ds.RasterXSize
+    example_ysize = example_ds.RasterYSize
+
+    if override_dtype:
+        example_dtype = example_ds.GetRasterBand(1).DataType
+    else:
+        example_dtype = source_ds.GetRasterBand(1).DataType
+
+    mem_drv = gdal.GetDriverByName('MEM')
+    dest_ds = mem_drv.Create('', example_xsize, example_ysize, 1, example_dtype)
+    dest_ds.SetGeoTransform(example_ds.GetGeoTransform())
+    dest_ds.SetProjection(example_ds.GetProjection())
+    dest_ds.GetRasterBand(1).Fill(ndv)
+    dest_ds.GetRasterBand(1).SetNoDataValue(ndv)
+
+    gdal.ReprojectImage(source_ds,
+                        dest_ds,
+                        source_ds.GetProjection(),
+                        dest_ds.GetProjection(),
+                        gdal.GRA_NearestNeighbour)
+
+    return dest_ds
+
 def reproject_dataset_example(dataset, dataset_example, method=1):
     """
     A sample function to reproject and resample a GDAL dataset from within
