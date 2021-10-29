@@ -406,7 +406,7 @@ def lapse_rate_temp(tair_file, dem_file):
     dem_down[dem_down <= 0] = 0
     dem_up_ave[dem_up_ave <= 0] = 0
 
-    tdown = pywapor.et_look_v2.meteo.disaggregate_air_temperature(tempe, dem_down, dem_up_ave)
+    tdown = pywapor.et_look_v2.meteo.disaggregate_air_temperature(tempe, dem_down, dem_up_ave, lapse = pywapor.et_look_v2.constants.lapse)
     # _plot_array(tdown)
 
     # test_tair = r"/Volumes/Data/pre_et_look_ORIGINAL/ETLook_input_MODIS/20190706/tair_24_20190706.tif"

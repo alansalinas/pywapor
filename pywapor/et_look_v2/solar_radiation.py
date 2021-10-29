@@ -249,7 +249,7 @@ def seasonal_correction(doy):
     >>> solrad.seasonal_correction(180)
     -0.052343379605521212
     """
-    b = 2 * np.pi * (doy - 81) / 364.0
+    b = 2 * np.pi * (doy - 81) / 365.0
     return 0.1645 * np.sin(2 * b) - 0.1255 * np.cos(b) - 0.025 * np.sin(b)
 
 

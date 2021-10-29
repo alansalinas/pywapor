@@ -93,7 +93,7 @@ Maximum Obstacle Height | m | from Landcover
 | ------ | ------ | ------ | ------ | ------ |
 |[MOD13](https://lpdaac.usgs.gov/products/mod13q1v006/) | 2000-02-18 - ongoing | 16-Daily |250m|NDVI|
 |[MYD13](https://lpdaac.usgs.gov/products/myd13q1v006/) | 2002-07-04 - ongoing | 16-Daily |250m|NDVI|
-|[MCD43](https://lpdaac.usgs.gov/products/mcd43a1v006/)|2000-02-16 - ongoing|Daily|500m|Albedo|
+|[MCD43](https://lpdaac.usgs.gov/products/mcd43a3v006/)|2000-02-16 - ongoing|Daily|500m|Albedo|
 |[MOD11](https://lpdaac.usgs.gov/products/mod11a1v006/) | 2000-02-24 - ongoing | Daily | 1000m | LST |
 |[MYD11](https://lpdaac.usgs.gov/products/myd11a1v006/)| 2002-07-04 - ongoing | Daily | 1000m | LST |
 |[PROBAV](https://www.vito-eodata.be/collectioncatalogue/srv/eng/catalog.search#/metadata/urn:ogc:def:EOP:VITO:PROBAV_S5-TOC_100M_V001)|2014-03-11 - ongoing|5-Daily|100m|NDVI, Albedo|
