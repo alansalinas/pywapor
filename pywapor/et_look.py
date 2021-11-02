@@ -50,7 +50,8 @@ def create_fp(key, value, date, folders):
 
     return fp
 
-def main(project_folder, date, level = "level_1", et_look_version = "v2", input_data = None):
+def main(project_folder, date, level = "level_1", et_look_version = "v2", 
+            output = None, input_data = None):
 
     # Version
     if et_look_version == "v2":
@@ -79,8 +80,17 @@ def main(project_folder, date, level = "level_1", et_look_version = "v2", input_
     if not os.path.exists(output_folder_date) and isinstance(input_data, type(None)):
         os.makedirs(output_folder_date)
 
+    if isinstance(output, type(None)):
+        out_final = out.outputs
+    elif output == "all":
+        out_final = {k: True for k in out.outputs.keys()}
+    elif isinstance(output, dict):
+        for key, value in output.items():
+            out.outputs[key] = value
+            out_final = out.outputs
+
     for key, value in vars.outputs.items():
-        value["output"] = bool(getattr(out, key))
+        value["output"] = out_final[key]
         value["file_path"] = os.path.join(output_folder_date, 
         "{0}_{1}.tif".format(value["file_name"], date_str))
 
@@ -405,6 +415,8 @@ def se_root(id, od, et_look_version, date, folders, geoinfo):
 
     od["t_max_bare"] = ETLook.soil_moisture.maximum_temperature_bare(od["ra_hor_clear_i"], od["emiss_atm_i"], od["t_air_k_i"], od["ad_i"], od["raa"], od["ras"], id["r0_bare"])
     od["t_max_full"] = ETLook.soil_moisture.maximum_temperature_full(od["ra_hor_clear_i"], od["emiss_atm_i"], od["t_air_k_i"], od["ad_i"], od["rac"], id["r0_full"])
+
+    # print(np.nanmean(od["t_max_bare"]), np.nanmean(od["t_max_full"]))
 
     od["w_i"] = ETLook.soil_moisture.dew_point_temperature_inst(od["vp_i"])
     od["t_dew_i"] = ETLook.soil_moisture.dew_point_temperature_inst(od["vp_i"])
