@@ -266,7 +266,7 @@ order = [
     "biomass_prod_kg-ha",
 ]
 
-def get_raw_meteo_paths():
+def get_raw_meteo_paths(type = "all"):
 
     meteo_raw_paths_GEOS = {
         "Pair_24_0":    ("{raw_folder}", "GEOS5", "Sea_Level_Pressure", "daily", "slp_GEOS_kpa_daily_{date}.tif"),
@@ -276,34 +276,43 @@ def get_raw_meteo_paths():
         "qv_inst":      ("{raw_folder}", "GEOS5", "Specific_Humidity", "three_hourly", "qv2m_GEOS_kg-kg-1_3-hourly_{date}_H{hour}.M00.tif"),
         "tair_24":      ("{raw_folder}", "GEOS5", "Air_Temperature", "daily", "t2m_GEOS_K_daily_{date}.tif"),
         "tair_inst":    ("{raw_folder}", "GEOS5", "Air_Temperature", "three_hourly", "t2m_GEOS_K_3-hourly_{date}_H{hour}.M00.tif"),
-        "tair_max_24":  ("{raw_folder}", "GEOS5", "Air_Temperature", "daily", "t2m_GEOS_K_daily_max_{date}.tif"),
-        "tair_min_24":  ("{raw_folder}", "GEOS5", "Air_Temperature", "daily", "t2m_GEOS_K_daily_min_{date}.tif"),
+        "tair_max_24":  ("{raw_folder}", "GEOS5", "Air_Temperature", "daily", "t2m_GEOS_K_daily-max_{date}.tif"),
+        "tair_min_24":  ("{raw_folder}", "GEOS5", "Air_Temperature", "daily", "t2m_GEOS_K_daily-min_{date}.tif"),
         "wv_inst":      ("{raw_folder}", "GEOS5", "Total_Precipitable_Water_Vapor", "three_hourly", "tqv_GEOS_mm_3-hourly_{date}_H{hour}.M00.tif"),
-        "wind_inst":    (["{raw_folder}", "GEOS5", "Northward_Wind", "three_hourly", "v2m_GEOS_m-s-1_3-hourly_{date}_H{hour}.M00.tif"],
-                         ["{raw_folder}", "GEOS5", "Eastward_Wind", "three_hourly", "u2m_GEOS_m-s-1_3-hourly_{date}_H{hour}.M00.tif"]),
-        "wind_24":      (["{raw_folder}", "GEOS5", "Northward_Wind", "daily", "v2m_GEOS_m-s-1_daily_{date}.tif"],
-                         ["{raw_folder}", "GEOS5", "Eastward_Wind", "daily", "u2m_GEOS_m-s-1_daily_{date}.tif"]),
+        "v2m_inst":     ("{raw_folder}", "GEOS5", "Northward_Wind", "three_hourly", "v2m_GEOS_m-s-1_3-hourly_{date}_H{hour}.M00.tif"),
+        "u2m_inst":     ("{raw_folder}", "GEOS5", "Eastward_Wind", "three_hourly", "u2m_GEOS_m-s-1_3-hourly_{date}_H{hour}.M00.tif"),
+        "v2m_24":       ("{raw_folder}", "GEOS5", "Northward_Wind", "daily", "v2m_GEOS_m-s-1_daily_{date}.tif"),
+        "u2m_24":       ("{raw_folder}", "GEOS5", "Eastward_Wind", "daily", "u2m_GEOS_m-s-1_daily_{date}.tif"),
     }
 
     meteo_raw_paths_MERRA = {
-        "Pair_24_0":    (["{raw_folder}", "MERRA2", "Sea_Level_Pressure", "daily_MERRA2", "slp_MERRA_kpa_daily_{date}.tif"]),
-        "Pair_inst_0":  (["{raw_folder}", "MERRA2", "Sea_Level_Pressure", "hourly_MERRA2", "slp_MERRA_kpa_hourly_{date}_H{hour}.M00.tif"]),
-        "Pair_inst":    (["{raw_folder}", "MERRA2", "Surface_Pressure", "hourly_MERRA2", "ps_MERRA_kpa_hourly_{date}_H{hour}.M00.tif"]),
-        "qv_24":        (["{raw_folder}", "MERRA2", "Specific_Humidity", "daily_MERRA2", "q2m_MERRA_kg-kg-1_daily_{date}.tif"]),
-        "qv_inst":      (["{raw_folder}", "MERRA2", "Specific_Humidity", "hourly_MERRA2", "q2m_MERRA_kg-kg-1_hourly_{date}_H{hour}.M00.tif"]),
-        "tair_24":      (["{raw_folder}", "MERRA2", "Air_Temperature", "daily_MERRA2", "t2m_MERRA_K_daily_{date}.tif"]),
-        "tair_inst":    (["{raw_folder}", "MERRA2", "Air_Temperature", "hourly_MERRA2", "t2m_MERRA_K_hourly_{date}_H{hour}.M00.tif"]),
-        "tair_max_24":  (["{raw_folder}", "MERRA2", "Air_Temperature", "daily_MERRA2", "t2mmax_MERRA_K_daily_{date}.tif"]),
-        "tair_min_24":  (["{raw_folder}", "MERRA2", "Air_Temperature", "daily_MERRA2", "t2mmin_MERRA_K_daily_{date}.tif"]),
-        "wv_inst":      (["{raw_folder}", "MERRA2", "Total_Precipitable_Water_Vapor", "hourly_MERRA2", "tpw_MERRA_mm_hourly_{date}_H{hour}.M00.tif"]),
-        "wind_inst":    (["{raw_folder}", "MERRA2", "Northward_Wind", "hourly_MERRA2", "v2m_MERRA_m-s-1_hourly_{date}_H{hour}.M00.tif"],
-                         ["{raw_folder}", "MERRA2", "Eastward_Wind", "hourly_MERRA2", "u2m_MERRA_m-s-1_hourly_{date}_H{hour}.M00.tif"]),
-        "wind_24":      (["{raw_folder}", "MERRA2", "Northward_Wind", "daily_MERRA2", "v2m_MERRA_m-s-1_daily_{date}.tif"],
-                         ["{raw_folder}", "MERRA2", "Eastward_Wind", "daily_MERRA2", "u2m_MERRA_m-s-1_daily_{date}.tif"]),
+        "Pair_24_0":    ("{raw_folder}", "MERRA2", "Sea_Level_Pressure", "daily_MERRA2", "slp_MERRA_kpa_daily_{date}.tif"),
+        "Pair_inst_0":  ("{raw_folder}", "MERRA2", "Sea_Level_Pressure", "hourly_MERRA2", "slp_MERRA_kpa_hourly_{date}_H{hour}.M00.tif"),
+        "Pair_inst":    ("{raw_folder}", "MERRA2", "Surface_Pressure", "hourly_MERRA2", "ps_MERRA_kpa_hourly_{date}_H{hour}.M00.tif"),
+        "qv_24":        ("{raw_folder}", "MERRA2", "Specific_Humidity", "daily_MERRA2", "q2m_MERRA_kg-kg-1_daily_{date}.tif"),
+        "qv_inst":      ("{raw_folder}", "MERRA2", "Specific_Humidity", "hourly_MERRA2", "q2m_MERRA_kg-kg-1_hourly_{date}_H{hour}.M00.tif"),
+        "tair_24":      ("{raw_folder}", "MERRA2", "Air_Temperature", "daily_MERRA2", "t2m_MERRA_K_daily_{date}.tif"),
+        "tair_inst":    ("{raw_folder}", "MERRA2", "Air_Temperature", "hourly_MERRA2", "t2m_MERRA_K_hourly_{date}_H{hour}.M00.tif"),
+        "tair_max_24":  ("{raw_folder}", "MERRA2", "Air_Temperature", "daily_MERRA2", "t2mmax_MERRA_K_daily_{date}.tif"),
+        "tair_min_24":  ("{raw_folder}", "MERRA2", "Air_Temperature", "daily_MERRA2", "t2mmin_MERRA_K_daily_{date}.tif"),
+        "wv_inst":      ("{raw_folder}", "MERRA2", "Total_Precipitable_Water_Vapor", "hourly_MERRA2", "tpw_MERRA_mm_hourly_{date}_H{hour}.M00.tif"),
+        "v2m_inst":     ("{raw_folder}", "MERRA2", "Northward_Wind", "hourly_MERRA2", "v2m_MERRA_m-s-1_hourly_{date}_H{hour}.M00.tif"),
+        "u2m_inst":     ("{raw_folder}", "MERRA2", "Eastward_Wind", "hourly_MERRA2", "u2m_MERRA_m-s-1_hourly_{date}_H{hour}.M00.tif"),
+        "v2m_24":       ("{raw_folder}", "MERRA2", "Northward_Wind", "daily_MERRA2", "v2m_MERRA_m-s-1_daily_{date}.tif"),
+        "u2m_24":       ("{raw_folder}", "MERRA2", "Eastward_Wind", "daily_MERRA2", "u2m_MERRA_m-s-1_daily_{date}.tif"),
+        "u2m_24":       ("{raw_folder}", "MERRA2", "Eastward_Wind", "daily_MERRA2", "u2m_MERRA_m-s-1_daily_{date}.tif"),
     }
 
-    raw_meteo_paths = {"MERRA2": meteo_raw_paths_MERRA,
-                       "GEOS5": meteo_raw_paths_GEOS}
+    if type == "all":
+        raw_meteo_paths = {"MERRA2": meteo_raw_paths_MERRA,
+                        "GEOS5": meteo_raw_paths_GEOS}
+    if type == "inst":
+        raw_meteo_paths = {"MERRA2": {k: v for k,v in meteo_raw_paths_MERRA.items() if "inst" in k},
+                        "GEOS5": {k: v for k,v in meteo_raw_paths_GEOS.items() if "inst" in k}}   
+
+    if type == "non-inst":
+        raw_meteo_paths = {"MERRA2": {k: v for k,v in meteo_raw_paths_MERRA.items() if "inst" not in k},
+                "GEOS5": {k: v for k,v in meteo_raw_paths_GEOS.items() if "inst" not in k}}   
 
     return raw_meteo_paths
 
