@@ -2,8 +2,6 @@
 import sys
 from pywapor.collect.MERRA.DataAccess import DownloadData
 from pywapor.collect.MERRA.DataAccess import VariablesInfo
-import os
-import glob
 import pywapor
 
 def main(Dir, latlim, lonlim, Startdate, Enddate, Vars, Waitbar = 1, data_type = ["mean"]):
@@ -20,7 +18,7 @@ def main(Dir, latlim, lonlim, Startdate, Enddate, Vars, Waitbar = 1, data_type =
     lonlim -- [xmin, xmax]
     Waitbar -- 1 (Default) Will print a waitbar
     """
-    all_files = list()
+    all_files = dict()
 
     username, password = pywapor.collect.get_pw_un.get("NASA")
 
@@ -30,14 +28,11 @@ def main(Dir, latlim, lonlim, Startdate, Enddate, Vars, Waitbar = 1, data_type =
             print('\nDownloading daily MERRA %s data for the period %s till %s' %(Var, Startdate, Enddate))
 
         # Download data
-        DownloadData(Dir, Var, Startdate, Enddate, latlim, lonlim, "daily_MERRA2", '', username, password, Waitbar = 1, data_type = data_type)
+        all_files = {**all_files, **DownloadData(Dir, Var, Startdate, Enddate, latlim, lonlim, "daily_MERRA2", '', username, password, Waitbar = 1, data_type = data_type)}
 
         TimeStep = "daily_MERRA2"
         VarInfo = VariablesInfo(TimeStep)
         Parameter = VarInfo.names[Var]
-
-        files = glob.glob(os.path.join(Dir, "MERRA2", Parameter, TimeStep, "*.tif") )
-        all_files.append(files)
 
     return all_files
 

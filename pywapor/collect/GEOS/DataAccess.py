@@ -12,6 +12,16 @@ import urllib
 
 def DownloadData(Dir, Var, Startdate, Enddate, latlim, lonlim, TimeStep, Period, Waitbar):
 
+    if TimeStep == "daily" and Var == "t2m":
+        all_files = {Var: list(), "t2m-min": list(), "t2m-max": list()}
+    else:
+        all_files = {Var: list()}
+
+    # Add extra buffer to ensure good spatial interpolation
+    buffer_pixels = 2
+    lonlim = [lonlim[0] - 0.3125 * buffer_pixels, lonlim[1] + 0.3125 * buffer_pixels]
+    latlim = [latlim[0] - 0.25 * buffer_pixels, latlim[1] + 0.25 * buffer_pixels]
+
 	# WAPOR modules
     import pywapor.general.processing_functions as PF
 
@@ -81,89 +91,102 @@ def DownloadData(Dir, Var, Startdate, Enddate, latlim, lonlim, TimeStep, Period,
 
             # if not downloaded try to download file
             while downloaded == 0:
-                try:
+                # try:
 
-                    # download data (first save as text file)
-                    pathtext = os.path.join(output_folder,'temp%s.txt' %str(IDz_start))
+                # download data (first save as text file)
+                pathtext = os.path.join(output_folder,'temp%s.txt' %str(IDz_start))
 
-                    # Download the data
-                    urllib.request.urlretrieve(url_GEOS, filename=pathtext)
+                # Download the data
+                urllib.request.urlretrieve(url_GEOS, filename=pathtext)
 
-                    # Reshape data
-                    datashape = [int(IDy[1] - IDy[0] + 1), int(IDx[1] - IDx[0] + 1)]
-                    data_start = np.genfromtxt(pathtext,dtype = float,skip_header = 1,skip_footer = 6,delimiter = ',')
-                    data_list = np.asarray(data_start[:,1:])
-                    if TimeStep == "daily":
-                        data_end = np.resize(data_list,(8, datashape[0], datashape[1]))
-                    if TimeStep == "three_hourly":
-                        data_end = np.resize(data_list,(datashape[0], datashape[1]))
-                    os.remove(pathtext)
+                # Reshape data
+                datashape = [int(IDy[1] - IDy[0] + 1), int(IDx[1] - IDx[0] + 1)]
+                data_start = np.genfromtxt(pathtext,dtype = float,skip_header = 1,skip_footer = 6,delimiter = ',')
+                data_list = np.asarray(data_start[:,1:])
+                if TimeStep == "daily":
+                    data_end = np.resize(data_list,(8, datashape[0], datashape[1]))
+                if TimeStep == "three_hourly":
+                    data_end = np.resize(data_list,(datashape[0], datashape[1]))
+                os.remove(pathtext)
 
-                    # Set no data value
-                    data_end[data_end>1000000] = -9999
+                # Set no data value
+                data_end[data_end>1000000] = -9999
 
-                    if TimeStep == "daily":
-                        if Var == "t2m":
-                            data_end_max = np.nanmax(data_end, 0)
-                            data_end_min = np.nanmin(data_end, 0)
-                        if types == "state":
-                            data_end = np.nanmean(data_end, 0)
-                        else:
-                            data_end = np.nansum(data_end, 0)
+                if TimeStep == "daily":
+                    if Var == "t2m":
+                        data_end_max = np.nanmax(data_end, 0)
+                        data_end_min = np.nanmin(data_end, 0)
+                    if types == "state":
+                        data_end = np.nanmean(data_end, 0)
+                    else:
+                        data_end = np.nansum(data_end, 0)
 
+                # Add the VarFactor
+                if VarInfo.factors[Var] < 0:
+                    data_end[data_end != -9999] = data_end[data_end != -9999] + VarInfo.factors[Var]
+                else:
+                    data_end[data_end != -9999] = data_end[data_end != -9999] * VarInfo.factors[Var]
+                data_end[data_end < -9999] = -9999
+
+                # Download was succesfull
+                downloaded = 1
+
+                # twist the data
+                data_end = np.flipud(data_end)
+
+                # Save as tiff file
+                PF.Save_as_tiff(output_name, data_end, geo_out, proj)
+                all_files[Var].append(output_name)
+                
+                if TimeStep == "daily" and Var == "t2m":
                     # Add the VarFactor
                     if VarInfo.factors[Var] < 0:
-                        data_end[data_end != -9999] = data_end[data_end != -9999] + VarInfo.factors[Var]
+                        data_end_max[data_end != -9999] = data_end_max[data_end != -9999] + VarInfo.factors[Var]
+                        data_end_min[data_end != -9999] = data_end_min[data_end != -9999] + VarInfo.factors[Var]
                     else:
-                        data_end[data_end != -9999] = data_end[data_end != -9999] * VarInfo.factors[Var]
-                    data_end[data_end < -9999] = -9999
-
-                    # Download was succesfull
-                    downloaded = 1
-
+                        data_end_max[data_end != -9999] = data_end_max[data_end != -9999] * VarInfo.factors[Var]
+                        data_end_min[data_end != -9999] = data_end_min[data_end != -9999] * VarInfo.factors[Var]
+                    data_end_max[data_end < -9999] = -9999
+                    data_end_min[data_end < -9999] = -9999
+                    
                     # twist the data
-                    data_end = np.flipud(data_end)
+                    data_end_min = np.flipud(data_end_min)
+                    data_end_max = np.flipud(data_end_max)
 
                     # Save as tiff file
-                    PF.Save_as_tiff(output_name, data_end, geo_out, proj)
-                    
-                    if TimeStep == "daily" and Var == "t2m":
-                        # Add the VarFactor
-                        if VarInfo.factors[Var] < 0:
-                            data_end_max[data_end != -9999] = data_end_max[data_end != -9999] + VarInfo.factors[Var]
-                            data_end_min[data_end != -9999] = data_end_min[data_end != -9999] + VarInfo.factors[Var]
-                        else:
-                            data_end_max[data_end != -9999] = data_end_max[data_end != -9999] * VarInfo.factors[Var]
-                            data_end_min[data_end != -9999] = data_end_min[data_end != -9999] * VarInfo.factors[Var]
-                        data_end_max[data_end < -9999] = -9999
-                        data_end_min[data_end < -9999] = -9999
-                        
-                        # twist the data
-                        data_end_min = np.flipud(data_end_min)
-                        data_end_max = np.flipud(data_end_max)
-
-                        # Save as tiff file
-                        output_name = os.path.join(output_folder, "%s_GEOS_%s_daily_max_%d.%02d.%02d.tif"%(Var, unit, Date.year, Date.month, Date.day))
-                        PF.Save_as_tiff(output_name, data_end_max, geo_out, proj)
-                        output_name = os.path.join(output_folder, "%s_GEOS_%s_daily_min_%d.%02d.%02d.tif"%(Var, unit, Date.year, Date.month, Date.day))
-                        PF.Save_as_tiff(output_name, data_end_min, geo_out, proj)
+                    output_name = os.path.join(output_folder, "%s_GEOS_%s_daily-max_%d.%02d.%02d.tif"%(Var, unit, Date.year, Date.month, Date.day))
+                    PF.Save_as_tiff(output_name, data_end_max, geo_out, proj)
+                    all_files["t2m-max"].append(output_name)
+                    output_name = os.path.join(output_folder, "%s_GEOS_%s_daily-min_%d.%02d.%02d.tif"%(Var, unit, Date.year, Date.month, Date.day))
+                    PF.Save_as_tiff(output_name, data_end_min, geo_out, proj)
+                    all_files["t2m-min"].append(output_name)
 
                 # If download was not succesfull
-                except:
+                # except:
 
-                    # Try another time
-                    N = N + 1
+                #     # Try another time
+                #     N = N + 1
 
-                    # Stop trying after 10 times
-                    if N == 10:
-                        print('Data from ' + Date.strftime('%Y-%m-%d') + ' is not available')
-                        downloaded = 1
+                #     # Stop trying after 10 times
+                #     if N == 10:
+                #         print('Data from ' + Date.strftime('%Y-%m-%d') + ' is not available')
+                #         downloaded = 1
+        else:
+            if os.path.isfile(output_name):
+                all_files[Var].append(output_name)
+            if TimeStep == "daily" and Var == "t2m":
+                output_name = os.path.join(output_folder, "%s_GEOS_%s_daily-max_%d.%02d.%02d.tif"%(Var, unit, Date.year, Date.month, Date.day))
+                if os.path.isfile(output_name):
+                    all_files["t2m-max"].append(output_name)
+                output_name = os.path.join(output_folder, "%s_GEOS_%s_daily-min_%d.%02d.%02d.tif"%(Var, unit, Date.year, Date.month, Date.day))
+                if os.path.isfile(output_name):
+                    all_files["t2m-min"].append(output_name)
 
         if Waitbar == 1:
             amount += 1
             WaitbarConsole.printWaitBar(amount, total_amount, prefix = 'Progress:', suffix = 'Complete', length = 50)
 
-    return()
+    return all_files
 
 class VariablesInfo:
     """

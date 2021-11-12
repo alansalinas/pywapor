@@ -1,8 +1,6 @@
 # -*- coding: utf-8 -*-
 import sys
 from pywapor.collect.GEOS.DataAccess import DownloadData
-import os
-import glob
 
 def main(Dir, latlim, lonlim, Startdate, Enddate, Vars, Waitbar = 1):
     """
@@ -18,16 +16,17 @@ def main(Dir, latlim, lonlim, Startdate, Enddate, Vars, Waitbar = 1):
     lonlim -- [xmin, xmax]
     Waitbar -- 1 (Default) Will print a waitbar
     """
+    all_files = dict()
     for Var in Vars:
 
         if Waitbar == 1:
             print('\nDownloading daily GEOS %s data for the period %s till %s' %(Var, Startdate, Enddate))
 
         # Download data
-        DownloadData(Dir, Var, Startdate, Enddate, latlim, lonlim, "daily", Period = '', Waitbar = 1)
+        all_files = {**all_files, **DownloadData(Dir, Var, Startdate, Enddate, latlim, lonlim, "daily", Period = '', Waitbar = 1)}
 
-    output_folder = os.path.join(Dir, "GEOS5", "**", "**", "*.tif")
-    return glob.glob(output_folder)
+
+    return all_files
 
 if __name__ == '__main__':
     main(sys.argv)

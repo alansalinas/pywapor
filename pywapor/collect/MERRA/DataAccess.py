@@ -16,7 +16,20 @@ from netCDF4 import Dataset
 def DownloadData(Dir, Var, Startdate, Enddate, latlim, lonlim, TimeStep, Period, username, password, Waitbar, data_type = ["mean"]):
 
     import pywapor.general.processing_functions as PF
- 
+
+    all_files = dict()
+    if "mean" in data_type:
+        all_files[Var] = list()
+    if "max" in data_type:
+        all_files[f"{Var}-max"] = list()
+    if "min" in data_type:
+        all_files[f"{Var}-min"] = list()
+
+    # Add extra buffer to ensure good spatial interpolation
+    buffer_pixels = 2
+    lonlim = [lonlim[0] - 0.625 * buffer_pixels, lonlim[1] + 0.625 * buffer_pixels]
+    latlim = [latlim[0] - 0.5 * buffer_pixels, latlim[1] + 0.5 * buffer_pixels]
+
     # Check the latitude and longitude and otherwise set lat or lon on greatest extent
     if latlim[0] < -90 or latlim[1] > 90:
         print('Latitude above 90N or below 90S is not possible. Value set to maximum')
@@ -308,10 +321,13 @@ def DownloadData(Dir, Var, Startdate, Enddate, latlim, lonlim, TimeStep, Period,
                     # Save as tiff file
                     if "mean" in data_type: 
                         PF.Save_as_tiff(output_name, data_end, geo_out, proj)
+                        all_files[Var].append(output_name)
                     if "min" in data_type:
                         PF.Save_as_tiff(output_name_min, data_min, geo_out, proj)
+                        all_files[f"{Var}-min"].append(output_name_min)
                     if "max" in data_type:
                         PF.Save_as_tiff(output_name_max, data_max, geo_out, proj)
+                        all_files[f"{Var}-max"].append(output_name_max)
                         
                 # If download was not succesfull
                 except:
@@ -323,13 +339,20 @@ def DownloadData(Dir, Var, Startdate, Enddate, latlim, lonlim, TimeStep, Period,
                     if N == 4:
                         print('Data from ' + Date.strftime('%Y-%m-%d') + ' is not available')
                         downloaded = 1
+
+        else:
+            if os.path.isfile(output_name):
+                all_files[Var].append(output_name)
+            if os.path.isfile(output_name_min):
+                all_files[f"{Var}-min"].append(output_name_min)
+            if os.path.isfile(output_name_max):
+                all_files[f"{Var}-max"].append(output_name_max)
     
         if Waitbar == 1:
             amount += 1
             WaitbarConsole.printWaitBar(amount, total_amount, prefix = 'Progress:', suffix = 'Complete', length = 50)
 
-    return()    
-
+    return all_files  
 
 def Get_NC_data_end(file_name,Var, TimeStep, Period, IDy, IDx, VarInfo):
                         
