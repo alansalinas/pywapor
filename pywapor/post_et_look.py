@@ -388,3 +388,89 @@ def compare_two_tifs(tif1, tif2, example_tif, options1 = None, options2 = None, 
         fig.savefig(output)
 
     return np.nanmean(orig_arrays[0]), np.nanmean(orig_arrays[1]), [orig_arrays[0].reshape((ysize,xsize)), orig_arrays[1].reshape((ysize,xsize))]
+
+def plot_ts(ax, times, values, sources, styling):
+
+    for source in np.unique(sources):
+
+        xs = times[sources == source]
+        ys = values[sources == source]
+
+        if np.sum(np.isnan(ys)) == ys.size:
+            continue
+
+        ax.scatter(xs, ys, marker = styling[source][0], c = styling[source][1], label = styling[source][3], zorder = 10, alpha = styling[source][2])
+        ax.set_facecolor("lightgray")
+        ax.grid(color="k", linestyle=":")
+        ax.legend(loc = "best")
+        ax.set_title("RAW Values")
+
+    # ax.set_ylabel("NDVI [-]")
+
+    return ax
+
+def plot_composite_ts(ax, starts, ends, values, label = "Composite"):
+
+    ax.bar(starts, values, (ends - starts), align = "edge", color = "lightblue", edgecolor = "darkblue", label = label)
+    ax.set_facecolor("lightgray")
+    ax.grid(color="k", linestyle=":")
+    # ax.set_ylabel("NDVI [-]")
+    ax.set_title("Composite Values")
+    ax.legend(bbox_to_anchor=(1,1), loc="upper left")
+
+def check_bb(ds, diagnostics_lon, diagnostics_lat):
+    lon_lim = [float(ds.lon.min().values), 
+                float(ds.lon.max().values)]
+    lat_lim = [float(ds.lat.min().values), 
+                float(ds.lat.max().values)]
+    lon_test = np.all([diagnostics_lon >= lon_lim[0],
+                       diagnostics_lon <= lon_lim[1]])
+    lat_test = np.all([diagnostics_lat >= lat_lim[0],
+                       diagnostics_lat <= lat_lim[1]])
+    if not lon_test:
+        print(f"WARNING: {diagnostics_lon} not in boundingbox ({lon_lim}).")
+    if not lat_test:
+        print(f"WARNING: {diagnostics_lat} not in boundingbox ({lat_lim}).")
+
+def plot_composite(ds, diagnostics, out_folder = None, band_name = "band_data"):
+
+    for point, (diagnostics_lat, diagnostics_lon) in diagnostics.items():
+
+        check_bb(ds, diagnostics_lon, diagnostics_lat)
+
+        ts = ds.sel(lon = diagnostics_lon, 
+                    lat = diagnostics_lat, method="nearest")
+
+        times = ts.time.values
+        ndvis = ts[band_name].values
+        sources = ts.sources.values
+
+        ndvi_composites = ts.composite.values
+        epoch_starts = ts.epoch_starts.values
+        epoch_ends = ts.epoch_ends.values
+
+        # for t, src in zip(times, sources):
+        #     print(t, styling[src][3])
+
+        fig = plt.figure(1)
+        fig.clf()
+        fig.set_size_inches(9, 5)
+        ax = fig.gca()
+
+        styling = {k: ds.attrs[str(k)] for k in np.unique(sources)}
+
+        plot_ts(ax, times, ndvis, sources, styling)
+        plot_composite_ts(ax, epoch_starts, epoch_ends, ndvi_composites, f"Composite ({ds.attrs['composite_type']})")
+
+        ax.set_ylabel(f"{ds.attrs['var_name']} [{ds.attrs['var_unit']}]")
+        ax.set_title(f"{ds.attrs['var_name']} at {point}")
+
+        fig.autofmt_xdate(bottom=0.2, rotation=30, ha='right')
+        fig.suptitle(f"{diagnostics_lon} °E, {diagnostics_lat} °N")
+        fig.subplots_adjust(right=0.75)
+
+        if not isinstance(out_folder, type(None)):
+            if not os.path.exists(out_folder):
+                os.mkdir(out_folder)
+            fn = f"{point}_{ds.attrs['var_name']}.png"
+            fig.savefig(os.path.join(out_folder, fn))
