@@ -10,6 +10,7 @@ import pywapor.general.outputs as out
 import pywapor.general.variables as vars
 import pywapor.general.processing_functions as PF
 import copy
+import xarray as xr
 
 def get_geoinfo(example_filepath):
     ds = gdal.Open(example_filepath)
@@ -202,7 +203,10 @@ def main(project_folder, date, level = "level_1", et_look_version = "v2",
 
     # **Soil Moisture Content***********************************************************
     if isinstance(id["se_root"], type(None)):
-        od, id = se_root(id, od, et_look_version, date, folders, geoinfo)
+        if et_look_version == "dev":
+            c.z0m_full = 0.04 + 0.01 * (resolution - 30)/(250-30)
+            od["lst_zone_mean"] = lst_zone_mean(id, geo_ex, proj_ex, date, folders)
+        od, id = se_root(id, od, ETLook, date)
     else:
         od["se_root"] = np.copy(id["se_root"])
 
@@ -316,33 +320,52 @@ def main(project_folder, date, level = "level_1", et_look_version = "v2",
     else:
         return od, id
 
-def se_root(id, od, et_look_version, date, folders, geoinfo):
+def se_root(id, od, ETLook, date):
+
+    et_look_version = ETLook.__name__.split(".")[-1].split("_")[-1]
 
     # Version
     if et_look_version == "v2":
-        ETLook = ETLook_v2
+        # ETLook = ETLook_v2
         print("--> Running SEroot_v2")
     elif et_look_version == "dev":
-        ETLook = ETLook_dev
+        # ETLook = ETLook_dev
         print("--> Running SEroot_dev")
     c = ETLook.constants
 
-    resolution, geo_ex, proj_ex = geoinfo
+    if not isinstance(id, dict):
+        od = id
+
+    # resolution, geo_ex, proj_ex = geoinfo
 
     doy = int(date.strftime("%j"))
     sc = ETLook.solar_radiation.seasonal_correction(doy)
     decl = ETLook.solar_radiation.declination(doy)
     day_angle = ETLook.clear_sky_radiation.day_angle(doy)
+    dtime = date.hour + (date.minute / 60)
+
+    if "r0_bare" not in id.keys():
+        if isinstance(id, xr.Dataset):
+            id["r0_bare"] = xr.ones_like(id["ndvi"]) * c.r0_bare
+        else:
+            id["r0_bare"] = np.ones_like(id["ndvi"]) * c.r0_bare
+    if "r0_full" not in id.keys():
+        if isinstance(id, xr.Dataset):
+            id["r0_full"] = xr.ones_like(id["ndvi"]) * c.r0_full
+        else:
+            id["r0_full"] = np.ones_like(id["ndvi"]) * c.r0_full
 
     if et_look_version == "dev":
         id["t_air_i"][id["t_air_i"] < -270] = np.nan
     id["p_air_i"] = ETLook.meteo.air_pressure_kpa2mbar(id["p_air_i"])
     id["p_air_0_i"] = ETLook.meteo.air_pressure_kpa2mbar(id["p_air_0_i"])
 
-    if et_look_version == "dev":
-        z0m_full = 0.04 + 0.01 * (resolution - 30)/(250-30)
-    elif et_look_version == "v2":
-        z0m_full = 0.1
+    # if et_look_version == "dev":
+    #     z0m_full = 0.04 + 0.01 * (resolution - 30)/(250-30)
+    # elif et_look_version == "v2":
+    #     z0m_full = 0.1
+
+    od["vc"] = ETLook.leaf.vegetation_cover(id["ndvi"], c.nd_min, c.nd_max, c.vc_pow)
 
     od["t_air_k_i"] = ETLook.meteo.air_temperature_kelvin_inst(id["t_air_i"])
     od["vp_i"] = ETLook.meteo.vapour_pressure_from_specific_humidity_inst(id["qv_i"], id["p_air_i"])
@@ -351,7 +374,8 @@ def se_root(id, od, et_look_version, date, folders, geoinfo):
     od["ad_i"] = ETLook.meteo.air_density_inst(od["ad_dry_i"], od["ad_moist_i"])
     od["u_b_i_bare"] = ETLook.soil_moisture.wind_speed_blending_height_bare(id["u_i"], c.z0m_bare, c.z_obs, c.z_b)
     od["lon"] = ETLook.solar_radiation.longitude_rad(id["lon_deg"])
-    od["ha"] = ETLook.solar_radiation.hour_angle(sc, id["dtime"], od["lon"])
+    od["lat"] = ETLook.solar_radiation.latitude_rad(id["lat_deg"])
+    od["ha"] = ETLook.solar_radiation.hour_angle(sc, dtime, od["lon"])
     
     I0 = ETLook.clear_sky_radiation.solar_constant()
     ied = ETLook.clear_sky_radiation.inverse_earth_sun_distance(day_angle)
@@ -372,56 +396,24 @@ def se_root(id, od, et_look_version, date, folders, geoinfo):
     od["rn_full"] = ETLook.soil_moisture.net_radiation_full(od["ra_hor_clear_i"], od["emiss_atm_i"], od["t_air_k_i"], id["lst"], id["r0_full"])
     od["h_bare"] = ETLook.soil_moisture.sensible_heat_flux_bare(od["rn_bare"], c.fraction_h_bare)
     od["h_full"] = ETLook.soil_moisture.sensible_heat_flux_full(od["rn_full"], c.fraction_h_full)
-    od["u_b_i_full"] = ETLook.soil_moisture.wind_speed_blending_height_full_inst(id["u_i"], z0m_full, c.z_obs, c.z_b)
+    od["u_b_i_full"] = ETLook.soil_moisture.wind_speed_blending_height_full_inst(id["u_i"], c.z0m_full, c.z_obs, c.z_b)
     
     od["u_star_i_bare"] = ETLook.soil_moisture.friction_velocity_bare_inst(od["u_b_i_bare"], c.z0m_bare, c.disp_bare, c.z_b)
-    od["u_star_i_full"] = ETLook.soil_moisture.friction_velocity_full_inst(od["u_b_i_full"], z0m_full, c.disp_full, c.z_b)
+    od["u_star_i_full"] = ETLook.soil_moisture.friction_velocity_full_inst(od["u_b_i_full"], c.z0m_full, c.disp_full, c.z_b)
     od["L_bare"] = ETLook.soil_moisture.monin_obukhov_length_bare(od["h_bare"], od["ad_i"], od["u_star_i_bare"], od["t_air_k_i"])
     od["L_full"] = ETLook.soil_moisture.monin_obukhov_length_full(od["h_full"], od["ad_i"], od["u_star_i_full"], od["t_air_k_i"])
     
     od["u_i_soil"] = ETLook.soil_moisture.wind_speed_soil_inst(id["u_i"], od["L_bare"], c.z_obs)
     od["ras"] = ETLook.soil_moisture.aerodynamical_resistance_soil(od["u_i_soil"])
     od["raa"] = ETLook.soil_moisture.aerodynamical_resistance_bare(id["u_i"], od["L_bare"], c.z0m_bare, c.disp_bare, c.z_obs)
-    od["rac"] = ETLook.soil_moisture.aerodynamical_resistance_full(id["u_i"], od["L_full"], z0m_full, c.disp_full, c.z_obs)
+    od["rac"] = ETLook.soil_moisture.aerodynamical_resistance_full(id["u_i"], od["L_full"], c.z0m_full, c.disp_full, c.z_obs)
     
-    # Create MEM file zones
-    if et_look_version == "dev":
-
-        size_y, size_x = id["ndvi"].shape
-        size_y_zone = int(np.ceil(size_y/200))
-        size_x_zone = int(np.ceil(size_x/200)) 
-        array_fake = np.ones([size_y_zone, size_x_zone])
-        geo_new = tuple([geo_ex[0], geo_ex[1] * 200, geo_ex[2], geo_ex[3], geo_ex[4], geo_ex[5]*200])
-        MEM_file = PF.Save_as_MEM(array_fake, geo_new, proj_ex)
-
-        LST_filename = create_fp("LST", vars.inputs["LST"], date, folders)
-        
-        dest_lst_zone_large = PF.reproject_dataset_example(LST_filename, MEM_file, 4)
-        lst_zone_mean_large = dest_lst_zone_large.GetRasterBand(1).ReadAsArray()
-        lst_zone_mean_large[lst_zone_mean_large==0] = -9999
-        lst_zone_mean_large[np.isnan(lst_zone_mean_large)] = -9999
-
-        if np.nanmax(lst_zone_mean_large) == -9999:
-            for x in range(0, size_x_zone):
-                for y in range(0, size_y_zone):
-                    lst_zone_mean_large[y, x] = np.nanmean(id["lst"][y*200:np.minimum((y+1)*200, size_y-1), x*200:np.minimum((x+1)*200, size_x-1)])
-            lst_zone_mean_large[np.isnan(lst_zone_mean_large)] = -9999
-
-        lst_zone_mean_large = PF.gap_filling(lst_zone_mean_large, -9999, 1)
-        dest_lst_zone_large = PF.Save_as_MEM(lst_zone_mean_large, geo_new, proj_ex)
-        
-        dest_lst_zone = PF.reproject_dataset_example(dest_lst_zone_large, LST_filename, 6)
-        od["lst_zone_mean"] = dest_lst_zone.GetRasterBand(1).ReadAsArray()
-
     od["t_max_bare"] = ETLook.soil_moisture.maximum_temperature_bare(od["ra_hor_clear_i"], od["emiss_atm_i"], od["t_air_k_i"], od["ad_i"], od["raa"], od["ras"], id["r0_bare"])
     od["t_max_full"] = ETLook.soil_moisture.maximum_temperature_full(od["ra_hor_clear_i"], od["emiss_atm_i"], od["t_air_k_i"], od["ad_i"], od["rac"], id["r0_full"])
 
-    # print(np.nanmean(od["t_max_bare"]), np.nanmean(od["t_max_full"]))
-
-    od["w_i"] = ETLook.soil_moisture.dew_point_temperature_inst(od["vp_i"])
-    od["t_dew_i"] = ETLook.soil_moisture.dew_point_temperature_inst(od["vp_i"])
-
-    #t_wet_i =      ETLook.soil_moisture.wet_bulb_temperature_inst        (t_air_i, t_dew_i, p_air_i)
+    # od["w_i"] = ETLook.soil_moisture.dew_point_temperature_inst(od["vp_i"])
+    # od["t_dew_i"] = ETLook.soil_moisture.dew_point_temperature_inst(od["vp_i"])
+    # od["t_wet_i"] = ETLook.soil_moisture.wet_bulb_temperature_inst(id["t_air_i"], od["t_dew_i"], id["p_air_i"])
     od["t_wet_i"] = ETLook.soil_moisture.wet_bulb_temperature_inst_new(id["t_air_i"], id["qv_i"], id["p_air_i"])
     #t_wet_i_new2 = ETLook.soil_moisture.wet_bulb_temperature_inst_new2(t_air_i)
 
@@ -439,4 +431,30 @@ def se_root(id, od, et_look_version, date, folders, geoinfo):
 
     return od, id
 
-# %%
+def lst_zone_mean(id, geo_ex, proj_ex, date, folders):
+    size_y, size_x = id["ndvi"].shape
+    size_y_zone = int(np.ceil(size_y/200))
+    size_x_zone = int(np.ceil(size_x/200)) 
+    array_fake = np.ones([size_y_zone, size_x_zone])
+    geo_new = tuple([geo_ex[0], geo_ex[1] * 200, geo_ex[2], geo_ex[3], geo_ex[4], geo_ex[5]*200])
+    MEM_file = PF.Save_as_MEM(array_fake, geo_new, proj_ex)
+
+    LST_filename = create_fp("LST", vars.inputs["LST"], date, folders)
+    
+    dest_lst_zone_large = PF.reproject_dataset_example(LST_filename, MEM_file, 4)
+    lst_zone_mean_large = dest_lst_zone_large.GetRasterBand(1).ReadAsArray()
+    lst_zone_mean_large[lst_zone_mean_large==0] = -9999
+    lst_zone_mean_large[np.isnan(lst_zone_mean_large)] = -9999
+
+    if np.nanmax(lst_zone_mean_large) == -9999:
+        for x in range(0, size_x_zone):
+            for y in range(0, size_y_zone):
+                lst_zone_mean_large[y, x] = np.nanmean(id["lst"][y*200:np.minimum((y+1)*200, size_y-1), x*200:np.minimum((x+1)*200, size_x-1)])
+        lst_zone_mean_large[np.isnan(lst_zone_mean_large)] = -9999
+
+    lst_zone_mean_large = PF.gap_filling(lst_zone_mean_large, -9999, 1)
+    dest_lst_zone_large = PF.Save_as_MEM(lst_zone_mean_large, geo_new, proj_ex)
+    
+    dest_lst_zone = PF.reproject_dataset_example(dest_lst_zone_large, LST_filename, 6)
+    lst_zone_mean = dest_lst_zone.GetRasterBand(1).ReadAsArray()
+    return lst_zone_mean
