@@ -320,17 +320,19 @@ def main(project_folder, date, level = "level_1", et_look_version = "v2",
     else:
         return od, id
 
-def se_root(id, od, ETLook, date):
+def se_root(id, od, ETLook, date, verbose = False):
 
     et_look_version = ETLook.__name__.split(".")[-1].split("_")[-1]
 
     # Version
     if et_look_version == "v2":
         # ETLook = ETLook_v2
-        print("--> Running SEroot_v2")
+        if not verbose:
+            print("--> Running SEroot_v2")
     elif et_look_version == "dev":
         # ETLook = ETLook_dev
-        print("--> Running SEroot_dev")
+        if not verbose:
+            print("--> Running SEroot_dev")
     c = ETLook.constants
 
     if not isinstance(id, dict):
