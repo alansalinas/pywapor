@@ -56,9 +56,9 @@ def download_data(download_dir, start_date, end_date, latitude_extent, longitude
     for i in tqdm(range(delta.days + 1)):
         date = start_date + timedelta(days=i)
 
-        template = os.path.join(download_dir, "{v}", "{v}_{d_str}.tif")
+        template = os.path.join(download_dir, "{v}", "{v}_PROBAV_-_5-daily_{d_str}.tif")
         fh1 = template.format(v = "NDVI", d_str = date.strftime("%Y.%m.%d"))
-        fh2 = template.format(v = "ALBEDO", d_str = date.strftime("%Y.%m.%d"))
+        fh2 = template.format(v = "Albedo", d_str = date.strftime("%Y.%m.%d"))
         if np.all([os.path.isfile(fh1), os.path.isfile(fh2)]):
             continue
 
@@ -132,9 +132,9 @@ def download_data(download_dir, start_date, end_date, latitude_extent, longitude
             if date_str == date.strftime('%Y%m%d'):
                 input_files.append(str(tif_file))
 
-        for product in ['NDVI', 'ALBEDO']:
+        for product in ["NDVI_PROBAV_-_5-daily_", "Albedo_PROBAV_-_5-daily_"]:
             output_file = str(download_dir /
-                              ('%s/%s_%s.tif' % (product, product, date.strftime("%Y.%m.%d"))))
+                              ('%s/%s_%s.tif' % (product.split("_")[0], product, date.strftime("%Y.%m.%d"))))
             data_files = _preprocess_inputs(input_files, product)
 
             # merge files and clip to extent, save as tif
@@ -256,9 +256,9 @@ def _preprocess_inputs(input_files, product):
 
         all_bands = np.asarray(all_data).squeeze()
 
-        if product == 'NDVI':
+        if product == "NDVI_PROBAV_-_5-daily_":
             data = all_bands[band_names.index('NDVI'), ...]
-        elif product == 'ALBEDO':
+        elif product == "Albedo_PROBAV_-_5-daily_":
             data = (0.429 * all_bands[band_names.index('BLUE'), ...]
                     + 0.333 * all_bands[band_names.index('RED'), ...]
                     + 0.133 * all_bands[band_names.index('NIR'), ...]
@@ -280,9 +280,9 @@ def _preprocess_inputs(input_files, product):
         swir_mask = swir_vza >= max_angle
         vnir_mask = vnir_vza >= max_angle
 
-        if product == 'NDVI':
+        if product == "NDVI_PROBAV_-_5-daily_":
             data[vnir_mask] = None
-        elif product == 'ALBEDO':
+        elif product == "Albedo_PROBAV_-_5-daily_":
             data[vnir_mask & swir_mask] = None
 
         data_filename = str(Path(matching_files[0]).parent /
