@@ -399,7 +399,9 @@ def plot_ts(ax, times, values, sources, styling):
         if np.sum(np.isnan(ys)) == ys.size:
             continue
 
-        ax.scatter(xs, ys, marker = styling[source][0], c = styling[source][1], label = styling[source][3], zorder = 10, alpha = styling[source][2])
+        c_styling = eval(styling[source])
+
+        ax.scatter(xs, ys, marker = c_styling[0], c = c_styling[1], label = c_styling[3], zorder = 10, alpha = float(c_styling[2]))
         ax.set_facecolor("lightgray")
         ax.grid(color="k", linestyle=":")
         ax.legend(loc = "best")
@@ -434,9 +436,12 @@ def check_bb(ds, diagnostics_lon, diagnostics_lat):
 
 def plot_composite(ds, diagnostics, out_folder = None, band_name = "band_data"):
 
+    ds = ds.reindex({"lat": ds.lat.sortby("lat"), 
+                     "lon": ds.lon.sortby("lon")})
+
     for point, (diagnostics_lat, diagnostics_lon) in diagnostics.items():
 
-        check_bb(ds, diagnostics_lon, diagnostics_lat)
+        # check_bb(ds, diagnostics_lon, diagnostics_lat)
 
         ts = ds.sel(lon = diagnostics_lon, 
                     lat = diagnostics_lat, method="nearest")
@@ -457,7 +462,7 @@ def plot_composite(ds, diagnostics, out_folder = None, band_name = "band_data"):
         fig.set_size_inches(9, 5)
         ax = fig.gca()
 
-        styling = {k: ds.attrs[str(k)] for k in np.unique(sources)}
+        styling = {int(k): ds.attrs[str(int(k))] for k in np.unique(sources)}
 
         plot_ts(ax, times, ndvis, sources, styling)
         plot_composite_ts(ax, epoch_starts, epoch_ends, ndvi_composites, f"Composite ({ds.attrs['composite_type']})")

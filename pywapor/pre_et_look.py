@@ -16,14 +16,16 @@ import pywapor.general as g
 from pathlib import Path
 import json
 import xarray as xr
+from dask.diagnostics import ProgressBar
+import glob
 
 def main(project_folder, startdate, enddate, latlim, lonlim, level = "level_1", 
-        diagnostics = None):
+        diagnostics = None, composite_length = "DEKAD"):
 
 #%%
     sdate = dat.strptime(startdate, "%Y-%m-%d").date()
     edate = dat.strptime(enddate, "%Y-%m-%d").date()
-    epochs_info = create_dates(sdate, edate, "DEKAD")
+    epochs_info = create_dates(sdate, edate, composite_length)
 
     #### Check if selected sources and dates are valid
     levels = g.variables.get_source_level_selections()
@@ -42,10 +44,13 @@ def main(project_folder, startdate, enddate, latlim, lonlim, level = "level_1",
     raw_folder = os.path.join(project_folder, "RAW")
     level_folder = os.path.join(project_folder, level)
     graph_folder = os.path.join(level_folder, "graphs")
+    temp_folder = os.path.join(project_folder, "temporary")
 
     dl_args = (raw_folder, latlim, lonlim, startdate, enddate)
 
     unraw_file_templates = unraw_filepaths(epochs_info[1], level_folder, "{var}")
+
+#%%
 
     #### NDVI #### 
     raw_ndvi_files = list()
@@ -53,7 +58,7 @@ def main(project_folder, startdate, enddate, latlim, lonlim, level = "level_1",
     if "PROBAV" in source_selection["NDVI"]:
         raw_ndvi_files.append(c.PROBAV.PROBAV_S5(*dl_args)[0])
     if "MOD13" in source_selection["NDVI"]:
-        raw_ndvi_files.append(c.MOD13.NDVI(*dl_args))
+        raw_ndvi_files.append(c.MOD13.NDVI(*dl_args, remove_hdf = 0))
     if "MYD13" in source_selection["NDVI"]:
         raw_ndvi_files.append(c.MYD13.NDVI(*dl_args))
 
@@ -66,11 +71,17 @@ def main(project_folder, startdate, enddate, latlim, lonlim, level = "level_1",
         "var_name": "NDVI",
         "var_unit": "-",
     }
-    ds_ndvi = compositer(cmeta, raw_ndvi_files, epochs_info, example_ds).rename({"band_data": "ndvi"})
-    unraw_all_new(cmeta["var_name"], ds_ndvi, unraw_file_templates, example_geoinfo)
+    ds, ds_diags = compositer(cmeta, raw_ndvi_files, epochs_info, temp_folder, example_ds, 
+                                diagnostics = diagnostics, 
+                                lean_output = False)
+    ds_ndvi = ds.rename({"band_data": "ndvi"})
+    
+    unraw_all(cmeta["var_name"], ds_ndvi, unraw_file_templates, example_geoinfo)
 
     if not isinstance(diagnostics, type(None)):
-        pywapor.post_et_look.plot_composite(ds_ndvi, diagnostics, graph_folder, "ndvi")
+        pywapor.post_et_look.plot_composite(ds_diags, diagnostics, graph_folder)
+
+#%%
 
     #### ALBEDO ####
     raw_albedo_files = list()
@@ -87,11 +98,11 @@ def main(project_folder, startdate, enddate, latlim, lonlim, level = "level_1",
         "var_name": "ALBEDO",
         "var_unit": "-",
     }
-    ds = compositer(cmeta, raw_albedo_files, epochs_info, example_ds)
-    unraw_all_new(cmeta["var_name"], ds, unraw_file_templates, example_geoinfo)
+    ds, ds_diags = compositer(cmeta, raw_albedo_files, epochs_info, temp_folder, example_ds, diagnostics = diagnostics)
+    unraw_all(cmeta["var_name"], ds, unraw_file_templates, example_geoinfo)
 
     if not isinstance(diagnostics, type(None)):
-        pywapor.post_et_look.plot_composite(ds, diagnostics, graph_folder)
+        pywapor.post_et_look.plot_composite(ds_diags, diagnostics, graph_folder)
 
     #### LST ####
     raw_lst_files = list()
@@ -100,7 +111,7 @@ def main(project_folder, startdate, enddate, latlim, lonlim, level = "level_1",
     if "MYD11" in source_selection["LST"]:
         raw_lst_files.append(c.MYD11.LST(*dl_args))
     
-    ds_lst = combine_lst_new(raw_lst_files)
+    ds_lst = combine_lst(raw_lst_files)
 
     #### PRECIPITATION ####
     raw_precip_files = list()
@@ -114,18 +125,27 @@ def main(project_folder, startdate, enddate, latlim, lonlim, level = "level_1",
         "var_name": "Precipitation",
         "var_unit": "mm/day",
     }
-    ds = compositer(cmeta, raw_precip_files, epochs_info, example_ds)
-    unraw_all_new(cmeta["var_name"], ds, unraw_file_templates, example_geoinfo)
+    ds, ds_diags = compositer(cmeta, raw_precip_files, epochs_info, temp_folder, example_ds, diagnostics = diagnostics)
+    unraw_all(cmeta["var_name"], ds, unraw_file_templates, example_geoinfo)
 
     if not isinstance(diagnostics, type(None)):
-        pywapor.post_et_look.plot_composite(ds, diagnostics, graph_folder)
+        pywapor.post_et_look.plot_composite(ds_diags, diagnostics, graph_folder)
 
     #### DEM ####
     if "SRTM" in source_selection["DEM"]:
         raw_dem_file = c.SRTM.DEM(*dl_args[:3])
     
     dem_file = unraw_filepaths(None, level_folder, "DEM", static = True)[0]
-    unraw(raw_dem_file, dem_file, example_fh, 4)  
+
+    cmeta = {
+        "composite_type": None,
+        "temporal_interp": None,
+        "spatial_interp": "linear",
+        "var_name": "DEM",
+        "var_unit": "m",
+    }
+    ds = compositer(cmeta, [[raw_dem_file]], None, temp_folder, example_ds)[0]
+    unraw_all(cmeta["var_name"], ds, [dem_file], example_geoinfo)
 
     #### SLOPE ASPECT ####
     slope_aspect(dem_file, level_folder, example_fh)
@@ -150,7 +170,7 @@ def main(project_folder, startdate, enddate, latlim, lonlim, level = "level_1",
     #### METEO ####
     if "MERRA2" in source_selection["METEO"]:
         freq = "H"
-        periods, period_times = calc_periods_new(ds_lst.time.values, freq)
+        periods, period_times = calc_periods(ds_lst.time.values, freq)
         ds_lst["periods"] = xr.DataArray([x[2] for x in periods], {"time": ds_lst.time})
         meteo_vars = ['t2m', 'u2m', 'v2m', 'q2m', 'tpw', 'ps', 'slp']
         raw_meteo_files = c.MERRA.daily_MERRA2(*dl_args, meteo_vars)
@@ -161,7 +181,7 @@ def main(project_folder, startdate, enddate, latlim, lonlim, level = "level_1",
                                 'u2m': "u2m", 'v2m': "v2m",'q2m': "qv_24",'slp': "Pair_24_0"}
     elif "GEOS5" in source_selection["METEO"]:
         freq = "3H"
-        periods, period_times = calc_periods_new(ds_lst.time.values, freq)
+        periods, period_times = calc_periods(ds_lst.time.values, freq)
         ds_lst["periods"] = xr.DataArray([x[2] for x in periods], {"time": ds_lst.time})
         meteo_vars = ['t2m', 'u2m', 'v2m', 'qv2m', 'tqv', 'ps', 'slp']
         raw_meteo_files = c.GEOS.daily(*dl_args, meteo_vars)
@@ -169,8 +189,6 @@ def main(project_folder, startdate, enddate, latlim, lonlim, level = "level_1",
                                 'u2m': "u2m", 'v2m': "v2m",'slp': "Pair_24_0",'qv2m': "qv_24",}
         for sd, ed, period in periods:
             c.GEOS.three_hourly(*dl_args[:3], sd, ed, meteo_vars, [int(period)])
-
-#%%
 
     #### INST. METEO ####
     raw_inst_meteo_paths = g.variables.get_raw_meteo_paths("inst")
@@ -206,8 +224,6 @@ def main(project_folder, startdate, enddate, latlim, lonlim, level = "level_1",
                 else:
                     ds_meteo = xr.concat([ds_meteo, ds_temp], dim = "time")
 
-#%%
-
     #### NON-INST. METEO ####
     for var_name, raw_files in raw_meteo_files.items():
 
@@ -227,14 +243,14 @@ def main(project_folder, startdate, enddate, latlim, lonlim, level = "level_1",
             "var_name": meteo_name_convertor[var_name],
             "var_unit": units[meteo_name_convertor[var_name]],
         }
-        ds = compositer(cmeta, [raw_files], epochs_info, example_ds)
-        unraw_all_new(meteo_name_convertor[var_name], ds, unraw_file_templates, example_geoinfo)
+        ds, ds_diags = compositer(cmeta, [raw_files], epochs_info, temp_folder, example_ds, diagnostics = diagnostics)
+        unraw_all(meteo_name_convertor[var_name], ds, unraw_file_templates, example_geoinfo)
 
         if not isinstance(diagnostics, type(None)):
-            pywapor.post_et_look.plot_composite(ds, diagnostics, graph_folder)
+            pywapor.post_et_look.plot_composite(ds_diags, diagnostics, graph_folder)
 
     #### LAT LON ####
-    lat_lon(level_folder, example_fh)
+    lat_lon(example_ds, level_folder, example_geoinfo)
 
     #### SOLAR RADIATION ####
     if "MERRA2" in source_selection["TRANS"]:
@@ -247,13 +263,13 @@ def main(project_folder, startdate, enddate, latlim, lonlim, level = "level_1",
         "var_name": "ra_24",
         "var_unit": "-",
     }
-    ds = compositer(cmeta, [raw_ra24_files], epochs_info, example_ds)
-    unraw_all_new(cmeta["var_name"], ds, unraw_file_templates, example_geoinfo)
+    ds, ds_diags = compositer(cmeta, [raw_ra24_files], epochs_info, temp_folder, example_ds, diagnostics = diagnostics)
+    unraw_all(cmeta["var_name"], ds, unraw_file_templates, example_geoinfo)
 
     if not isinstance(diagnostics, type(None)):
-        pywapor.post_et_look.plot_composite(ds, diagnostics, graph_folder)
+        pywapor.post_et_look.plot_composite(ds_diags, diagnostics, graph_folder)
 
-    #### TEMP. AMPLITUDE ####
+    #### TEMP. AMPLITUDE #### # TODO add source selection and remove year data
     raw_temp_ampl_file = os.path.join(raw_folder, "GLDAS", "Temp_Amplitudes_global.tif")
     download_file_from_google_drive("1pqZnCn-1xkUC7o1csG24hwg22fV57gCH", raw_temp_ampl_file)
     temp_ampl_file_template = unraw_filepaths(None, level_folder, "Tair_amp_{year}", static = True)[0]
@@ -266,17 +282,18 @@ def main(project_folder, startdate, enddate, latlim, lonlim, level = "level_1",
                                         ds_temperature, example_ds, example_geoinfo)
 
     cmeta = {
-        "composite_type": 0.90,
+        "composite_type": "max", # 0.90,
         "temporal_interp": False,
         "spatial_interp": "nearest",
         "var_name": "se_root",
         "var_unit": "-",
     }
-    ds = compositer(cmeta, [raw_se_root_files], epochs_info, example_ds)
-    unraw_all_new(cmeta["var_name"], ds, unraw_file_templates, example_geoinfo)
+
+    ds, ds_diags = compositer(cmeta, [raw_se_root_files], epochs_info, temp_folder, example_ds, diagnostics = diagnostics)
+    unraw_all(cmeta["var_name"], ds, unraw_file_templates, example_geoinfo)
 
     if not isinstance(diagnostics, type(None)):
-        pywapor.post_et_look.plot_composite(ds, diagnostics, graph_folder)
+        pywapor.post_et_look.plot_composite(ds_diags, diagnostics, graph_folder)
 
     #### METADATA ####
     metadata = dict()
@@ -297,33 +314,22 @@ def main(project_folder, startdate, enddate, latlim, lonlim, level = "level_1",
     with open(json_file, 'w+') as f:
         json.dump(metadata, f, indent = 4 )
 
+    for fh in glob.glob(os.path.join(temp_folder, "*.nc")):
+        os.remove(fh)
+
     os.chdir(project_folder)
 
-def unraw_all(variable, unraw_file_templates, raw_files, template_file, method):
-    unraw_files = [unraw_file.format(var = variable) for unraw_file in unraw_file_templates]
-    if len(raw_files) != len(unraw_files):
-        matched_raw_files = match_to_nearest(raw_files, unraw_files)
-    else:
-        matched_raw_files = raw_files
-    for raw_file, unraw_file in zip(matched_raw_files, unraw_files):
-        unraw(raw_file, unraw_file, template_file, method)
-    return unraw_files
+    print("DONE")
 
-def unraw_all_new(var_name, ds, unraw_file_templates, example_geoinfo):
+def unraw_all(var_name, ds, unraw_file_templates, example_geoinfo):
     assert ds.epoch.size == len(unraw_file_templates)
     for i, fh in enumerate(unraw_file_templates):
-        fh_date = pd.Timestamp(dat.strptime(fh.split("_")[-1], "%Y%m%d.tif"))
-        assert fh_date == pd.Timestamp(ds.epoch_starts.isel(epoch = i).values)
+        if not -9999 in ds["epoch"].values:
+            fh_date = pd.Timestamp(dat.strptime(fh.split("_")[-1], "%Y%m%d.tif"))
+            assert fh_date == pd.Timestamp(ds.epoch_starts.isel(epoch = i).values)
         array = np.copy(ds.composite.isel(epoch = i).values)
         PF.Save_as_tiff(fh.format(var = var_name), 
                         array, example_geoinfo[0], example_geoinfo[1])
-
-def match_to_nearest(raw_files, files):
-    raw_dates = [dat.strptime(os.path.split(fp)[-1].split("_")[-1], "%Y.%m.%d.tif") for fp in raw_files]
-    dates = [dat.strptime(os.path.split(fp)[-1].split("_")[-1], "%Y%m%d.tif") for fp in files]
-    find_idx = lambda d: np.argmin([np.abs((raw_date - d).days) for raw_date in raw_dates])
-    matched_raw_ndvi_files = [raw_files[find_idx(d)] for d in dates]
-    return matched_raw_ndvi_files
 
 def select_template(fhs):
     fhs = [val for sublist in fhs for val in sublist]
@@ -336,36 +342,6 @@ def select_template(fhs):
     example_geoinfo = PF.get_geoinfo(example_fh)
 
     return example_fh, example_ds, example_geoinfo
-    
-def calc_ra24_flat(lat_file, doy):
-
-    ## latitude
-    lat = PF.open_as_array(lat_file)
-
-    Gsc = 1367        # Solar constant (W / m2)
-    deg2rad = np.pi / 180.0
-    # Computation of Hour Angle (HRA = w)
-    B = 360./365 * (doy-81)           # (degrees)
-    # Computation of cos(theta), where theta is the solar incidence angle
-    # relative to the normal to the land surface
-    delta=np.arcsin(np.sin(23.45*deg2rad)*np.sin(np.deg2rad(B))) # Declination angle (radians)
-    
-    phi = lat * deg2rad                                     # latitude of the pixel (radians)
-    
-    dr = 1 + 0.033 * np.cos(doy*2*np.pi/365)
-    
-    # Daily 24 hr radiation - For flat terrain only !
-    ws_angle = np.arccos(-np.tan(phi)*np.tan(delta))   # Sunset hour angle ws   
-    
-    # Extraterrestrial daily radiation, Ra (W/m2):
-    ra24_flat = (Gsc/np.pi * dr * (ws_angle * np.sin(phi) * np.sin(delta) +
-                    np.cos(phi) * np.cos(delta) * np.sin(ws_angle)))
-
-    # decl = solar_radiation.declination(doy)
-    # iesd = pywapor.et_look_v2.solar_radiation.inverse_earth_sun_distance(doy)
-    # ws = pywapor.et_look_v2.solar_radiation.sunset_hour_angle(lat, decl)
-    # ra24_flat = pywapor.et_look_v2.solar_radiation.daily_solar_radiation_toa_flat(decl, iesd, lat, ws)
-    return ra24_flat
 
 def slope_aspect(dem_file, project_folder, template_file):
 
@@ -399,53 +375,19 @@ def slope_aspect(dem_file, project_folder, template_file):
 
     return slope_file, aspect_file
 
-def lat_lon(project_folder, template_file):
+def lat_lon(ds, project_folder, example_geoinfo):
 
     lat_file = unraw_filepaths(None, project_folder, "Lat", static = True)[0]
     lon_file = unraw_filepaths(None, project_folder, "Lon", static = True)[0]
 
-    geo_ex, proj_ex, size_x_ex, size_y_ex = PF.get_geoinfo(template_file)
-
-    lon_deg = np.array([geo_ex[0] + np.arange(0,size_x_ex) * geo_ex[1]]*size_y_ex)
-    lat_deg = np.array([geo_ex[3] + np.arange(0,size_y_ex) * geo_ex[5]]*size_x_ex).transpose()
-
+    lat_deg = np.rot90(np.tile(ds.lat, ds.lon.size).reshape(ds.band_data.shape[::-1]), 3)
+    lon_deg = np.tile(ds.lon, ds.lat.size).reshape(ds.band_data.shape)
     if not os.path.exists(lon_file):
-        PF.Save_as_tiff(lon_file, lon_deg, geo_ex, proj_ex)
+        PF.Save_as_tiff(lon_file, lon_deg, example_geoinfo[0], example_geoinfo[1])
     if not os.path.exists(lat_file):
-        PF.Save_as_tiff(lat_file, lat_deg, geo_ex, proj_ex)
+        PF.Save_as_tiff(lat_file, lat_deg, example_geoinfo[0], example_geoinfo[1])
 
     return lat_file, lon_file
-
-def calc_periods(time_files, freq):
-
-    geo_ex, proj_ex, size_x_ex, size_y_ex = PF.get_geoinfo(time_files[0])
-    periods = list()
-
-    for time_file in time_files:
-
-        array = PF.open_as_array(time_file)
-        dtime = np.nanmean(array)
-        if np.isnan(dtime):
-            dtime = 12
-
-        lon_deg = np.array([geo_ex[0] + np.arange(0,size_x_ex) * geo_ex[1]]*size_y_ex)
-
-        offset_GTM = int(round(lon_deg[int(lon_deg.shape[0]/2),int(lon_deg.shape[1]/2)] * 24 / 360))
-
-        date = dat.strptime(os.path.split(time_file)[-1], "Time_%Y%m%d.tif")
-        starttime = dat(date.year, date.month, date.day, 0, 0)
-        endtime = dat(date.year, date.month, date.day, 23, 59)
-        nowtime = dat(date.year, date.month, date.day, int(np.floor(dtime)), int((dtime - np.floor(dtime))*60)) - pd.DateOffset(hours = offset_GTM) 
-
-        offsets = {"3H": 90, "H": 30}
-
-        DateTime = pd.date_range(starttime, endtime, freq=freq) + pd.offsets.Minute(offsets[freq])
-        Time_nearest = min(DateTime, key=lambda DateTime: abs(DateTime - nowtime))
-        period = np.argwhere(DateTime ==Time_nearest)[0][0] + 1
-
-        periods.append((starttime, endtime, period))
-
-    return periods
 
 def unraw_filepaths(periods_start, project_folder, var, static = False):
     filepaths = list()
@@ -472,13 +414,10 @@ def create_dates(sdate, edate, period_length):
         days = (edate - sdate).days
         no_periods = int(days // period_length + 1)
         dates = pd.date_range(sdate, periods = no_periods + 1 , freq = f"{period_length}D")
-    
     periods_start = dates[:-1]
     epochs = np.arange(0, no_periods, 1)[periods_start < np.datetime64(edate)]
-    periods_end = np.array([x - np.timedelta64(1, "D") for x in dates[1:]])
-    periods_end = periods_end[periods_start < np.datetime64(edate)]
+    periods_end = dates[1:][periods_start < np.datetime64(edate)]
     periods_start = periods_start[periods_start < np.datetime64(edate)]
-
     return epochs, periods_start, periods_end
 
 def unraw(raw_file, unraw_file, template_file, method):
@@ -488,15 +427,11 @@ def unraw(raw_file, unraw_file, template_file, method):
         PF.Save_as_tiff(unraw_file, array, geo_ex, proj_ex)
 
 def unraw_replace_values(raw_file, unraw_file, replace_values, template_file):
-
     if not os.path.exists(unraw_file) and os.path.exists(raw_file):
-
         array = PF.reproj_file(raw_file, template_file, 1)
-
         replaced_array = np.ones_like(array) * np.nan
         for key, value in replace_values.items():
             replaced_array[array == key] = value
-
         geo_ex, proj_ex = PF.get_geoinfo(template_file)[0:2]
         PF.Save_as_tiff(unraw_file, replaced_array, geo_ex, proj_ex)
 
@@ -552,54 +487,11 @@ def lapse_rate_temp(tair_file, dem_file):
 
     return fh
 
-def combine_lst(raw_files):
-
-    new_dict = PF.combine_dicts(raw_files)
-
-    lst_files = list()
-    time_files = list()
-
-    for date, scenes in new_dict.items():
-
-        date_str = date.strftime("%Y.%m.%d")
-
-        for i, scene in enumerate(scenes):
-
-            lst = PF.open_as_array(scene[0])
-            time = PF.open_as_array(scene[1])
-            vza = np.abs(PF.open_as_array(scene[2]))
-
-            if i == 0:
-                lsts = np.array([lst])
-                vzas = np.array([vza])
-                times = np.array([time])
-            else:
-                lsts = np.concatenate((lsts, np.array([lst])))
-                vzas = np.concatenate((vzas, np.array([vza])))
-                times = np.concatenate((times, np.array([time])))
-
-        idxs = np.argmin(vzas, axis = 0)
-
-        lst = PF.apply_mask(lsts, idxs, axis = 0)
-        time = PF.apply_mask(times, idxs, axis = 0)
-
-        template = scene[0]
-        geo_ex, proj_ex = PF.get_geoinfo(template)[0:2]
-
-        out_folder = os.path.join(str(Path(template).parent.parent), "LST") 
-        out_file_lst = os.path.join(out_folder, f"LST_MCD11A1_K_daily_{date_str}.tif")
-        out_file_time = os.path.join(out_folder, f"Time_MCD11A1_hour_daily_{date_str}.tif")
-
-        lst_files.append(out_file_lst)
-        time_files.append(out_file_time)
-
-        PF.Save_as_tiff(out_file_lst, lst, geo_ex, proj_ex)
-        PF.Save_as_tiff(out_file_time, time, geo_ex, proj_ex)
-
-    return lst_files, time_files
-
 def download_file_from_google_drive(id, destination):
     
+    if os.path.isfile(destination):
+        return
+
     folder = os.path.split(destination)[0]
     if not os.path.exists(folder):
         os.makedirs(folder)
@@ -615,54 +507,76 @@ def download_file_from_google_drive(id, destination):
         params = { 'id' : id, 'confirm' : token }
         response = session.get(URL, params = params, stream = True)
 
-    save_response_content(response, destination)            
+    save_response_content(response, destination) 
+
+    return           
 
 def get_confirm_token(response):
     for key, value in response.cookies.items():
         if key.startswith('download_warning'):
             return value
-
     return None
 
 def save_response_content(response, destination):
     CHUNK_SIZE = 32768
-
     with open(destination, "wb") as f:
         for chunk in response.iter_content(CHUNK_SIZE):
             if chunk: # filter out keep-alive new chunks
                 f.write(chunk)
 
-def compositer(cmeta, dbs, epochs_info, example_ds = None):
+def compositer(cmeta, dbs, epochs_info, temp_folder, example_ds = None,
+                lean_output = True, diagnostics = None):
     """
     composite_type = "max", "mean", "min"
     temporal_interp = False, "linear", "nearest", "zero", "slinear", "quadratic", "cubic"
     spatial_interp = "nearest", "linear"
     """
 
+    if not os.path.exists(temp_folder):
+        os.mkdir(temp_folder)
+
     composite_type = cmeta["composite_type"]
     temporal_interp = cmeta["temporal_interp"]
     spatial_interp = cmeta["spatial_interp"]
 
-    styling = { 1.0: ("*", "r", 1.0, "MOD13Q1"),
-                2.0: ("o", "g", 1.0, "MYD13Q1"),
-                3.0: ("v", "b", 1.0, "PROBAV"),
-                4.0: ("s", "y", 1.0, "MCD43A3"),
-                5.0: ("*", "purple", 1.0, "CHIRPS.v2.0"),
-                6.0: ("p", "darkblue", 1.0, "GEOS"),
-                7.0: ("h", "gray", 1.0, "MERRA"),
-                999.0: ("P", "orange", 1.0, "-"),
+    styling = { 1: ("*", "r", 1.0, "MOD13Q1"),
+                2: ("o", "g", 1.0, "MYD13Q1"),
+                3: ("v", "b", 1.0, "PROBAV"),
+                4: ("s", "y", 1.0, "MCD43A3"),
+                5: ("*", "purple", 1.0, "CHIRPS.v2.0"),
+                6: ("p", "darkblue", 1.0, "GEOS"),
+                7: ("h", "gray", 1.0, "MERRA"),
+                999: ("P", "orange", 1.0, "-"),
 
-                0.0: (".", "k", 0.7, "Interp.")}
+                0: (".", "k", 0.7, "Interp.")}
+
+    # Check if data is static
+    if np.all([isinstance(composite_type, type(None)), 
+                isinstance(temporal_interp, type(None)),
+                len(dbs) == 1,
+                len(dbs[0]) == 1]):
+        print("> Data is static")
+        ds = xr.open_dataset(dbs[0][0], engine="rasterio")
+        ds = ds.rename_vars({"x": f"lon", "y": f"lat"})
+        ds = ds.swap_dims({"x": f"lon", "y": f"lat"})
+        ds = ds.interp_like(example_ds, method = "linear", kwargs={"fill_value": "extrapolate"},)
+        ds = ds.rename({"band": "epoch"}).assign_coords({"epoch": [-9999]})
+        ds = ds.rename({"band_data": "composite"})
+        return ds, None
 
     epochs, epoch_starts, epoch_ends = epochs_info
 
     def preprocess_func(ds):
 
         date_string = ds.encoding["source"].split("_")[-1]
+        freq_string = ds.encoding["source"].split("_")[-2]
         if len(date_string.split(".")) > 4:
             date = dat.strptime(date_string, '%Y.%m.%d.%H.%M.tif')
         else:
             date = dat.strptime(date_string, '%Y.%m.%d.tif')
+            t_offsets = {"daily": 12, "16-daily": 192, 
+                        "daily-min":12, "daily-max":12, "5-daily": 60}
+            date = date + pd.Timedelta(hours = t_offsets[freq_string])
 
         source = ds.encoding["source"].split("_")[-4]
 
@@ -687,16 +601,18 @@ def compositer(cmeta, dbs, epochs_info, example_ds = None):
     dss = list()
     dbs_names = list()
 
+    # Open tif-files and apply spatial interpolation
     for db in dbs:
+
         sub_ds = xr.open_mfdataset(db, concat_dim = "time", engine="rasterio", 
-                                    preprocess = preprocess_func)
+                                        preprocess = preprocess_func)
         dbs_names.append(sub_ds.source.values[0])
 
         if isinstance(example_ds, type(None)):
             example_ds = sub_ds.isel(time = 0, 
                                     source = 0).drop_vars(["source", "time"])
         else:
-            sub_ds = sub_ds.interp_like(example_ds, method = spatial_interp)
+            sub_ds = sub_ds.interp_like(example_ds, method = spatial_interp, kwargs={"fill_value": "extrapolate"},)
 
         dss.append(sub_ds)
 
@@ -710,17 +626,24 @@ def compositer(cmeta, dbs, epochs_info, example_ds = None):
 
     ds = ds_temp
 
+    ### STEP 1
+    print("--> Reprojecting datasets.")
+    with ProgressBar(minimum = 30):
+        ds.to_netcdf(os.path.join(temp_folder, "step1.nc"))
+    ds.close()
+    ds = None
+    ds = xr.open_dataset(os.path.join(temp_folder, "step1.nc")).chunk({"time":-1})
+    ###
+
     if temporal_interp:
-        ds_resampled = ds.resample({"time": "1D"}).interpolate(temporal_interp).drop("sources")
+        ds_resampled = ds.interpolate_na(dim="time")
+        ds_resampled = ds_resampled.resample({"time": "12H"}).interpolate(temporal_interp).drop("sources")
         ds_resampled["sources"] = ds.sources
         ds_resampled["sources"] = ds_resampled["sources"].fillna(0.0)
         ds = ds_resampled
 
-    da1 = xr.DataArray(epochs, coords={"time":epoch_starts})
-    da2 = xr.DataArray(epochs, coords={"time":epoch_ends})
-    da11 = da1.reindex_like(ds["time"], method = "ffill")
-    da22 = da2.reindex_like(ds["time"], method = "bfill")
-    ds["epochs"] = da11.where(np.isfinite(da22), np.nan)
+    da = xr.DataArray(epochs, coords={"time":epoch_starts})
+    ds["epochs"] = da.reindex_like(ds["time"], method = "ffill", tolerance = epoch_ends[-1] - epoch_starts[-1])
 
     if composite_type == "max":
         ds["composite"] = ds.band_data.groupby(ds["epochs"]).max().rename({"epochs": "epoch"})
@@ -729,7 +652,7 @@ def compositer(cmeta, dbs, epochs_info, example_ds = None):
     elif composite_type == "min":
         ds["composite"] = ds.band_data.groupby(ds["epochs"]).min().rename({"epochs": "epoch"})
     elif isinstance(composite_type, float):
-        ds["composite"] = ds.band_data.chunk(dict(time=-1)).groupby(ds["epochs"]).quantile(composite_type).rename({"epochs": "epoch"})
+        ds["composite"] = ds.band_data.groupby(ds["epochs"]).quantile(composite_type).rename({"epochs": "epoch"})
     else:
         print("No valid composite_type selected.")
 
@@ -738,11 +661,41 @@ def compositer(cmeta, dbs, epochs_info, example_ds = None):
 
     checklist = {True: dbs_names + ["Interp."], False: dbs_names}[True] # TODO interp data should not be included when not used
     sources_styling = {str(k): v for k, v in styling.items() if v[3] in checklist}
-    ds.attrs = {**cmeta, **sources_styling}
+    ds.attrs = {str(k): str(v) for k, v in {**cmeta, **sources_styling}.items()}
 
-    return ds
+    if diagnostics:
+        ds_diags = ds.sel(lat = [v[0] for v in diagnostics.values()],
+                          lon = [v[1] for v in diagnostics.values()], method = "nearest")
+    else:
+        ds_diags = None
 
-def combine_lst_new(lst_files):
+    if lean_output:
+        ds = ds.drop_vars(["band_data", "sources", "epochs", "time"])
+    else:
+        ds = ds.drop_vars(["sources", "epochs"])
+   
+    ### STEP 2
+    with ProgressBar(minimum = 30):
+        print("--> Calculating composites.")
+        ds.to_netcdf(os.path.join(temp_folder, f"{cmeta['var_name']}_composite.nc"))
+    ds.close()
+    ds = None
+    ds = xr.open_dataset(os.path.join(temp_folder, f"{cmeta['var_name']}_composite.nc"))
+
+    if not isinstance(diagnostics, type(None)):
+        with ProgressBar(minimum = 30):
+            print("--> Calculating diagnostics.")
+            ds_diags.to_netcdf(os.path.join(temp_folder, f"{cmeta['var_name']}_diagnostics.nc"))   
+        ds_diags.close()
+        ds_diags = None
+        ds_diags = xr.open_dataset(os.path.join(temp_folder, f"{cmeta['var_name']}_diagnostics.nc"))
+
+    os.remove(os.path.join(temp_folder, "step1.nc"))
+    ###
+
+    return ds, ds_diags
+
+def combine_lst(lst_files):
     ds = None
 
     for lst_db in lst_files:
@@ -779,7 +732,7 @@ def combine_lst_new(lst_files):
 
     return ds
 
-def calc_periods_new(times, freq):
+def calc_periods(times, freq):
     periods = list()
 
     for now_time in times:
@@ -804,8 +757,8 @@ def calc_se_root_i(project_folder, ds_lst, ds_meteo, ds_ndvi,
                     ds_temperature, example_ds, example_geoinfo):
 
     # spatial interpolation
-    ds_lst2 = ds_lst.interp_like(example_ds, method = "linear") # TODO check meteo download and remove extrapolation
-    ds_meteo2 = ds_meteo.interp_like(example_ds, method = "linear")
+    ds_lst2 = ds_lst.interp_like(example_ds, method = "linear", kwargs={"fill_value": "extrapolate"},)
+    ds_meteo2 = ds_meteo.interp_like(example_ds, method = "linear", kwargs={"fill_value": "extrapolate"},)
     
     # temporal interpolation
     ds_meteo3 = ds_meteo2.interp(time = ds_lst2.time, method = "nearest", kwargs={"fill_value": "extrapolate"},) # TODO download more meteo data and switch to linear
@@ -823,9 +776,6 @@ def calc_se_root_i(project_folder, ds_lst, ds_meteo, ds_ndvi,
     ds_se_root = ds_se_root.drop_vars([x for x in list(ds_se_root.variables) if x not in req_vars])
     ds_se_root = ds_se_root.rename({k: v for k, v in renames.items() if k in list(ds_se_root.variables)})
     ds_se_root["u_i"] = np.sqrt(ds_se_root["v2m_inst"]**2 + ds_se_root["u2m_inst"]**2)
-
-    # ds_se_root.to_netcdf(r"/Users/hmcoerver/On My Mac/se_root_full_test.nc")
-    # ds_se_root = xr.open_dataset(r"/Users/hmcoerver/On My Mac/se_root_full_test.nc")
 
     se_root_folder = os.path.join(project_folder, "SMC")
     if not os.path.exists(se_root_folder):
@@ -858,5 +808,25 @@ if __name__ == "__main__":
     startdate = "2021-07-01"
     enddate = "2021-07-10"
     level = "level_1"
-    diagnostics = {"POI #1":  (29.6785, 31.1955),
-                    "POI #2": (29.2, 30.621)}
+    composite_length = "DEKAD"
+    # composite_length = 1
+
+    # level = {
+    #     "METEO": ["MERRA2"],
+    #     "NDVI": ["MOD13", "MYD13", "PROBAV"],
+    #     "ALBEDO": ["PROBAV"],
+    #     "LST": ["MOD11", "MYD11"],
+    #     "LULC": ["WAPOR"],
+    #     "DEM": ["SRTM"],
+    #     "PRECIPITATION": ["CHIRPS"],
+    #     "TRANS": ["MERRA2"],
+    # }
+
+    diagnostics = { # label          # lat      # lon
+                    "water":	    (29.44977,	30.58215),
+                    "desert":	    (29.12343,	30.51222),
+                    "agriculture":	(29.32301,	30.77599),
+                    "urban":	    (29.30962,	30.84109),
+                    }
+
+    # main(project_folder, startdate, enddate, latlim, lonlim, level = level, diagnostics = diagnostics, composite_length = composite_length)
