@@ -26,7 +26,7 @@ def DownloadData(Dir, Var, Startdate, Enddate, latlim, lonlim, TimeStep, Period,
         all_files[f"{Var}-min"] = list()
 
     # Add extra buffer to ensure good spatial interpolation
-    buffer_pixels = 2
+    buffer_pixels = 0
     lonlim = [lonlim[0] - 0.625 * buffer_pixels, lonlim[1] + 0.625 * buffer_pixels]
     latlim = [latlim[0] - 0.5 * buffer_pixels, latlim[1] + 0.5 * buffer_pixels]
 
