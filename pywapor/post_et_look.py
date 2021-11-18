@@ -476,6 +476,6 @@ def plot_composite(ds, diagnostics, out_folder = None, band_name = "band_data"):
 
         if not isinstance(out_folder, type(None)):
             if not os.path.exists(out_folder):
-                os.mkdir(out_folder)
+                os.makedirs(out_folder)
             fn = f"{point}_{ds.attrs['var_name']}.png"
             fig.savefig(os.path.join(out_folder, fn))

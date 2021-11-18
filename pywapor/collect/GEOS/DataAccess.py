@@ -59,11 +59,11 @@ def DownloadData(Dir, Var, Startdate, Enddate, latlim, lonlim, TimeStep, Period,
     Dates = pd.date_range(Startdate, Enddate, freq = "D")
 
     # Create Waitbar
-    if Waitbar == 1:
-        import pywapor.general.waitbar_console as WaitbarConsole
-        total_amount = len(Dates)
-        amount = 0
-        WaitbarConsole.printWaitBar(amount, total_amount, prefix = 'Progress:', suffix = 'Complete', length = 50)
+    # if Waitbar == 1:
+    #     import pywapor.general.waitbar_console as WaitbarConsole
+    #     total_amount = len(Dates)
+    #     amount = 0
+    #     WaitbarConsole.printWaitBar(amount, total_amount, prefix = 'Progress:', suffix = 'Complete', length = 50)
 
     for Date in Dates:
 
@@ -182,9 +182,10 @@ def DownloadData(Dir, Var, Startdate, Enddate, latlim, lonlim, TimeStep, Period,
                 if os.path.isfile(output_name):
                     all_files["t2m-min"].append(output_name)
 
-        if Waitbar == 1:
-            amount += 1
-            WaitbarConsole.printWaitBar(amount, total_amount, prefix = 'Progress:', suffix = 'Complete', length = 50)
+        if Waitbar:
+            Waitbar.update(1)
+            # amount += 1
+            # WaitbarConsole.printWaitBar(amount, total_amount, prefix = 'Progress:', suffix = 'Complete', length = 50)
 
     return all_files
 

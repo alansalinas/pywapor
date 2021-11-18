@@ -8,7 +8,7 @@ from pywapor.collect.SRTM.DataAccess import DownloadData
 import sys
 
 
-def main(Dir, latlim, lonlim, Waitbar = 1):
+def main(Dir, latlim, lonlim, Waitbar = 0):
     """
     Downloads HydroSHED data from http://srtm.csi.cgiar.org/download
 

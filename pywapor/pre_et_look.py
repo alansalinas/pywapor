@@ -12,15 +12,17 @@ import pywapor
 import pywapor.general.processing_functions as PF
 import pywapor.collect as c
 import pywapor.general as g
-from pathlib import Path
 import json
 import xarray as xr
 import glob
+import warnings
+import shutil
 
 def main(project_folder, startdate, enddate, latlim, lonlim, level = "level_1", 
         diagnostics = None, composite_length = "DEKAD"):
 
-#%%
+    # Disable Warnings
+    warnings.filterwarnings('ignore')
 
     sdate = dat.strptime(startdate, "%Y-%m-%d").date()
     edate = dat.strptime(enddate, "%Y-%m-%d").date()
@@ -42,20 +44,23 @@ def main(project_folder, startdate, enddate, latlim, lonlim, level = "level_1",
 
     raw_folder = os.path.join(project_folder, "RAW")
     level_folder = os.path.join(project_folder, level)
-    graph_folder = os.path.join(level_folder, "graphs")
     temp_folder = os.path.join(project_folder, "temporary")
+    if diagnostics:
+        diagnostics["folder"] = os.path.join(level_folder, "graphs")
 
     dl_args = (raw_folder, latlim, lonlim, startdate, enddate)
 
     unraw_file_templates = unraw_filepaths(epochs_info[1], level_folder, "{var}")
 
-    #### NDVI #### 
+    #### NDVI ####
+    print(f"\n#### NDVI ####")
     raw_ndvi_files = list()
     # Order is important! PROBV gets priority over MOD13, and MOD13 over MYD13.
     if "PROBAV" in source_selection["NDVI"]:
         raw_ndvi_files.append(c.PROBAV.PROBAV_S5(*dl_args)[0])
+        # raw_ndvi_files.append(glob.glob(r"/Volumes/Data/FAO/WaPOR_vs_pyWaPOR/pyWAPOR_long_test/RAW/PROBAV/NDVI/*.tif"))
     if "MOD13" in source_selection["NDVI"]:
-        raw_ndvi_files.append(c.MOD13.NDVI(*dl_args, remove_hdf = 0))
+        raw_ndvi_files.append(c.MOD13.NDVI(*dl_args))
     if "MYD13" in source_selection["NDVI"]:
         raw_ndvi_files.append(c.MYD13.NDVI(*dl_args))
 
@@ -68,21 +73,18 @@ def main(project_folder, startdate, enddate, latlim, lonlim, level = "level_1",
         "var_name": "NDVI",
         "var_unit": "-",
     }
-    ds, ds_diags = g.compositer.main(cmeta, raw_ndvi_files, epochs_info, temp_folder, example_ds, 
-                                diagnostics = diagnostics, 
-                                lean_output = False)
-    ds_ndvi = ds.rename({"band_data": "ndvi"})
-    
-    unraw_all(cmeta["var_name"], ds_ndvi, unraw_file_templates, example_geoinfo)
+    ds = g.compositer.main(cmeta, raw_ndvi_files, epochs_info, temp_folder, example_ds, 
+                                diagnostics = diagnostics)
 
-    if not isinstance(diagnostics, type(None)):
-        pywapor.post_et_look.plot_composite(ds_diags, diagnostics, graph_folder)
+    unraw_all(cmeta["var_name"], ds, unraw_file_templates, example_geoinfo)
 
     #### ALBEDO ####
+    print(f"\n#### ALBEDO ####")
     raw_albedo_files = list()
     # Order is important! PROBV gets priority over MDC43.
     if "PROBAV" in source_selection["ALBEDO"]:
         raw_albedo_files.append(c.PROBAV.PROBAV_S5(*dl_args)[1])
+        # raw_albedo_files.append(glob.glob(r"/Volumes/Data/FAO/WaPOR_vs_pyWaPOR/pyWAPOR_long_test/RAW/PROBAV/Albedo/*.tif"))
     if "MDC43" in source_selection["ALBEDO"]:
         raw_albedo_files.append(c.MCD43.ALBEDO(*dl_args))
 
@@ -93,13 +95,11 @@ def main(project_folder, startdate, enddate, latlim, lonlim, level = "level_1",
         "var_name": "ALBEDO",
         "var_unit": "-",
     }
-    ds, ds_diags = g.compositer.main(cmeta, raw_albedo_files, epochs_info, temp_folder, example_ds, diagnostics = diagnostics)
+    ds = g.compositer.main(cmeta, raw_albedo_files, epochs_info, temp_folder, example_ds, diagnostics = diagnostics)
     unraw_all(cmeta["var_name"], ds, unraw_file_templates, example_geoinfo)
 
-    if not isinstance(diagnostics, type(None)):
-        pywapor.post_et_look.plot_composite(ds_diags, diagnostics, graph_folder)
-
     #### PRECIPITATION ####
+    print(f"\n#### PRECIPITATION ####")
     raw_precip_files = list()
     if "CHIRPS" in source_selection["PRECIPITATION"]:
         raw_precip_files.append(c.CHIRPS.daily(*dl_args))
@@ -111,13 +111,11 @@ def main(project_folder, startdate, enddate, latlim, lonlim, level = "level_1",
         "var_name": "Precipitation",
         "var_unit": "mm/day",
     }
-    ds, ds_diags = g.compositer.main(cmeta, raw_precip_files, epochs_info, temp_folder, example_ds, diagnostics = diagnostics)
+    ds = g.compositer.main(cmeta, raw_precip_files, epochs_info, temp_folder, example_ds, diagnostics = diagnostics)
     unraw_all(cmeta["var_name"], ds, unraw_file_templates, example_geoinfo)
 
-    if not isinstance(diagnostics, type(None)):
-        pywapor.post_et_look.plot_composite(ds_diags, diagnostics, graph_folder)
-
     #### DEM ####
+    print(f"\n#### DEM ####")
     if "SRTM" in source_selection["DEM"]:
         raw_dem_file = c.SRTM.DEM(*dl_args[:3])
     
@@ -130,13 +128,15 @@ def main(project_folder, startdate, enddate, latlim, lonlim, level = "level_1",
         "var_name": "DEM",
         "var_unit": "m",
     }
-    ds = g.compositer.main(cmeta, [[raw_dem_file]], None, temp_folder, example_ds)[0]
+    ds = g.compositer.main(cmeta, [[raw_dem_file]], None, temp_folder, example_ds)
     unraw_all(cmeta["var_name"], ds, [dem_file], example_geoinfo)
 
     #### SLOPE ASPECT ####
+    print(f"\n#### SLOPE ASPECT ####")
     slope_aspect(dem_file, level_folder, example_fh)
 
     #### LULC ####
+    print(f"\n#### LULC ####")
     if "GLOBCOVER" in source_selection["LULC"]:
         raw_lulc_file = c.Globcover.Landuse(*dl_args[:3])
         raw_lulc_files = [(year, raw_lulc_file) for year in range(sdate.year, edate.year + 1)]
@@ -150,10 +150,11 @@ def main(project_folder, startdate, enddate, latlim, lonlim, level = "level_1",
     lulc_file_template = unraw_filepaths(None, level_folder, "{var}_{year}", static = True)[0]
     for year, raw_file in raw_lulc_files:
         for key, replace_values in lulc_values[source_selection["LULC"][0]].items():
-            print(year, raw_file, key)
+            # print(year, raw_file, key)
             unraw_replace_values(raw_file, lulc_file_template.format(var = key, year = year), replace_values, example_fh)
 
     #### METEO ####
+    print(f"\n#### METEO ####")
     if "MERRA2" in source_selection["METEO"]:
         meteo_vars = ['t2m', 'u2m', 'v2m', 'q2m', 'tpw', 'ps', 'slp']
         raw_meteo_files = c.MERRA.daily_MERRA2(*dl_args, meteo_vars)
@@ -167,6 +168,8 @@ def main(project_folder, startdate, enddate, latlim, lonlim, level = "level_1",
                                 'u2m': "u2m", 'v2m': "v2m",'slp': "Pair_24_0",'qv2m': "qv_24",}
 
     for var_name, raw_files in raw_meteo_files.items():
+
+        print(f"## {var_name} ##")
 
         if "t2m" in var_name:
             raw_files = [g.lapse_rate.lapse_rate_temperature(x, dem_file) for x in raw_files if "_K_" in x]
@@ -182,36 +185,31 @@ def main(project_folder, startdate, enddate, latlim, lonlim, level = "level_1",
             "var_name": meteo_name_convertor[var_name],
             "var_unit": units[meteo_name_convertor[var_name]],
         }
-        ds, ds_diags = g.compositer.main(cmeta, [raw_files], epochs_info, temp_folder, example_ds, diagnostics = diagnostics)
+        ds = g.compositer.main(cmeta, [raw_files], epochs_info, temp_folder, example_ds, diagnostics = diagnostics)
         unraw_all(meteo_name_convertor[var_name], ds, unraw_file_templates, example_geoinfo)
 
-        if not isinstance(diagnostics, type(None)):
-            pywapor.post_et_look.plot_composite(ds_diags, diagnostics, graph_folder)
-
     #### SE_ROOT ####
+    print(f"\n#### SE_ROOT ####")
     ds_lst, ds_meteo, ds_ndvi, ds_temperature = pywapor.pre_se_root.main(project_folder, startdate, enddate, latlim, lonlim, level = source_selection)
     raw_se_root_files = pywapor.se_root.main(project_folder, ds_lst, ds_meteo, ds_ndvi, 
                                         ds_temperature, example_ds, example_geoinfo)
 
     cmeta = {
-        "composite_type": "max", # 0.90,
+        "composite_type": 0.85,
         "temporal_interp": False,
         "spatial_interp": "nearest",
         "var_name": "se_root",
         "var_unit": "-",
     }
-
-#%%
-    ds, ds_diags = g.compositer.main(cmeta, [raw_se_root_files], epochs_info, temp_folder, example_ds, diagnostics = diagnostics)
+    ds = g.compositer.main(cmeta, [raw_se_root_files], epochs_info, temp_folder, example_ds, diagnostics = diagnostics)
     unraw_all(cmeta["var_name"], ds, unraw_file_templates, example_geoinfo)
 
-    if not isinstance(diagnostics, type(None)):
-        pywapor.post_et_look.plot_composite(ds_diags, diagnostics, graph_folder)
-
     #### LAT LON ####
+    print(f"\n#### LAT LON ####")
     lat_lon(example_ds, level_folder, example_geoinfo)
 
     #### SOLAR RADIATION ####
+    print(f"\n#### SOLAR RADIATION ####")
     if "MERRA2" in source_selection["TRANS"]:
         raw_ra24_files = c.MERRA.daily_MERRA2(*dl_args, ['swgnet'])['swgnet']
 
@@ -222,13 +220,11 @@ def main(project_folder, startdate, enddate, latlim, lonlim, level = "level_1",
         "var_name": "ra_24",
         "var_unit": "-",
     }
-    ds, ds_diags = g.compositer.main(cmeta, [raw_ra24_files], epochs_info, temp_folder, example_ds, diagnostics = diagnostics)
+    ds = g.compositer.main(cmeta, [raw_ra24_files], epochs_info, temp_folder, example_ds, diagnostics = diagnostics)
     unraw_all(cmeta["var_name"], ds, unraw_file_templates, example_geoinfo)
 
-    if not isinstance(diagnostics, type(None)):
-        pywapor.post_et_look.plot_composite(ds_diags, diagnostics, graph_folder)
-
     #### TEMP. AMPLITUDE #### # TODO add source selection and remove year data
+    print(f"\n#### TEMP. AMPLITUDE ####")
     raw_temp_ampl_file = os.path.join(raw_folder, "GLDAS", "Temp_Amplitudes_global.tif")
     download_file_from_google_drive("1pqZnCn-1xkUC7o1csG24hwg22fV57gCH", raw_temp_ampl_file)
     temp_ampl_file_template = unraw_filepaths(None, level_folder, "Tair_amp_{year}", static = True)[0]
@@ -257,6 +253,8 @@ def main(project_folder, startdate, enddate, latlim, lonlim, level = "level_1",
 
     for fh in glob.glob(os.path.join(temp_folder, "*.nc")):
         os.remove(fh)
+    if len(os.listdir(temp_folder)) == 0:
+        shutil.rmtree(temp_folder)
 
     os.chdir(project_folder)
 
@@ -429,7 +427,7 @@ if __name__ == "__main__":
     # composite_length = 1
 
     # level = {
-    #     "METEO": ["MERRA2"],
+    #     "METEO": ["GEOS5"],
     #     "NDVI": ["MOD13", "MYD13", "PROBAV"],
     #     "ALBEDO": ["PROBAV"],
     #     "LST": ["MOD11", "MYD11"],
@@ -439,14 +437,14 @@ if __name__ == "__main__":
     #     "TRANS": ["MERRA2"],
     # }
 
-    diagnostics = { # label          # lat      # lon
-                    "water":	    (29.44977,	30.58215),
-                    "desert":	    (29.12343,	30.51222),
-                    "agriculture":	(29.32301,	30.77599),
-                    "urban":	    (29.30962,	30.84109),
-                    }
+    # diagnostics = { # label          # lat      # lon
+    #                 "water":	    (29.44977,	30.58215),
+    #                 "desert":	    (29.12343,	30.51222),
+    #                 "agriculture":	(29.32301,	30.77599),
+    #                 "urban":	    (29.30962,	30.84109),
+    #                 }
 
-    main(project_folder, startdate, enddate, latlim, lonlim, level = level, diagnostics = diagnostics, composite_length = composite_length)
+    # main(project_folder, startdate, enddate, latlim, lonlim, level = level, diagnostics = diagnostics, composite_length = composite_length)
 
     # ds_lst, ds_meteo, ds_ndvi, ds_temperature = pywapor.pre_se_root.main(project_folder, startdate, enddate, latlim, lonlim, level = level)
     

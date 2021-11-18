@@ -1,8 +1,10 @@
 # -*- coding: utf-8 -*-
 import sys
 from pywapor.collect.GEOS.DataAccess import DownloadData
+import tqdm
+import pandas as pd
 
-def main(Dir, latlim, lonlim, Startdate, Enddate, Vars, Waitbar = 1):
+def main(Dir, latlim, lonlim, Startdate, Enddate, Vars, Waitbar = True):
     """
     This function downloads GEOS daily data for a given variable, time
     interval, and spatial extent.
@@ -16,14 +18,22 @@ def main(Dir, latlim, lonlim, Startdate, Enddate, Vars, Waitbar = 1):
     lonlim -- [xmin, xmax]
     Waitbar -- 1 (Default) Will print a waitbar
     """
+    no_dates = len(pd.date_range(Startdate, Enddate, freq="D"))
+    no_vars = len(Vars)
+
+    if Waitbar:
+        waitbar = tqdm.tqdm(total = no_vars * no_dates, delay = 30, position = 0)
+    else:
+        waitbar = False
+
     all_files = dict()
     for Var in Vars:
 
-        if Waitbar == 1:
-            print('\nDownloading daily GEOS %s data for the period %s till %s' %(Var, Startdate, Enddate))
+        if Waitbar:
+            waitbar.set_description_str(Var)
 
         # Download data
-        all_files = {**all_files, **DownloadData(Dir, Var, Startdate, Enddate, latlim, lonlim, "daily", Period = '', Waitbar = 1)}
+        all_files = {**all_files, **DownloadData(Dir, Var, Startdate, Enddate, latlim, lonlim, "daily", Period = '', Waitbar = waitbar)}
 
 
     return all_files

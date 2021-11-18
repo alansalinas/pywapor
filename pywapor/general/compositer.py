@@ -4,6 +4,7 @@ import xarray as xr
 from datetime import datetime as dat
 import pandas as pd
 from dask.diagnostics import ProgressBar
+import pywapor.post_et_look as pl
 
 def main(cmeta, dbs, epochs_info, temp_folder, example_ds = None,
                 lean_output = True, diagnostics = None):
@@ -14,7 +15,7 @@ def main(cmeta, dbs, epochs_info, temp_folder, example_ds = None,
     """
 
     if not os.path.exists(temp_folder):
-        os.mkdir(temp_folder)
+        os.makedirs(temp_folder)
 
     composite_type = cmeta["composite_type"]
     temporal_interp = cmeta["temporal_interp"]
@@ -28,7 +29,6 @@ def main(cmeta, dbs, epochs_info, temp_folder, example_ds = None,
                 6: ("p", "darkblue", 1.0, "GEOS"),
                 7: ("h", "gray", 1.0, "MERRA"),
                 999: ("P", "orange", 1.0, "-"),
-
                 0: (".", "k", 0.7, "Interp.")}
 
     # Check if data is static
@@ -36,14 +36,13 @@ def main(cmeta, dbs, epochs_info, temp_folder, example_ds = None,
                 isinstance(temporal_interp, type(None)),
                 len(dbs) == 1,
                 len(dbs[0]) == 1]):
-        print("> Data is static")
         ds = xr.open_dataset(dbs[0][0], engine="rasterio")
         ds = ds.rename_vars({"x": f"lon", "y": f"lat"})
         ds = ds.swap_dims({"x": f"lon", "y": f"lat"})
         ds = ds.interp_like(example_ds, method = "linear", kwargs={"fill_value": "extrapolate"},)
         ds = ds.rename({"band": "epoch"}).assign_coords({"epoch": [-9999]})
         ds = ds.rename({"band_data": "composite"})
-        return ds, None
+        return ds
 
     def preprocess_func(ds):
 
@@ -101,18 +100,13 @@ def main(cmeta, dbs, epochs_info, temp_folder, example_ds = None,
         if i == 0:
             ds_temp = ds.sel(source = db_name)
         else:
+            # Combine datasets, this is where one ds is prioritised over another!
             ds_temp = ds_temp.fillna(ds.sel(source = db_name))
 
     ds = ds_temp
 
-    ### STEP 1
-    print("--> Reprojecting datasets.")
-    with ProgressBar(minimum = 30):
-        ds.to_netcdf(os.path.join(temp_folder, "step1.nc"))
-    ds.close()
-    ds = None
-    ds = xr.open_dataset(os.path.join(temp_folder, "step1.nc")).chunk({"time":-1})
-    ###
+    fh = os.path.join(temp_folder, "intermediate.nc")
+    ds = calculate_ds(ds, fh, "--> Reprojecting datasets.").chunk({"time":-1})
 
     if temporal_interp:
         ds_resampled = ds.interpolate_na(dim="time")
@@ -122,13 +116,9 @@ def main(cmeta, dbs, epochs_info, temp_folder, example_ds = None,
         ds = ds_resampled
 
     if isinstance(epochs_info, type(None)):
-        with ProgressBar(minimum = 30):
-            ds.to_netcdf(os.path.join(temp_folder, f"{cmeta['var_name']}2_composite.nc"))
-        ds.close()
-        ds = None
-        ds = xr.open_dataset(os.path.join(temp_folder, f"{cmeta['var_name']}_composite.nc")).chunk({"time":-1})
-        os.remove(os.path.join(temp_folder, "step1.nc"))
-        return ds, None
+        fh = os.path.join(temp_folder, f"{cmeta['var_name']}_ts.nc")
+        ds = calculate_ds(ds, fh, "--> Exporting timeseries.")
+        return ds
 
     epochs, epoch_starts, epoch_ends = epochs_info
 
@@ -154,33 +144,36 @@ def main(cmeta, dbs, epochs_info, temp_folder, example_ds = None,
     ds.attrs = {str(k): str(v) for k, v in {**cmeta, **sources_styling}.items()}
 
     if diagnostics:
+        graph_folder = diagnostics.pop("folder")
         ds_diags = ds.sel(lat = [v[0] for v in diagnostics.values()],
                           lon = [v[1] for v in diagnostics.values()], method = "nearest")
     else:
         ds_diags = None
 
-    if lean_output:
+    if lean_output: # TODO this option can be removed?
         ds = ds.drop_vars(["band_data", "sources", "epochs", "time"])
     else:
         ds = ds.drop_vars(["sources", "epochs"])
    
-    ### STEP 2
-    with ProgressBar(minimum = 30):
-        print("--> Calculating composites.")
-        ds.to_netcdf(os.path.join(temp_folder, f"{cmeta['var_name']}_composite.nc"))
-    ds.close()
-    ds = None
-    ds = xr.open_dataset(os.path.join(temp_folder, f"{cmeta['var_name']}_composite.nc"))
+    fh = os.path.join(temp_folder, f"{cmeta['var_name']}_composite.nc")
+    ds = calculate_ds(ds, fh, label = "--> Calculating composites.")
 
     if not isinstance(diagnostics, type(None)):
-        with ProgressBar(minimum = 30):
-            print("--> Calculating diagnostics.")
-            ds_diags.to_netcdf(os.path.join(temp_folder, f"{cmeta['var_name']}_diagnostics.nc"))   
-        ds_diags.close()
-        ds_diags = None
-        ds_diags = xr.open_dataset(os.path.join(temp_folder, f"{cmeta['var_name']}_diagnostics.nc"))
+        fh = os.path.join(temp_folder, f"{cmeta['var_name']}_diags.nc")
+        ds_diags = calculate_ds(ds_diags, fh, label = "--> Calculating diagnostics.")
+        pl.plot_composite(ds_diags, diagnostics, graph_folder)
+        diagnostics["folder"] = graph_folder
 
-    os.remove(os.path.join(temp_folder, "step1.nc"))
-    ###
+    return ds
 
-    return ds, ds_diags
+def calculate_ds(ds, fh, label = None):
+    if os.path.isfile(fh):
+        os.remove(fh)
+    with ProgressBar(minimum = 30):
+        if not isinstance(label, type(None)):
+            print(label)
+        ds.to_netcdf(fh)
+    ds.close()
+    ds = None
+    ds = xr.open_dataset(fh)
+    return ds

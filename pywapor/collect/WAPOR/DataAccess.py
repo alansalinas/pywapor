@@ -177,7 +177,7 @@ def WAPOR(output_folder, Startdate, Enddate, latlim, lonlim, Parameter, auth_tok
                     job_url = result['links'][0]['href']
                     
                     # output filename
-                    print("Try to create %s" %file_name_temp)
+                    # print("Try to create %s" %file_name_temp)
                     
                     time.sleep(10)   
                     job_response = requests.get(job_url, headers=header)
@@ -189,7 +189,7 @@ def WAPOR(output_folder, Startdate, Enddate, latlim, lonlim, Parameter, auth_tok
                         if job_response.json()['response']['status'] == 'COMPLETED':
                             job_result = job_response.json()['response']['output']['downloadUrl']
                             urllib.request.urlretrieve(job_result, file_name_temp) 
-                            print("Created %s succesfully!!!" %file_name_temp)
+                            # print("Created %s succesfully!!!" %file_name_temp)
                             success = 1
                         else:
                             print("ERROR: Was not able to create output")  

@@ -29,7 +29,7 @@ def main(output_folder, latlim, lonlim, Startdate, Enddate, Parameter, Area = No
     """
     auth_token = pywapor.collect.get_pw_un.get("WAPOR")[0]
 
-    print('\nDownload WAPOR %s data for period %s till %s' %(Parameter, Startdate, Enddate))
+    # print('\nDownload WAPOR %s data for period %s till %s' %(Parameter, Startdate, Enddate))
     WAPOR(output_folder, Startdate, Enddate, latlim, lonlim, Parameter, auth_token, Area = Area, Version = Version)
 
     output_folder_para = os.path.join(output_folder, "WAPOR", "*.tif")
