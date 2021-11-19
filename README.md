@@ -1,5 +1,5 @@
 # pyWAPOR
-![downloads](https://img.shields.io/pypi/dw/pywapor) [![version](https://img.shields.io/pypi/v/pywapor)](https://pypi.org/project/pywapor/) [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/drive/19oYdrrXFsXWAMDa2x56yvvWUGxNHPYek?usp=sharing)
+![downloads](https://img.shields.io/pypi/dw/pywapor) [![version](https://img.shields.io/pypi/v/pywapor)](https://pypi.org/project/pywapor/) [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/bertcoerver/pywapor_notebooks/blob/main/pywapor_101.ipynb)
 
 
 This repository contains a Python implementation of the algorithm used to generate the [WaPOR](http://www.fao.org/in-action/remote-sensing-for-water-productivity/en/) [datasets](https://wapor.apps.fao.org/home/WAPOR_2/1). It can be used to calculate evaporation, transpiration and biomass production maps.
@@ -47,7 +47,7 @@ pywapor.pre_et_look.main(project_folder, startdate, enddate, latlim, lonlim)
 pywapor.et_look.main(project_folder, startdate)
 ```
 
-See the `examples` folder for more examples or check out the [Colab Notebook](https://colab.research.google.com/drive/19oYdrrXFsXWAMDa2x56yvvWUGxNHPYek?usp=sharing).
+See the `examples` folder for more examples or check out the [Colab Notebook](https://colab.research.google.com/github/bertcoerver/pywapor_notebooks/blob/main/pywapor_101.ipynb).
 
 ## Data Sources
 
@@ -55,23 +55,30 @@ To run the ETLook model, two types of spatial variables are required, temporal a
 
 **For your convenience, the pyWAPOR package has a function that can collect all this data from selected sources** and make sure the data is stored in the correct format and folder structure.
 
-#### Temporal Data
-| Variable | Aggregate | Unit | Selected Sources |
-| ------ | ------ | ------ | ------ |
-| Albedo | instant | - | MODIS, PROBA-V, *️⃣ |
-| Land Surface Temperature (LST) | instant  | K | MODIS, *️⃣ |
-| Normalized Difference Vegetation Index (NDVI) | instant  | - | MODIS, PROBA-V *️⃣ |
-| Precipitation | instant  | mm/day | CHIRPS |
-| Air Pressure at sea level | instant, mean  | kPa | MERRA-2, GEOS-5 |
-| Air Pressure at surface level | instant  | kPa | MERRA-2, GEOS-5 |
-| Specific Humidity | instant, mean  | kg/kg | MERRA-2, GEOS-5 |
-| Air Temperature | instant, mean, min, max  | °C | MERRA-2, GEOS-5 |
-| Windspeed | instant, mean  | m/s | MERRA-2, GEOS-5 |
-| Total Precipitable Water Vapour | instant  | mm | MERRA-2, GEOS-5 |
-| Transmissivity | instant  | - | MERRA-2 |
-| Instantaneous Data Time | instant  | hour | from LST
+#### Temporal ET_Look Data (composites)
+| Variable | Unit | Selected Sources |
+| ------ | ------ | ------ |
+| Normalized Difference Vegetation Index (NDVI) | - | MOD13, MYD13, PROBA-V|
+| Albedo | - | MCD43, PROBA-V|
+| Precipitation | mm/day | CHIRPS |
+| Air Pressure at sea level | kPa | MERRA-2, GEOS-5 |
+| Specific Humidity | kg/kg | MERRA-2, GEOS-5 |
+| Air Temperature | °C | MERRA-2, GEOS-5 |
+| Windspeed | m/s | MERRA-2, GEOS-5 |
+| Solar Radiation | W/m2  | MERRA-2 |
+| Soil Saturation | - | from pywapor.se_root()
 
-*️⃣ PROBA-V and LandSat support in development.
+#### Temporal SE_Root Data (instantaneous)
+| Variable | Unit | Selected Sources |
+| ------ | ------ | ------ |
+| Normalized Difference Vegetation Index (NDVI) | - | MOD13, MYD13, PROBA-V *️⃣ |
+| Air Pressure at sea level | kPa | MERRA-2, GEOS-5 |
+| Air Pressure at surface level  | kPa | MERRA-2, GEOS-5 |
+| Specific Humidity | kg/kg | MERRA-2, GEOS-5 |
+| Air Temperature  | °C | MERRA-2, GEOS-5 |
+| Windspeed | m/s | MERRA-2, GEOS-5 |
+| Total Precipitable Water Vapour  | mm | MERRA-2, GEOS-5 |
+| Land Surface Temperature (LST) | K | MOD11, MYD11 |
 
 #### Static Data
 | Variable | Unit | Selected Sources |
