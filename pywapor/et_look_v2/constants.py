@@ -70,9 +70,9 @@ int_max = 0.2
 
 # **canopy resistance***********************************************************
 # constants or predefined:
-r0_bare = 0.53 # used for se_root calc
+r0_bare = 0.265 # used for se_root calc
 r0_bare_wet = 0.20
-r0_full = 0.507 # used for se_root calc
+r0_full = 0.254 # used for se_root calc
 tenacity = 1.5
 disp_bare = 0.0
 disp_full = 0.667
@@ -81,7 +81,8 @@ fraction_h_full = 0.95
 
 z_obs = 2
 z_b = 100
-z0m_bare = 0.001 # 0.0005 
+z0m_bare = 0.001 # 0.0005
+z0m_full = 0.1
 
 # **initial canopy aerodynamic resistance***********************************************************
 # constants or predefined:
