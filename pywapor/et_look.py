@@ -116,12 +116,14 @@ def main(project_folder, date, level = "level_1", et_look_version = "v2",
             print("----> trans_24 will be calculated from ra_24.")
         if name == "z_oro" and isinstance(value, type(None)):
             print("----> z_oro will be calculated from slope.")
+        if name == "u_24" and isinstance(value, type(None)):
+            print("----> u_24 will be calculated from u2m_24 and v2m_24.")
         if name in spatial_or_constant and isinstance(value, type(None)):
             print(f"----> {name} will be constant at {getattr(c, name):.4f}.")
 
     # Resolution
     if isinstance(input_data, type(None)):
-        example_filepath = create_fp("ALBEDO", vars.inputs["ALBEDO"], date, folders)
+        example_filepath = create_fp("r0", vars.inputs["r0"], date, folders)
         geoinfo = get_geoinfo(example_filepath)
         resolution, geo_ex, proj_ex = geoinfo
         print(f"----> resolution is ~{resolution:.0f} meter.")
@@ -129,6 +131,9 @@ def main(project_folder, date, level = "level_1", et_look_version = "v2",
     for param in spatial_or_constant:
         if isinstance(id[param], type(None)):
             id[param] = np.ones_like(id["ndvi"]) * getattr(c, param)
+
+    if isinstance(id["u_24"], type(None)):
+        id["u_24"] = np.sqrt(id["v2m_24"]**2 + id["u2m_24"]**2)
 
     # Outputs
     od = dict()
@@ -310,13 +315,15 @@ def main(project_folder, date, level = "level_1", et_look_version = "v2",
         od["biomass_prod"] = ETLook.biomass.biomass(od["apar"], od["lue"])     
 
     if isinstance(input_data, type(None)):
-        example_filepath = create_fp("ALBEDO", vars.inputs["ALBEDO"], date, folders)
+        all_files = dict()
+        example_filepath = create_fp("r0", vars.inputs["r0"], date, folders)
         geo_ex, proj_ex = get_geoinfo(example_filepath)[1:3]
         for var in vars.outputs.keys():
             if var in od.keys():
                 if vars.outputs[var]["output"]:
                     PF.Save_as_tiff(vars.outputs[var]["file_path"], od[var], geo_ex, proj_ex)
-        return
+                    all_files[var] = vars.outputs[var]["file_path"]
+        return all_files
     else:
         return od, id
 
@@ -460,3 +467,15 @@ def lst_zone_mean(id, geo_ex, proj_ex, date, folders):
     dest_lst_zone = PF.reproject_dataset_example(dest_lst_zone_large, LST_filename, 6)
     lst_zone_mean = dest_lst_zone.GetRasterBand(1).ReadAsArray()
     return lst_zone_mean
+
+# if __name__ == "__main__":
+
+#     project_folder = r"/Volumes/Data/FAO/WaPOR_vs_pyWaPOR/pyWAPOR_v1"
+#     startdate = date = "2021-07-01"
+
+#     level = "level_1"
+#     et_look_version = "v2"
+#     output = None
+#     input_data = None
+
+#     # all_files = main(project_folder, startdate)
