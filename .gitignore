@@ -23,6 +23,10 @@
 .vscode/
 
 devs/
+dist/
+build/
+pywapor_test.egg-info/
+pywapor.egg-info/
 
 # Unit test reports
 TEST*.xml
@@ -47,4 +51,8 @@ Thumbs.db
 *.wmv
 *.tif.aux.xml
 
-tests/test_data/output
+tests/test_data/input_ref/out_level_1
+tests/test_data/RAW
+
+keys.json
+secret.txt

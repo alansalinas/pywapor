@@ -1,0 +1,4 @@
+include pywapor/collect/MOD11/sn_gring_10deg.txt
+prune tests/
+prune docs/
+prune examples/

@@ -68,14 +68,18 @@ def vegetation_cover(ndvi, nd_min=0.125, nd_max=0.8, vc_pow=0.7):
 
     else:
 
-        # Create empty array
-        res = np.ones(ndvi.shape) * np.nan
+        if isinstance(ndvi, np.ndarray):
+            # Create empty array
+            res = np.ones(ndvi.shape) * np.nan
 
-        # fill in array
-        res[ndvi <= nd_min] = 0
-        res[np.logical_and(ndvi > nd_min, ndvi < nd_max)] = 1 - (
-                    (nd_max - ndvi[np.logical_and(ndvi > nd_min, ndvi < nd_max)]) / (nd_max - nd_min)) ** vc_pow
-        res[ndvi >= nd_max] = 1
+            # fill in array
+            res[ndvi <= nd_min] = 0
+            res[np.logical_and(ndvi > nd_min, ndvi < nd_max)] = 1 - (
+                        (nd_max - ndvi[np.logical_and(ndvi > nd_min, ndvi < nd_max)]) / (nd_max - nd_min)) ** vc_pow
+            res[ndvi >= nd_max] = 1
+        else:
+            res = 1 - ((nd_max - ndvi) / (nd_max - nd_min)) ** vc_pow
+            res = np.clip(res, 0, 1)
 
     return res
 

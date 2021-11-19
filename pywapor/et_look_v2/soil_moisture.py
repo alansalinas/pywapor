@@ -29,7 +29,7 @@ def wet_bulb_temperature_inst(t_air_i, t_dew_i, p_air_i):
         :math:`Tw_{a}`
         [C]
     """
-    tw = wetbulb_temperature_iter(t_air_i, t_dew_i, p_air_i)
+    tw = wetbulb_temperature_iter(t_air_i, t_dew_i)
 
     return tw
 

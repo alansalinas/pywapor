@@ -54,7 +54,7 @@ lai_pow = -0.45
 # constants or predefined:
 diffusion_slope = -1.33
 diffusion_intercept = 1.15
-t_opt = 25 # optimal temperature for plant growth
+t_opt = 23.097 # optimal temperature for plant growth
 t_min = 0 # minimal temperature for plant growth
 t_max = 50 # maximal temperature for plant growth
 vpd_slope = -0.3
@@ -64,15 +64,15 @@ rcan_max = 1000000
 # constants or predefined:
 vp_slope = 0.14
 vp_offset = 0.34
-lw_slope = 1.35
-lw_offset = 0.35
+lw_slope = 6.99
+lw_offset = -4.7
 int_max = 0.2
 
 # **canopy resistance***********************************************************
 # constants or predefined:
-r0_bare = 0.38
+r0_bare = 0.265 # used for se_root calc
 r0_bare_wet = 0.20
-r0_full = 0.18
+r0_full = 0.254 # used for se_root calc
 tenacity = 1.5
 disp_bare = 0.0
 disp_full = 0.667
@@ -81,7 +81,8 @@ fraction_h_full = 0.95
 
 z_obs = 2
 z_b = 100
-z0m_bare = 0.001 # 0.0005 
+z0m_bare = 0.001 # 0.0005
+z0m_full = 0.1
 
 # **initial canopy aerodynamic resistance***********************************************************
 # constants or predefined:
@@ -106,8 +107,8 @@ r_soil_min = 800
 # constants or predefined:
 #porosity = 0.4 #Note: soil dependent
 #se_top = 1.0 #Note should be input !
-rn_slope = 0.92
-rn_offset = -61.0
+rn_slope = 1.394
+rn_offset = -209.774
 
 # **ETLook.unstable.evaporation***********************************************************
 # constants or predefined:

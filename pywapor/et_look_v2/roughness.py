@@ -99,14 +99,14 @@ def roughness_length(lai, z_oro, z_obst, z_obst_max, land_mask=1):
 
     """
 
-    def veg_roughness(zo, d, zo_max, l, oro):
+    def veg_roughness(z_obst, disp, z_obst_max, lai, z_oro):
         veg = 0.193
-        z_dif = zo-d
+        z_dif = z_obst-disp
 
-        term1 = np.minimum(0.41**2/((np.log(z_dif/(0.002*zo_max))+veg)**2), 1.0) + 0.35*l/2
+        term1 = np.minimum(0.41**2/((np.log(z_dif/(0.002*z_obst_max))+veg)**2), 1.0) + 0.35*lai/2
         term2 = np.exp(0.41/np.minimum(np.sqrt(term1), 0.3)-veg)
 
-        return z_dif/term2+oro
+        return z_dif/term2+z_oro
 
     # roughness length specific displacement height
     disp = z_obst * (1 - (1 - np.exp(-np.sqrt(12 * lai))) / (np.sqrt(12 * lai)))

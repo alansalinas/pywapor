@@ -138,7 +138,7 @@ def Globcover_LUEmax(version = '1.0'):
 
 
 def WAPOR_MaxObs(version = '1.0'):
-    ETlook_Classes = {
+    ETlook_Classes_v1 = {
     33: 8.0,   #Natural Vegetation
     41:	2.0,   #Cropland, Rainfed or Fallow
     42:	4.0,   #Cropland, Irrigated or Under Water Management
@@ -147,13 +147,29 @@ def WAPOR_MaxObs(version = '1.0'):
     80:	0.1   #Water
     }
 
+    ETlook_Classes_v2 = {
+    20.0:1.0,
+    30.0:2.0,
+    42.0:1.5,
+    43.0:1.5,
+    50.0:10.0,
+    60.0:0.1,
+    80.0:0.1,
+    90.0:2.0,
+    116.0:5.0,
+    126.0:3.0,
+    33: 8.0,   #Natural Vegetation
+    41:	2.0,   #Cropland, Rainfed or Fallow
+    }
+
     Classes_MaxObs =dict()
-    Classes_MaxObs['1.0'] = ETlook_Classes
+    Classes_MaxObs['1.0'] = ETlook_Classes_v1
+    Classes_MaxObs['2.0'] = ETlook_Classes_v2
 
     return Classes_MaxObs[version]
 
 def WAPOR_Bulk(version = '1.0'):
-    ETlook_Classes = {
+    ETlook_Classes_v1 = {
     33: 175,   #Natural Vegetation
     41:	150,   #Cropland, Rainfed or Fallow
     42:	200,   #Cropland, Irrigated or Under Water Management
@@ -162,14 +178,30 @@ def WAPOR_Bulk(version = '1.0'):
     80:	100   #Water
     }
 
+    ETlook_Classes_v2 = {
+    20.0:175,
+    30.0:175,
+    42.0:125,
+    43.0:125,
+    50.0:400,
+    60.0:100,
+    80.0:100,
+    90.0:150,
+    116.0:180,
+    126.0:250,
+    33: 175,   #Natural Vegetation
+    41:	150,   #Cropland, Rainfed or Fallow
+    }
+
     Classes_Bulk =dict()
-    Classes_Bulk['1.0'] = ETlook_Classes
+    Classes_Bulk['1.0'] = ETlook_Classes_v1
+    Classes_Bulk['2.0'] = ETlook_Classes_v2
 
     return Classes_Bulk[version]
 
 
 def WAPOR_LM(version = '1.0'):
-    ETlook_Classes = {
+    ETlook_Classes_v1 = {
     33: 1,   #Natural Vegetation
     41:	1,   #Cropland, Rainfed or Fallow
     42:	1,   #Cropland, Irrigated or Under Water Management
@@ -178,8 +210,24 @@ def WAPOR_LM(version = '1.0'):
     80:	2   #Water
     }
 
+    ETlook_Classes_v2 = {
+    20.0:1,
+    30.0:1,
+    42.0:1,
+    43.0:1,
+    50.0:3,
+    60.0:1,
+    80.0:2,
+    90.0:1,
+    116.0:1,
+    126.0:1,
+    33: 1,   #Natural Vegetation
+    41:	1,   #Cropland, Rainfed or Fallow
+    }
+
     Classes_Bulk =dict()
-    Classes_Bulk['1.0'] = ETlook_Classes
+    Classes_Bulk['1.0'] = ETlook_Classes_v1
+    Classes_Bulk['2.0'] = ETlook_Classes_v2
 
     return Classes_Bulk[version]
 
@@ -198,3 +246,16 @@ def WAPOR_LUEmax(version = '1.0'):
     Classes_LUEmax['1.0'] = ETlook_Classes
 
     return Classes_LUEmax[version]
+
+def get_lulc_values():
+    lulc_values = {"GLOBCOVER": {"land_mask": Globcover_LM(),
+                                "rs_min": Globcover_Bulk(),
+                                "z_obst_max": Globcover_MaxObs(),
+                                "lue_max": Globcover_LUEmax()},
+                    "WAPOR":     {"land_mask": WAPOR_LM(version = "2.0"),
+                                "rs_min": WAPOR_Bulk(version = "2.0"),
+                                "z_obst_max": WAPOR_MaxObs(version = "2.0"),
+                                "lue_max": WAPOR_LUEmax(version = "1.0")}
+                            }
+
+    return lulc_values

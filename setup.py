@@ -2,21 +2,20 @@ from setuptools import setup, find_packages
 
 setup(
     name = 'pywapor',
-    version = '2.1.0',
+    version = '2.3.1',
     url = 'https://bitbucket.org/cioapps/wapor-et-look/src/master/',
     author = "FAO",
-    summary = "Python implementation of the algorithm used to generate the WaPOR datasets.",
     author_email = "bert.coerver@fao.org",
-    license = "Apache v2.0",
+    license = "Apache",
     packages = find_packages(include = ['pywapor', 'pywapor.*']),
+    include_package_data=True,
     install_requires = [
         'gdal<=3.1.4',
-        'watertools',
+        'aiohttp==3.7.4.post0',
         'numpy',
         'pandas',
         'requests',
         'matplotlib',
-        # These should be requirements for watertools, not pywapor:
         'netcdf4',
         'pyproj',
         'scipy',
@@ -26,5 +25,13 @@ setup(
         'joblib',
         'bs4',
         'paramiko',
+        'rasterio',
+        'xarray>=0.20.0',
+        'geojson',
+        'vito_download',
+        'nest_asyncio',
+        'tqdm',
+        'dask',
+        'rioxarray',
     ]
 )
