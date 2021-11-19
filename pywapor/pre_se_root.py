@@ -11,8 +11,12 @@ import warnings
 
 def main(project_folder, startdate, enddate, latlim, lonlim, level = "level_1"):
 
-    # # Disable Warnings
-    # warnings.filterwarnings('ignore')
+    print("\n#################")
+    print("## PRE_SE_ROOT ##")
+    print("#################")
+
+    # Disable Warnings
+    warnings.filterwarnings('ignore')
 
     sdate = dat.strptime(startdate, "%Y-%m-%d").date()
     edate = dat.strptime(enddate, "%Y-%m-%d").date()
@@ -67,7 +71,7 @@ def main(project_folder, startdate, enddate, latlim, lonlim, level = "level_1"):
     ds_lst = combine_lst(raw_lst_files)
 
     #### DEM ####
-    print(f"\n#### LST ####")
+    print(f"\n#### DEM ####")
     if "SRTM" in source_selection["DEM"]:
         raw_dem_file = c.SRTM.DEM(*dl_args[:3])
 
@@ -124,6 +128,10 @@ def main(project_folder, startdate, enddate, latlim, lonlim, level = "level_1"):
                     ds_meteo = xr.merge([ds_meteo, ds_temp])
                 else:
                     ds_meteo = xr.concat([ds_meteo, ds_temp], dim = "time")
+
+    print("\n#################")
+    print("## PRE_SE_ROOT ##")
+    print("##### DONE ######\n")
 
     return ds_lst, ds_meteo, ds_ndvi, ds_temperature
 
