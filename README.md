@@ -128,5 +128,16 @@ This repository contains, among others, contributions from Bert Coerver (FAO), T
 ## Contact
 For questions, requests or issues with this repository, please contact Bert Coerver at [bert.coerver@fao.org](mailto:bert.coerver@fao.org) or the WaPOR team at [wapor@fao.org](mailto:wapor@fao.org).
 
+## Release Notes
+
+#####2.3.0 (2021-11-19)
+* Automatically create input composites before running ETLook.
+* Choose composite lengths in number of days or dekads.
+* Option to choose which products to use per variable.
+* Calculate soil saturation separate from ETLook.
+* PROBA-V support for NDVI and Albedo inputs.
+* Define diagnostics pixels, for which extra outputs are created (e.g. charts, maps etc.).
+* Bug-fixes and performance improvements.
+
 ## License
 [APACHE](https://bitbucket.org/cioapps/wapor-et-look/src/dev/LICENSE)
