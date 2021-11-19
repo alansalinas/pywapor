@@ -130,7 +130,8 @@ For questions, requests or issues with this repository, please contact Bert Coer
 
 ## Release Notes
 
-#####2.3.0 (2021-11-19)
+#### 2.3.0 (2021-11-19)
+
 * Automatically create input composites before running ETLook.
 * Choose composite lengths in number of days or dekads.
 * Option to choose which products to use per variable.
