@@ -8,8 +8,10 @@ import pywapor.et_look_dev as ETLook_dev
 import pywapor.et_look_v2 as ETLook_v2
 import tqdm
 
-def main(project_folder, ds_lst, ds_meteo, ds_ndvi, 
+def main(level_folder, ds_lst, ds_meteo, ds_ndvi, 
                     ds_temperature, example_ds, example_geoinfo, et_look_version = "v2"):
+
+    print("\n#### SE_ROOT ####")
 
     # Version
     if et_look_version == "v2":
@@ -40,7 +42,7 @@ def main(project_folder, ds_lst, ds_meteo, ds_ndvi,
     ds_se_root = ds_se_root.rename({k: v for k, v in renames.items() if k in list(ds_se_root.variables)})
     ds_se_root["u_i"] = np.sqrt(ds_se_root["v2m_inst"]**2 + ds_se_root["u2m_inst"]**2)
 
-    se_root_folder = os.path.join(project_folder, "SMC")
+    se_root_folder = os.path.join(level_folder, "SMC")
     if not os.path.exists(se_root_folder):
         os.mkdir(se_root_folder)
 

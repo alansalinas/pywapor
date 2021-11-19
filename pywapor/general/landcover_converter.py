@@ -248,14 +248,14 @@ def WAPOR_LUEmax(version = '1.0'):
     return Classes_LUEmax[version]
 
 def get_lulc_values():
-    lulc_values = {"GLOBCOVER": {"LandMask": Globcover_LM(),
-                                "Bulk_Stomatal_resistance": Globcover_Bulk(),
-                                "Maximum_Obstacle_Height": Globcover_MaxObs(),
-                                "LUEmax": Globcover_LUEmax()},
-                    "WAPOR":     {"LandMask": WAPOR_LM(version = "2.0"),
-                                "Bulk_Stomatal_resistance": WAPOR_Bulk(version = "2.0"),
-                                "Maximum_Obstacle_Height": WAPOR_MaxObs(version = "2.0"),
-                                "LUEmax": WAPOR_LUEmax(version = "1.0")}
+    lulc_values = {"GLOBCOVER": {"land_mask": Globcover_LM(),
+                                "rs_min": Globcover_Bulk(),
+                                "z_obst_max": Globcover_MaxObs(),
+                                "lue_max": Globcover_LUEmax()},
+                    "WAPOR":     {"land_mask": WAPOR_LM(version = "2.0"),
+                                "rs_min": WAPOR_Bulk(version = "2.0"),
+                                "z_obst_max": WAPOR_MaxObs(version = "2.0"),
+                                "lue_max": WAPOR_LUEmax(version = "1.0")}
                             }
 
     return lulc_values
