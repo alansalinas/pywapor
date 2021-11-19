@@ -1,16 +1,29 @@
-import matplotlib.pyplot as plt
 import numpy as np
 import gdal
 import pywapor.general.processing_functions as PF
 import warnings
-from matplotlib.patches import Patch
 import os
 import datetime
-try:
-    from IPython import get_ipython
-    get_ipython().run_line_magic("matplotlib", "")
-except:
-    print("Using inline plotting.")
+import matplotlib
+gui_env = [
+    'MacOSX',
+    'module://ipympl.backend_nbagg',
+    'TkAgg',
+    'GTK4Agg',
+    'Qt5Agg',
+    'WXAgg',
+    'module://matplotlib_inline.backend_inline',
+    ]
+for gui in gui_env:
+    try:
+        matplotlib.use(gui, force=True)
+        import matplotlib.pyplot as plt
+        from matplotlib.patches import Patch
+        break
+    except:
+        continue
+print("mpl backend:", matplotlib.get_backend())
+
 warnings.filterwarnings("ignore", message="Mean of empty slice")
 
 def prepare_dss(dss, sorter):
