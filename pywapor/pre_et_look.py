@@ -3,7 +3,6 @@
 """
 import os
 from datetime import datetime as dat
-from datetime import time as datt
 from osgeo import gdal
 import pandas as pd
 import numpy as np
@@ -21,8 +20,14 @@ import shutil
 def main(project_folder, startdate, enddate, latlim, lonlim, level = "level_1", 
         diagnostics = None, composite_length = "DEKAD"):
 
+    print("\n#################")
+    print("## PRE_ET_LOOK ##")
+    print("#################")
+
+#%%
     # Disable Warnings
     warnings.filterwarnings('ignore')
+    all_files = dict()
 
     sdate = dat.strptime(startdate, "%Y-%m-%d").date()
     edate = dat.strptime(enddate, "%Y-%m-%d").date()
@@ -58,7 +63,7 @@ def main(project_folder, startdate, enddate, latlim, lonlim, level = "level_1",
     # Order is important! PROBV gets priority over MOD13, and MOD13 over MYD13.
     if "PROBAV" in source_selection["NDVI"]:
         raw_ndvi_files.append(c.PROBAV.PROBAV_S5(*dl_args)[0])
-        # raw_ndvi_files.append(glob.glob(r"/Volumes/Data/FAO/WaPOR_vs_pyWaPOR/pyWAPOR_long_test/RAW/PROBAV/NDVI/*.tif"))
+        # raw_ndvi_files.append(glob.glob(os.path.join(project_folder, "RAW/PROBAV/NDVI/*.tif")))
     if "MOD13" in source_selection["NDVI"]:
         raw_ndvi_files.append(c.MOD13.NDVI(*dl_args))
     if "MYD13" in source_selection["NDVI"]:
@@ -70,13 +75,15 @@ def main(project_folder, startdate, enddate, latlim, lonlim, level = "level_1",
         "composite_type": "mean",
         "temporal_interp": "linear",
         "spatial_interp": "nearest",
-        "var_name": "NDVI",
+        "var_name": "ndvi",
         "var_unit": "-",
     }
     ds = g.compositer.main(cmeta, raw_ndvi_files, epochs_info, temp_folder, example_ds, 
                                 diagnostics = diagnostics)
 
-    unraw_all(cmeta["var_name"], ds, unraw_file_templates, example_geoinfo)
+    all_files["ndvi"] = unraw_all(cmeta["var_name"], ds, unraw_file_templates, example_geoinfo)
+
+#%%
 
     #### ALBEDO ####
     print(f"\n#### ALBEDO ####")
@@ -92,12 +99,13 @@ def main(project_folder, startdate, enddate, latlim, lonlim, level = "level_1",
         "composite_type": "mean",
         "temporal_interp": "linear",
         "spatial_interp": "nearest",
-        "var_name": "ALBEDO",
+        "var_name": "r0",
         "var_unit": "-",
     }
     ds = g.compositer.main(cmeta, raw_albedo_files, epochs_info, temp_folder, example_ds, diagnostics = diagnostics)
-    unraw_all(cmeta["var_name"], ds, unraw_file_templates, example_geoinfo)
+    all_files["r0"] = unraw_all(cmeta["var_name"], ds, unraw_file_templates, example_geoinfo)
 
+#%%
     #### PRECIPITATION ####
     print(f"\n#### PRECIPITATION ####")
     raw_precip_files = list()
@@ -108,28 +116,29 @@ def main(project_folder, startdate, enddate, latlim, lonlim, level = "level_1",
         "composite_type": "mean",
         "temporal_interp": "linear",
         "spatial_interp": "nearest",
-        "var_name": "Precipitation",
+        "var_name": "P_24",
         "var_unit": "mm/day",
     }
     ds = g.compositer.main(cmeta, raw_precip_files, epochs_info, temp_folder, example_ds, diagnostics = diagnostics)
-    unraw_all(cmeta["var_name"], ds, unraw_file_templates, example_geoinfo)
+    all_files["P_24"] = unraw_all(cmeta["var_name"], ds, unraw_file_templates, example_geoinfo)
 
+#%%
     #### DEM ####
     print(f"\n#### DEM ####")
     if "SRTM" in source_selection["DEM"]:
         raw_dem_file = c.SRTM.DEM(*dl_args[:3])
     
-    dem_file = unraw_filepaths(None, level_folder, "DEM", static = True)[0]
+    dem_file = unraw_filepaths(None, level_folder, "z", static = True)[0]
 
     cmeta = {
         "composite_type": None,
         "temporal_interp": None,
         "spatial_interp": "linear",
-        "var_name": "DEM",
+        "var_name": "z",
         "var_unit": "m",
     }
     ds = g.compositer.main(cmeta, [[raw_dem_file]], None, temp_folder, example_ds)
-    unraw_all(cmeta["var_name"], ds, [dem_file], example_geoinfo)
+    all_files["z"] = unraw_all(cmeta["var_name"], ds, [dem_file], example_geoinfo)
 
     #### SLOPE ASPECT ####
     print(f"\n#### SLOPE ASPECT ####")
@@ -153,19 +162,20 @@ def main(project_folder, startdate, enddate, latlim, lonlim, level = "level_1",
             # print(year, raw_file, key)
             unraw_replace_values(raw_file, lulc_file_template.format(var = key, year = year), replace_values, example_fh)
 
+#%%
     #### METEO ####
     print(f"\n#### METEO ####")
     if "MERRA2" in source_selection["METEO"]:
         meteo_vars = ['t2m', 'u2m', 'v2m', 'q2m', 'tpw', 'ps', 'slp']
         raw_meteo_files = c.MERRA.daily_MERRA2(*dl_args, meteo_vars)
         raw_meteo_files = {**c.MERRA.daily_MERRA2(*dl_args, ['t2m'], data_type = ["min", "max"]), **raw_meteo_files}
-        meteo_name_convertor = {'t2m-max': "tair_max_24", 't2m-min': "tair_min_24", 't2m': "tair_24", 
-                                'u2m': "u2m", 'v2m': "v2m",'q2m': "qv_24",'slp': "Pair_24_0"}
+        meteo_name_convertor = {'t2m-max': "t_air_max_24", 't2m-min': "t_air_min_24", 't2m': "t_air_24", 
+                                'u2m': "u2m_24", 'v2m': "v2m_24",'q2m': "qv_24",'slp': "p_air_24_0"}
     elif "GEOS5" in source_selection["METEO"]:
         meteo_vars = ['t2m', 'u2m', 'v2m', 'qv2m', 'tqv', 'ps', 'slp']
         raw_meteo_files = c.GEOS.daily(*dl_args, meteo_vars)
-        meteo_name_convertor = {'t2m': "tair_24", 't2m-min': "tair_min_24", 't2m-max': "tair_max_24",  
-                                'u2m': "u2m", 'v2m': "v2m",'slp': "Pair_24_0",'qv2m': "qv_24",}
+        meteo_name_convertor = {'t2m': "t_air_24", 't2m-min': "t_air_min_24", 't2m-max': "t_air_max_24",  
+                                'u2m': "u2m_24", 'v2m': "v2m_24",'slp': "p_air_24_0",'qv2m': "qv_24",}
 
     for var_name, raw_files in raw_meteo_files.items():
 
@@ -175,8 +185,8 @@ def main(project_folder, startdate, enddate, latlim, lonlim, level = "level_1",
             raw_files = [g.lapse_rate.lapse_rate_temperature(x, dem_file) for x in raw_files if "_K_" in x]
         if var_name not in meteo_name_convertor.keys():
             continue
-        units = {"tair_max_24": "°C", "tair_min_24":"°C", "tair_24":"°C", 
-          "u2m":"m/s", "v2m":"m/s","qv_24":"kg/kg","Pair_24_0":"kPa"}
+        units = {"t_air_max_24": "°C", "t_air_min_24":"°C", "t_air_24":"°C", 
+          "u2m_24":"m/s", "v2m_24":"m/s","qv_24":"kg/kg","p_air_24_0":"kPa"}
 
         cmeta = {
             "composite_type": "mean",
@@ -186,12 +196,12 @@ def main(project_folder, startdate, enddate, latlim, lonlim, level = "level_1",
             "var_unit": units[meteo_name_convertor[var_name]],
         }
         ds = g.compositer.main(cmeta, [raw_files], epochs_info, temp_folder, example_ds, diagnostics = diagnostics)
-        unraw_all(meteo_name_convertor[var_name], ds, unraw_file_templates, example_geoinfo)
+        all_files[meteo_name_convertor[var_name]] = unraw_all(meteo_name_convertor[var_name], ds, unraw_file_templates, example_geoinfo)
 
+#%%
     #### SE_ROOT ####
-    print(f"\n#### SE_ROOT ####")
     ds_lst, ds_meteo, ds_ndvi, ds_temperature = pywapor.pre_se_root.main(project_folder, startdate, enddate, latlim, lonlim, level = source_selection)
-    raw_se_root_files = pywapor.se_root.main(project_folder, ds_lst, ds_meteo, ds_ndvi, 
+    raw_se_root_files = pywapor.se_root.main(level_folder, ds_lst, ds_meteo, ds_ndvi, 
                                         ds_temperature, example_ds, example_geoinfo)
 
     cmeta = {
@@ -202,8 +212,9 @@ def main(project_folder, startdate, enddate, latlim, lonlim, level = "level_1",
         "var_unit": "-",
     }
     ds = g.compositer.main(cmeta, [raw_se_root_files], epochs_info, temp_folder, example_ds, diagnostics = diagnostics)
-    unraw_all(cmeta["var_name"], ds, unraw_file_templates, example_geoinfo)
+    all_files["se_root"] = unraw_all(cmeta["var_name"], ds, unraw_file_templates, example_geoinfo)
 
+#%%
     #### LAT LON ####
     print(f"\n#### LAT LON ####")
     lat_lon(example_ds, level_folder, example_geoinfo)
@@ -221,13 +232,13 @@ def main(project_folder, startdate, enddate, latlim, lonlim, level = "level_1",
         "var_unit": "-",
     }
     ds = g.compositer.main(cmeta, [raw_ra24_files], epochs_info, temp_folder, example_ds, diagnostics = diagnostics)
-    unraw_all(cmeta["var_name"], ds, unraw_file_templates, example_geoinfo)
+    all_files["ra_24"] = unraw_all(cmeta["var_name"], ds, unraw_file_templates, example_geoinfo)
 
     #### TEMP. AMPLITUDE #### # TODO add source selection and remove year data
     print(f"\n#### TEMP. AMPLITUDE ####")
     raw_temp_ampl_file = os.path.join(raw_folder, "GLDAS", "Temp_Amplitudes_global.tif")
     download_file_from_google_drive("1pqZnCn-1xkUC7o1csG24hwg22fV57gCH", raw_temp_ampl_file)
-    temp_ampl_file_template = unraw_filepaths(None, level_folder, "Tair_amp_{year}", static = True)[0]
+    temp_ampl_file_template = unraw_filepaths(None, level_folder, "t_amp_year_{year}", static = True)[0]
     raw_temp_ampl_files = [(year, raw_temp_ampl_file) for year in range(sdate.year, edate.year + 1)]
     for year, raw_file in raw_temp_ampl_files:
         unraw(raw_file, temp_ampl_file_template.format(year = year), example_fh, 6)
@@ -258,21 +269,26 @@ def main(project_folder, startdate, enddate, latlim, lonlim, level = "level_1",
 
     os.chdir(project_folder)
 
-    print("DONE")
-    return
+    print("\n#################")
+    print("## PRE_ET_LOOK ##")
+    print("##### DONE ######\n")
+#%%
+    return all_files
 
 def unraw_all(var_name, ds, unraw_file_templates, example_geoinfo):
+    unrawed_files = list()
     assert ds.epoch.size == len(unraw_file_templates)
     for i, fh in enumerate(unraw_file_templates):
         if not -9999 in ds["epoch"].values:
             fh_date = pd.Timestamp(dat.strptime(fh.split("_")[-1], "%Y%m%d.tif"))
             assert fh_date == pd.Timestamp(ds.epoch_starts.isel(epoch = i).values)
         array = np.copy(ds.composite.isel(epoch = i).values)
-        PF.Save_as_tiff(fh.format(var = var_name), 
-                        array, example_geoinfo[0], example_geoinfo[1])
+        real_fh = fh.format(var = var_name)
+        PF.Save_as_tiff(real_fh, array, example_geoinfo[0], example_geoinfo[1])
+        unrawed_files.append(real_fh)
     ds.close()
     ds = None
-    return
+    return unrawed_files
 
 def select_template(fhs):
     fhs = [val for sublist in fhs for val in sublist]
@@ -288,8 +304,8 @@ def select_template(fhs):
 
 def slope_aspect(dem_file, project_folder, template_file):
 
-    slope_file = unraw_filepaths(None, project_folder, "Slope", static = True)[0]
-    aspect_file = unraw_filepaths(None, project_folder, "Aspect", static = True)[0]
+    slope_file = unraw_filepaths(None, project_folder, "slope_deg", static = True)[0]
+    aspect_file = unraw_filepaths(None, project_folder, "aspect_deg", static = True)[0]
 
     if not os.path.exists(slope_file) or not os.path.exists(aspect_file):
 
@@ -320,8 +336,8 @@ def slope_aspect(dem_file, project_folder, template_file):
 
 def lat_lon(ds, project_folder, example_geoinfo):
 
-    lat_file = unraw_filepaths(None, project_folder, "Lat", static = True)[0]
-    lon_file = unraw_filepaths(None, project_folder, "Lon", static = True)[0]
+    lat_file = unraw_filepaths(None, project_folder, "lat_deg", static = True)[0]
+    lon_file = unraw_filepaths(None, project_folder, "lon_deg", static = True)[0]
 
     lat_deg = np.rot90(np.tile(ds.lat, ds.lon.size).reshape(ds.band_data.shape[::-1]), 3)
     lon_deg = np.tile(ds.lon, ds.lat.size).reshape(ds.band_data.shape)
@@ -415,16 +431,14 @@ def save_response_content(response, destination):
             if chunk: # filter out keep-alive new chunks
                 f.write(chunk)
 
-if __name__ == "__main__":
+# if __name__ == "__main__":
 
-    project_folder = r"/Volumes/Data/FAO/WaPOR_vs_pyWaPOR/pyWAPOR_v1"
-    latlim = [28.9, 29.7]
-    lonlim = [30.2, 31.2]
-    startdate = "2021-07-01"
-    enddate = "2021-07-10"
-    level = "level_1"
-    composite_length = "DEKAD"
-    # composite_length = 1
+    # project_folder = r"/Volumes/Data/FAO/WaPOR_vs_pyWaPOR/pyWAPOR_v1"
+    # latlim = [28.9, 29.7]
+    # lonlim = [30.2, 31.2]
+    # startdate = "2021-07-01"
+    # enddate = "2021-07-10"
+    # composite_length = "DEKAD"
 
     # level = {
     #     "METEO": ["GEOS5"],
@@ -436,6 +450,7 @@ if __name__ == "__main__":
     #     "PRECIPITATION": ["CHIRPS"],
     #     "TRANS": ["MERRA2"],
     # }
+    # level = "level_2"
 
     # diagnostics = { # label          # lat      # lon
     #                 "water":	    (29.44977,	30.58215),
@@ -443,15 +458,7 @@ if __name__ == "__main__":
     #                 "agriculture":	(29.32301,	30.77599),
     #                 "urban":	    (29.30962,	30.84109),
     #                 }
+    # diagnostics = None
 
-    # main(project_folder, startdate, enddate, latlim, lonlim, level = level, diagnostics = diagnostics, composite_length = composite_length)
-
-    # ds_lst, ds_meteo, ds_ndvi, ds_temperature = pywapor.pre_se_root.main(project_folder, startdate, enddate, latlim, lonlim, level = level)
-    
-    # raw_ndvi_files = glob.glob(r"/Volumes/Data/FAO/WaPOR_vs_pyWaPOR/pyWAPOR_v1/RAW/MODIS/MOD13/*.tif")
-    # example_fh, example_ds, example_geoinfo = select_template([raw_ndvi_files])
-
-    # raw_se_root_files = pywapor.se_root.main(project_folder, ds_lst, ds_meteo, ds_ndvi, 
-    #                                     ds_temperature, example_ds, example_geoinfo)
-
-# %%
+    # all_files = main(project_folder, startdate, enddate, latlim, lonlim, level = level, 
+    #     diagnostics = diagnostics, composite_length = composite_length)
