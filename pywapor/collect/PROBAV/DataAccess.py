@@ -19,7 +19,6 @@ from requests.exceptions import HTTPError
 from datetime import datetime, timedelta
 from aiohttp import ClientResponseError, ServerDisconnectedError
 from asyncio import TimeoutError
-import pywapor.general.processing_functions as PF
 
 # Required for Python 3.6 and 3.7
 import nest_asyncio
@@ -48,18 +47,21 @@ def download_data(download_dir, start_date, end_date, latitude_extent, longitude
     # Buffer the download to make sure that a decadal composite can be produced regarding of start
     # and end dates
     if buffer_dates:
-        start_date = start_date - timedelta(days=14)
-        end_date = end_date + timedelta(days=8)
+        start_date = start_date - timedelta(days=6)
+        end_date = end_date + timedelta(days=6)
     delta = end_date - start_date
 
+    waitbar = tqdm(total = (delta.days + 1)*10, position = 0, unit = "days", unit_scale = 0.1)
     # Loop over all dates
-    for i in tqdm(range(delta.days + 1)):
+    for i in range(delta.days + 1):
         date = start_date + timedelta(days=i)
+        waitbar.set_description_str(date.strftime("%Y.%m.%d:               "))
 
         template = os.path.join(download_dir, "{v}", "{v}_PROBAV_-_5-daily_{d_str}.tif")
         fh1 = template.format(v = "NDVI", d_str = date.strftime("%Y.%m.%d"))
         fh2 = template.format(v = "Albedo", d_str = date.strftime("%Y.%m.%d"))
         if np.all([os.path.isfile(fh1), os.path.isfile(fh2)]):
+            waitbar.update(10)
             continue
 
         # retrieve vito URL
@@ -78,7 +80,9 @@ def download_data(download_dir, start_date, end_date, latitude_extent, longitude
                 local_files = vito.download_data(url, username=username, password=password,
                                                  download_dir=download_dir, include='*.HDF5',
                                                  download_jobs=4)
+                waitbar.set_description_str(date.strftime("%Y.%m.%d: Downloading..."))
                 downloaded_files = list(local_files)
+                waitbar.set_description_str(date.strftime("%Y.%m.%d:               "))
 
                 for file in downloaded_files:
                     # If file is corrupted, delete it and retry
@@ -101,10 +105,14 @@ def download_data(download_dir, start_date, end_date, latitude_extent, longitude
             warnings.warn(f'vito download failed for date: {date.strftime("%Y-%m-%d")}')
             break
 
+        if len(downloaded_files) == 0:
+            waitbar.update(10)
+
         # convert downloaded HDF5 files to tif files
         for hdf_file in downloaded_files:
             da = _hdf5_to_dataarray(hdf_file, 'LEVEL3/NDVI', 'NDVI')
             _dataarray_to_tif(da, str(Path(hdf_file).parent / Path(hdf_file).stem) + '_NDVI.tif')
+            waitbar.update(1)
 
             band_list = ['BLUE', 'NIR', 'RED', 'SWIR']
             # read all bands and save as individual tifs
@@ -112,6 +120,7 @@ def download_data(download_dir, start_date, end_date, latitude_extent, longitude
                 da = _hdf5_to_dataarray(hdf_file, f'LEVEL3/RADIOMETRY/{band}', 'TOC')
                 _dataarray_to_tif(da, str(Path(hdf_file).parent /
                                           Path(hdf_file).stem) + f'_{band}.tif')
+                waitbar.update(1)
 
             angle_band_list = ['VNIR', 'SWIR']
             # read all angle bands and save as individual tifs
@@ -119,10 +128,12 @@ def download_data(download_dir, start_date, end_date, latitude_extent, longitude
                 da = _hdf5_to_dataarray(hdf_file, f'LEVEL3/GEOMETRY/{band}', 'VZA')
                 _dataarray_to_tif(da, str(Path(hdf_file).parent /
                                           Path(hdf_file).stem) + f'_{band}-VZA.tif')
+                waitbar.update(1)
 
             # read and save quality mask
             da = _hdf5_to_dataarray(hdf_file, 'LEVEL3/QUALITY', 'SM')
             _dataarray_to_tif(da, str(Path(hdf_file).parent / Path(hdf_file).stem) + '_SM.tif')
+            waitbar.update(1)
 
         # loop over all tif files in download folder
         input_files = []
@@ -134,7 +145,7 @@ def download_data(download_dir, start_date, end_date, latitude_extent, longitude
 
         for product in ["NDVI_PROBAV_-_5-daily_", "Albedo_PROBAV_-_5-daily_"]:
             output_file = str(download_dir /
-                              ('%s/%s_%s.tif' % (product.split("_")[0], product, date.strftime("%Y.%m.%d"))))
+                              ('%s/%s_%s.tif' % (product.split("_")[0], product[:-1], date.strftime("%Y.%m.%d"))))
             data_files = _preprocess_inputs(input_files, product)
 
             # merge files and clip to extent, save as tif
@@ -142,6 +153,7 @@ def download_data(download_dir, start_date, end_date, latitude_extent, longitude
                 _merge_and_save_tifs(data_files, output_file, 
                                     latitude_extent, longitude_extent,
                                     delete_input=delete_tif)
+                waitbar.update(1)
 
         if delete_tif:
             for file in input_files:
@@ -294,3 +306,19 @@ def _preprocess_inputs(input_files, product):
         updated_input_files.append(data_filename)
 
     return updated_input_files
+
+# if __name__ == "__main__":
+
+    # download_dir = r"/Volumes/Data/FAO/WaPOR_vs_pyWaPOR/pyWAPOR_v1/RAW"
+    # latitude_extent = [28.9, 29.7]
+    # longitude_extent = [30.2, 31.2]
+    # start_date = "2021-07-01"
+    # end_date = "2021-07-10"
+
+    # url = vito.build_url(product='Proba-V-S5-TOC', year=2021, month=7, day=6,
+    #                     extent={'xmin': longitude_extent[0], 'xmax': longitude_extent[1],
+    #                             'ymin': latitude_extent[0], 'ymax': latitude_extent[1]})
+
+    # local_files = vito.download_data(url, username='broodj3ham', password='N0tmyrealpassword',
+    #                                     download_dir=download_dir, include='*.HDF5',
+    #                                     download_jobs=4)

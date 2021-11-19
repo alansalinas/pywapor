@@ -22,3 +22,12 @@ def main(download_dir, latitude_extent, longitude_extent, start_date, end_date,
 
 if __name__ == '__main__':
     main(sys.argv)
+
+#     download_dir = r"/Users/hmcoerver/On My Mac/probav_test"
+#     latitude_extent = [28.9, 29.7]
+#     longitude_extent = [30.2, 31.2]
+#     start_date = "2021-07-05"
+#     end_date = "2021-07-05"
+
+#     main(download_dir, latitude_extent, longitude_extent, start_date, end_date, 
+#         buffer_dates = True)
