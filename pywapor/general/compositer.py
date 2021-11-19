@@ -5,6 +5,7 @@ from datetime import datetime as dat
 import pandas as pd
 from dask.diagnostics import ProgressBar
 import pywapor.post_et_look as pl
+import pywapor.general.processing_functions as PF
 
 def main(cmeta, dbs, epochs_info, temp_folder, example_ds = None,
                 lean_output = True, diagnostics = None):
@@ -82,7 +83,9 @@ def main(cmeta, dbs, epochs_info, temp_folder, example_ds = None,
     # Open tif-files and apply spatial interpolation
     for db in dbs:
 
-        sub_ds = xr.open_mfdataset(db, concat_dim = "time", engine="rasterio", 
+        check_geots(db)
+
+        sub_ds = xr.open_mfdataset(db, concat_dim = "time", engine="rasterio", combine = "nested",
                                         preprocess = preprocess_func)
         dbs_names.append(sub_ds.source.values[0])
 
@@ -106,6 +109,8 @@ def main(cmeta, dbs, epochs_info, temp_folder, example_ds = None,
     ds = ds_temp
 
     fh = os.path.join(temp_folder, "intermediate.nc")
+
+    ds = ds.reindex({"time": ds.time.sortby("time")})
     ds = calculate_ds(ds, fh, "--> Reprojecting datasets.").chunk({"time":-1})
 
     if temporal_interp:
@@ -177,3 +182,9 @@ def calculate_ds(ds, fh, label = None):
     ds = None
     ds = xr.open_dataset(fh)
     return ds
+
+def check_geots(files):
+    ref = PF.get_geoinfo(files[0])
+    for fh in files[1:]:
+        checker = PF.get_geoinfo(fh)
+        assert ref == checker, f"ERROR: {files[0]} does not have same geotransform/projection as {fh}."
