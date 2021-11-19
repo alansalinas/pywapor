@@ -1,8 +1,8 @@
 from setuptools import setup, find_packages
 
 setup(
-    name = 'pywapor',
-    version = '2.2.0',
+    name = 'pywapor_test',
+    version = '2.3.0',
     url = 'https://bitbucket.org/cioapps/wapor-et-look/src/master/',
     author = "FAO",
     author_email = "bert.coerver@fao.org",
@@ -11,6 +11,7 @@ setup(
     include_package_data=True,
     install_requires = [
         'gdal<=3.1.4',
+        'aiohttp==3.7.4.post0',
         'numpy',
         'pandas',
         'requests',
@@ -30,5 +31,8 @@ setup(
         'vito_download',
         'nest_asyncio',
         'tqdm',
+        'dask',
+        'rioxarray',
+        'ipympl',
     ]
 )
