@@ -1,7 +1,7 @@
 from setuptools import setup, find_packages
 
 setup(
-    name = 'pywapor_test',
+    name = 'pywapor',
     version = '2.3.0',
     url = 'https://bitbucket.org/cioapps/wapor-et-look/src/master/',
     author = "FAO",
@@ -26,13 +26,12 @@ setup(
         'bs4',
         'paramiko',
         'rasterio',
-        'xarray',
+        'xarray>=0.20.0',
         'geojson',
         'vito_download',
         'nest_asyncio',
         'tqdm',
         'dask',
         'rioxarray',
-        'ipympl',
     ]
 )

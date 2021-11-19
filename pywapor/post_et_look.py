@@ -6,7 +6,7 @@ import os
 import datetime
 import matplotlib
 gui_env = [
-    'module://ipympl.backend_nbagg',
+    # 'module://ipympl.backend_nbagg',
     'MacOSX',
     'TkAgg',
     'GTK4Agg',
