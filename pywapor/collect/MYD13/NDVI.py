@@ -32,7 +32,7 @@ def main(Dir, latlim, lonlim, Startdate, Enddate, Waitbar = 1,
 
     username, password = pywapor.collect.get_pw_un.get("NASA")
 
-    print('\nDownload 16-daily MODIS NDVI data for period %s till %s' %(Startdate, Enddate))
+    print('\nDownload 16-daily MYD13 NDVI data for period %s till %s' %(Startdate, Enddate))
     DownloadData(Dir, Startdate, Enddate, latlim, lonlim, username, 
                 password, Waitbar, hdf_library, remove_hdf, buffer_dates = buffer_dates)
 

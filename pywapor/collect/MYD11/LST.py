@@ -27,7 +27,7 @@ def main(Dir, latlim, lonlim, Startdate, Enddate, Waitbar = 1, hdf_library = Non
     """
     username, password = pywapor.collect.get_pw_un.get("NASA")
 
-    print('\nDownload daily MODIS land surface temperature data for period %s till %s' %(Startdate, Enddate))
+    print('\nDownload daily MYD11 Land Surface Temperature data for period %s till %s' %(Startdate, Enddate))
     
     files = DownloadData(Dir, Startdate, Enddate, latlim, lonlim, username, password, Waitbar, hdf_library, remove_hdf)
 
