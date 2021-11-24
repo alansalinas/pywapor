@@ -96,10 +96,10 @@ def main(project_folder, date, level = "level_1", et_look_version = "v2",
         "{0}_{1}.tif".format(value["file_name"], date_str))
 
     # Inputs
-    if isinstance(input_data, type(None)):
-        id = {v["array_name"]: open_array(k, v, date, folders) for k, v in vars.inputs.items()}
-    else:
-        id = copy.deepcopy(input_data)
+    
+    id = {v["array_name"]: open_array(k, v, date, folders) for k, v in vars.inputs.items()}
+    if not isinstance(input_data, type(None)):
+        id = {**id, **input_data}
 
     spatial_or_constant = ["lw_offset", "lw_slope", "r0_bare", "r0_full", 
                             "rn_offset", "rn_slope", "t_opt", "vpd_slope"]
@@ -120,13 +120,14 @@ def main(project_folder, date, level = "level_1", et_look_version = "v2",
             print("----> u_24 will be calculated from u2m_24 and v2m_24.")
         if name in spatial_or_constant and isinstance(value, type(None)):
             print(f"----> {name} will be constant at {getattr(c, name):.4f}.")
+        if name in spatial_or_constant and np.isscalar(value):
+            print(f"----> {name} will be constant at {value:.4f}.")
 
     # Resolution
-    if isinstance(input_data, type(None)):
-        example_filepath = create_fp("r0", vars.inputs["r0"], date, folders)
-        geoinfo = get_geoinfo(example_filepath)
-        resolution, geo_ex, proj_ex = geoinfo
-        print(f"----> resolution is ~{resolution:.0f} meter.")
+    example_filepath = create_fp("r0", vars.inputs["r0"], date, folders)
+    geoinfo = get_geoinfo(example_filepath)
+    resolution, geo_ex, proj_ex = geoinfo
+    print(f"----> resolution is ~{resolution:.0f} meter.")
 
     for param in spatial_or_constant:
         if isinstance(id[param], type(None)):
@@ -314,18 +315,15 @@ def main(project_folder, date, level = "level_1", et_look_version = "v2",
         od["apar"] = ETLook.leaf.apar(od["ra_24"], od["fpar"])       
         od["biomass_prod"] = ETLook.biomass.biomass(od["apar"], od["lue"])     
 
-    if isinstance(input_data, type(None)):
-        all_files = dict()
-        example_filepath = create_fp("r0", vars.inputs["r0"], date, folders)
-        geo_ex, proj_ex = get_geoinfo(example_filepath)[1:3]
-        for var in vars.outputs.keys():
-            if var in od.keys():
-                if vars.outputs[var]["output"]:
-                    PF.Save_as_tiff(vars.outputs[var]["file_path"], od[var], geo_ex, proj_ex)
-                    all_files[var] = vars.outputs[var]["file_path"]
-        return all_files
-    else:
-        return od, id
+    all_files = dict()
+    example_filepath = create_fp("r0", vars.inputs["r0"], date, folders)
+    geo_ex, proj_ex = get_geoinfo(example_filepath)[1:3]
+    for var in vars.outputs.keys():
+        if var in od.keys():
+            if vars.outputs[var]["output"]:
+                PF.Save_as_tiff(vars.outputs[var]["file_path"], od[var], geo_ex, proj_ex)
+                all_files[var] = vars.outputs[var]["file_path"]
+    return all_files
 
 def se_root(id, od, ETLook, date, verbose = False):
 

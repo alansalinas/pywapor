@@ -28,16 +28,16 @@ pip install pywapor
 
 ## Usage
 
-To run the model for one day (2019-07-07 in this case) for the Fayoum irrigation scheme in Egypt (but feel free to change the [boundingbox](http://bboxfinder.com) defined by `latlim` and `lonlim`) using MODIS data, run the following code. 
+To run the model for one dekad (from 2021-07-01 to 2021-07-10 in this case) for the Fayoum irrigation scheme in Egypt (but feel free to change the [boundingbox](http://bboxfinder.com) defined by `latlim` and `lonlim`) using mainly MODIS data, run the following code. 
 
 ```python
 import pywapor
 
 # User inputs.
-startdate = "2019-07-07"
-enddate = "2019-07-07"
-latlim = [29.0, 29.6]
-lonlim = [30.3, 31.1]
+startdate = "2021-07-01"
+enddate = "2021-07-10"
+latlim = [28.9, 29.7]
+lonlim = [30.2, 31.2]
 project_folder = r"/my_first_ETLook_run/"
 
 # Download input data.
@@ -47,11 +47,11 @@ pywapor.pre_et_look.main(project_folder, startdate, enddate, latlim, lonlim)
 pywapor.et_look.main(project_folder, startdate)
 ```
 
-See the `examples` folder for more examples or check out the [Colab Notebook](https://colab.research.google.com/github/bertcoerver/pywapor_notebooks/blob/main/pywapor_101.ipynb).
+See the `pywapor_notebooks` folder for more examples or check out an introduction in this [Colab Notebook](https://colab.research.google.com/github/bertcoerver/pywapor_notebooks/blob/main/pywapor_101.ipynb).
 
 ## Data Sources
 
-To run the ETLook model, two types of spatial variables are required, temporal and static data. **Each of these variables can be collected from whichever source you wish to use**, as long as you make sure the units are correct, the data is stored as a GeoTIFF (1 band per file, 1 file for each variable and date), the files all have the same no-data-value and they all have the same projection and resolution. The `tests/test_data/input/` folder contains an example input dataset.
+To run the ETLook model, two types of spatial variables are required, temporal and static data. **Each of these variables can be collected from whichever source you wish to use**, as long as you make sure the units are correct, the data is stored as a GeoTIFF (1 band per file, 1 file for each variable and date), the files all have the same no-data-value and they all have the same projection and resolution.
 
 **For your convenience, the pyWAPOR package has a function that can collect all this data from selected sources** and make sure the data is stored in the correct format and folder structure.
 
@@ -71,7 +71,7 @@ To run the ETLook model, two types of spatial variables are required, temporal a
 #### Temporal SE_Root Data (instantaneous)
 | Variable | Unit | Selected Sources |
 | ------ | ------ | ------ |
-| Normalized Difference Vegetation Index (NDVI) | - | MOD13, MYD13, PROBA-V *️⃣ |
+| Normalized Difference Vegetation Index (NDVI) | - | MOD13, MYD13, PROBA-V |
 | Air Pressure at sea level | kPa | MERRA-2, GEOS-5 |
 | Air Pressure at surface level  | kPa | MERRA-2, GEOS-5 |
 | Specific Humidity | kg/kg | MERRA-2, GEOS-5 |

@@ -4,3 +4,6 @@
 [submodule "pywapor/collect/PROBAV/itsybitsy"]
 	path = pywapor/collect/PROBAV/itsybitsy
 	url = https://github.com/DHI-GRAS/itsybitsy.git
+[submodule "pywapor_notebooks"]
+	path = pywapor_notebooks
+	url = https://github.com/bertcoerver/pywapor_notebooks.git
