@@ -18,6 +18,8 @@ from datetime import timedelta
 
 def WAPOR(output_folder, Startdate, Enddate, latlim, lonlim, Parameter, auth_token, Area = None, Version = "2"):
     
+    all_files = list()
+    
     time_steps = Parameter.split("_")[-1]
     level = Parameter.split("_")[0]
     
@@ -191,6 +193,7 @@ def WAPOR(output_folder, Startdate, Enddate, latlim, lonlim, Parameter, auth_tok
                             urllib.request.urlretrieve(job_result, file_name_temp) 
                             # print("Created %s succesfully!!!" %file_name_temp)
                             success = 1
+                            all_files.append(file_name_temp)
                         else:
                             print("ERROR: Was not able to create output")  
 
@@ -201,7 +204,10 @@ def WAPOR(output_folder, Startdate, Enddate, latlim, lonlim, Parameter, auth_tok
                     no_succes +=1
                     if no_succes == 10:
                         print("ERROR: already tried 10 times, and no connection with server. Please run code again")
-    return()
+        else:
+          all_files.append(file_name_temp)
+    
+    return all_files
 
 
 def Create_Payload_JSON(Parameter, Date_end, Start_day_payload, End_year_payload, End_month_payload, End_day_payload, latlim, lonlim, version, dimension, measure, Projection):
