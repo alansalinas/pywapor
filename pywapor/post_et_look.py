@@ -114,6 +114,17 @@ def calc_pearson_correlation(arrays):
 
     return rs
 
+def calc_rmse(arrays):
+
+    x = arrays[0]
+    rmses = np.array([])
+
+    for y in arrays[1:]:
+        rmse = np.sqrt(np.mean((x - y)**2))
+        rmses = np.append(rmses, rmse)
+    
+    return rmses
+
 def calc_nash_sutcliffe(arrays):
 
     x = arrays[0]
@@ -289,7 +300,7 @@ def compare_two_tifs(tif1, tif2, example_tif, options1 = None, options2 = None, 
     ds1["dataset"] = 1
 
     if not isinstance(options1, type(None)):
-        for option, value in options1:
+        for option, value in options1.items():
             ds1[option] = value
 
     ds2 = dict()
@@ -299,7 +310,7 @@ def compare_two_tifs(tif1, tif2, example_tif, options1 = None, options2 = None, 
     ds2["dataset"] = 2
 
     if not isinstance(options2, type(None)):
-        for option, value in options2:
+        for option, value in options2.items():
             ds2[option] = value
 
     meta = dict()
@@ -513,3 +524,33 @@ def prettyprint(d, indent=0):
          prettyprint(value, indent+1)
       else:
          print('\t' * (indent) + " " + str(value))
+
+def plot_img(ax, array, title = "", var_name = "", cmap = "viridis", cb_limits = None):
+    if cmap == "coolwarm":
+        max_error = np.nanpercentile(np.abs(array), 99)
+        vmin = -max_error
+        vmax = max_error
+    else:
+        vmin = None
+        vmax = None
+    if not isinstance(cb_limits, type(None)):
+        vmin = cb_limits[0]
+        vmax = cb_limits[1]
+    img0 = ax.imshow(array, cmap = cmap, vmin = vmin, vmax = vmax)
+    cax0 = ax.inset_axes([0.00, -0.20, 1.0, 0.04], transform=ax.transAxes)
+    ax.get_figure().colorbar(img0, ax = ax, cax = cax0, extend = "both", 
+                orientation = "horizontal", label = var_name)
+    ax.set_title(title)
+
+def plot_hexbin(ax, arrays, xlabel = "", ylabel = "", title = ""):
+    minmax = [np.min(arrays), np.max(arrays)]
+    ax.plot(minmax, minmax, ":k", label = "1:1")
+    ax.legend()
+    hb = ax.hexbin(*arrays, bins = "log")
+    ax.set_facecolor(plt.cm.get_cmap('viridis')(0.0))
+    ax.get_figure().colorbar(hb, label = "Number of pixels [-]")
+    ax.set_xlim(minmax)
+    ax.set_ylim(minmax)
+    ax.set_xlabel(xlabel)
+    ax.set_ylabel(ylabel)
+    ax.set_title(title)

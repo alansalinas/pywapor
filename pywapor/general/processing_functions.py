@@ -35,7 +35,10 @@ def combine_dicts(dicts):
     return new_dict
 
 def get_geoinfo(template_file):
-    ds = gdal.Open(template_file)
+    if isinstance(template_file, str):
+        ds = gdal.Open(template_file)
+    elif isinstance(template_file, gdal.Dataset):
+        ds = template_file
     geo_ex = ds.GetGeoTransform()
     proj_ex = ds.GetProjection()
     size_x_ex = ds.RasterXSize
@@ -411,7 +414,7 @@ def open_as_array(input):
         ds = gdal.Open(input)
     elif isinstance(input, gdal.Dataset):
         ds = input
-    array = ds.GetRasterBand(1).ReadAsArray()
+    array = ds.GetRasterBand(1).ReadAsArray().astype(float)
     ndv = ds.GetRasterBand(1).GetNoDataValue()
     array[array == ndv] = np.nan
     return array  
