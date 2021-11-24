@@ -47,7 +47,51 @@ pywapor.pre_et_look.main(project_folder, startdate, enddate, latlim, lonlim)
 pywapor.et_look.main(project_folder, startdate)
 ```
 
-See the `pywapor_notebooks` folder for more examples or check out an introduction in this [Colab Notebook](https://colab.research.google.com/github/bertcoerver/pywapor_notebooks/blob/main/pywapor_101.ipynb).
+Check out one of the Colab Notebooks below to learn more!
+
+### Notebooks
+|  | Name | Duration* |
+| ------ | ------ | ------ |
+| 1. | [Introduction](https://colab.research.google.com/github/bertcoerver/pywapor_notebooks/blob/main/pywapor_101.ipynb) | 10 + 30 |
+| 2. | [Levels](https://colab.research.google.com/github/bertcoerver/pywapor_notebooks/blob/main/levels.ipynb) | 10 + 120 |
+| 3. | [Composites](https://colab.research.google.com/github/bertcoerver/pywapor_notebooks/blob/main/composites.ipynb) | 10 + 10 |
+| 4. | [pyWaPOR vs. WaPOR](https://colab.research.google.com/github/bertcoerver/pywapor_notebooks/blob/main/wapor_vs_pywapor.ipynb) | 10 + 30 |
+| 5. | Soil Saturation | > Coming Soon < |
+
+\* Estimation of the time required in minutes, as in "active" + "download time". 
+
+
+## Documentation
+### WaPOR v2
+➡ [WaPOR-ETLook Data Manual](https://bitbucket.org/cioapps/wapor-et-look/downloads/FRAME_ET_v2_data_manual_finaldraft_v2.2.pdf)
+
+➡ [WaPOR-Biomass Data Manual](https://bitbucket.org/cioapps/wapor-et-look/downloads/FRAME_NPP_v2_data_manual_finaldraft_v2.2.pdf)
+
+### WaPOR v1
+➡ [WaPOR-ETLook Data Manual](https://bitbucket.org/cioapps/wapor-et-look/raw/9ec88e56769f49722c2d1165bb34547f5842b811/Docs/WaPOR_ET_data_manual_finaldraft-v1.2-for-distribution.pdf)
+
+## Acknowledgments
+The methodology for WaPOR was developed by the FRAME1 consortium, consisting of eLEAF, VITO, ITC, University of Twente and Waterwatch foundation, commissioned by and in partnership with the Land and Water Division of FAO. 
+
+This repository contains, among others, contributions from Bert Coerver (FAO), Tim Hessels (WaterSat) and, in the framework of the ESA-funded ET4FAO project, from Radoslaw Guzinski (DHI-GRAS), Hector Nieto (Complutig) and Laust Faerch (DHI-GRAS).
+
+## Contact
+For questions, requests or issues with this repository, please contact Bert Coerver at [bert.coerver@fao.org](mailto:bert.coerver@fao.org) or the WaPOR team at [wapor@fao.org](mailto:wapor@fao.org).
+
+## Release Notes
+
+#### 2.3.0 (2021-11-19)
+
+* Automatically create input composites before running ETLook.
+* Choose composite lengths in number of days or dekads.
+* Option to choose which products to use per variable.
+* Calculate soil saturation separate from ETLook.
+* PROBA-V support for NDVI and Albedo inputs.
+* Define diagnostics pixels, for which extra outputs are created (e.g. charts, maps etc.).
+* Bug-fixes and performance improvements.
+
+## License
+[APACHE](https://bitbucket.org/cioapps/wapor-et-look/src/dev/LICENSE)
 
 ## Data Sources
 
@@ -110,35 +154,3 @@ Maximum Obstacle Height | m | from Landcover
 | [WAPOR](https://wapor.apps.fao.org/catalog/WAPOR_2/1/L1_LCC_A) | 2009 - 2020 | Yearly |250m | Landcover |
 | [GLOBCOVER](http://due.esrin.esa.int/page_globcover.php) | 2009 | Single| 250m | Landcover |
 | [SRTM](https://srtm.csi.cgiar.org) | 2009 | Single | 90m | DEM |
-
-## Documentation
-### WaPOR v2
-➡ [WaPOR-ETLook Data Manual](https://bitbucket.org/cioapps/wapor-et-look/downloads/FRAME_ET_v2_data_manual_finaldraft_v2.2.pdf)
-
-➡ [WaPOR-Biomass Data Manual](https://bitbucket.org/cioapps/wapor-et-look/downloads/FRAME_NPP_v2_data_manual_finaldraft_v2.2.pdf)
-
-### WaPOR v1
-➡ [WaPOR-ETLook Data Manual](https://bitbucket.org/cioapps/wapor-et-look/raw/9ec88e56769f49722c2d1165bb34547f5842b811/Docs/WaPOR_ET_data_manual_finaldraft-v1.2-for-distribution.pdf)
-
-## Acknowledgments
-The methodology for WaPOR was developed by the FRAME1 consortium, consisting of eLEAF, VITO, ITC, University of Twente and Waterwatch foundation, commissioned by and in partnership with the Land and Water Division of FAO. 
-
-This repository contains, among others, contributions from Bert Coerver (FAO), Tim Hessels (WaterSat) and, in the framework of the ESA-funded ET4FAO project, from Radoslaw Guzinski (DHI-GRAS), Hector Nieto (Complutig) and Laust Faerch (DHI-GRAS).
-
-## Contact
-For questions, requests or issues with this repository, please contact Bert Coerver at [bert.coerver@fao.org](mailto:bert.coerver@fao.org) or the WaPOR team at [wapor@fao.org](mailto:wapor@fao.org).
-
-## Release Notes
-
-#### 2.3.0 (2021-11-19)
-
-* Automatically create input composites before running ETLook.
-* Choose composite lengths in number of days or dekads.
-* Option to choose which products to use per variable.
-* Calculate soil saturation separate from ETLook.
-* PROBA-V support for NDVI and Albedo inputs.
-* Define diagnostics pixels, for which extra outputs are created (e.g. charts, maps etc.).
-* Bug-fixes and performance improvements.
-
-## License
-[APACHE](https://bitbucket.org/cioapps/wapor-et-look/src/dev/LICENSE)
