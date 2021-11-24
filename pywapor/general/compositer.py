@@ -7,13 +7,19 @@ from dask.diagnostics import ProgressBar
 import pywapor.post_et_look as pl
 import pywapor.general.processing_functions as PF
 
-def main(cmeta, dbs, epochs_info, temp_folder, example_ds = None,
+def main(cmeta, dbs, epochs_info, temp_folder = None, example_ds = None,
                 lean_output = True, diagnostics = None):
     """
     composite_type = "max", "mean", "min"
     temporal_interp = False, "linear", "nearest", "zero", "slinear", "quadratic", "cubic"
     spatial_interp = "nearest", "linear"
     """
+
+    if isinstance(temp_folder, type(None)):
+        fh = dbs[0][0]
+        path = os.path.normpath(fh)
+        parts = path.split(os.sep)
+        temp_folder = os.path.join(*parts[:-4], "temporary")
 
     if not os.path.exists(temp_folder):
         os.makedirs(temp_folder)
@@ -157,9 +163,7 @@ def main(cmeta, dbs, epochs_info, temp_folder, example_ds = None,
 
     if lean_output: # TODO this option can be removed?
         ds = ds.drop_vars(["band_data", "sources", "epochs", "time"])
-    else:
-        ds = ds.drop_vars(["sources", "epochs"])
-   
+
     fh = os.path.join(temp_folder, f"{cmeta['var_name']}_composite.nc")
     ds = calculate_ds(ds, fh, label = "--> Calculating composites.")
 
@@ -172,8 +176,8 @@ def main(cmeta, dbs, epochs_info, temp_folder, example_ds = None,
     return ds
 
 def calculate_ds(ds, fh, label = None):
-    if os.path.isfile(fh):
-        os.remove(fh)
+    while os.path.isfile(fh):
+        fh = fh.replace(".nc", "_.nc")
     with ProgressBar(minimum = 30):
         if not isinstance(label, type(None)):
             print(label)
@@ -188,3 +192,44 @@ def check_geots(files):
     for fh in files[1:]:
         checker = PF.get_geoinfo(fh)
         assert ref == checker, f"ERROR: {files[0]} does not have same geotransform/projection as {fh}."
+
+# if __name__ == "__main__":
+
+#     import pywapor
+
+#     project_folder = r"/Users/hmcoerver/On My Mac/pyWAPOR/example_data"
+#     latlim = [28.9, 29.7]
+#     lonlim = [30.2, 31.2]
+#     startdate = "2021-06-01"
+#     enddate = "2021-08-01"
+
+#     epochs_info = pywapor.pre_et_look.create_dates(startdate, enddate, 6)
+
+#     cmeta = {
+#         "composite_type": "mean",
+#         "temporal_interp": False,
+#         "spatial_interp": "nearest",
+#         "var_name": "ndvi",
+#         "var_unit": "-",
+#     }
+
+#     dbs = [['/Users/hmcoerver/On My Mac/pyWAPOR/example_data/RAW/MODIS/MOD13/NDVI_MOD13Q1_-_16-daily_2021.06.26.tif',
+#     '/Users/hmcoerver/On My Mac/pyWAPOR/example_data/RAW/MODIS/MOD13/NDVI_MOD13Q1_-_16-daily_2021.07.28.tif',
+#     '/Users/hmcoerver/On My Mac/pyWAPOR/example_data/RAW/MODIS/MOD13/NDVI_MOD13Q1_-_16-daily_2021.07.12.tif',
+#     '/Users/hmcoerver/On My Mac/pyWAPOR/example_data/RAW/MODIS/MOD13/NDVI_MOD13Q1_-_16-daily_2021.05.25.tif',
+#     '/Users/hmcoerver/On My Mac/pyWAPOR/example_data/RAW/MODIS/MOD13/NDVI_MOD13Q1_-_16-daily_2021.08.13.tif',
+#     '/Users/hmcoerver/On My Mac/pyWAPOR/example_data/RAW/MODIS/MOD13/NDVI_MOD13Q1_-_16-daily_2021.06.10.tif',
+#     '/Users/hmcoerver/On My Mac/pyWAPOR/example_data/RAW/MODIS/MOD13/NDVI_MOD13Q1_-_16-daily_2021.08.29.tif'],
+#     ['/Users/hmcoerver/On My Mac/pyWAPOR/example_data/RAW/MODIS/MYD13/NDVI_MYD13Q1_-_16-daily_2021.06.18.tif',
+#     '/Users/hmcoerver/On My Mac/pyWAPOR/example_data/RAW/MODIS/MYD13/NDVI_MYD13Q1_-_16-daily_2021.08.21.tif',
+#     '/Users/hmcoerver/On My Mac/pyWAPOR/example_data/RAW/MODIS/MYD13/NDVI_MYD13Q1_-_16-daily_2021.07.04.tif',
+#     '/Users/hmcoerver/On My Mac/pyWAPOR/example_data/RAW/MODIS/MYD13/NDVI_MYD13Q1_-_16-daily_2021.07.20.tif',
+#     '/Users/hmcoerver/On My Mac/pyWAPOR/example_data/RAW/MODIS/MYD13/NDVI_MYD13Q1_-_16-daily_2021.08.05.tif',
+#     '/Users/hmcoerver/On My Mac/pyWAPOR/example_data/RAW/MODIS/MYD13/NDVI_MYD13Q1_-_16-daily_2021.06.02.tif']]
+    
+#     temp_folder = None
+#     example_ds = None
+#     lean_output = False 
+#     diagnostics = None
+
+#     main(cmeta, dbs, epochs_info, lean_output = False)

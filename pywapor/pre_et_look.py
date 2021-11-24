@@ -363,8 +363,12 @@ def unraw_filepaths(periods_start, project_folder, var, static = False):
     return filepaths
 
 def create_dates(sdate, edate, period_length):
+    if isinstance(sdate, str):
+        sdate = dat.strptime(sdate, "%Y-%m-%d")
+    if isinstance(edate, str):
+        edate = dat.strptime(edate, "%Y-%m-%d")
     if period_length == "DEKAD":
-        dekad1 = pd.date_range(sdate, edate, freq = "MS")
+        dekad1 = pd.date_range(sdate - pd.to_timedelta(sdate.day - 1, unit='d'), edate, freq = "MS")
         dekad2 = dekad1 + pd.Timedelta(10, unit='D')
         dekad3 = dekad1 + pd.Timedelta(20, unit='D')
         dates = np.sort(np.array([dekad1, dekad2, dekad3]).flatten())
@@ -374,9 +378,11 @@ def create_dates(sdate, edate, period_length):
         no_periods = int(days // period_length + 1)
         dates = pd.date_range(sdate, periods = no_periods + 1 , freq = f"{period_length}D")
     periods_start = dates[:-1]
-    epochs = np.arange(0, no_periods, 1)[periods_start < np.datetime64(edate)]
-    periods_end = dates[1:][periods_start < np.datetime64(edate)]
-    periods_start = periods_start[periods_start < np.datetime64(edate)]
+    mask = np.all([periods_start < np.datetime64(edate), 
+                   periods_start >= np.datetime64(sdate)], axis = 0)
+    epochs = np.arange(0, no_periods, 1)[mask]
+    periods_end = dates[1:][mask]
+    periods_start = periods_start[mask]
     return epochs, periods_start, periods_end
 
 def unraw(raw_file, unraw_file, template_file, method):

@@ -4,25 +4,21 @@ import pywapor.general.processing_functions as PF
 import warnings
 import os
 import datetime
-import matplotlib
-gui_env = [
-    # 'module://ipympl.backend_nbagg',
-    'MacOSX',
-    'TkAgg',
-    'GTK4Agg',
-    'Qt5Agg',
-    'WXAgg',
-    'module://matplotlib_inline.backend_inline',
-    ]
-for gui in gui_env:
-    try:
-        matplotlib.use(gui, force=True)
-        import matplotlib.pyplot as plt
-        from matplotlib.patches import Patch
-        break
-    except:
-        continue
-print("mpl backend:", matplotlib.get_backend())
+try:
+    import IPython
+    valids = ['osx', 'inline',]
+    for valid in valids:
+        # print(f"Trying {valid}")
+        try:
+            IPython.get_ipython().run_line_magic("matplotlib", valid)
+            # print(f"Using {valid}")
+            break
+        except:
+            continue
+except:
+    print("")
+import matplotlib.pyplot as plt
+from matplotlib.patches import Patch
 
 warnings.filterwarnings("ignore", message="Mean of empty slice")
 
