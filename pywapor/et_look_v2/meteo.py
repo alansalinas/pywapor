@@ -395,7 +395,7 @@ def saturated_vapour_pressure_maximum(t_air_max_coarse):
 
 
 def saturated_vapour_pressure_average(svp_24_max, svp_24_min):
-    """
+    r"""
     Average saturated vapour pressure based on two saturated vapour pressure values
     calculated using minimum and maximum air temperature respectively. This is preferable
     to calculating saturated vapour pressure using the average air temperature, because
