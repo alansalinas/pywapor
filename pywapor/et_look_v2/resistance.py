@@ -1,46 +1,46 @@
-
 import numpy as np
 
 def atmospheric_canopy_resistance(lai_eff, stress_rad, stress_vpd,
                                   stress_temp, rs_min=70, rcan_max=1000000.):
     r"""
-    Computes canopy resistance excluding soil moisture stress
+    Computes canopy resistance excluding soil moisture stress.
 
     .. math ::
-        r_{canopy,0}=\left(\frac{r_{s,min}}{I_{lai,eff}}\right)
-        \left(\frac{1}{S_{T}S_{V}S_{r}}\right)
+
+        r_{canopy,0}=\left(\frac{r_{s,min}}{I_{lai, eff}}\right)\cdot
+        \left(\frac{1}{S_{T} \cdot S_{V} \cdot S_{r}}\right)
 
     Parameters
     ----------
     lai_eff : float
-        effective leaf area index
+        effective leaf area index, 
         :math:`I_{lai,eff}`
         [-]
     stress_temp : float
-        stress factor for air temperature
+        stress factor for air temperature, 
         :math:`S_{t}`
         [-]
     stress_vpd : float
-        stress factor for vapour pressure deficit
+        stress factor for vapour pressure deficit, 
         :math:`S_{v}`
         [-]
     stress_rad : float
-        stress factor for radiation
+        stress factor for radiation, 
         :math:`S_{r}`
         [-]
     rs_min : float
-        Minimal stomatal resistance
+        Minimal stomatal resistance, 
         :math:`r_{s_min}`
         [sm-1]
     rcan_max : float
-        Maximum stomatal resistance
+        Maximum stomatal resistance, 
         :math:`r_{can_max}`
         [sm-1]
 
     Returns
     -------
     r_canopy_0 : float
-        atmospheric canopy resistance
+        atmospheric canopy resistance, 
         :math:`r_{canopy,0}`
         [sm-1]
 
@@ -62,30 +62,31 @@ def atmospheric_canopy_resistance(lai_eff, stress_rad, stress_vpd,
 
 def canopy_resistance(r_canopy_0, stress_moist, rcan_max=1000000.):
     r"""
-    Computes canopy resistance
+    Computes canopy resistance.
 
     .. math ::
+
         r_{canopy}=\frac{r_{canopy,0}}{S_{m}}
 
     Parameters
     ----------
     r_canopy_0 : float
-        Atmospheric canopy resistance
+        Atmospheric canopy resistance, 
         :math:`r_{canopy_0}`
         [sm-1]
     stress_moist : float
-        stress factor for root zone soil moisture
+        stress factor for root zone soil moisture, 
         :math:`S_{m}`
         [-]
     rcan_max : float
-        Maximum stomatal resistance
+        Maximum stomatal resistance, 
         :math:`r_{can_max}`
         [sm-1]
 
     Returns
     -------
     r_canopy : float
-        canopy resistance
+        canopy resistance, 
         :math:`r_{canopy}`
         [sm-1]
 
@@ -103,34 +104,35 @@ def canopy_resistance(r_canopy_0, stress_moist, rcan_max=1000000.):
 
 def soil_resistance(se_top, land_mask=1, r_soil_pow=-2.1, r_soil_min=800):
     r"""
-    Computes soil resistance
+    Computes soil resistance.
 
     .. math ::
-        r_{soil}=r_{soil,min}\left(S_{e,top}\right)^{a}
+
+        r_{soil}=r_{soil, min}\cdot \left(S_{e,top}\right)^{a}
 
     Parameters
     ----------
     r_soil_min : float
-        Minimum soil resistance
+        Minimum soil resistance, 
         :math:`r_{soil,min}`
         [sm-1]
     se_top : float
-        Top soil effective saturation
+        Top soil effective saturation, 
         :math:`S_{e,top}`
         [-]
     r_soil_pow : float
-        Power soil resistance function
+        Power soil resistance function, 
         :math:`a`
         [-]
     land_mask : int
-        land use classification
+        land use classification, 
         :math:`l`
         [-]
 
     Returns
     -------
     r_soil : float
-        soil resistance
+        soil resistance, 
         :math:`r_{soil}`
         [sm-1]
 

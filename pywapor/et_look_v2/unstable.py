@@ -15,18 +15,18 @@ def initial_sensible_heat_flux_canopy_daily(rn_24_canopy, t_24_init):
     Parameters
     ----------
     rn_24_canopy : float
-        daily net radiation for the canopy
+        daily net radiation for the canopy, 
         :math:`Q_{canopy}^{*}`
         [W m-2]
     t_24_init : float
-        initial estimate of daily transpiration
+        initial estimate of daily transpiration, 
         :math:`T`
         [W m-2]
 
     Returns
     -------
     h_canopy_24_init : float
-        initial estimate of the sensible heat flux
+        initial estimate of the sensible heat flux, 
         :math:`H^{canopy}`
         [W m-2]
     """
@@ -47,22 +47,22 @@ def initial_sensible_heat_flux_soil_daily(rn_24_soil, e_24_init, g0_24):
     Parameters
     ----------
     rn_24_soil : float
-        daily net radiation for the soil
+        daily net radiation for the soil, 
         :math:`Q_{canopy}^{*}`
         [W m-2]
     g0_24 : float
-        daily soil heat flux
+        daily soil heat flux, 
         :math:`G_{0}`
         [W m-2]
     e_24_init : float
-        initial estimate of daily evaporation
+        initial estimate of daily evaporation, 
         :math:`E`
         [W m-2]
 
     Returns
     -------
     h_soil_24_init : float
-        initial estimate of the sensible heat flux
+        initial estimate of the sensible heat flux, 
         :math:`H_{canopy}`
         [W m-2]
     """
@@ -75,24 +75,24 @@ def initial_friction_velocity_daily(u_b_24, z0m, disp, z_b=100):
 
     .. math ::
 
-        u_{*}=\frac{ku_{b}}{ln\left(\frac{z_{b}-d}{z_{0,m}}\right)}
+        u_{*}=\frac{k \cdot u_{b}}{ln\left(\frac{z_{b}-d}{z_{0,m}}\right)}
 
     Parameters
     ----------
     u_b_24 : float
-        daily wind speed at blending heigt
+        daily wind speed at blending heigt, 
         :math:`u_{b}`
         [m s-1]
     z0m : float
-        surface roughness
+        surface roughness, 
         :math:`z_{0,m}`
         [m]
     disp : float
-        displacement height
+        displacement height, 
         :math:`d`
         [m]
     z_b : float
-        blending height
+        blending height, 
         :math:`z_{b}`
         [m]
 
@@ -100,7 +100,7 @@ def initial_friction_velocity_daily(u_b_24, z0m, disp, z_b=100):
     Returns
     -------
     u_star_24_init : float
-        initial estimate of the daily friction velocity
+        initial estimate of the daily friction velocity, 
         :math:`u_{*}`
         [m s-1]
     """
@@ -113,20 +113,20 @@ def initial_friction_velocity_soil_daily(u_b_24, disp, z_b=100):
 
     .. math ::
 
-        u_{*}=\frac{ku_{b}}{ln\left(\frac{z_{b}-d}{z_{0,m}}\right)}
+        u_{*}=\frac{k \cdot u_{b}}{ln\left(\frac{z_{b}-d}{z_{0,m}}\right)}
 
     Parameters
     ----------
     u_b_24 : float
-        daily wind speed at blending heigt
+        daily wind speed at blending heigt, 
         :math:`u_{b}`
         [m s-1]
     disp : float
-        displacement height
+        displacement height, 
         :math:`d`
         [m]
     z_b : float
-        blending height
+        blending height, 
         :math:`z_{b}`
         [m]
 
@@ -134,7 +134,7 @@ def initial_friction_velocity_soil_daily(u_b_24, disp, z_b=100):
     Returns
     -------
     u_star_24_soil_init : float
-        initial estimate of the daily friction velocity for soil
+        initial estimate of the daily friction velocity for soil, 
         :math:`u_{*}`
         [m s-1]
     """
@@ -154,26 +154,26 @@ def monin_obukhov_length(h_flux, ad, u_star, t_air_k):
     Parameters
     ----------
     h_flux : float
-        sensible heat flux
+        sensible heat flux, 
         :math:`H`
         [W m-2]
     ad : float
-        air density
+        air density, 
         :math:`\rho`
         [kg m-3]
     u_star : float
-        Monin Obukhov length
+        Monin Obukhov length, 
         :math:`L`
         [m]
     t_air_k : float
-        air tempererature in kelvin
+        air tempererature in kelvin, 
         :math:`T_{a}`
         [K]
 
     Returns
     -------
     monin : float
-        monin obukhov length
+        monin obukhov length, 
         :math:`L`
         [m]
     """
@@ -193,22 +193,22 @@ def stability_parameter(monin, disp, z_b=100):
     Parameters
     ----------
     monin : float
-        monin obukhov length
+        monin obukhov length, 
         :math:`L`
         [m]
     z_b : float
-        blending height
+        blending height, 
         :math:`z_{b}`
         [m]
     disp : float
-        displacement height
+        displacement height, 
         :math:`d`
         [m]
 
     Returns
     -------
     x_b : float
-        stability parameter used in stability correction
+        stability parameter used in stability correction, 
         :math:`x_{b}`
         [-]
     """
@@ -221,21 +221,21 @@ def stability_factor(x_b):
 
     .. math ::
 
-        \psi_{h,b}=2\ln\left(\frac{1+x_{b}}{2}\right)+
+        \psi_{h,b}=2 \cdot \ln\left(\frac{1+x_{b}}{2}\right)+
         \ln\left(\frac{1+x_{b}^{2}}{2}\right)-
-        2\arctan\left(x_{b}\right)+0.5\pi
+        2 \cdot \arctan\left(x_{b}\right)+0.5 \cdot \pi
 
     Parameters
     ----------
     x_b : float
-        stability parameter used in stability correction
+        stability parameter used in stability correction, 
         :math:`x_{b}`
         [-]
 
     Returns
     -------
     sf : float
-        stability correction for heat
+        stability correction for heat, 
         :math:`\psi_{h,b}`
         [-]
     """
@@ -260,18 +260,18 @@ def stability_parameter_obs(monin, z_obs):
     Parameters
     ----------
     monin : float
-        monin obukhov length
+        monin obukhov length, 
         :math:`L`
         [m]
     z_obs : float
-        observation height
+        observation height, 
         :math:`z_{obs}`
         [m]
 
     Returns
     -------
     x_b_obs : float
-        stability parameter used in stability correction for observation height
+        stability parameter used in stability correction for observation height, 
         :math:`x_{obs}`
         [-]
     """
@@ -284,19 +284,19 @@ def stability_correction_heat_obs(x_b_obs):
 
     .. math ::
 
-        \psi_{h,obs}=2\ln\left(\frac{1+x_{obs}^{2}}{2}\right)
+        \psi_{h,obs}=2 \cdot \ln\left(\frac{1+x_{obs}^{2}}{2}\right)
 
     Parameters
     ----------
     x_b_obs : float
-        stability parameter used in stability correction for observation height
+        stability parameter used in stability correction for observation height, 
         :math:`x_{obs}`
         [-]
 
     Returns
     -------
     sf_obs : float
-        stability correction for heat for observation height
+        stability correction for heat for observation height, 
         :math:`\psi_{h,obs}`
         [-]
     """
@@ -305,39 +305,39 @@ def stability_correction_heat_obs(x_b_obs):
 
 def friction_velocity(u_b, z_b, z0m, disp, sf):
     r"""
-    Computes the friction velocity
+    Computes the friction velocity.
 
     .. math ::
 
-        u_{*}=\frac{ku_{b}}{ln\left(\frac{z_{b}-d}{z_{0,m}}\right)-\psi_{h,b}}
+        u_{*}=\frac{k \cdot u_{b}}{ln\left(\frac{z_{b}-d}{z_{0,m}}\right)-\psi_{h,b}}
 
     Parameters
     ----------
     u_b : float
-        windspeed at blending height
+        windspeed at blending height, 
         :math:`u_{b}`
         [m]
     z_b : float
-        blending height
+        blending height, 
         :math:`z_{b}`
         [m]
     z0m : float
-        roughness length
+        roughness length, 
         :math:`z_{0,m}`
         [m]
     disp : float
-        displacement height
+        displacement height, 
         :math:`d`
         [m]
     sf : float
-        stability factor at blending height
+        stability factor at blending height, 
         :math:`\psi_{h,b}`
         [m]
 
     Returns
     -------
     u_star : float
-        friction velocity
+        friction velocity, 
         :math:`u_{*}`
         [m s-1]
     """
@@ -354,16 +354,14 @@ def ra_canopy(
     if the difference between two subsequent estimations is less than 0.01.
 
     .. math ::
-
-        \begin{cases}
-        \begin{array}{c}
-        L=\frac{-\rho c_{p}u_{*}^{3}T_{a}}{kgH_{canopy}}\\
-        x_{b}=1-16\left(\frac{z_{b}-d}{L}\right)^{0.25}\\
-        \psi_{h,b}=2\ln\left(\frac{1+z_{b}}{2}\right)+
+    
+        L &= \frac{-\rho c_{p}u_{*}^{3}T_{a}}{kgH_{canopy}}\\
+        x_{b} &= 1-16\left(\frac{z_{b}-d}{L}\right)^{0.25}\\
+        \psi_{h,b} &= 2 \ln\left(\frac{1+z_{b}}{2}\right)+
         \ln\left(\frac{1+z_{b}^{2}}{2}\right)-
         2\arctan\left(x_{b}\right)+0.5\pi\\
-        u_{*}=\frac{ku_{b}}{ln\left(\frac{z_{b}-d}{z_{0,m}}\right)-\psi_{h,b}}
-        \end{array}\end{cases}
+        u_{*} &= \frac{ku_{b}}{ln\left(\frac{z_{b}-d}{z_{0,m}}\right)-\psi_{h,b}}
+
 
     The friction velocity is independent of height. So this value can be used
     to calculate together with the stability correction for heat on observation
@@ -371,60 +369,58 @@ def ra_canopy(
 
     .. math ::
 
-        x_{obs}=1-16\left(\frac{z_{obs}}{L}\right)^{0.25}
-
-        \psi_{h,obs}=2\ln\left(\frac{1+x_{obs}^{2}}{2}\right)
-
-        r_{a,canopy}=\frac{\ln\left(\frac{z_{obs}-d}
-        {0.1z_{0,m}}\right)-\psi_{h,obs}}{ku_{*}}
+        x_{obs}&=1-16 \cdot \left(\frac{z_{obs}}{L}\right)^{0.25} \\
+        \psi_{h,obs}&=2 \cdot \ln\left(\frac{1+x_{obs}^{2}}{2}\right) \\
+        r_{a,canopy}&=\frac{\ln\left(\frac{z_{obs}-d}
+        {0.1 \cdot z_{0,m}}\right)-\psi_{h,obs}}{k \cdot u_{*}}
 
     Parameters
     ----------
     h_canopy_init : float
-        initial estimate of the sensible heat flux
+        initial estimate of the sensible heat flux, 
         :math:`H^{canopy}`
         [W m-2]
     t_air_k : float
-        air tempererature in kelvin
+        air tempererature in kelvin, 
         :math:`T_{a}`
         [K]
     u_star_init : float
-        initial estimate of the daily friction velocity
+        initial estimate of the daily friction velocity, 
         :math:`u_{*}`
         [m s-1]
     ad : float
-        air density
+        air density, 
         :math:`\rho`
         [kg m-3]
     z_b : float
-        blending height
+        blending height, 
         :math:`z_{b}`
         [m]
     z_obs : float
-        observation height
+        observation height, 
         :math:`z_{obs}`
         [m]
     z0m : float
-        roughness length
+        roughness length, 
         :math:`z_{0,m}`
         [m]
     disp : float
-        displacement height
+        displacement height, 
         :math:`d`
         [m]
     u_b : float
-        windspeed at blending height
+        windspeed at blending height, 
         :math:`u_{b}`
         [m/s]
     iter_ra : integer
-        number of iterations for aerodynamical resistance
+        number of iterations for aerodynamical resistance, 
         :math:`n_{ra}`
         [-]
 
     Returns
     -------
     ra_canopy : float
-        aerodynamical resistance for canopy
+        aerodynamical resistance for canopy, 
         :math:`r_{a,canopy}`
         [s m-1]
     """
@@ -485,7 +481,7 @@ def transpiration(
     Parameters
     ----------
     rn_24_canopy : float
-        net radiation for the canopy
+        net radiation for the canopy, 
         :math:`Q^{*}_{canopy}`
         [Wm-2]
     ssvp_24 : float
@@ -493,7 +489,7 @@ def transpiration(
        :math:`\Delta_{24}`
        [mbar K-1]
     ad_24 : float
-        daily air density
+        daily air density, 
         :math:`\rho_{24}`
         [kg m-3]
     vpd_24 : float
@@ -501,54 +497,54 @@ def transpiration(
        :math:`\Delta_{e,24}`
        [mbar]
     psy_24 : float
-        daily psychrometric constant
+        daily psychrometric constant, 
         :math:`\gamma_{24}`
         [mbar K-1]
     r_canopy : float
-        canopy resistance
+        canopy resistance, 
         :math:`r_{canopy}`
         [sm-1]
     h_canopy_24_init : float
-        initial estimate of the sensible heat flux
+        initial estimate of the sensible heat flux, 
         :math:`H^{canopy}`
         [W m-2]
     t_air_k_24 : float
-        daily air tempererature in kelvin
+        daily air tempererature in kelvin, 
         :math:`T_{a}`
         [K]
     u_star_24_init : float
-        initial estimate of the daily friction velocity
+        initial estimate of the daily friction velocity, 
         :math:`u_{*}`
         [m s-1]
     z0m : float
-        roughness length
+        roughness length, 
         :math:`z_{0,m}`
         [m]
     disp : float
-        displacement height
+        displacement height, 
         :math:`d`
         [m]
     u_b_24 : float
-        daily windspeed at blending height
+        daily windspeed at blending height, 
         :math:`u_{b}`
         [m]
     z_b : float
-        blending height
+        blending height, 
         :math:`z_{b}`
         [m]
     z_obs : float
-        observation height
+        observation height, 
         :math:`z_{obs}`
         [m]
     iter_h : integer
-        number of iterations for sensible heat flux
+        number of iterations for sensible heat flux, 
         :math:`n_h`
         [-]
 
     Returns
     -------
     t_24 : float
-        daily transpiration energy equivalent
+        daily transpiration energy equivalent, 
         :math:`T_{24}`
         [W m-2]
     """
@@ -582,16 +578,14 @@ def ra_soil(
 
     .. math ::
 
-        \begin{cases}
-        \begin{array}{c}
-        L=\frac{-\rho c_{p}u_{*}^{3}T_{a}}{kgH_{soil}}\\
-        x_{b}=1-16\left(\frac{z_{b}-d}{L}\right)^{0.25}\\
-        \psi_{h,b}=2\ln\left(\frac{1+z_{b}}{2}\right)+
+        L &= \frac{-\rho c_{p}u_{*}^{3}T_{a}}{kgH_{soil}}\\
+        x_{b} &= 1-16\left(\frac{z_{b}-d}{L}\right)^{0.25}\\
+        \psi_{h,b} &= 2\ln\left(\frac{1+z_{b}}{2}\right)+
         \ln\left(\frac{1+z_{b}^{2}}{2}\right)-
         2\arctan\left(x_{b}\right)+0.5\pi\\
-        u_{*}=\frac{ku_{b}}{ln\left(\frac{z_{b}-d}{z_{0,soil}}\right)
+        u_{*} &= \frac{ku_{b}}{ln\left(\frac{z_{b}-d}{z_{0,soil}}\right)
         -\psi_{h,b}}
-        \end{array}\end{cases}
+
 
     The friction velocity is independent of height. So this value can be used
     to calculate together with the stability correction for heat on observation
@@ -599,56 +593,54 @@ def ra_soil(
 
     .. math ::
 
-        x_{obs}=1-16\left(\frac{z_{obs}}{L}\right)^{0.25}
-
-        \psi_{h,obs}=2\ln\left(\frac{1+x_{obs}^{2}}{2}\right)
-
-        r_{a,soil}=\frac{\ln\left(\frac{z_{obs}-d}
+        x_{obs} &= 1-16\left(\frac{z_{obs}}{L}\right)^{0.25} \\
+        \psi_{h,obs} &= 2\ln\left(\frac{1+x_{obs}^{2}}{2}\right) \\
+        r_{a,soil} &= \frac{\ln\left(\frac{z_{obs}-d}
         {0.1z_{0,soil}}\right)-\psi_{h,obs}}{ku_{*}}
 
     Parameters
     ----------
     h_soil_24_init : float
-        initial estimate of the sensible heat flux for soil
+        initial estimate of the sensible heat flux for soil, 
         :math:`H^{soil}`
         [W m-2]
     t_air_k : float
-        air tempererature in kelvin
+        air tempererature in kelvin, 
         :math:`T_{a}`
         [K]
     u_star_24_init : float
-        initial estimate of the daily friction velocity
+        initial estimate of the daily friction velocity, 
         :math:`u_{*}`
         [m s-1]
     ad : float
-        air density
+        air density, 
         :math:`\rho`
         [kg m-3]
     z_b : float
-        blending height
+        blending height, 
         :math:`z_{b}`
         [m]
     z_obs : float
-        observation height
+        observation height, 
         :math:`z_{obs}`
         [m]
     disp : float
-        displacement height
+        displacement height, 
         :math:`d`
         [m]
     u_b : float
-        windspeed at blending height
+        windspeed at blending height, 
         :math:`u_{b}`
         [m]
     iter_ra : integer
-        number of iterations for aerodynamical resistance
+        number of iterations for aerodynamical resistance, 
         :math:`n_{ra}`
         [-]
 
     Returns
     -------
     ra_soil : float
-        aerodynamical resistance for soil
+        aerodynamical resistance for soil, 
         :math:`r_{a,soil}`
         [s m-1]
     """
@@ -710,11 +702,11 @@ def evaporation(
     Parameters
     ----------
     rn_24_soil : float
-        net radiation for the soil
+        net radiation for the soil, 
         :math:`Q^{*}_{canopy}`
         [Wm-2]
     g0_24 : float
-        daily soil heat flux
+        daily soil heat flux, 
         :math:`G`
         [Wm-2]
     ssvp_24 : float
@@ -722,7 +714,7 @@ def evaporation(
        :math:`\Delta_{24}`
        [mbar K-1]
     ad_24 : float
-        daily air density
+        daily air density, 
         :math:`\rho_{24}`
         [kg m-3]
     vpd_24 : float
@@ -730,50 +722,50 @@ def evaporation(
        :math:`\Delta_{e,24}`
        [mbar]
     psy_24 : float
-        daily psychrometric constant
+        daily psychrometric constant, 
         :math:`\gamma_{24}`
         [mbar K-1]
     r_soil : float
-        soil resistance
+        soil resistance, 
         :math:`r_{soil}`
         [sm-1]
     h_soil_24_init : float
-        initial estimate of the sensible heat flux for soil
+        initial estimate of the sensible heat flux for soil, 
         :math:`H^{soil}`
         [W m-2]
     t_air_k_24 : float
-        daily air temperature in kelvin
+        daily air temperature in kelvin, 
         :math:`T_{a}`
         [K]
     u_star_24_soil_init : float
-        initial estimate of the daily friction velocity for soil
+        initial estimate of the daily friction velocity for soil, 
         :math:`u_{*}`
         [m s-1]
     disp : float
-        displacement height
+        displacement height, 
         :math:`d`
         [m]
     u_b_24 : float
-        daily wind speed at blending height
+        daily wind speed at blending height, 
         :math:`u_{b}`
         [m]
     z_b : float
-        blending height
+        blending height, 
         :math:`z_{b}`
         [m]
     z_obs : float
-        observation height
+        observation height, 
         :math:`z_{obs}`
         [m]
     iter_h : integer
-        number of iterations for sensible heat flux
+        number of iterations for sensible heat flux, 
         :math:`n_h`
         [-]
 
     Returns
     -------
     e_24 : float
-        daily evaporation energy equivalent
+        daily evaporation energy equivalent, 
         :math:`E_{24}`
         [W m-2]
     """
@@ -802,7 +794,7 @@ def transpiration_mm(t_24, lh_24):
 
     .. math ::
 
-        T=Td_{sec}\lambda_{24}
+        T=T \cdot \frac{d_{sec}}{\lambda_{24}}
 
     where the following constants are used
 
@@ -811,18 +803,18 @@ def transpiration_mm(t_24, lh_24):
     Parameters
     ----------
     t_24 : float
-        daily transpiration energy equivalent
+        daily transpiration energy equivalent, 
         :math:`E^{0}`
         [W m-2]
     lh_24 : float
-        daily latent heat of evaporation
+        daily latent heat of evaporation, 
         :math:`\lambda_{24}`
         [J/kg]
 
     Returns
     -------
     t_24_mm : float
-        daily transpiration in mm
+        daily transpiration in mm, 
         :math:`T`
         [mm d-1]
     """
@@ -836,7 +828,7 @@ def evaporation_mm(e_24, lh_24):
 
     .. math ::
 
-        E=Ed_{sec}\lambda_{24}
+        E=E \cdot \frac{d_{sec}}{\lambda_{24}}
 
     where the following constants are used
 
@@ -845,18 +837,18 @@ def evaporation_mm(e_24, lh_24):
     Parameters
     ----------
     e_24 : float
-        daily evaporation energy equivalent
+        daily evaporation energy equivalent, 
         :math:`E^{0}`
         [W m-2]
     lh_24 : float
-        daily latent heat of evaporation
+        daily latent heat of evaporation, 
         :math:`\lambda_{24}`
         [J/kg]
 
     Returns
     -------
     e_24_mm : float
-        daily evaporation in mm
+        daily evaporation in mm, 
         :math:`E`
         [mm d-1]
     """

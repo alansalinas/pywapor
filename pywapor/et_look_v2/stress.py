@@ -2,23 +2,24 @@ import numpy as np
 
 def stress_radiation(ra_24):
     r"""
-    Computes the stress for plants when there is not sufficient radiation
+    Computes the stress for plants when there is not sufficient radiation.
 
     .. math ::
-        S_{r}=\frac{S^{\downarrow}}{\left(S^{\downarrow}+60.\right)}
+
+        S_{r}=\frac{S^{\downarrow}}{\left(S^{\downarrow}+60\right)}
         \left(1+\frac{60}{500}\right)
 
     Parameters
     ----------
     ra_24 : float
-        daily solar radiation
+        daily solar radiation, 
         :math:`S^{\downarrow}`
         [Wm-2]
 
     Returns
     -------
     stress_rad : float
-        stress factor for radiation
+        stress factor for radiation, 
         :math:`S_{r}`
         [-]
 
@@ -44,10 +45,11 @@ def stress_radiation(ra_24):
 def stress_moisture(se_root, tenacity=1.5):
     r"""
     Computes the stress for plants when there is not sufficient soil
-    moisture in the root zone
+    moisture in the root zone.
 
     .. math ::
-        S_{m}=K_{sf}S_{e,root}-\frac{\sin\left(2\pi S_{e,root}\right)}{2\pi}
+
+        S_{m}=K_{sf} \cdot S_{e,root}-\frac{\sin\left(2\pi \cdot S_{e,root}\right)}{2\pi}
 
     The tenacity factor :math:`K_{sf}` ranges from 1 for sensitive plants to
     1.5 for moderately sensitive plants to 3 for insensitive
@@ -67,7 +69,7 @@ def stress_moisture(se_root, tenacity=1.5):
     Returns
     -------
     stress_moist : float
-        stress factor for root zone moisture
+        stress factor for root zone moisture, 
         :math:`S_{m}`
         [-]
 
@@ -92,35 +94,37 @@ def stress_temperature(t_air_24, t_opt=25.0, t_min=0.0, t_max=50.0):
     Computes the stress for plants when it is too cold or hot
 
     .. math ::
+
         f=\frac{T_{max}-T_{opt}}{T_{opt}-T_{min}}
 
     .. math ::
-        s_{T}=\frac{\left(T_{a}-T_{min}\right)\left(T_{max}-T_{a}\right)^{f}}
-            {\left(T_{opt}-T_{min}\right)\left(T_{max}-T_{opt}\right)^{f}}
+
+        s_{T}=\frac{\left(T_{a}-T_{min}\right)\cdot\left(T_{max}-T_{a}\right)^{f}}
+            {\left(T_{opt}-T_{min}\right)\cdot\left(T_{max}-T_{opt}\right)^{f}}
 
     Parameters
     ----------
     t_air_24 : float
-        daily air temperature
+        daily air temperature, 
         :math:`T_{a}`
         [C]
     t_opt : float
-        optimum air temperature for plant growth
+        optimum air temperature for plant growth, 
         :math:`T_{opt}`
         [C]
     t_min : float
-        minimum air temperature for plant growth
+        minimum air temperature for plant growth, 
         :math:`T_{min}`
         [C]
     t_max : float
-        maximum air temperature for plant growth
+        maximum air temperature for plant growth, 
         :math:`T_{max}`
         [C]
 
     Returns
     -------
     stress_temp : float
-        stress factor for air temperature
+        stress factor for air temperature, 
         :math:`S_{T}`
         [-]
 
@@ -152,26 +156,27 @@ def stress_vpd(vpd_24, vpd_slope=-0.3):
     r"""
     Computes the stress for plants if the vpd increases too much. With
     lower slopes the stress increases faster. The slope of the curve
-    is between -0.3 and -0.7
+    is between -0.3 and -0.7.
 
     .. math ::
-        S_{v}=m\ln(0.1\Delta_{e}+\frac{1}{2})+1
+
+        S_{v}=m \cdot \ln(0.1 \cdot \Delta_{e}+\frac{1}{2})+1
 
     Parameters
     ----------
     vpd_24 : float
-        daily vapour pressure deficit
+        daily vapour pressure deficit, 
         :math:`\Delta_{e}`
         [mbar]
     vpd_slope : float
-        vapour pressure stress curve slope
+        vapour pressure stress curve slope, 
         :math:`m`
         [mbar-1]
 
     Returns
     -------
     stress_vpd : float
-        stress factor for vapour pressure deficit
+        stress factor for vapour pressure deficit, 
         :math:`S_{v}`
         [-]
 

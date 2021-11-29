@@ -3,7 +3,7 @@
     variables. All meteorological functions can be calculated on a daily
     or instantaneous basis. Base functions are available also. The daily
     functions have a 'daily' extension, instantaneous functions have a 'inst'
-    extension
+    extension.
 
 """
 from pywapor.et_look_v2 import constants as c
@@ -12,19 +12,19 @@ import numpy as np
 def air_temperature_celcius(t_air_k):
     r"""
     Converts air temperature from Kelvin to Celcius, where 0 degrees Celcius
-    is equal to 273.15 degrees Kelvin
+    is equal to 273.15 degrees Kelvin.
 
     Parameters
     ----------
     t_air_k : float
-        air temperature
+        air temperature, 
         :math:`T_a`
         [K]
 
     Returns
     -------
     t_air_c : float
-        air temperature
+        air temperature, 
         :math:`T_a`
         [C]
 
@@ -40,19 +40,19 @@ def air_temperature_celcius(t_air_k):
 def air_temperature_kelvin(t_air):
     r"""
     Converts air temperature from Celcius to Kelvin, where 0 degrees Celcius
-    is equal to 273.15 degrees Kelvin
+    is equal to 273.15 degrees Kelvin.
 
     Parameters
     ----------
     t_air : float
-        air temperature
+        air temperature, 
         :math:`T_a`
         [C]
 
     Returns
     -------
     t_air_k : float
-        air temperature
+        air temperature, 
         :math:`T_a`
         [K]
 
@@ -66,19 +66,19 @@ def air_temperature_kelvin(t_air):
 
 
 def air_temperature_kelvin_daily(t_air_24):
-    """Like :func:`air_temperature_kelvin` but as a daily average
+    """Like :func:`air_temperature_kelvin` but as a daily average.
 
     Parameters
     ----------
     t_air_24 : float
-        daily air temperature
+        daily air temperature, 
         :math:`T_{a,24}`
         [C]
 
     Returns
     -------
     t_air_k_24 : float
-        daily air temperature
+        daily air temperature, 
         :math:`T_{a,24}`
         [K]
     """
@@ -86,19 +86,19 @@ def air_temperature_kelvin_daily(t_air_24):
 
 
 def air_temperature_kelvin_inst(t_air_i):
-    """Like :func:`air_temperature_kelvin` but as an instantaneous value
+    """Like :func:`air_temperature_kelvin` but as an instantaneous value.
 
     Parameters
     ----------
     t_air_i : float
-        instantaneous air temperature
+        instantaneous air temperature, 
         :math:`T_{a,i}`
         [C]
 
     Returns
     -------
     t_air_k_i : float
-        instantaneous air temperature
+        instantaneous air temperature, 
         :math:`T_{a,i}`
         [K]
     """
@@ -108,19 +108,19 @@ def air_temperature_kelvin_inst(t_air_i):
 def wet_bulb_temperature_kelvin_inst(t_wet_i):
     """
     Converts wet bulb temperature from Celcius to Kelvin, where 0
-    degrees Celcius is equal to 273.15 degrees Kelvin
+    degrees Celcius is equal to 273.15 degrees Kelvin.
 
     Parameters
     ----------
     t_wet_i : float
-        instantaneous wet bulb temperature
+        instantaneous wet bulb temperature, 
         :math:`T_{w,i}`
         [C]
 
     Returns
     -------
     t_wet_k_i : float
-        instantaneous wet bulb temperature
+        instantaneous wet bulb temperature, 
         :math:`T_{w,i}`
         [K]
     """
@@ -135,7 +135,8 @@ def disaggregate_air_temperature(t_air_coarse, z, z_coarse, lapse=-0.006):
     resolution.
 
     .. math ::
-        T_{a}=T_{a,c}+(z-z_{c})L_{T}-T_{K,0}
+
+        T_{a}=T_{a,c}+(z-z_{c}) \cdot L_{T}-T_{K,0}
 
     where the following constant is used
 
@@ -144,26 +145,26 @@ def disaggregate_air_temperature(t_air_coarse, z, z_coarse, lapse=-0.006):
     Parameters
     ----------
     t_air_coarse : float
-        air temperature at coarse resolution
+        air temperature at coarse resolution, 
         :math:`T_{a,c}`
         [K]
     z : float
-        elevation
+        elevation, 
         :math:`z`
         [m]
     z_coarse : float
-        elevation at coarse resolution
+        elevation at coarse resolution, 
         :math:`z_{c}`
         [m]
     lapse : float
-        lapse rate
+        lapse rate, 
         :math:`L_{T}`
         [K m-1]
 
     Returns
     -------
     t_air : float
-        air temperature
+        air temperature, 
         :math:`T_{a}`
         [C]
 
@@ -182,31 +183,31 @@ def disaggregate_air_temperature(t_air_coarse, z, z_coarse, lapse=-0.006):
 
 
 def disaggregate_air_temperature_daily(t_air_24_coarse, z, z_coarse, lapse=-0.006):
-    r"""Like :func:`disaggregate_air_temperature` but as a daily average
+    r"""Like :func:`disaggregate_air_temperature` but as a daily average.
 
     Parameters
     ----------
     t_air_24_coarse : float
-        daily air temperature at coarse resolution
+        daily air temperature at coarse resolution, 
         :math:`T_{a,24,c}`
         [K]
     z : float
-        elevation
+        elevation, 
         :math:`z`
         [m]
     z_coarse : float
-        elevation at coarse resolution
+        elevation at coarse resolution, 
         :math:`z_{c}`
         [m]
     lapse : float
-        lapse rate
+        lapse rate, 
         :math:`L`
         [K m-1]
 
     Returns
     -------
     t_air_24 : float
-        daily air temperature
+        daily air temperature, 
         :math:`T_{a,24}`
         [C]
 
@@ -219,31 +220,31 @@ def disaggregate_air_temperature_daily(t_air_24_coarse, z, z_coarse, lapse=-0.00
 
 
 def disaggregate_air_temperature_inst(t_air_i_coarse, z, z_coarse, lapse=-0.006):
-    r"""Like :func:`disaggregate_air_temperature` but as a instantaneous value
+    r"""Like :func:`disaggregate_air_temperature` but as a instantaneous value.
 
     Parameters
     ----------
     t_air_i_coarse : float
-        instantaneous air temperature at coarse resolution
+        instantaneous air temperature at coarse resolution, 
         :math:`T_{a,i,c}`
         [K]
     z : float
-        elevation
+        elevation, 
         :math:`z`
         [m]
     z_coarse : float
-        elevation at coarse resolution
+        elevation at coarse resolution, 
         :math:`z_{c}`
         [m]
     lapse : float
-        lapse rate
+        lapse rate, 
         :math:`L`
         [K m-1]
 
     Returns
     -------
     t_air_i : float
-        instantaneous air temperature
+        instantaneous air temperature, 
         :math:`T_{a,i}`
         [C]
 
@@ -258,31 +259,31 @@ def disaggregate_air_temperature_inst(t_air_i_coarse, z, z_coarse, lapse=-0.006)
 def disaggregate_dew_point_temperature_inst(t_dew_coarse_i, z, z_coarse, lapse_dew=-0.002):
     r"""
     Disaggregates geos dew point temperature using lapse rate and difference between
-    smoothed coarse scale DEM and fine scale DEM
+    smoothed coarse scale DEM and fine scale DEM.
 
     Parameters
     ----------
     t_dew_coarse_i : float
-        coarse instantaneous dew point temperature
+        coarse instantaneous dew point temperature, 
         :math:`T_{dew,coarse}`
         [C]
     z : float
-        elevation
+        elevation, 
         :math:`z`
         [m]
     z_coarse : float
-        smoothed elevation at coarse resolution
+        smoothed elevation at coarse resolution, 
         :math:`z`
         [m]
     lapse_dew : float
-        lapse rate
+        lapse rate, 
         :math:`L`
         [K m-1]
 
     Returns
     -------
     t_dew_i : float
-        instantaneous dew point temperature
+        instantaneous dew point temperature, 
         :math:`T_{dew,i}`
         [C]
     """
@@ -292,10 +293,11 @@ def disaggregate_dew_point_temperature_inst(t_dew_coarse_i, z, z_coarse, lapse_d
 def vapour_pressure_from_specific_humidity(qv, p_air):
     r"""
     Computes the vapour pressure :math:`e_a` in [mbar] using specific humidity
-    and surface pressure
+    and surface pressure.
 
     .. math ::
-        e_{a}=\frac{q_{v}P}{\varepsilon}
+
+        e_{a}=\frac{q_{v} \cdot P}{\varepsilon}
 
     where the following constant is used
 
@@ -306,18 +308,18 @@ def vapour_pressure_from_specific_humidity(qv, p_air):
     Parameters
     ----------
     qv : float
-        specific humidity
+        specific humidity, 
         :math:`q_{v}`
         [kg/kg]
     p_air : float
-        air pressure
+        air pressure, 
         :math:`P`
         [mbar]
 
     Returns
     -------
     vp : float
-        vapour pressure
+        vapour pressure, 
         :math:`e_{a}`
         [mbar]
     """
@@ -325,23 +327,23 @@ def vapour_pressure_from_specific_humidity(qv, p_air):
 
 
 def vapour_pressure_from_specific_humidity_daily(qv_24, p_air_24):
-    """Like :func:`vapour_pressure_from_specific_humidity` but as a daily average
+    """Like :func:`vapour_pressure_from_specific_humidity` but as a daily average.
 
     Parameters
     ----------
     qv_24 : float
-        daily specific humidity
+        daily specific humidity, 
         :math:`q_{v,24}`
         [kg/kg]
     p_air_24 : float
-        daily air pressure
+        daily air pressure, 
         :math:`P_{24}`
         [mbar]
 
     Returns
     -------
     vp_24 : float
-        daily vapour pressure
+        daily vapour pressure, 
         :math:`e_{a,24}`
         [mbar]
     """
@@ -350,19 +352,19 @@ def vapour_pressure_from_specific_humidity_daily(qv_24, p_air_24):
 
 def saturated_vapour_pressure_minimum(t_air_min_coarse):
     """Like :func:`saturated_vapour_pressure` but based on daily minimum air temperature. This
-    is only relevant for reference ET calculations
+    is only relevant for reference ET calculations.
 
     Parameters
     ----------
     t_air_min_coarse : float
-        daily minimum air temperature
+        daily minimum air temperature, 
         :math:`T_{a,min}`
         [C]
 
     Returns
     -------
     svp_24_min : float
-        daily saturated vapour pressure based on minimum air temperature
+        daily saturated vapour pressure based on minimum air temperature, 
         :math:`e_{s,min}`
         [mbar]
 
@@ -372,19 +374,19 @@ def saturated_vapour_pressure_minimum(t_air_min_coarse):
 
 def saturated_vapour_pressure_maximum(t_air_max_coarse):
     """Like :func:`saturated_vapour_pressure` but based on daily maximum air temperature. This
-    is only relevant for reference ET calculations
+    is only relevant for reference ET calculations.
 
     Parameters
     ----------
     t_air_max_coarse : float
-        daily maximum air temperature
+        daily maximum air temperature, 
         :math:`T_{a,max}`
         [C]
 
     Returns
     -------
     svp_24_max : float
-        daily saturated vapour pressure based on maximum air temperature
+        daily saturated vapour pressure based on maximum air temperature, 
         :math:`e_{s,max}`
         [mbar]
 
@@ -398,50 +400,52 @@ def saturated_vapour_pressure_average(svp_24_max, svp_24_min):
     calculated using minimum and maximum air temperature respectively. This is preferable
     to calculating saturated vapour pressure using the average air temperature, because
     of the strong non-linear relationship between saturated vapour pressure and air
-    temperature
+    temperature.
 
     .. math ::
-        e_{s}=\frac{e^{0}\left(T_{max}\right)+e^{0}\left(T_{mon}\right)}{2}
+
+        e_{s}=\frac{e^{0}\left(T_{max}\right)+e^{0}\left(T_{min}\right)}{2}
 
     Parameters
     ----------
     svp_24_max : float
-        daily saturated vapour pressure based on maximum air temperature
+        daily saturated vapour pressure based on maximum air temperature, 
         :math:`e_{s,max}`
         [mbar]
     svp_24_min : float
-        daily saturated vapour pressure based on minimum air temperature
+        daily saturated vapour pressure based on minimum air temperature, 
         :math:`e_{s,min}`
         [mbar]
 
     Returns
     -------
     svp_24 : float
-        daily saturated vapour pressure
+        daily saturated vapour pressure, 
         :math:`e_{s,24}`
         [mbar]
+
     """
     return (svp_24_max + svp_24_min)/2
 
 
 def vapour_pressure_from_specific_humidity_inst(qv_i, p_air_i):
-    """Like :func:`vapour_pressure_from_specific_humidity` but as an instantaneous value
+    """Like :func:`vapour_pressure_from_specific_humidity` but as an instantaneous value.
 
     Parameters
     ----------
     qv_i : float
-        instantaneous specific humidity
+        instantaneous specific humidity, 
         :math:`q_{v,i}`
         [kg/kg]
     p_air_i : float
-        instantaneous air pressure
+        instantaneous air pressure, 
         :math:`P_{i}`
         [mbar]
 
     Returns
     -------
     vp_i : float
-        instantaneous vapour pressure
+        instantaneous vapour pressure, 
         :math:`e_{a,i}`
         [mbar]
     """
@@ -452,22 +456,23 @@ def saturated_vapour_pressure(t_air):
     r"""
     Computes saturated vapour pressure :math:`e_s` [mbar], it provides
     the vapour pressure when the air is fully saturated with water. It is
-    related to air temperature :math:`T_a` [C]:
+    related to air temperature :math:`T_a` [C] as:
 
     .. math ::
-        e_{s}=6.108\exp\left[\frac{17.27T_{a}}{T_{a}+237.3}\right]
+
+        e_{s}=6.108 \cdot \exp\left[\frac{17.27 \cdot T_{a}}{T_{a}+237.3}\right]
 
     Parameters
     ----------
     t_air : float
-        air temperature
+        air temperature, 
         :math:`T_a`
         [C]
 
     Returns
     -------
     svp : float
-        saturated vapour pressure
+        saturated vapour pressure, 
         :math:`e_s`
         [mbar]
 
@@ -482,19 +487,19 @@ def saturated_vapour_pressure(t_air):
 
 
 def saturated_vapour_pressure_daily(t_air_24):
-    """Like :func:`saturated_vapour_pressure` but as a daily average
+    """Like :func:`saturated_vapour_pressure` but as a daily average.
 
     Parameters
     ----------
     t_air_24 : float
-        daily air temperature
+        daily air temperature, 
         :math:`T_{a,24}`
         [C]
 
     Returns
     -------
     svp_24 : float
-        daily saturated vapour pressure
+        daily saturated vapour pressure, 
         :math:`e_{s,24}`
         [mbar]
 
@@ -503,19 +508,19 @@ def saturated_vapour_pressure_daily(t_air_24):
 
 
 def saturated_vapour_pressure_inst(t_air_i):
-    """Like :func:`saturated_vapour_pressure` but as an instantaneous value
+    """Like :func:`saturated_vapour_pressure` but as an instantaneous value.
 
     Parameters
     ----------
     t_air_i : float
-        instantaneous air temperature
+        instantaneous air temperature, 
         :math:`T_{a,i}`
         [C]
 
     Returns
     -------
     svp_i : float
-        instantaneous saturated vapour pressure
+        instantaneous saturated vapour pressure, 
         :math:`e_{s,i}`
         [mbar]
 
@@ -525,26 +530,27 @@ def saturated_vapour_pressure_inst(t_air_i):
 
 def vapour_pressure(svp, rh):
     r"""
-    Computes the vapour pressure :math:`e_a` in [mbar]
+    Computes the vapour pressure :math:`e_a` in [mbar].
 
     .. math ::
-        e_{a}=\frac{\phi}{100}e_{s}
+
+        e_{a}=\frac{\phi}{100} \cdot e_{s}
 
     Parameters
     ----------
     svp : float
-        saturated vapour pressure
+        saturated vapour pressure, 
         :math:`e_s`
         [mbar]
     rh : float
-        relative humidity
+        relative humidity, 
         :math:`\phi`
         [%]
 
     Returns
     -------
     vp : float
-        vapour pressure
+        vapour pressure, 
         :math:`e_{a}`
         [mbar]
 
@@ -566,7 +572,8 @@ def slope_saturated_vapour_pressure(t_air):
     [mbar] which in itself is a function of :math:`T_a`.
 
     .. math ::
-        \Delta=\frac{4098e_{s}}{\left(237.3+T_{a}\right)^{2}}
+
+        \Delta=\frac{4098 \cdot e_{s}}{\left(237.3+T_{a}\right)^{2}}
 
     for :math:`e_s` see :func:`saturated_vapour_pressure`
 
@@ -596,7 +603,7 @@ def slope_saturated_vapour_pressure(t_air):
 
 
 def slope_saturated_vapour_pressure_daily(t_air_24):
-    """Like :func:`slope_saturated_vapour_pressure` but as a daily average
+    """Like :func:`slope_saturated_vapour_pressure` but as a daily average.
 
     Parameters
     ----------
@@ -618,20 +625,20 @@ def slope_saturated_vapour_pressure_daily(t_air_24):
 
 
 def slope_saturated_vapour_pressure_inst(t_air_i):
-    """Like :func:`slope_saturated_vapour_pressure` but as an instantaneous
+    """Like :func:`slope_saturated_vapour_pressure` but as an instantaneous.
     value
 
     Parameters
     ----------
     t_air_i : float
-        instantaneous air temperature
+        instantaneous air temperature, 
         :math:`T_{a,i}`
         [C]
 
     Returns
     -------
     ssvp_i : float
-        instantaneous slope of saturated vapour pressure curve
+        instantaneous slope of saturated vapour pressure curve, 
         :math:`e_{s,i}`
         [mbar]
     """
@@ -640,19 +647,20 @@ def slope_saturated_vapour_pressure_inst(t_air_i):
 
 def vapour_pressure_deficit(svp, vp):
     r"""
-    Computes the vapour pressure deficit :math:`\Delta_e` in [mbar]
+    Computes the vapour pressure deficit :math:`\Delta_e` in [mbar].
 
     .. math ::
+
         \Delta_e=e_s-e_a
 
     Parameters
     ----------
     svp : float
-        saturated vapour pressure
+        saturated vapour pressure, 
         :math:`e_s`
         [mbar]
     vp : float
-        actual vapour pressure
+        actual vapour pressure, 
         :math:`e_a`
         [mbar]
 
@@ -679,16 +687,16 @@ def vapour_pressure_deficit(svp, vp):
 
 
 def vapour_pressure_deficit_daily(svp_24, vp_24):
-    """Like :func:`vapour_pressure_deficit` but as a daily average
+    """Like :func:`vapour_pressure_deficit` but as a daily average.
 
     Parameters
     ----------
     svp_24 : float
-        daily saturated vapour pressure
+        daily saturated vapour pressure, 
         :math:`e_{s,24}`
         [mbar]
     vp_24 : float
-        daily actual vapour pressure
+        daily actual vapour pressure, 
         :math:`e_{a,24}`
         [mbar]
 
@@ -709,8 +717,9 @@ def air_pressure(z, p_air_0=1013.25):
     increasing elevation.
 
     .. math ::
-        P=P_{0}\left(\frac{T_{ref,0,K}-\alpha_{1}\left(z-z_{0}\right)}
-        {T_{ref,0,K}}\right)^{\frac{g}{\alpha{}_{1^{R}}}}
+
+        P=P_{0} \cdot \left(\frac{T_{ref,0,K}-\alpha_{1} \cdot \left(z-z_{0}\right)}
+        {T_{ref,0,K}}\right)^{\frac{g}{-\alpha_{1}\cdot R }}
 
     where the following constants are used
 
@@ -719,23 +728,23 @@ def air_pressure(z, p_air_0=1013.25):
       :math:`z_0` = 293.15 K
     * :math:`g` = gravitational acceleration = 9.807 [m/s2]
     * :math:`R` = specific gas constant = 287.0 [J kg-1 K-1]
-    * :math:`\alpha_1` = constant lapse rate for moist air = 0.0065 [K m-1]
+    * :math:`\alpha_{1}` = constant lapse rate for moist air = 0.0065 [K m-1]
 
     Parameters
     ----------
     z : float
-        elevation
+        elevation, 
         :math:`z`
         [m]
     p_air_0 : float
-        air pressure at sea level
+        air pressure at sea level, 
         :math:`P_0`
         [mbar]
 
     Returns
     -------
     p_air : float
-        air pressure
+        air pressure, 
         :math:`P`
         [mbar]
 
@@ -750,23 +759,23 @@ def air_pressure(z, p_air_0=1013.25):
 
 
 def air_pressure_daily(z, p_air_0_24=1013.25):
-    r"""Like :func:`air_pressure` but as a daily average
+    r"""Like :func:`air_pressure` but as a daily average.
 
     Parameters
     ----------
     z : float
-        elevation
+        elevation, 
         :math:`z`
         [m]
     p_air_0_24 : float
-        daily air pressure at sea level
+        daily air pressure at sea level, 
         :math:`P_{0,24}`
         [mbar]
 
     Returns
     -------
     p_air_24 : float
-        daily air pressure
+        daily air pressure, 
         :math:`P_{24}`
         [mbar]
 
@@ -776,10 +785,11 @@ def air_pressure_daily(z, p_air_0_24=1013.25):
 
 def dry_air_density(p_air, vp, t_air_k):
     r"""
-    Computes dry air density :math:`\rho_{d}` in [kg m-3]
+    Computes dry air density :math:`\rho_{d}` in [kg m-3].
 
     .. math ::
-        \rho_{d}=\frac{P-e_{a}}{\Re T_{a,K}}
+
+        \rho_{d}=\frac{P-e_{a}}{\Re \cdot T_{a,K}}
 
     where the following constants are used
 
@@ -788,22 +798,22 @@ def dry_air_density(p_air, vp, t_air_k):
     Parameters
     ----------
     p_air : float
-        air pressure
+        air pressure, 
         :math:`P`
         [mbar]
     vp : float
-        vapour pressure
+        vapour pressure, 
         :math:`e_{a}`
         [mbar]
     t_air_k : float
-        daily air temperature
+        daily air temperature, 
         :math:`T_{a}`
         [K]
 
     Returns
     -------
     ad_dry : float
-        dry air density
+        dry air density, 
         :math:`\rho_{d}`
         [kg m-3]
 
@@ -819,27 +829,27 @@ def dry_air_density(p_air, vp, t_air_k):
 
 def dry_air_density_daily(p_air_24, vp_24, t_air_k_24):
     r"""
-    Like :func:`dry_air_density` but as a daily average
+    Like :func:`dry_air_density` but as a daily average.
 
     Parameters
     ----------
     p_air_24 : float
-        daily air pressure
+        daily air pressure, 
         :math:`P_{24}`
         [mbar]
     vp_24 : float
-        daily vapour pressure
+        daily vapour pressure, 
         :math:`e_{a,24}`
         [mbar]
     t_air_k_24 : float
-        daily air temperature
+        daily air temperature, 
         :math:`T_{a,24}`
         [K]
 
     Returns
     -------
     ad_dry_24 : float
-        daily dry air density
+        daily dry air density, 
         :math:`\rho_{d,24}`
         [kg m-3]
     """
@@ -848,27 +858,27 @@ def dry_air_density_daily(p_air_24, vp_24, t_air_k_24):
 
 def dry_air_density_inst(p_air_i, vp_i, t_air_k_i):
     r"""
-    Like :func:`dry_air_density` but as an instantaneous value
+    Like :func:`dry_air_density` but as an instantaneous value.
 
     Parameters
     ----------
     p_air_i : float
-        instantaneous air pressure
+        instantaneous air pressure, 
         :math:`P_{i}`
         [mbar]
     vp_i : float
-        instantaneous vapour pressure
+        instantaneous vapour pressure, 
         :math:`e_{a,i}`
         [mbar]
     t_air_k_i : float
-        instantaneous air temperature
+        instantaneous air temperature, 
         :math:`T_{a,i}`
         [K]
 
     Returns
     -------
     ad_dry_i : float
-        instantaneous dry air density
+        instantaneous dry air density, 
         :math:`\rho_{d,i}`
         [kg m-3]
     """
@@ -877,30 +887,31 @@ def dry_air_density_inst(p_air_i, vp_i, t_air_k_i):
 
 def moist_air_density(vp, t_air_k):
     r"""
-    Computes moist air density :math:`\rho_{s}` in [kg m-3]
+    Computes moist air density :math:`\rho_{s}` in [kg m-3].
 
     .. math ::
-        \rho_{s}=\frac{e_{a}}{R_{v}T_{a,K}}
 
-    where the following constants are used
+        \rho_{s}=\frac{e_{a}}{R_{v} \cdot T_{a,K}}
+
+    where:
 
     * :math:`R_v` = gas constant for moist air = 4.61 mbar K-1 m3 kg-1
 
     Parameters
     ----------
     vp : float
-        vapour pressure
+        vapour pressure, 
         :math:`e_{a}`
         [mbar]
     t_air_k : float
-        air temperature
+        air temperature, 
         :math:`T_{a,K}`
         [K]
 
     Returns
     -------
     ad_moist : float
-        moist air density
+        moist air density, 
         :math:`\rho_{s}`
         [kg m-3]
 
@@ -916,23 +927,23 @@ def moist_air_density(vp, t_air_k):
 
 def moist_air_density_daily(vp_24, t_air_k_24):
     r"""
-    Like :func:`moist_air_density` but as a daily average
+    Like :func:`moist_air_density` but as a daily average.
 
     Parameters
     ----------
     vp_24 : float
-        daily vapour pressure
+        daily vapour pressure, 
         :math:`e_{a,24}`
         [mbar]
     t_air_k_24 : float
-        daily air temperature
+        daily air temperature, 
         :math:`T_{a,K,24}`
         [K]
 
     Returns
     -------
     ad_moist_24 : float
-        daily moist air density
+        daily moist air density, 
         :math:`\rho_{s,24}`
         [kg m-3]
 
@@ -942,23 +953,23 @@ def moist_air_density_daily(vp_24, t_air_k_24):
 
 def moist_air_density_inst(vp_i, t_air_k_i):
     r"""
-    Like :func:`moist_air_density` but as an instantaneous value
+    Like :func:`moist_air_density` but as an instantaneous value.
 
     Parameters
     ----------
     vp_i : float
-        instantaneous vapour pressure
+        instantaneous vapour pressure, 
         :math:`e_{a,i}`
         [mbar]
     t_air_k_i : float
-        instantaneous air temperature
+        instantaneous air temperature, 
         :math:`T_{a,K,i}`
         [K]
 
     Returns
     -------
     ad_moist_i : float
-        instantaneous moist air density
+        instantaneous moist air density, 
         :math:`\rho_{s,i}`
         [kg m-3]
 
@@ -968,26 +979,27 @@ def moist_air_density_inst(vp_i, t_air_k_i):
 
 def air_density(ad_dry, ad_moist):
     r"""
-    Computes air density :math:`\rho` in [kg m-3]
+    Computes air density :math:`\rho` in [kg m-3].
 
     .. math ::
+
         \rho=\rho_{s}+\rho_{d}
 
     Parameters
     ----------
     ad_dry : float
-        dry air density
+        dry air density, 
         :math:`\rho_{d}`
         [kg m-3]
     ad_moist : float
-        moist air density
+        moist air density, 
         :math:`\rho_{s}`
         [kg m-3]
 
     Returns
     -------
     ad : float
-        air density
+        air density, 
         :math:`\rho`
         [kg m-3]
 
@@ -1006,23 +1018,23 @@ def air_density(ad_dry, ad_moist):
 def air_density_daily(ad_dry_24, ad_moist_24):
     r"""
 
-    Like :func:`air_density` but as a daily average
+    Like :func:`air_density` but as a daily average.
 
     Parameters
     ----------
     ad_dry_24 : float
-        daily dry air density
+        daily dry air density, 
         :math:`\rho_{d,24}`
         [kg m-3]
     ad_moist_24 : float
-        daily moist air density
+        daily moist air density, 
         :math:`\rho_{s,24}`
         [kg m-3]
 
     Returns
     -------
     ad_24 : float
-        daily air density
+        daily air density, 
         :math:`\rho_{24}`
         [kg m-3]
 
@@ -1032,23 +1044,23 @@ def air_density_daily(ad_dry_24, ad_moist_24):
 
 def air_density_inst(ad_dry_i, ad_moist_i):
     r"""
-    Like :func:`air_density` but as a instantaneous value
+    Like :func:`air_density` but as a instantaneous value.
 
     Parameters
     ----------
     ad_dry_i : float
-        instantaneous dry air density
+        instantaneous dry air density, 
         :math:`\rho_{d,i}`
         [kg m-3]
     ad_moist_i : float
-        instantaneous moist air density
+        instantaneous moist air density, 
         :math:`\rho_{s,i}`
         [kg m-3]
 
     Returns
     -------
     ad_i : float
-        instantaneous air density
+        instantaneous air density, 
         :math:`\rho_{i}`
         [kg m-3]
 
@@ -1065,7 +1077,7 @@ def latent_heat(t_air):
 
     .. math ::
 
-        \lambda=(\lambda_0 + \Delta_\lambda T_{a})
+        \lambda=\lambda_0 + \Delta_\lambda \cdot T_{a}
 
     where the following constants are used
 
@@ -1075,14 +1087,14 @@ def latent_heat(t_air):
     Parameters
     ----------
     t_air : float
-        air temperature
+        air temperature, 
         :math:`T_a`
         [C]
 
     Returns
     -------
     lh : float
-        latent heat of evaporation
+        latent heat of evaporation, 
         :math:`\lambda`
         [J/kg]
 
@@ -1097,19 +1109,19 @@ def latent_heat(t_air):
 
 
 def latent_heat_daily(t_air_24):
-    """Like :func:`latent_heat` but as a daily average
+    """Like :func:`latent_heat` but as a daily average.
 
     Parameters
     ----------
     t_air_24 : float
-        daily air temperature
+        daily air temperature, 
         :math:`T_{a,24}`
         [C]
 
     Returns
     -------
     lh_24 : float
-        daily latent heat of evaporation
+        daily latent heat of evaporation, 
         :math:`\lambda_{24}`
         [J/kg]
 
@@ -1120,11 +1132,11 @@ def latent_heat_daily(t_air_24):
 def psychrometric_constant(p_air, lh):
     r"""
     Computes the psychrometric constant :math:`\gamma` [mbar K-1] which
-    relates the partial pressure of water in air to the air temperature
+    relates the partial pressure of water in air to the air temperature.
 
     .. math ::
 
-        \gamma=\frac{Pc_{p}}{\varepsilon\lambda}
+        \gamma=\frac{P \cdot c_{p}}{\varepsilon \cdot \lambda}
 
     where the following constants are used
 
@@ -1135,18 +1147,18 @@ def psychrometric_constant(p_air, lh):
     Parameters
     ----------
     p_air : float
-        air pressure
+        air pressure, 
         :math:`P`
         [mbar]
     lh : float
-        latent heat of evaporation
+        latent heat of evaporation, 
         :math:`\lambda`
         [J/kg]
 
     Returns
     -------
     psy : float
-        psychrometric constant
+        psychrometric constant, 
         :math:`\gamma`
         [mbar K-1]
 
@@ -1163,23 +1175,23 @@ def psychrometric_constant(p_air, lh):
 
 
 def psychrometric_constant_daily(p_air_24, lh_24):
-    """Like :func:`psychrometric_constant` but as a daily average
+    """Like :func:`psychrometric_constant` but as a daily average.
 
     Parameters
     ----------
     p_air_24 : float
-        daily air pressure
+        daily air pressure, 
         :math:`P_{24}`
         [mbar]
     lh_24 : float
-        daily latent heat of evaporation
+        daily latent heat of evaporation, 
         :math:`\lambda_{24}`
         [J/kg]
 
     Returns
     -------
     psy_24 : float
-        daily psychrometric constant
+        daily psychrometric constant, 
         :math:`\gamma_{24}`
         [mbar K-1]
 
@@ -1190,31 +1202,32 @@ def psychrometric_constant_daily(p_air_24, lh_24):
 def wind_speed_blending_height(u, z_obs=2, z_b=100):
     r"""
     Computes the wind speed at blending height :math:`u_{b}` [m/s] using the
-    logarithmic wind profile
+    logarithmic wind profile.
 
     .. math ::
-        u_{b}=\frac{u_{obs}\ln\left(\frac{z_{b}}{z_{0,m}}\right)}
+
+        u_{b}=\frac{u_{obs} \cdot \ln\left(\frac{z_{b}}{z_{0,m}}\right)}
         {\ln\left(\frac{z_{obs}}{z_{0,m}}\right)}
 
     Parameters
     ----------
     u : float
-        wind speed at observation height
+        wind speed at observation height, 
         :math:`u_{obs}`
         [m/s]
     z_obs : float
-        observation height of wind speed
+        observation height of wind speed, 
         :math:`z_{obs}`
         [m]
     z_b : float
-        blending height
+        blending height, 
         :math:`z_{b}`
         [m]
 
     Returns
     -------
     u_b : float
-        wind speed at blending height
+        wind speed at blending height, 
         :math:`u_{b}`
         [m/s]
 
@@ -1235,27 +1248,27 @@ def wind_speed_blending_height(u, z_obs=2, z_b=100):
 
 
 def wind_speed_blending_height_daily(u_24, z_obs=2, z_b=100):
-    """Like :func:`wind_speed_blending_height` but as a daily average
+    """Like :func:`wind_speed_blending_height` but as a daily average.
 
     Parameters
     ----------
     u_24 : float
-        daily wind speed at observation height
+        daily wind speed at observation height, 
         :math:`u_{obs,24}`
         [m/s]
     z_obs : float
-        observation height of wind speed
+        observation height of wind speed, 
         :math:`z_{obs}`
         [m]
     z_b : float
-        blending height
+        blending height, 
         :math:`z_{b}`
         [m]
 
     Returns
     -------
     u_b_24 : float
-        daily wind speed at blending height
+        daily wind speed at blending height, 
         :math:`u_{b, 24}`
         [m/s]
 
@@ -1264,19 +1277,19 @@ def wind_speed_blending_height_daily(u_24, z_obs=2, z_b=100):
 
 
 def air_pressure_kpa2mbar(p_air_kpa):
-    """Like :func:`p_air`
+    """Like :func:`p_air`.
 
     Parameters
     ----------
     p_air_kpa : float
-        air pressure
+        air pressure, 
         :math:`Pair_{a}`
         [kpa]
 
     Returns
     -------
     p_air_mbar : float
-        air pressure
+        air pressure, 
         :math:`Pair_{a}`
         [mbar]
     """

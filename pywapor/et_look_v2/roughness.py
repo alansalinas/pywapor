@@ -1,5 +1,5 @@
 """
-    The roughness module contains all functions related to surface roughness
+    The roughness module contains all functions related to surface roughness.
 
 """
 import numpy as np
@@ -7,27 +7,28 @@ import numpy as np
 def orographic_roughness(slope, dem_resolution=1000.0):
     r"""
     Computes the orographic roughness, which is a function of the slope of the
-    terrain. Steeper slopes will increase the orographic roughness
+    terrain. Steeper slopes will increase the orographic roughness.
 
     .. math ::
-        z_{oro}=0.002\left(\frac{\left(x_{res}\frac{\Delta}{100}\right)}
+
+        z_{oro}=0.002 \cdot \left(\frac{\left(x_{res} \cdot \frac{\Delta}{100}\right)}
         {x_{res}}^{2}\right)
 
     Parameters
     ----------
     slope : float
-        slope
+        slope, 
         :math:`\Delta`
         [rad]
     dem_resolution : float
-        resolution of dem
+        resolution of dem, 
         :math:`x_{res}`
         [m]
 
     Returns
     -------
     z_oro : float
-        orographic roughness
+        orographic roughness, 
         :math:`z_{oro}`
         [m]
 
@@ -41,7 +42,7 @@ def roughness_length(lai, z_oro, z_obst, z_obst_max, land_mask=1):
     Computes the surface roughness length. The roughness length is related to
     the roughness characteristics. For the logarithmic wind-profile the
     surface roughness length is the height at which the wind speed is zero.
-    The roughness length is calculated differently for different types of land use
+    The roughness length is calculated differently for different types of land use.
 
     Land use is classified as follows:
 
@@ -57,37 +58,37 @@ def roughness_length(lai, z_oro, z_obst, z_obst_max, land_mask=1):
         0 & l=0\\
         z_{0,m} & l=1\\
         0.0001 & l=2\\
-        \frac{1}{7}z_{obst,max}+z_{oro} & l=3
+        \frac{1}{7} \cdot z_{obst,max}+z_{oro} & l=3
         \end{array}\end{cases}
 
 
     Parameters
     ----------
     lai : float
-        leaf area index
+        leaf area index, 
         :math:`I_{lai}`
         [-]
     z_oro : float
-        orographic roughness
+        orographic roughness, 
         :math:`z_{oro}`
         [m]
     z_obst : float
-        obstacle height
+        obstacle height, 
         :math:`z_{obst}`
         [m]
     z_obst_max : float
-        maximum obstacle height
+        maximum obstacle height, 
         :math:`z_{obst,max}`
         [m]
     land_mask : int
-        land use classification
+        land use classification, 
         :math:`l`
         [-]
 
     Returns
     -------
     z0m : float
-        roughness length
+        roughness length, 
         :math:`z_{0,m}`
         [m]
 
@@ -140,19 +141,19 @@ def obstacle_height(ndvi, z_obst_max, ndvi_obs_min=0.25,
     Parameters
     ----------
     ndvi : float
-        normalized difference vegetation index
+        normalized difference vegetation index, 
         :math:`I_{ndvi}`
         [-]
     ndvi_obs_min : float
-        normalized difference vegetation index @ min obstacle height
+        normalized difference vegetation index @ min obstacle height, 
         :math:`I_{ndvi,obs,min}`
         [-]
     ndvi_obs_max : float
-        normalized difference vegetation index @ max obstacle height
+        normalized difference vegetation index @ max obstacle height, 
         :math:`I_{ndvi,obs,max}`
         [-]
     obs_fr : float
-        ratio of minimum and maximum obstacle height
+        ratio of minimum and maximum obstacle height, 
         :math:`f_{obs}`
         [-]
     z_obst_max : float
@@ -163,7 +164,7 @@ def obstacle_height(ndvi, z_obst_max, ndvi_obs_min=0.25,
     Returns
     -------
     z_obst : float
-        obstacle height
+        obstacle height, 
         :math:`z_{obst}`
         [m]
 
@@ -206,28 +207,28 @@ def displacement_height(lai, z_obst, land_mask=1, c1=1):
         z_{disp}=\begin{cases}
         \begin{array}{cc}
         0 & l=0\\
-        z_{obst}\left(1-\frac{1-\exp\left(-\sqrt{c_{1}I_{lai}}\right)}
-        {\sqrt{c_{1}I_{lai}}}\right) & l=1\\
+        z_{obst}\left(1-\frac{1-\exp\left(-\sqrt{c_{1} \cdot I_{lai}}\right)}
+        {\sqrt{c_{1} \cdot I_{lai}}}\right) & l=1\\
         0 & l=2\\
-        \frac{2}{3}z_{obst} & l=3
+        \frac{2}{3} \cdot z_{obst} & l=3
         \end{array}\end{cases}
 
     Parameters
     ----------
     lai : float
-        leaf area index
+        leaf area index, 
         :math:`I_{lai}`
         [-]
     z_obst : float
-        obstacle height
+        obstacle height, 
         :math:`z_{obst}`
         [m]
     land_mask : int
-        land use classification
+        land use classification, 
         :math:`l`
         [-]
     c1 : float
-        exponential growth rate displacement height function
+        exponential growth rate displacement height function, 
         :math:`c_1`
         [-]
 
@@ -235,7 +236,7 @@ def displacement_height(lai, z_obst, land_mask=1, c1=1):
     Returns
     -------
     disp : float
-        displacement height
+        displacement height, 
         :math:`{disp}`
         [m]
 
