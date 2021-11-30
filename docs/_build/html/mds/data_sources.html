@@ -1,0 +1,386 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Temporal ET_Look Data (composites) &mdash; pyWaPOR  documentation</title>
+      <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="../_static/css/theme.css" type="text/css" />
+  <!--[if lt IE 9]>
+    <script src="../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script data-url_root="../" id="documentation_options" src="../_static/documentation_options.js"></script>
+        <script src="../_static/jquery.js"></script>
+        <script src="../_static/underscore.js"></script>
+        <script src="../_static/doctools.js"></script>
+        <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+    <script src="../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+            <a href="../index.html" class="icon icon-home"> pyWaPOR
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="../installation.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../data_sources.html">Data</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../_user_guide.html">User Guide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../_functions.html">Functions</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../bibliography.html">Bibliography</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">pyWaPOR</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../index.html" class="icon icon-home"></a> &raquo;</li>
+      <li>Temporal ET_Look Data (composites)</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="../_sources/mds/data_sources.md.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  
+<style>
+/* CSS overrides for sphinx_rtd_theme */
+
+/* 24px margin */
+.nbinput.nblast.container,
+.nboutput.nblast.container {
+    margin-bottom: 19px;  /* padding has already 5px */
+}
+
+/* ... except between code cells! */
+.nblast.container + .nbinput.container {
+    margin-top: -19px;
+}
+
+.admonition > p:before {
+    margin-right: 4px;  /* make room for the exclamation icon */
+}
+
+/* Fix math alignment, see https://github.com/rtfd/sphinx_rtd_theme/pull/686 */
+.math {
+    text-align: unset;
+}
+</style>
+<p>To run the ETLook model, two types of spatial variables are required, temporal and static data. <strong>Each of these variables can be collected from whichever source you wish to use</strong>, as long as you make sure the units are correct, the data is stored as a GeoTIFF (1 band per file, 1 file for each variable and date), the files all have the same no-data-value and they all have the same projection and resolution.</p>
+<p><strong>For your convenience, the pyWAPOR package has a function that can collect all this data from selected sources</strong> and make sure the data is stored in the correct format and folder structure.</p>
+<section id="temporal-et-look-data-composites">
+<h1>Temporal ET_Look Data (composites)<a class="headerlink" href="#temporal-et-look-data-composites" title="Permalink to this headline"></a></h1>
+<table class="docutils align-default">
+<colgroup>
+<col style="width: 33%" />
+<col style="width: 33%" />
+<col style="width: 33%" />
+</colgroup>
+<thead>
+<tr class="row-odd"><th class="head"><p>Variable</p></th>
+<th class="head"><p>Unit</p></th>
+<th class="head"><p>Selected Sources</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>Normalized Difference Vegetation Index (NDVI)</p></td>
+<td><p>—</p></td>
+<td><p>MOD13, MYD13, PROBA-V</p></td>
+</tr>
+<tr class="row-odd"><td><p>Albedo</p></td>
+<td><p>—</p></td>
+<td><p>MCD43, PROBA-V</p></td>
+</tr>
+<tr class="row-even"><td><p>Precipitation</p></td>
+<td><p>mm/day</p></td>
+<td><p>CHIRPS</p></td>
+</tr>
+<tr class="row-odd"><td><p>Air Pressure at sea level</p></td>
+<td><p>kPa</p></td>
+<td><p>MERRA-2, GEOS-5</p></td>
+</tr>
+<tr class="row-even"><td><p>Specific Humidity</p></td>
+<td><p>kg/kg</p></td>
+<td><p>MERRA-2, GEOS-5</p></td>
+</tr>
+<tr class="row-odd"><td><p>Air Temperature</p></td>
+<td><p>°C</p></td>
+<td><p>MERRA-2, GEOS-5</p></td>
+</tr>
+<tr class="row-even"><td><p>Windspeed</p></td>
+<td><p>m/s</p></td>
+<td><p>MERRA-2, GEOS-5</p></td>
+</tr>
+<tr class="row-odd"><td><p>Solar Radiation</p></td>
+<td><p>W/m2</p></td>
+<td><p>MERRA-2</p></td>
+</tr>
+<tr class="row-even"><td><p>Soil Saturation</p></td>
+<td><p>—</p></td>
+<td><p>from pywapor.se_root()</p></td>
+</tr>
+</tbody>
+</table>
+</section>
+<section id="temporal-se-root-data-instantaneous">
+<h1>Temporal SE_Root Data (instantaneous)<a class="headerlink" href="#temporal-se-root-data-instantaneous" title="Permalink to this headline"></a></h1>
+<table class="docutils align-default">
+<colgroup>
+<col style="width: 33%" />
+<col style="width: 33%" />
+<col style="width: 33%" />
+</colgroup>
+<thead>
+<tr class="row-odd"><th class="head"><p>Variable</p></th>
+<th class="head"><p>Unit</p></th>
+<th class="head"><p>Selected Sources</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>Normalized Difference Vegetation Index (NDVI)</p></td>
+<td><p>—</p></td>
+<td><p>MOD13, MYD13, PROBA-V</p></td>
+</tr>
+<tr class="row-odd"><td><p>Air Pressure at sea level</p></td>
+<td><p>kPa</p></td>
+<td><p>MERRA-2, GEOS-5</p></td>
+</tr>
+<tr class="row-even"><td><p>Air Pressure at surface level</p></td>
+<td><p>kPa</p></td>
+<td><p>MERRA-2, GEOS-5</p></td>
+</tr>
+<tr class="row-odd"><td><p>Specific Humidity</p></td>
+<td><p>kg/kg</p></td>
+<td><p>MERRA-2, GEOS-5</p></td>
+</tr>
+<tr class="row-even"><td><p>Air Temperature</p></td>
+<td><p>°C</p></td>
+<td><p>MERRA-2, GEOS-5</p></td>
+</tr>
+<tr class="row-odd"><td><p>Windspeed</p></td>
+<td><p>m/s</p></td>
+<td><p>MERRA-2, GEOS-5</p></td>
+</tr>
+<tr class="row-even"><td><p>Total Precipitable Water Vapour</p></td>
+<td><p>mm</p></td>
+<td><p>MERRA-2, GEOS-5</p></td>
+</tr>
+<tr class="row-odd"><td><p>Land Surface Temperature (LST)</p></td>
+<td><p>K</p></td>
+<td><p>MOD11, MYD11</p></td>
+</tr>
+</tbody>
+</table>
+</section>
+<section id="static-data">
+<h1>Static Data<a class="headerlink" href="#static-data" title="Permalink to this headline"></a></h1>
+<table class="docutils align-default">
+<colgroup>
+<col style="width: 33%" />
+<col style="width: 33%" />
+<col style="width: 33%" />
+</colgroup>
+<thead>
+<tr class="row-odd"><th class="head"><p>Variable</p></th>
+<th class="head"><p>Unit</p></th>
+<th class="head"><p>Selected Sources</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>Landcover</p></td>
+<td><p>—</p></td>
+<td><p>WaPOR, GlobCover</p></td>
+</tr>
+<tr class="row-odd"><td><p>Digital Elevation Model</p></td>
+<td><p>m.a.s.l</p></td>
+<td><p>SRTM</p></td>
+</tr>
+<tr class="row-even"><td><p>Air Temperature (yearly amplitude)</p></td>
+<td><p>K</p></td>
+<td><p>GLDAS</p></td>
+</tr>
+<tr class="row-odd"><td><p>Latitude</p></td>
+<td><p>DD</p></td>
+<td><p>from NDVI</p></td>
+</tr>
+<tr class="row-even"><td><p>Longitude</p></td>
+<td><p>DD</p></td>
+<td><p>from NDVI</p></td>
+</tr>
+<tr class="row-odd"><td><p>Slope</p></td>
+<td><p>°</p></td>
+<td><p>from Elevation</p></td>
+</tr>
+<tr class="row-even"><td><p>Slope Aspect</p></td>
+<td><p>°</p></td>
+<td><p>from Elevation</p></td>
+</tr>
+<tr class="row-odd"><td><p>Bulk Stomatal Resistance</p></td>
+<td><p>s/m</p></td>
+<td><p>from Landcover</p></td>
+</tr>
+<tr class="row-even"><td><p>Landmask</p></td>
+<td><p>—</p></td>
+<td><p>from Landcover</p></td>
+</tr>
+<tr class="row-odd"><td><p>Maximum Light Use Efficiency</p></td>
+<td><p>gr/MJ</p></td>
+<td><p>from Landcover</p></td>
+</tr>
+<tr class="row-even"><td><p>Maximum Obstacle Height</p></td>
+<td><p>m</p></td>
+<td><p>from Landcover</p></td>
+</tr>
+</tbody>
+</table>
+</section>
+<section id="sources">
+<h1>Sources<a class="headerlink" href="#sources" title="Permalink to this headline"></a></h1>
+<table class="docutils align-default">
+<colgroup>
+<col style="width: 20%" />
+<col style="width: 20%" />
+<col style="width: 20%" />
+<col style="width: 20%" />
+<col style="width: 20%" />
+</colgroup>
+<thead>
+<tr class="row-odd"><th class="head"><p>Source</p></th>
+<th class="head"><p>Temporal Availability</p></th>
+<th class="head"><p>Temporal Resolution</p></th>
+<th class="head"><p>Spatial Resolution</p></th>
+<th class="head"><p>Used For</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p><a class="reference external" href="https://lpdaac.usgs.gov/products/mod13q1v006/">MOD13</a></p></td>
+<td><p>2000-02-18 - ongoing</p></td>
+<td><p>16-Daily</p></td>
+<td><p>250m</p></td>
+<td><p>NDVI</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference external" href="https://lpdaac.usgs.gov/products/myd13q1v006/">MYD13</a></p></td>
+<td><p>2002-07-04 - ongoing</p></td>
+<td><p>16-Daily</p></td>
+<td><p>250m</p></td>
+<td><p>NDVI</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference external" href="https://lpdaac.usgs.gov/products/mcd43a3v006/">MCD43</a></p></td>
+<td><p>2000-02-16 - ongoing</p></td>
+<td><p>Daily</p></td>
+<td><p>500m</p></td>
+<td><p>Albedo</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference external" href="https://lpdaac.usgs.gov/products/mod11a1v006/">MOD11</a></p></td>
+<td><p>2000-02-24 - ongoing</p></td>
+<td><p>Daily</p></td>
+<td><p>1000m</p></td>
+<td><p>LST</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference external" href="https://lpdaac.usgs.gov/products/myd11a1v006/">MYD11</a></p></td>
+<td><p>2002-07-04 - ongoing</p></td>
+<td><p>Daily</p></td>
+<td><p>1000m</p></td>
+<td><p>LST</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference external" href="https://www.vito-eodata.be/collectioncatalogue/srv/eng/catalog.search#/metadata/urn:ogc:def:EOP:VITO:PROBAV_S5-TOC_100M_V001">PROBAV</a></p></td>
+<td><p>2014-03-11 - ongoing</p></td>
+<td><p>5-Daily</p></td>
+<td><p>100m</p></td>
+<td><p>NDVI, Albedo</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference external" href="https://geos5.org">GEOS5</a></p></td>
+<td><p>2017-12-01 - ongoing</p></td>
+<td><p>3-Hourly</p></td>
+<td><p>0.3125°×0.25°</p></td>
+<td><p>Meteo</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference external" href="https://gmao.gsfc.nasa.gov/reanalysis/MERRA-2/">MERRA2</a></p></td>
+<td><p>1980-01-01 - ongoing</p></td>
+<td><p>Hourly</p></td>
+<td><p>0.625°×0.5°</p></td>
+<td><p>Meteo</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference external" href="https://www.chc.ucsb.edu/data/chirps">CHIRPS</a></p></td>
+<td><p>1981-01-01 - ongoing</p></td>
+<td><p>Daily</p></td>
+<td><p>0.05°</p></td>
+<td><p>Precipitation</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference external" href="https://wapor.apps.fao.org/catalog/WAPOR_2/1/L1_LCC_A">WAPOR</a></p></td>
+<td><p>2009 - 2020</p></td>
+<td><p>Yearly</p></td>
+<td><p>250m</p></td>
+<td><p>Landcover</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference external" href="http://due.esrin.esa.int/page_globcover.php">GLOBCOVER</a></p></td>
+<td><p>2009</p></td>
+<td><p>Single</p></td>
+<td><p>250m</p></td>
+<td><p>Landcover</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference external" href="https://srtm.csi.cgiar.org">SRTM</a></p></td>
+<td><p>2009</p></td>
+<td><p>Single</p></td>
+<td><p>90m</p></td>
+<td><p>DEM</p></td>
+</tr>
+</tbody>
+</table>
+</section>
+
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2021, FAO.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>
