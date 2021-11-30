@@ -1,4 +1,3 @@
-
 """
 Author: Laust Færch
 Module: Collect/PROBAV
@@ -19,6 +18,12 @@ from requests.exceptions import HTTPError
 from datetime import datetime, timedelta
 from aiohttp import ClientResponseError, ServerDisconnectedError
 from asyncio import TimeoutError
+
+# import importlib.util
+# spec = importlib.util.spec_from_file_location("vito_download", "/Users/hmcoerver/Git/wapor-et-look/pywapor/collect/PROBAV/vito-download/vito_download/download.py")
+# foo = importlib.util.module_from_spec(spec)
+# spec.loader.exec_module(foo)
+from pywapor.collect.PROBAV import download as foo
 
 # Required for Python 3.6 and 3.7
 import nest_asyncio
@@ -51,7 +56,7 @@ def download_data(download_dir, start_date, end_date, latitude_extent, longitude
         end_date = end_date + timedelta(days=6)
     delta = end_date - start_date
 
-    waitbar = tqdm(total = (delta.days + 1)*10, position = 0, unit = "days", unit_scale = 0.1)
+    waitbar = tqdm(total = (delta.days + 1)*10, position = 0, unit_scale = True)
     # Loop over all dates
     for i in range(delta.days + 1):
         date = start_date + timedelta(days=i)
@@ -77,12 +82,12 @@ def download_data(download_dir, start_date, end_date, latitude_extent, longitude
         while no_of_attempts <= max_retries:
             try:
                 # download all matching files
-                local_files = vito.download_data(url, username=username, password=password,
+                local_files = foo.download_data(url, username=username, password=password,
                                                  download_dir=download_dir, include='*.HDF5',
                                                  download_jobs=4)
-                waitbar.set_description_str(date.strftime("%Y.%m.%d: Downloading..."))
+                waitbar.set_description_str(date.strftime("%Y.%m.%d: Starting dl..."))
                 downloaded_files = list(local_files)
-                waitbar.set_description_str(date.strftime("%Y.%m.%d:               "))
+                waitbar.set_description_str(date.strftime("%Y.%m.%d: dl finished   "))
 
                 for file in downloaded_files:
                     # If file is corrupted, delete it and retry
@@ -110,6 +115,8 @@ def download_data(download_dir, start_date, end_date, latitude_extent, longitude
 
         # convert downloaded HDF5 files to tif files
         for hdf_file in downloaded_files:
+            waitbar.set_description_str(date.strftime("%Y.%m.%d: Converting to tif "))
+
             da = _hdf5_to_dataarray(hdf_file, 'LEVEL3/NDVI', 'NDVI')
             _dataarray_to_tif(da, str(Path(hdf_file).parent / Path(hdf_file).stem) + '_NDVI.tif')
             waitbar.update(1)
@@ -144,6 +151,8 @@ def download_data(download_dir, start_date, end_date, latitude_extent, longitude
                 input_files.append(str(tif_file))
 
         for product in ["NDVI_PROBAV_-_5-daily_", "Albedo_PROBAV_-_5-daily_"]:
+            waitbar.set_description_str(date.strftime("%Y.%m.%d: Saving finals.    "))
+
             output_file = str(download_dir /
                               ('%s/%s_%s.tif' % (product.split("_")[0], product[:-1], date.strftime("%Y.%m.%d"))))
             data_files = _preprocess_inputs(input_files, product)
@@ -162,6 +171,8 @@ def download_data(download_dir, start_date, end_date, latitude_extent, longitude
     if delete_hdf5:
         for file in list(download_dir.glob('*.HDF5')):
             os.remove(file)
+
+    waitbar.close()
 
     return()
 
@@ -309,16 +320,36 @@ def _preprocess_inputs(input_files, product):
 
 # if __name__ == "__main__":
 
-    # download_dir = r"/Volumes/Data/FAO/WaPOR_vs_pyWaPOR/pyWAPOR_v1/RAW"
-    # latitude_extent = [28.9, 29.7]
-    # longitude_extent = [30.2, 31.2]
-    # start_date = "2021-07-01"
-    # end_date = "2021-07-10"
+#     download_dir = Path(r"/Users/hmcoerver/On My Mac/probav_test/PROBAV")
+#     latitude_extent = [28.9, 29.7]
+#     longitude_extent = [30.2, 31.2]
+#     start_date = "2021-07-01"
+#     end_date = "2021-07-11"
+#     username = ""
+#     password = ""
+#     buffer_dates = True
+
+#     download_data(Path(download_dir), start_date, end_date, latitude_extent, longitude_extent, username,
+#                   password, buffer_dates = True)
+
+    # import warnings
+    # warnings.simplefilter('always')
 
     # url = vito.build_url(product='Proba-V-S5-TOC', year=2021, month=7, day=6,
     #                     extent={'xmin': longitude_extent[0], 'xmax': longitude_extent[1],
     #                             'ymin': latitude_extent[0], 'ymax': latitude_extent[1]})
 
-    # local_files = vito.download_data(url, username='broodj3ham', password='N0tmyrealpassword',
+    # import importlib.util
+    # spec = importlib.util.spec_from_file_location("vito_download", "/Users/hmcoerver/Git/wapor-et-look/pywapor/collect/PROBAV/vito-download/vito_download/download.py")
+    # foo = importlib.util.module_from_spec(spec)
+    # spec.loader.exec_module(foo)
+
+    # local_files = foo.download_data(url, username=username, password=pw,
     #                                     download_dir=download_dir, include='*.HDF5',
     #                                     download_jobs=4)
+
+
+
+    #%%
+
+
