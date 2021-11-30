@@ -18,6 +18,9 @@ import itsybitsy
 logger = logging.getLogger(__name__)
 
 def copyfileobj(fsrc, fdst, callback, length=0):
+    """
+    https://stackoverflow.com/questions/29967487/get-progress-back-from-shutil-file-copy-thread
+    """
     try:
         # check for optimisation opportunity
         if "b" in fsrc.mode and "b" in fdst.mode and fsrc.readinto:
@@ -27,7 +30,10 @@ def copyfileobj(fsrc, fdst, callback, length=0):
         pass
 
     if not length:
-        length = shutil.COPY_BUFSIZE
+        try:
+            length = shutil.COPY_BUFSIZE
+        except AttributeError:
+            length = 1024*1024
 
     fsrc_read = fsrc.read
     fdst_write = fdst.write
