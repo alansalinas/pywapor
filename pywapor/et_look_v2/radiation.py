@@ -7,24 +7,25 @@ def interception_wm2(int_mm, lh_24):
     is provide in mm/day
 
     .. math ::
-        I = \frac{\lambda I^*}{86400}
+
+        I = \frac{\lambda \cdot I^*}{86400}
 
     Parameters
     ----------
     int_mm : float
-        interception
+        interception, 
         :math:`I^*`
         [mm day-1]
 
     lh_24 : float
-        daily latent heat for evaporation
+        daily latent heat for evaporation, 
         :math:`\lambda`
         [J kg-1]
 
     Returns
     -------
     int_wm2 : float
-        interception
+        interception, 
         :math:`I`
         [W m-2]
 
@@ -47,19 +48,20 @@ def soil_fraction(lai):
     no radiation reaches the soil.
 
     .. math ::
-        s_f = \exp\left(-0.6*I_{lai}\right)
+
+        s_f = \exp^{-0.6 \cdot I_{lai}}
 
     Parameters
     ----------
     lai : float
-        leaf area index
+        leaf area index, 
         :math:`I_{lai}`
         [-]
 
     Returns
     -------
     sf_soil : float
-        soil fraction
+        soil fraction, 
         :math:`s_f`
         [-]
 
@@ -79,9 +81,10 @@ def longwave_radiation_fao_etref(t_air_k_24, vp_24, trans_24):
     lw_offset are being provided as defaults
 
     .. math ::
-        L^{*}=\sigma\left(T_{a,K}\right)^{4}
-        \left(vp_off-vp_slp\sqrt{0.1e_{a}}
-        \right)\left(lw_slp\frac{\tau}{0.75}+lw_off\right)
+
+        L^{*}=\sigma\left(T_{a,K}\right)^{4} \cdot
+        \left(vp_{off}-vp_{slope}\sqrt{0.1e_{a}} \cdot 
+        \right)\left(lw_{slope}\frac{\tau}{0.75}+lw_{off}\right)
 
     where the following constant is used
 
@@ -90,22 +93,22 @@ def longwave_radiation_fao_etref(t_air_k_24, vp_24, trans_24):
     Parameters
     ----------
     t_air_k_24 : float
-        daily air temperature in Kelvin
+        daily air temperature in Kelvin, 
         :math:`T_{a,K}`
         [-]
     vp_24 : float
-        daily vapour pressure
+        daily vapour pressure, 
         :math:`e_{a}`
         [mbar]
     trans_24 : float
-        daily atmospheric transmissivity
+        daily atmospheric transmissivity, 
         :math:`\tau`
         [-]
 
     Returns
     -------
     l_net : float
-        daily net longwave radiation
+        daily net longwave radiation, 
         :math:`L^{*}`
         [Wm-2]
 
@@ -129,6 +132,7 @@ def longwave_radiation_fao(t_air_k_24, vp_24, trans_24, vp_slope=0.14, vp_offset
     Computes the net longwave radiation according to the FAO 56 manual.
 
     .. math ::
+
         L^{*}=\sigma\left(T_{a,K}\right)^{4}
         \left(vp_{off}-vp_{slope}\sqrt{0.1e_{a}}
         \right)\left(lw_{slope}\frac{\tau}{0.75}+lw_{off}\right)
@@ -140,38 +144,38 @@ def longwave_radiation_fao(t_air_k_24, vp_24, trans_24, vp_slope=0.14, vp_offset
     Parameters
     ----------
     t_air_k_24 : float
-        daily air temperature in Kelvin
+        daily air temperature in Kelvin, 
         :math:`T_{a,K}`
         [-]
     vp_24 : float
-        daily vapour pressure
+        daily vapour pressure, 
         :math:`e_{a}`
         [mbar]
     trans_24 : float
-        daily atmospheric transmissivity
+        daily atmospheric transmissivity, 
         :math:`\tau`
         [-]
     vp_slope : float
-        slope of the vp-term in the FAO-56 longwave radiation relationship
+        slope of the vp-term in the FAO-56 longwave radiation relationship, 
         :math:`vp_{slope}`
         [-]
     vp_offset : float
-        offset of the vp-term in the FAO-56 longwave radiation relationship
+        offset of the vp-term in the FAO-56 longwave radiation relationship, 
         :math:`vp_{off}`
         [-]
     lw_slope : float
-        slope of the tau-term in the FAO-56 longwave radiation relationship
+        slope of the tau-term in the FAO-56 longwave radiation relationship, 
         :math:`lw_{slope}`
         [-]
     lw_offset : float
-        offset of the tau-term in the FAO-56 longwave radiation relationship
+        offset of the tau-term in the FAO-56 longwave radiation relationship, 
         :math:`lw_{off}`
         [-]
 
     Returns
     -------
     l_net : float
-        daily net longwave radiation
+        daily net longwave radiation, 
         :math:`L^{*}`
         [Wm-2]
 
@@ -190,31 +194,32 @@ def net_radiation(r0, ra_24, l_net, int_wm2):
     Computes the net radiation
 
     .. math ::
+
         Q^{*} = \left[\left(1-\alpha_{0}\right)S^{\downarrow}-L^{*}-I\right]
 
     Parameters
     ----------
     r0 : float
-        albedo
+        albedo, 
         :math:`\alpha_{0}`
         [-]
     ra_24 : float
-        daily solar radiation
+        daily solar radiation, 
         :math:`S^{\downarrow}`
         [Wm-2]
     l_net : float
-        daily net longwave radiation
+        daily net longwave radiation, 
         :math:`L^{*}`
         [wm-2]
     int_wm2 : float
-        interception
+        interception, 
         :math:`I`
         [Wm-2]
 
     Returns
     -------
     rn_24 : float
-        daily net radiation
+        daily net radiation, 
         :math:`Q^{*}`
         [Wm-2]
 
@@ -232,23 +237,24 @@ def net_radiation_canopy(rn_24, sf_soil):
     Computes the net radiation for the canopy
 
     .. math ::
+
         Q^{*}_{canopy} = \left(1-s_f\right) Q^{*}
 
     Parameters
     ----------
     rn_24 : float
-        net radiation
+        net radiation, 
         :math:`Q^{*}`
         [Wm-2]
     sf_soil : float
-        soil fraction
+        soil fraction, 
         :math:`s_f`
         [-]
 
     Returns
     -------
     rn_24_canopy : float
-        net radiation for the canopy
+        net radiation for the canopy, 
         :math:`Q^{*}_{canopy}`
         [Wm-2]
 
@@ -267,23 +273,24 @@ def net_radiation_soil(rn_24, sf_soil):
     Computes the net radiation for the soil
 
     .. math ::
-        Q^{*}_{soil} = s_f Q^{*}
+
+        Q^{*}_{soil} = s_f \cdot Q^{*}
 
     Parameters
     ----------
     rn_24 : float
-        net radiation
+        net radiation, 
         :math:`Q^{*}`
         [Wm-2]
     sf_soil : float
-        soil fraction
+        soil fraction, 
         :math:`s_f`
         [-]
 
     Returns
     -------
     rn_24_soil : float
-        net radiation for the soil
+        net radiation for the soil, 
         :math:`Q^{*}_{soil}`
         [Wm-2]
 
@@ -301,27 +308,28 @@ def net_radiation_grass(ra_24, l_net, r0_grass=0.23):
     Computes the net radiation for reference grass
 
     .. math ::
+
         Q^{*} = \left[\left(1-\alpha_{0, grass}\right)S^{\downarrow}-L^{*}-I\right]
 
     Parameters
     ----------
     ra_24 : float
-        daily solar radiation
+        daily solar radiation, 
         :math:`S^{\downarrow}`
         [Wm-2]
     l_net : float
-        daily net longwave radiation
+        daily net longwave radiation, 
         :math:`L^{*}`
         [wm-2]
     r0_grass : float
-        albedo for reference grass
+        albedo for reference grass, 
         :math:`\alpha_{0, grass}`
         [-]
 
     Returns
     -------
     rn_24_grass : float
-        daily net radiation for reference grass
+        daily net radiation for reference grass, 
         :math:`Q^{*}`
         [Wm-2]
 
@@ -339,24 +347,25 @@ def volumetric_heat_capacity(se_top=1.0, porosity=0.4):
     Computes the volumetric heat capacity of the soil
 
     .. math ::
-        \rho c_{p}=10e^{6}\left[\left(1-\phi\right)^{2}+
-        2.5\phi+4.2\phi S_{e,top}\right]
+
+        \rho c_{p}=10^{6} \cdot \left[\left(1-\phi\right)^{2}+
+        2.5 \cdot \phi+4.2 \cdot \phi \cdot S_{e,top}\right]
 
     Parameters
     ----------
     se_top : float
-        effective saturation of the topsoil
+        effective saturation of the topsoil, 
         :math:`S_{e,top}`
         [-]
     porosity : float
-        porosity of the soil
+        porosity of the soil, 
         :math:`\phi`
         [-]
 
     Returns
     -------
     vhc : float
-        volumetric heat capacity
+        volumetric heat capacity, 
         :math:`\rho c_{p}`
         [J m-3 K-1]
 
@@ -374,19 +383,20 @@ def soil_thermal_conductivity(se_top):
     Computes the soil thermal conductivity
 
     .. math ::
-        k=0.15+18.5S_{e,top}
+
+        k=0.15+18.5 \cdot S_{e,top}
 
     Parameters
     ----------
     se_top : float
-        effective saturation of the topsoil
+        effective saturation of the topsoil, 
         :math:`S_{e,top}`
         [-]
 
     Returns
     -------
     stc : float
-        soil thermal conductivity
+        soil thermal conductivity, 
         :math:`k`
         [W m-1 K-1]
 
@@ -404,6 +414,7 @@ def damping_depth(stc, vhc):
     Computes the damping depth
 
     .. math ::
+
         z_{d}=\sqrt{\frac{2kP}{2\pi\rho c_{p}}}
 
     with the following constant
@@ -413,18 +424,18 @@ def damping_depth(stc, vhc):
     Parameters
     ----------
     stc : float
-        soil thermal conductivity
+        soil thermal conductivity, 
         :math:`k`
         [W m-1 K-1]
     vhc : float
-        volumetric heat capacity
+        volumetric heat capacity, 
         :math:`\rho c_{p}`
         [J m-3 K-1]
 
     Returns
     -------
     dd : float
-        damping depth
+        damping depth, 
         :math:`z_{d}`
         [m]
 
@@ -443,7 +454,8 @@ def bare_soil_heat_flux(doy, dd, stc, t_amp_year, lat):
     Computes the bare soil heat flux
 
     .. math ::
-        G_{0}=\frac{\sqrt{2}A_{t,year}k\sin\left(\frac{2\pi J}{P}-
+
+        G_{0}=\frac{\sqrt{2} \cdot A_{t,year} \cdot k \cdot \sin\left(\frac{2\pi \cdot J}{P}-
               \frac{\pi}{4}\right)}{z_{d}}
 
     where the following constant is used
@@ -456,30 +468,30 @@ def bare_soil_heat_flux(doy, dd, stc, t_amp_year, lat):
     Parameters
     ----------
     stc : float
-        soil thermal conductivity
+        soil thermal conductivity, 
         :math:`k`
         [W m-1 K-1]
     dd : float
-        damping depth
+        damping depth, 
         :math:`z_{d}`
         [m]
     t_amp_year : float
-        yearly air temperature amplitude
+        yearly air temperature amplitude, 
         :math:`A_{t,year}`
         [m]
     doy : float
-        julian day of the year
+        julian day of the year, 
         :math:`J`
         [-]
     lat : float
-        latitude
+        latitude, 
         :math:`\lambda`
         [rad]
 
     Returns
     -------
     g0_bs : float
-        bare soil heat flux
+        bare soil heat flux, 
         :math:`G_{0}`
         [m]
 
@@ -505,51 +517,52 @@ def soil_heat_flux(g0_bs, sf_soil, land_mask, rn_24_soil, trans_24, ra_24, l_net
     Computes the soil heat flux
 
     .. math ::
-        G=s_f G_{0}
+
+        G=s_f \cdot G_{0}
 
     Parameters
     ----------
     g0_bs : float
-        bare soil heat flux
+        bare soil heat flux, 
         :math:`G_{0}`
         [W m-2]
     sf_soil : float
-        soil fraction
+        soil fraction, 
         :math:`s_f`
         [-]
     land_mask : int
-        land use classification
+        land use classification, 
         :math:`l`
         [-]
     rn_24_soil : float
-        net radiation for the soil
+        net radiation for the soil, 
         :math:`Q^{*}_{soil}`
         [Wm-2]
     trans_24 : float
-        daily atmospheric transmissivity
+        daily atmospheric transmissivity, 
         :math:`\tau`
         [-]
     rn_slope : float
-        slope rn/g0 relation water
+        slope rn/g0 relation water, 
         :math:`lws`
         [-]
     rn_offset : float
-        offset rn/g0 relation water
+        offset rn/g0 relation water, 
         :math:`lwo`
         [-]
     ra_24 : float
-        daily solar radiation
+        daily solar radiation, 
         :math:`S^{\downarrow}`
         [Wm-2]
     l_net : float
-        daily net longwave radiation
+        daily net longwave radiation, 
         :math:`L^{*}`
         [wm-2]
 
     Returns
     -------
     g0_24 : float
-        daily soil heat flux
+        daily soil heat flux, 
         :math:`G`
         [W m-2]
 

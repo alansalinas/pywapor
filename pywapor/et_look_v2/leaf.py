@@ -7,9 +7,10 @@ import numpy as np
 
 def vegetation_cover(ndvi, nd_min=0.125, nd_max=0.8, vc_pow=0.7):
     r"""
-    Computes vegetation cover based on NDVI
+    Computes vegetation cover based on NDVI.
 
     .. math ::
+
         c_{veg} =
         \begin{cases}
         \begin{array}{cc}
@@ -22,26 +23,26 @@ def vegetation_cover(ndvi, nd_min=0.125, nd_max=0.8, vc_pow=0.7):
     Parameters
     ----------
     ndvi : float
-        Normalized Difference Vegetation Index
+        Normalized Difference Vegetation Index, 
         :math:`I_{NDVI}`
         [-]
     nd_min : float
-        NDVI value where vegetation cover is 0
+        NDVI value where vegetation cover is 0, 
         :math:`I_{NDVI,min}`
         [-]
     nd_max : float
-        NDVI value where vegetation cover is 1
+        NDVI value where vegetation cover is 1, 
         :math:`I_{NDVI,max}`
         [-]
     vc_pow : float
-        Exponential power used in vegetation cover function
+        Exponential power used in vegetation cover function, 
         :math:`a`
         [-]
 
     Returns
     -------
     vc : float
-        vegetation cover
+        vegetation cover, 
         :math:`c_{veg}`
         [-]
 
@@ -90,6 +91,7 @@ def leaf_area_index(vc, vc_min=0.0, vc_max=vegetation_cover(0.795), lai_pow=-0.4
     Kustas formulation of LAI vs NDVI.
 
     .. math ::
+
         I_{lai} =
         \begin{cases}
         \begin{array}{cc}
@@ -103,26 +105,26 @@ def leaf_area_index(vc, vc_min=0.0, vc_max=vegetation_cover(0.795), lai_pow=-0.4
     Parameters
     ----------
     vc : float
-        vegetation cover
+        vegetation cover, 
         :math:`c_{veg}`
         [-]
     vc_min : float
-        vegetation cover where LAI is 0
+        vegetation cover where LAI is 0, 
         :math:`c_{veg,min}`
         [-]
     vc_max : float
-        vegetation cover at maximum LAI
+        vegetation cover at maximum LAI, 
         :math:`c_{veg,max}`
         [-]
     lai_pow : float
-        exponential factor used in LAI function
+        exponential factor used in LAI function, 
         :math:`b`
         [-]
 
     Returns
     -------
     lai : float
-        leaf area index
+        leaf area index, 
         :math:`I_{lai}`
         [-]
 
@@ -168,19 +170,20 @@ def effective_leaf_area_index(lai):
     index.
 
     .. math ::
-        I_{lai,eff}=\frac{I_{lai}}{0.3I_{lai}+1.2}
+
+        I_{lai,eff}=\frac{I_{lai}}{0.3 \cdot I_{lai}+1.2}
 
     Parameters
     ----------
     lai : float
-        Leaf area index
+        Leaf area index, 
         :math:`I_{lai}`
         [-]
 
     Returns
     -------
     lai_eff : float
-        effective leaf area index
+        effective leaf area index, 
         :math:`I_{lai,eff}`
         [-]
 

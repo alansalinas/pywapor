@@ -10,14 +10,14 @@ def longitude_rad(lon_deg):
     Parameters
     ----------
     lon_deg : float
-        longitude in degrees
+        longitude in degrees, 
         :math:`\phi`
         [deg]
 
     Returns
     -------
     lon : float
-        longitude
+        longitude, 
         :math:`\phi`
         [rad]
 
@@ -32,14 +32,14 @@ def latitude_rad(lat_deg):
     Parameters
     ----------
     lat_deg : float
-        latitude in degrees
+        latitude in degrees, 
         :math:`\lambda`
         [deg]
 
     Returns
     -------
     lat : float
-        latitude
+        latitude, 
         :math:`\lambda`
         [rad]
 
@@ -54,14 +54,14 @@ def slope_rad(slope_deg):
     Parameters
     ----------
     slope_deg : float
-        slope in degrees
+        slope in degrees, 
         :math:`s`
         [deg]
 
     Returns
     -------
     slope : float
-        slope
+        slope, 
         :math:`\Delta`
         [rad]
 
@@ -76,14 +76,14 @@ def aspect_rad(aspect_deg):
     Parameters
     ----------
     aspect_deg : float
-        aspect in degrees
+        aspect in degrees, 
         :math:`s`
         [deg]
 
     Returns
     -------
     aspect : float
-        aspect (0 is north; pi is south)
+        aspect (0 is north; pi is south), 
         :math:`\alpha`
         [rad]
     """
@@ -93,22 +93,23 @@ def aspect_rad(aspect_deg):
 def declination(doy):
     r"""
     Computes the solar declination which is the angular height of the sun
-    above the astronomical equatorial plane in radians
+    above the astronomical equatorial plane in radians.
 
     .. math ::
-        \delta=0.409\sin\left(\frac{2\pi J}{365}-1.39\right)
+
+        \delta=0.409 \cdot \sin\left(\frac{2\pi \cdot J}{365}-1.39\right)
 
     Parameters
     ----------
     doy : float
-        julian day of the year
+        julian day of the year, 
         :math:`J`
         [-]
 
     Returns
     -------
     decl : float
-        declination
+        declination, 
         :math:`\delta`
         [rad]
 
@@ -123,22 +124,23 @@ def declination(doy):
 
 def earth_sun_distance(doy):
     r"""
-    Computes the earth sun distance in Angstrom Unit where 1 AU is 1.496e8 km
+    Computes the earth sun distance in Angstrom Unit where 1 AU is 1.496e8 km.
 
     .. math ::
-        d_{r}=1+0.033\cos\left(\frac{2\pi J}{365}\right)
+
+        d_{r}=1+0.033 \cdot \cos\left(\frac{2\pi \cdot J}{365}\right)
 
     Parameters
     ----------
     doy : float
-        julian day of the year
+        julian day of the year, 
         :math:`J`
         [-]
 
     Returns
     -------
     ed : float
-        earth sun distance
+        earth sun distance, 
         :math:`d_{r}`
         [AU]
 
@@ -158,22 +160,23 @@ def earth_sun_distance(doy):
 
 def inverse_earth_sun_distance(doy):
     r"""
-    Computes the inverse earth sun distance (iesd) in Angstrom Unit where 1 AU is 1.496e8 km
+    Computes the inverse earth sun distance (iesd) in Angstrom Unit where 1 AU is 1.496e8 km.
 
     .. math ::
-        d_{r}=1+0.033\cos\left(\frac{2\pi J}{365}\right)
+
+        d_{r}=1+0.033 \cdot \cos\left(\frac{2\pi \cdot J}{365}\right)
 
     Parameters
     ----------
     doy : float
-        julian day of the year
+        julian day of the year, 
         :math:`J`
         [-]
 
     Returns
     -------
     iesd : float
-        inverse earth sun distance
+        inverse earth sun distance, 
         :math:`d_{r}`
         [AU]
 
@@ -189,22 +192,23 @@ def inverse_earth_sun_distance(doy):
 
 def actual_earth_sun_distance(iesd):
     r"""
-    Computes the earth sun distance (esd) in Angstrom Unit where 1 AU is 1.496e8 km
+    Computes the earth sun distance (esd) in Angstrom Unit where 1 AU is 1.496e8 km.
 
     .. math ::
-        d_{r}=1+0.033\cos\left(\frac{2\pi J}{365}\right)
+
+        d_{r}=1+0.033 \cdot \cos\left(\frac{2\pi \cdot J}{365}\right)
 
     Parameters
     ----------
     iesd : float
-        inverse earth sun distance
-        :math:`d_{i}_{r}`
+        inverse earth sun distance, 
+        :math:`J`
         [AU]
 
     Returns
     -------
     esd : float
-        earth sun distance
+        earth sun distance, 
         :math:`d_{r}`
         [AU]
 
@@ -220,26 +224,27 @@ def actual_earth_sun_distance(iesd):
 
 def seasonal_correction(doy):
     r"""
-    Computes the seasonal correction for solar time  in hours
+    Computes the seasonal correction for solar time  in hours.
 
     .. math ::
-        b=\frac{2\pi\left(J-81\right)}{364}
+
+        b=\frac{2\pi\left(J-81\right)}{365}
 
     .. math ::
-        s_{c}=0.1645sin\left(2b\right)-0.1255cos\
-              left(b\right)-0.025\left(b\right)
+
+        s_{c}= 0.1645 \cdot sin \left( 2b \right) - 0.1255 \cdot cos \left(b \right) - 0.025 \left(b\right)
 
     Parameters
     ----------
     doy : float
-        julian day of the year
+        julian day of the year, 
         :math:`J`
         [-]
 
     Returns
     -------
     sc : float
-        seasonal correction
+        seasonal correction, 
         :math:`s_{c}`
         [hours]
 
@@ -255,26 +260,27 @@ def seasonal_correction(doy):
 
 def sunset_hour_angle(lat, decl):
     r"""
-    Computes the sunset hour angle
+    Computes the sunset hour angle.
 
     .. math ::
-        w_{s}=\arccos(-\tan(\lambda)\tan(\delta))
+
+        w_{s}=\arccos(-\tan(\lambda)\cdot \tan(\delta))
 
     Parameters
     ----------
     decl : float
-        solar declination
+        solar declination, 
         :math:`\delta`
         [rad]
     lat : float
-        latitude
+        latitude, 
         :math:`\lambda`
         [rad]
 
     Returns
     -------
     ws : float
-        sunset hour angle
+        sunset hour angle, 
         :math:`w_{s}`
         [rad]
 
@@ -288,27 +294,28 @@ def hour_angle(sc, dtime, lon=0):
     pi at 12:00 pm
 
     .. math ::
-        \omega=\left(\frac{\pi}{12}\right)\left(t+s_{c}-12\right)
+
+        \omega=\left(\frac{\pi}{12}\right)\cdot \left(t+s_{c}-12\right)
 
     Parameters
     ----------
     sc : float
-        seasonal correction
+        seasonal correction, 
         :math:`s_{c}`
         [hours]
     dtime : float
-        decimal time
+        decimal time, 
         :math:`t`
         [hours]
     lon : float
-        longitude
+        longitude, 
         :math:`\phi`
         [rad]
 
     Returns
     -------
     ha : float
-        hour_angle
+        hour_angle, 
         :math:`\omega`
         [rad]
 
@@ -325,26 +332,27 @@ def hour_angle(sc, dtime, lon=0):
 def inst_solar_radiation_toa(csza, iesd):
     r"""
     Computes the instantaneous solar radiation at the top of
-    the atmosphere [Wm-2]
+    the atmosphere [Wm-2].
 
     .. math ::
-        S_{toa}^{i} = S_{sun}d_{r}\phi
+
+        S_{toa}^{i} = S_{sun} \cdot d_{r} \cdot \phi
 
     Parameters
     ----------
     csza : float
-        cosine solar zenith angle
+        cosine solar zenith angle, 
         :math:`\phi`
         [-]
     iesd : float
-        inverse earth sun distance
+        inverse earth sun distance, 
         :math:`d_{r}`
         [AU]
 
     Returns
     -------
     ra_i_toa : float
-        instantaneous solar radiation at top of atmosphere
+        instantaneous solar radiation at top of atmosphere, 
         :math:`S_{toa}^{i}`
         [Wm-2]
 
@@ -368,39 +376,40 @@ def daily_solar_radiation_toa(sc, decl, iesd, lat, slope=0, aspect=0):
     Computes the daily solar radiation at the top of the atmosphere.
 
     .. math ::
-        S_{toa}=S_{sun}d_{r}\int_{i=-\pi}^{i=\pi}S_{toa}^{i}
+
+        S_{toa}=S_{sun} \cdot d_{r}\int_{i=-\pi}^{i=\pi}S_{toa}^{i}
 
     Parameters
     ----------
     iesd : float
-        inverse earth sun distance
+        inverse earth sun distance, 
         :math:`d_{r}`
         [AU]
     decl : float
-        solar declination
+        solar declination, 
         :math:`\delta`
         [rad]
     sc : float
-        seasonal correction
+        seasonal correction, 
         :math:`s_{c}`
         [hours]
     lat : float
-        latitude
+        latitude, 
         :math:`\lambda`
         [rad]
     slope : float
-        slope
+        slope, 
         :math:`\Delta`
         [rad]
     aspect : float
-        aspect (0 is north; pi is south)
+        aspect (0 is north; pi is south), 
         :math:`\alpha`
         [rad]
 
     Returns
     -------
     ra_24_toa : float
-        daily solar radiation at the top of atmosphere
+        daily solar radiation at the top of atmosphere, 
         :math:`S_{toa}`
         [Wm-2]
 
@@ -435,44 +444,43 @@ def daily_solar_radiation_toa(sc, decl, iesd, lat, slope=0, aspect=0):
 
 def cosine_solar_zenith_angle(ha, decl, lat, slope=0, aspect=0):
     r"""
-    computes the cosine of the solar zenith angle [-]
+    computes the cosine of the solar zenith angle [-].
 
     .. math ::
-        \phi = \begin{array}{c}
-        \sin\delta\sin\lambda\cos\Delta-\\
-        \sin\delta\cos\lambda\sin\Delta+\\
-        \cos\delta\cos\lambda\cos\Delta\cos\left(\omega\right)+\\
-        \cos\delta\sin\lambda\sin\Delta\sin\alpha\cos\left(\omega\right)+\\
-        \cos\delta\sin\Delta\sin\alpha\sin\left(\omega\right)
-        \end{array}
+
+        \phi = & \sin\left(\delta\right) \cdot \sin\left(\lambda\right) \cdot  \cos\left(\Delta\right) - \\
+        & \sin\left(\delta\right) \cdot \cos\left(\lambda\right) \cdot \sin\left(\Delta\right) + \\
+        & \cos\left(\delta\right) \cdot \cos\left(\lambda\right) \cdot \cos\left(\Delta\right) \cdot \cos\left(\omega\right)+\\
+        & \cos\left(\delta\right) \cdot \sin\left(\lambda\right) \cdot \sin\left(\Delta\right) \cdot \sin\left(\alpha\right) \cdot \cos\left(\omega\right)+\\
+        & \cos\left(\delta\right) \cdot \sin\left(\Delta\right) \cdot  \sin\left(\alpha\right) \cdot \sin\left(\omega\right)
 
     Parameters
     ----------
     ha : float
-        hour angle
+        hour angle, 
         :math:`\omega`
         [rad]
     decl : float
-        declination
+        declination, 
         :math:`\delta`
         [rad]
     lat : float
-        latitude
+        latitude, 
         :math:`\lambda`
         [rad]
     slope : float
-        slope
+        slope, 
         :math:`\Delta`
         [rad]
     aspect : float
-        aspect (0 is north; pi is south)
+        aspect (0 is north; pi is south), 
         :math:`\alpha`
         [rad]
 
     Returns
     -------
     csza : float
-        cosine solar zenith angle
+        cosine solar zenith angle, 
         :math:`\phi`
         [-]
 
@@ -509,32 +517,33 @@ def daily_solar_radiation_toa_flat(decl, iesd, lat, ws):
     surface.
 
     .. math ::
-        S_{toa,f}=\frac{S_{sun}}{\pi}d_{inv,r}*(w_{s}\sin(\lambda))\sin(\delta) +
-                  \cos(\lambda))\cos(\delta)\sin(w_{s})
+
+        S_{toa,f}=\frac{S_{sun}}{\pi} \cdot d_{inv,r} \cdot (w_{s} \cdot \sin(\lambda) \cdot \sin(\delta) +
+                  \cos(\lambda)\cdot\cos(\delta)\cdot\sin(w_{s}))
 
     Parameters
     ----------
     decl : float
-        solar declination
+        solar declination, 
         :math:`\delta`
         [rad]
     iesd : float
-        inverse earth sun distance
+        inverse earth sun distance, 
         :math:`d_{inv,r}`
         [AU]
     lat : float
-        latitude
+        latitude, 
         :math:`\lambda`
         [rad]
     ws : float
-        sunset hour angle
+        sunset hour angle, 
         :math:`w_{s}`
         [rad]
 
     Returns
     -------
     ra_24_toa_flat : float
-        daily solar radiation at the top of atmosphere for a flat surface
+        daily solar radiation at the top of atmosphere for a flat surface, 
         :math:`S_{toa,f}`
         [Wm-2]
 
@@ -547,26 +556,27 @@ def daily_solar_radiation_toa_flat(decl, iesd, lat, ws):
 
 def daily_solar_radiation_flat(ra_24_toa_flat, trans_24):
     r"""
-    Computes the daily solar radiation at the earth's surface
+    Computes the daily solar radiation at the earth's surface.
 
     .. math ::
-        S^{\downarrow} = \tau S_{toa}
+
+        S^{\downarrow} = \tau \cdot S_{toa}
 
     Parameters
     ----------
     ra_24_toa_flat : float
-        daily solar radiation at the top of atmosphere for a flat surface
+        daily solar radiation at the top of atmosphere for a flat surface, 
         :math:`S_{toa}`
         [Wm-2]
     trans_24 : float
-        daily atmospheric transmissivity
+        daily atmospheric transmissivity, 
         :math:`\tau`
         [-]
 
     Returns
     -------
     ra_24 : float
-        daily solar radiation for a flat surface
+        daily solar radiation for a flat surface, 
         :math:`S^{\downarrow}`
         [Wm-2]
 
@@ -580,27 +590,28 @@ def diffusion_index(trans_24, diffusion_slope=-1.33, diffusion_intercept=1.15):
     solar radiation. The results are clipped between 0 and 1.
 
     .. math ::
-        I_{diff} = a_{diff}+b_{diff}\tau
+
+        I_{diff} = a_{diff}+b_{diff} \cdot \tau
 
     Parameters
     ----------
     trans_24 : float
-        daily atmospheric transmissivity
+        daily atmospheric transmissivity, 
         :math:`\tau`
         [-]
     diffusion_slope : float
-        slope of diffusion index vs transmissivity relationship
+        slope of diffusion index vs transmissivity relationship, 
         :math:`b_{diff}`
         [-]
     diffusion_intercept : float
-        intercept of diffusion index vs transmissivity relationship
+        intercept of diffusion index vs transmissivity relationship, 
         :math:`a_{diff}`
         [-]
 
     Returns
     -------
     diffusion_index : float
-        diffusion_index
+        diffusion_index, 
         :math:`I_{diff}`
         [-]
 
@@ -615,34 +626,35 @@ def diffusion_index(trans_24, diffusion_slope=-1.33, diffusion_intercept=1.15):
 def daily_total_solar_radiation(ra_24_toa, ra_24_toa_flat, diffusion_index, trans_24):
     r"""
     Computes the daily solar radiation at the earth's surface taken
-    diffuse and direct solar radiation into account
+    diffuse and direct solar radiation into account.
 
     .. math ::
-        S^{\downarrow} = I_{diff} \tau S_{toa,f} +(1-I_{diff}) \tau S_{toa}
+
+        S^{\downarrow} = I_{diff} \cdot \tau \cdot S_{toa,f} +(1-I_{diff}) \cdot \tau \cdot S_{toa}
 
     Parameters
     ----------
     ra_24_toa : float
-        daily solar radiation at the top of atmosphere
+        daily solar radiation at the top of atmosphere, 
         :math:`S_{toa}`
         [Wm-2]
     ra_24_toa_flat : float
-        daily solar radiation at the top of atmosphere for a flat surface
+        daily solar radiation at the top of atmosphere for a flat surface, 
         :math:`S_{toa,f}`
         [Wm-2]
     diffusion_index : float
-        diffusion_index
+        diffusion_index, 
         :math:`I_{diff}`
         [-]
     trans_24 : float
-        daily atmospheric transmissivity
+        daily atmospheric transmissivity, 
         :math:`\tau`
         [-]
 
     Returns
     -------
     ra_24 : float
-        daily solar radiation
+        daily solar radiation, 
         :math:`S^{\downarrow}`
         [Wm-2]
 
@@ -656,39 +668,40 @@ def daily_solar_radiation_toa_new(sc, decl, iesd, lat, doy, slope=0, aspect=0):
     Computes the daily solar radiation at the top of the atmosphere.
 
     .. math ::
-        S_{toa}=S_{sun}d_{r}\int_{i=-\pi}^{i=\pi}S_{toa}^{i}
+
+        S_{toa}=S_{sun} \cdot d_{r} \cdot \int_{i=-\pi}^{i=\pi}S_{toa}^{i}
 
     Parameters
     ----------
     iesd : float
-        inverse earth sun distance
+        inverse earth sun distance, 
         :math:`d_{r}`
         [AU]
     decl : float
-        solar declination
+        solar declination, 
         :math:`\delta`
         [rad]
     sc : float
-        seasonal correction
+        seasonal correction, 
         :math:`s_{c}`
         [hours]
     lat : float
-        latitude
+        latitude, 
         :math:`\lambda`
         [rad]
     slope : float
-        slope
+        slope, 
         :math:`\Delta`
         [rad]
     aspect : float
-        aspect (0 is north; pi is south)
+        aspect (0 is north; pi is south), 
         :math:`\alpha`
         [rad]
 
     Returns
     -------
     ra_24_toa : float
-        daily solar radiation at the top of atmosphere
+        daily solar radiation at the top of atmosphere, 
         :math:`S_{toa}`
         [Wm-2]
 
@@ -742,8 +755,8 @@ def daily_solar_radiation_toa_new(sc, decl, iesd, lat, doy, slope=0, aspect=0):
 
 def OnePeriodSun(constant,delta,s,gamma,phi):
     '''
-    Based on Richard G. Allen 2006
-    Calculate the 24-hours extraterrestrial radiation when there is one sun period
+    Based on :footcite:t:`tasumi2006based`, 
+    calculates the 24-hours extraterrestrial radiation when there is one sun period.
     '''
     sunrise,sunset = SunHours(delta,s,gamma,phi)
     Vals=IntegrateSlope(constant,sunrise,sunset,delta,s,gamma,phi)
@@ -752,8 +765,8 @@ def OnePeriodSun(constant,delta,s,gamma,phi):
 
 def TwoPeriodSun(constant,delta,s,gamma,phi):
     '''
-    Based on Richard G. Allen 2006
-    Calculate the 24-hours extraterrestrial radiation when there are two sun period
+    Based on :footcite:t:`tasumi2006based`, 
+    calculates the 24-hours extraterrestrial radiation when there are two sun period.
     '''
     A1, A2 = SunHours(delta,s,gamma,phi)
     a,b,c = Constants(delta,s,gamma,phi)
@@ -784,8 +797,8 @@ def TwoPeriodSun(constant,delta,s,gamma,phi):
 #------------------------------------------------------------------------------
 def IntegrateSlope(constant,sunrise,sunset,delta,s,gamma,phi):
     '''
-    Based on Richard G. Allen 2006 equation 5
-    Calculate the 24 hours extraterrestrial radiation
+    Based on :footcite:t:`tasumi2006based`, Equation 5,
+    calculates the 24 hours extraterrestrial radiation.
     '''
     # correct the sunset and sunrise angels for days that have no sunset or no sunrise
     SunOrNoSun = np.logical_or(((np.abs(delta + phi)) > (np.pi/2)),((np.abs(delta - phi)) > (np.pi/2)))
@@ -821,10 +834,10 @@ def IntegrateSlope(constant,sunrise,sunset,delta,s,gamma,phi):
     return(integral)
 
 def BoundsHorizontal(delta,phi):
-    ''''
-    Based on Richard G. Allen 2006
-    This function calculates sunrise hours based on earth inclination and latitude
-    If there is no sunset or sunrise hours the values are either set to 0 (polar night) or pi (polar day)
+    '''
+    Based on :footcite:t:`tasumi2006based`, 
+    this function calculates sunrise hours based on earth inclination and latitude.
+    If there is no sunset or sunrise hours the values are either set to 0 (polar night) or pi (polar day).
     '''
     bound = np.arccos(-np.tan(delta)*np.tan(phi))
     bound[abs(delta+phi) > np.pi/2] = np.pi
@@ -834,8 +847,8 @@ def BoundsHorizontal(delta,phi):
 
 def TwoPeriods(delta,s,phi):
     '''
-    Based on Richard G. Allen 2006
-    Create a boolean map with True values for places with two sunsets
+    Based on :footcite:t:`tasumi2006based`, 
+    creates a boolean map with True values for places with two sunsets.
     '''
     TwoPeriods = (np.sin(s) > np.ones(phi.shape)*np.sin(phi)*np.cos(delta)+np.cos(phi)*np.sin(delta))
 
@@ -911,8 +924,8 @@ def SunHours(delta,slope,slopedir,lat):
 
 def AngleSlope(a,b,c,w):
     '''
-    Based on Richard G. Allen 2006
-    Calculate the cos zenith angle by using the hour angle and constants
+    Based on :footcite:t:`tasumi2006based`, 
+    calculates the cos zenith angle by using the hour angle and constants.
     '''
     angle = -a + b*np.cos(w) + c*np.sin(w)
 
@@ -920,8 +933,8 @@ def AngleSlope(a,b,c,w):
 
 def BoundsSlope(a,b,c):
     '''
-    Based on Richard G. Allen 2006 equation 13
-    This function calculates candidate values for sunrise and sunset hour angles
+    Based on :footcite:t:`tasumi2006based`,  Equation 13,
+    this function calculates candidate values for sunrise and sunset hour angles.
     '''
     Div = (b**2+c**2)
     Div[Div <= 0] = 0.00001
@@ -938,8 +951,8 @@ def BoundsSlope(a,b,c):
 
 def Constants(delta,s,gamma,phi):
     '''
-    Based on Richard G. Allen 2006 equation 11
-    determines constants for calculating the exterrestial solar radiation
+    Based on :footcite:t:`tasumi2006based`,  Equation 11,
+    determines constants for calculating the exterrestial solar radiation.
     '''
     a = np.sin(delta)*np.cos(phi)*np.sin(s)*np.cos(gamma) - np.sin(delta)*np.sin(phi)*np.cos(s)
     b = np.cos(delta)*np.cos(phi)*np.cos(s) + np.cos(delta)*np.sin(phi)*np.sin(s)*np.cos(gamma)

@@ -1,0 +1,833 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>solar_radiation &mdash; pyWaPOR  documentation</title>
+      <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="../_static/css/theme.css" type="text/css" />
+  <!--[if lt IE 9]>
+    <script src="../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script data-url_root="../" id="documentation_options" src="../_static/documentation_options.js"></script>
+        <script src="../_static/jquery.js"></script>
+        <script src="../_static/underscore.js"></script>
+        <script src="../_static/doctools.js"></script>
+        <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+        <script defer="defer" src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+        <script>window.MathJax = {"tex": {"inlineMath": [["$", "$"], ["\\(", "\\)"]], "processEscapes": true}, "options": {"ignoreHtmlClass": "tex2jax_ignore|mathjax_ignore|document", "processHtmlClass": "tex2jax_process|mathjax_process|math|output_area"}}</script>
+    <script src="../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="stress" href="stress.html" />
+    <link rel="prev" title="roughness" href="roughness.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+            <a href="../index.html" class="icon icon-home"> pyWaPOR
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../installation.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../data_sources.html">Data</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../_user_guide.html">User Guide</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="../_functions.html">Functions</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="clear_sky_radiation.html">clear_sky_radiation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="soil_moisture.html">soil_moisture</a></li>
+<li class="toctree-l2"><a class="reference internal" href="evapotranspiration.html">evapotranspiration</a></li>
+<li class="toctree-l2"><a class="reference internal" href="leaf.html">leaf</a></li>
+<li class="toctree-l2"><a class="reference internal" href="meteo.html">meteo</a></li>
+<li class="toctree-l2"><a class="reference internal" href="neutral.html">neutral</a></li>
+<li class="toctree-l2"><a class="reference internal" href="radiation.html">radiation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="resistance.html">resistance</a></li>
+<li class="toctree-l2"><a class="reference internal" href="roughness.html">roughness</a></li>
+<li class="toctree-l2 current"><a class="current reference internal" href="#">solar_radiation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="stress.html">stress</a></li>
+<li class="toctree-l2"><a class="reference internal" href="unstable.html">unstable</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../bibliography.html">Bibliography</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">pyWaPOR</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../index.html" class="icon icon-home"></a> &raquo;</li>
+          <li><a href="../_functions.html">Functions</a> &raquo;</li>
+      <li>solar_radiation</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="../_sources/et_look_rsts/solar_radiation.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  
+<style>
+/* CSS overrides for sphinx_rtd_theme */
+
+/* 24px margin */
+.nbinput.nblast.container,
+.nboutput.nblast.container {
+    margin-bottom: 19px;  /* padding has already 5px */
+}
+
+/* ... except between code cells! */
+.nblast.container + .nbinput.container {
+    margin-top: -19px;
+}
+
+.admonition > p:before {
+    margin-right: 4px;  /* make room for the exclamation icon */
+}
+
+/* Fix math alignment, see https://github.com/rtfd/sphinx_rtd_theme/pull/686 */
+.math {
+    text-align: unset;
+}
+</style>
+<section id="module-pywapor.et_look_v2.solar_radiation">
+<span id="solar-radiation"></span><h1>solar_radiation<a class="headerlink" href="#module-pywapor.et_look_v2.solar_radiation" title="Permalink to this headline"></a></h1>
+<dl class="py function">
+<dt class="sig sig-object py" id="pywapor.et_look_v2.solar_radiation.AngleSlope">
+<span class="sig-name descname"><span class="pre">AngleSlope</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">a</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">b</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">c</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">w</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pywapor.et_look_v2.solar_radiation.AngleSlope" title="Permalink to this definition"></a></dt>
+<dd><p>Based on Tasumi<a class="footnote-reference brackets" href="#footcite-tasumi2006based" id="id1">1</a>,
+calculates the cos zenith angle by using the hour angle and constants.</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="pywapor.et_look_v2.solar_radiation.BoundsHorizontal">
+<span class="sig-name descname"><span class="pre">BoundsHorizontal</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">delta</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">phi</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pywapor.et_look_v2.solar_radiation.BoundsHorizontal" title="Permalink to this definition"></a></dt>
+<dd><p>Based on Tasumi<a class="footnote-reference brackets" href="#footcite-tasumi2006based" id="id2">1</a>,
+this function calculates sunrise hours based on earth inclination and latitude.
+If there is no sunset or sunrise hours the values are either set to 0 (polar night) or pi (polar day).</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="pywapor.et_look_v2.solar_radiation.BoundsSlope">
+<span class="sig-name descname"><span class="pre">BoundsSlope</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">a</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">b</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">c</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pywapor.et_look_v2.solar_radiation.BoundsSlope" title="Permalink to this definition"></a></dt>
+<dd><p>Based on Tasumi<a class="footnote-reference brackets" href="#footcite-tasumi2006based" id="id3">1</a>,  Equation 13,
+this function calculates candidate values for sunrise and sunset hour angles.</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="pywapor.et_look_v2.solar_radiation.Constants">
+<span class="sig-name descname"><span class="pre">Constants</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">delta</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">s</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">gamma</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">phi</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pywapor.et_look_v2.solar_radiation.Constants" title="Permalink to this definition"></a></dt>
+<dd><p>Based on Tasumi<a class="footnote-reference brackets" href="#footcite-tasumi2006based" id="id4">1</a>,  Equation 11,
+determines constants for calculating the exterrestial solar radiation.</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="pywapor.et_look_v2.solar_radiation.IntegrateSlope">
+<span class="sig-name descname"><span class="pre">IntegrateSlope</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">constant</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">sunrise</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">sunset</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">delta</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">s</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">gamma</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">phi</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pywapor.et_look_v2.solar_radiation.IntegrateSlope" title="Permalink to this definition"></a></dt>
+<dd><p>Based on Tasumi<a class="footnote-reference brackets" href="#footcite-tasumi2006based" id="id5">1</a>, Equation 5,
+calculates the 24 hours extraterrestrial radiation.</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="pywapor.et_look_v2.solar_radiation.OnePeriodSun">
+<span class="sig-name descname"><span class="pre">OnePeriodSun</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">constant</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">delta</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">s</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">gamma</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">phi</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pywapor.et_look_v2.solar_radiation.OnePeriodSun" title="Permalink to this definition"></a></dt>
+<dd><p>Based on Tasumi<a class="footnote-reference brackets" href="#footcite-tasumi2006based" id="id6">1</a>,
+calculates the 24-hours extraterrestrial radiation when there is one sun period.</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="pywapor.et_look_v2.solar_radiation.TwoPeriodSun">
+<span class="sig-name descname"><span class="pre">TwoPeriodSun</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">constant</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">delta</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">s</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">gamma</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">phi</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pywapor.et_look_v2.solar_radiation.TwoPeriodSun" title="Permalink to this definition"></a></dt>
+<dd><p>Based on Tasumi<a class="footnote-reference brackets" href="#footcite-tasumi2006based" id="id7">1</a>,
+calculates the 24-hours extraterrestrial radiation when there are two sun period.</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="pywapor.et_look_v2.solar_radiation.TwoPeriods">
+<span class="sig-name descname"><span class="pre">TwoPeriods</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">delta</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">s</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">phi</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pywapor.et_look_v2.solar_radiation.TwoPeriods" title="Permalink to this definition"></a></dt>
+<dd><p>Based on Tasumi<a class="footnote-reference brackets" href="#footcite-tasumi2006based" id="id8">1</a>,
+creates a boolean map with True values for places with two sunsets.</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="pywapor.et_look_v2.solar_radiation.actual_earth_sun_distance">
+<span class="sig-name descname"><span class="pre">actual_earth_sun_distance</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">iesd</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pywapor.et_look_v2.solar_radiation.actual_earth_sun_distance" title="Permalink to this definition"></a></dt>
+<dd><p>Computes the earth sun distance (esd) in Angstrom Unit where 1 AU is 1.496e8 km.</p>
+<div class="math notranslate nohighlight">
+\[d_{r}=1+0.033 \cdot \cos\left(\frac{2\pi \cdot J}{365}\right)\]</div>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>iesd</strong> (<em>float</em>) – inverse earth sun distance,
+<span class="math notranslate nohighlight">\(J\)</span>
+[AU]</p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p><strong>esd</strong> – earth sun distance,
+<span class="math notranslate nohighlight">\(d_{r}\)</span>
+[AU]</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>float</p>
+</dd>
+</dl>
+<p class="rubric">Examples</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">import</span> <span class="nn">ETLook.solar_radiation</span> <span class="k">as</span> <span class="nn">solrad</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">solrad</span><span class="o">.</span><span class="n">actual_earth_sun_distance</span><span class="p">(</span><span class="mi">180</span><span class="p">)</span>
+<span class="go">1.034093489244084</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="pywapor.et_look_v2.solar_radiation.aspect_rad">
+<span class="sig-name descname"><span class="pre">aspect_rad</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">aspect_deg</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pywapor.et_look_v2.solar_radiation.aspect_rad" title="Permalink to this definition"></a></dt>
+<dd><p>Converts aspect from degrees to radians.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>aspect_deg</strong> (<em>float</em>) – aspect in degrees,
+<span class="math notranslate nohighlight">\(s\)</span>
+[deg]</p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p><strong>aspect</strong> – aspect (0 is north; pi is south),
+<span class="math notranslate nohighlight">\(\alpha\)</span>
+[rad]</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>float</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="pywapor.et_look_v2.solar_radiation.cosine_solar_zenith_angle">
+<span class="sig-name descname"><span class="pre">cosine_solar_zenith_angle</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">ha</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">decl</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">lat</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">slope</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">aspect</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pywapor.et_look_v2.solar_radiation.cosine_solar_zenith_angle" title="Permalink to this definition"></a></dt>
+<dd><p>computes the cosine of the solar zenith angle [-].</p>
+<div class="math notranslate nohighlight">
+\[\begin{split}\phi = &amp; \sin\left(\delta\right) \cdot \sin\left(\lambda\right) \cdot  \cos\left(\Delta\right) - \\
+&amp; \sin\left(\delta\right) \cdot \cos\left(\lambda\right) \cdot \sin\left(\Delta\right) + \\
+&amp; \cos\left(\delta\right) \cdot \cos\left(\lambda\right) \cdot \cos\left(\Delta\right) \cdot \cos\left(\omega\right)+\\
+&amp; \cos\left(\delta\right) \cdot \sin\left(\lambda\right) \cdot \sin\left(\Delta\right) \cdot \sin\left(\alpha\right) \cdot \cos\left(\omega\right)+\\
+&amp; \cos\left(\delta\right) \cdot \sin\left(\Delta\right) \cdot  \sin\left(\alpha\right) \cdot \sin\left(\omega\right)\end{split}\]</div>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>ha</strong> (<em>float</em>) – hour angle,
+<span class="math notranslate nohighlight">\(\omega\)</span>
+[rad]</p></li>
+<li><p><strong>decl</strong> (<em>float</em>) – declination,
+<span class="math notranslate nohighlight">\(\delta\)</span>
+[rad]</p></li>
+<li><p><strong>lat</strong> (<em>float</em>) – latitude,
+<span class="math notranslate nohighlight">\(\lambda\)</span>
+[rad]</p></li>
+<li><p><strong>slope</strong> (<em>float</em>) – slope,
+<span class="math notranslate nohighlight">\(\Delta\)</span>
+[rad]</p></li>
+<li><p><strong>aspect</strong> (<em>float</em>) – aspect (0 is north; pi is south),
+<span class="math notranslate nohighlight">\(\alpha\)</span>
+[rad]</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p><strong>csza</strong> – cosine solar zenith angle,
+<span class="math notranslate nohighlight">\(\phi\)</span>
+[-]</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>float</p>
+</dd>
+</dl>
+<p class="rubric">Examples</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">import</span> <span class="nn">ETLook.solar_radiation</span> <span class="k">as</span> <span class="nn">solrad</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">sc</span> <span class="o">=</span> <span class="n">solrad</span><span class="o">.</span><span class="n">seasonal_correction</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">ha</span> <span class="o">=</span> <span class="n">solrad</span><span class="o">.</span><span class="n">hour_angle</span><span class="p">(</span><span class="n">sc</span><span class="p">,</span> <span class="n">dtime</span><span class="o">=</span><span class="mi">12</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">solrad</span><span class="o">.</span><span class="n">cosine_solar_zenith_angle</span><span class="p">(</span><span class="n">ha</span><span class="p">,</span> <span class="n">decl</span><span class="o">=</span><span class="n">solrad</span><span class="o">.</span><span class="n">declination</span><span class="p">(</span><span class="mi">1</span><span class="p">),</span> <span class="n">lat</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+<span class="go">0.92055394167363314</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="pywapor.et_look_v2.solar_radiation.daily_solar_radiation_flat">
+<span class="sig-name descname"><span class="pre">daily_solar_radiation_flat</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">ra_24_toa_flat</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">trans_24</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pywapor.et_look_v2.solar_radiation.daily_solar_radiation_flat" title="Permalink to this definition"></a></dt>
+<dd><p>Computes the daily solar radiation at the earth’s surface.</p>
+<div class="math notranslate nohighlight">
+\[S^{\downarrow} = \tau \cdot S_{toa}\]</div>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>ra_24_toa_flat</strong> (<em>float</em>) – daily solar radiation at the top of atmosphere for a flat surface,
+<span class="math notranslate nohighlight">\(S_{toa}\)</span>
+[Wm-2]</p></li>
+<li><p><strong>trans_24</strong> (<em>float</em>) – daily atmospheric transmissivity,
+<span class="math notranslate nohighlight">\(\tau\)</span>
+[-]</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p><strong>ra_24</strong> – daily solar radiation for a flat surface,
+<span class="math notranslate nohighlight">\(S^{\downarrow}\)</span>
+[Wm-2]</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>float</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="pywapor.et_look_v2.solar_radiation.daily_solar_radiation_toa">
+<span class="sig-name descname"><span class="pre">daily_solar_radiation_toa</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">sc</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">decl</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">iesd</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">lat</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">slope</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">aspect</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pywapor.et_look_v2.solar_radiation.daily_solar_radiation_toa" title="Permalink to this definition"></a></dt>
+<dd><p>Computes the daily solar radiation at the top of the atmosphere.</p>
+<div class="math notranslate nohighlight">
+\[S_{toa}=S_{sun} \cdot d_{r}\int_{i=-\pi}^{i=\pi}S_{toa}^{i}\]</div>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>iesd</strong> (<em>float</em>) – inverse earth sun distance,
+<span class="math notranslate nohighlight">\(d_{r}\)</span>
+[AU]</p></li>
+<li><p><strong>decl</strong> (<em>float</em>) – solar declination,
+<span class="math notranslate nohighlight">\(\delta\)</span>
+[rad]</p></li>
+<li><p><strong>sc</strong> (<em>float</em>) – seasonal correction,
+<span class="math notranslate nohighlight">\(s_{c}\)</span>
+[hours]</p></li>
+<li><p><strong>lat</strong> (<em>float</em>) – latitude,
+<span class="math notranslate nohighlight">\(\lambda\)</span>
+[rad]</p></li>
+<li><p><strong>slope</strong> (<em>float</em>) – slope,
+<span class="math notranslate nohighlight">\(\Delta\)</span>
+[rad]</p></li>
+<li><p><strong>aspect</strong> (<em>float</em>) – aspect (0 is north; pi is south),
+<span class="math notranslate nohighlight">\(\alpha\)</span>
+[rad]</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p><strong>ra_24_toa</strong> – daily solar radiation at the top of atmosphere,
+<span class="math notranslate nohighlight">\(S_{toa}\)</span>
+[Wm-2]</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>float</p>
+</dd>
+</dl>
+<p class="rubric">Examples</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">import</span> <span class="nn">ETLook.solar_radiation</span> <span class="k">as</span> <span class="nn">solrad</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">math</span> <span class="kn">import</span> <span class="n">pi</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">doy</span> <span class="o">=</span> <span class="mi">1</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">sc</span> <span class="o">=</span> <span class="n">solrad</span><span class="o">.</span><span class="n">seasonal_correction</span><span class="p">(</span><span class="n">doy</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">decl</span> <span class="o">=</span> <span class="n">solrad</span><span class="o">.</span><span class="n">declination</span><span class="p">(</span><span class="n">doy</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">iesd</span> <span class="o">=</span> <span class="n">solrad</span><span class="o">.</span><span class="n">inverse_earth_sun_distance</span><span class="p">(</span><span class="n">doy</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">solrad</span><span class="o">.</span><span class="n">daily_solar_radiation_toa</span><span class="p">(</span><span class="n">sc</span><span class="p">,</span> <span class="n">decl</span><span class="p">,</span> <span class="n">iesd</span><span class="p">,</span> <span class="n">lat</span><span class="o">=</span><span class="mi">25</span><span class="o">*</span><span class="n">pi</span><span class="o">/</span><span class="mf">180.0</span><span class="p">)</span>
+<span class="go">265.74072308978026</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="pywapor.et_look_v2.solar_radiation.daily_solar_radiation_toa_flat">
+<span class="sig-name descname"><span class="pre">daily_solar_radiation_toa_flat</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">decl</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">iesd</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">lat</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ws</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pywapor.et_look_v2.solar_radiation.daily_solar_radiation_toa_flat" title="Permalink to this definition"></a></dt>
+<dd><p>Computes the daily solar radiation at the top of the atmosphere for a flat
+surface.</p>
+<div class="math notranslate nohighlight">
+\[S_{toa,f}=\frac{S_{sun}}{\pi} \cdot d_{inv,r} \cdot (w_{s} \cdot \sin(\lambda) \cdot \sin(\delta) +
+          \cos(\lambda)\cdot\cos(\delta)\cdot\sin(w_{s}))\]</div>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>decl</strong> (<em>float</em>) – solar declination,
+<span class="math notranslate nohighlight">\(\delta\)</span>
+[rad]</p></li>
+<li><p><strong>iesd</strong> (<em>float</em>) – inverse earth sun distance,
+<span class="math notranslate nohighlight">\(d_{inv,r}\)</span>
+[AU]</p></li>
+<li><p><strong>lat</strong> (<em>float</em>) – latitude,
+<span class="math notranslate nohighlight">\(\lambda\)</span>
+[rad]</p></li>
+<li><p><strong>ws</strong> (<em>float</em>) – sunset hour angle,
+<span class="math notranslate nohighlight">\(w_{s}\)</span>
+[rad]</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p><strong>ra_24_toa_flat</strong> – daily solar radiation at the top of atmosphere for a flat surface,
+<span class="math notranslate nohighlight">\(S_{toa,f}\)</span>
+[Wm-2]</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>float</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="pywapor.et_look_v2.solar_radiation.daily_solar_radiation_toa_new">
+<span class="sig-name descname"><span class="pre">daily_solar_radiation_toa_new</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">sc</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">decl</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">iesd</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">lat</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">doy</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">slope</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">aspect</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pywapor.et_look_v2.solar_radiation.daily_solar_radiation_toa_new" title="Permalink to this definition"></a></dt>
+<dd><p>Computes the daily solar radiation at the top of the atmosphere.</p>
+<div class="math notranslate nohighlight">
+\[S_{toa}=S_{sun} \cdot d_{r} \cdot \int_{i=-\pi}^{i=\pi}S_{toa}^{i}\]</div>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>iesd</strong> (<em>float</em>) – inverse earth sun distance,
+<span class="math notranslate nohighlight">\(d_{r}\)</span>
+[AU]</p></li>
+<li><p><strong>decl</strong> (<em>float</em>) – solar declination,
+<span class="math notranslate nohighlight">\(\delta\)</span>
+[rad]</p></li>
+<li><p><strong>sc</strong> (<em>float</em>) – seasonal correction,
+<span class="math notranslate nohighlight">\(s_{c}\)</span>
+[hours]</p></li>
+<li><p><strong>lat</strong> (<em>float</em>) – latitude,
+<span class="math notranslate nohighlight">\(\lambda\)</span>
+[rad]</p></li>
+<li><p><strong>slope</strong> (<em>float</em>) – slope,
+<span class="math notranslate nohighlight">\(\Delta\)</span>
+[rad]</p></li>
+<li><p><strong>aspect</strong> (<em>float</em>) – aspect (0 is north; pi is south),
+<span class="math notranslate nohighlight">\(\alpha\)</span>
+[rad]</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p><strong>ra_24_toa</strong> – daily solar radiation at the top of atmosphere,
+<span class="math notranslate nohighlight">\(S_{toa}\)</span>
+[Wm-2]</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>float</p>
+</dd>
+</dl>
+<p class="rubric">Examples</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">import</span> <span class="nn">ETLook.solar_radiation</span> <span class="k">as</span> <span class="nn">solrad</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">math</span> <span class="kn">import</span> <span class="n">pi</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">doy</span> <span class="o">=</span> <span class="mi">1</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">sc</span> <span class="o">=</span> <span class="n">solrad</span><span class="o">.</span><span class="n">seasonal_correction</span><span class="p">(</span><span class="n">doy</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">decl</span> <span class="o">=</span> <span class="n">solrad</span><span class="o">.</span><span class="n">declination</span><span class="p">(</span><span class="n">doy</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">iesd</span> <span class="o">=</span> <span class="n">solrad</span><span class="o">.</span><span class="n">inverse_earth_sun_distance</span><span class="p">(</span><span class="n">doy</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">solrad</span><span class="o">.</span><span class="n">daily_solar_radiation_toa</span><span class="p">(</span><span class="n">sc</span><span class="p">,</span> <span class="n">decl</span><span class="p">,</span> <span class="n">iesd</span><span class="p">,</span> <span class="n">lat</span><span class="o">=</span><span class="mi">25</span><span class="o">*</span><span class="n">pi</span><span class="o">/</span><span class="mf">180.0</span><span class="p">)</span>
+<span class="go">265.74072308978026</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="pywapor.et_look_v2.solar_radiation.daily_total_solar_radiation">
+<span class="sig-name descname"><span class="pre">daily_total_solar_radiation</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">ra_24_toa</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ra_24_toa_flat</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">diffusion_index</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">trans_24</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pywapor.et_look_v2.solar_radiation.daily_total_solar_radiation" title="Permalink to this definition"></a></dt>
+<dd><p>Computes the daily solar radiation at the earth’s surface taken
+diffuse and direct solar radiation into account.</p>
+<div class="math notranslate nohighlight">
+\[S^{\downarrow} = I_{diff} \cdot \tau \cdot S_{toa,f} +(1-I_{diff}) \cdot \tau \cdot S_{toa}\]</div>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>ra_24_toa</strong> (<em>float</em>) – daily solar radiation at the top of atmosphere,
+<span class="math notranslate nohighlight">\(S_{toa}\)</span>
+[Wm-2]</p></li>
+<li><p><strong>ra_24_toa_flat</strong> (<em>float</em>) – daily solar radiation at the top of atmosphere for a flat surface,
+<span class="math notranslate nohighlight">\(S_{toa,f}\)</span>
+[Wm-2]</p></li>
+<li><p><strong>diffusion_index</strong> (<em>float</em>) – diffusion_index,
+<span class="math notranslate nohighlight">\(I_{diff}\)</span>
+[-]</p></li>
+<li><p><strong>trans_24</strong> (<em>float</em>) – daily atmospheric transmissivity,
+<span class="math notranslate nohighlight">\(\tau\)</span>
+[-]</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p><strong>ra_24</strong> – daily solar radiation,
+<span class="math notranslate nohighlight">\(S^{\downarrow}\)</span>
+[Wm-2]</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>float</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="pywapor.et_look_v2.solar_radiation.declination">
+<span class="sig-name descname"><span class="pre">declination</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">doy</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pywapor.et_look_v2.solar_radiation.declination" title="Permalink to this definition"></a></dt>
+<dd><p>Computes the solar declination which is the angular height of the sun
+above the astronomical equatorial plane in radians.</p>
+<div class="math notranslate nohighlight">
+\[\delta=0.409 \cdot \sin\left(\frac{2\pi \cdot J}{365}-1.39\right)\]</div>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>doy</strong> (<em>float</em>) – julian day of the year,
+<span class="math notranslate nohighlight">\(J\)</span>
+[-]</p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p><strong>decl</strong> – declination,
+<span class="math notranslate nohighlight">\(\delta\)</span>
+[rad]</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>float</p>
+</dd>
+</dl>
+<p class="rubric">Examples</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">import</span> <span class="nn">ETLook.solar_radiation</span> <span class="k">as</span> <span class="nn">solrad</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">solrad</span><span class="o">.</span><span class="n">declination</span><span class="p">(</span><span class="mi">180</span><span class="p">)</span>
+<span class="go">0.40512512455439242</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="pywapor.et_look_v2.solar_radiation.diffusion_index">
+<span class="sig-name descname"><span class="pre">diffusion_index</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">trans_24</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">diffusion_slope</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">-</span> <span class="pre">1.33</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">diffusion_intercept</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1.15</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pywapor.et_look_v2.solar_radiation.diffusion_index" title="Permalink to this definition"></a></dt>
+<dd><p>Computes the diffusion index, the ratio between diffuse and direct
+solar radiation. The results are clipped between 0 and 1.</p>
+<div class="math notranslate nohighlight">
+\[I_{diff} = a_{diff}+b_{diff} \cdot \tau\]</div>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>trans_24</strong> (<em>float</em>) – daily atmospheric transmissivity,
+<span class="math notranslate nohighlight">\(\tau\)</span>
+[-]</p></li>
+<li><p><strong>diffusion_slope</strong> (<em>float</em>) – slope of diffusion index vs transmissivity relationship,
+<span class="math notranslate nohighlight">\(b_{diff}\)</span>
+[-]</p></li>
+<li><p><strong>diffusion_intercept</strong> (<em>float</em>) – intercept of diffusion index vs transmissivity relationship,
+<span class="math notranslate nohighlight">\(a_{diff}\)</span>
+[-]</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p><strong>diffusion_index</strong> – diffusion_index,
+<span class="math notranslate nohighlight">\(I_{diff}\)</span>
+[-]</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>float</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="pywapor.et_look_v2.solar_radiation.earth_sun_distance">
+<span class="sig-name descname"><span class="pre">earth_sun_distance</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">doy</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pywapor.et_look_v2.solar_radiation.earth_sun_distance" title="Permalink to this definition"></a></dt>
+<dd><p>Computes the earth sun distance in Angstrom Unit where 1 AU is 1.496e8 km.</p>
+<div class="math notranslate nohighlight">
+\[d_{r}=1+0.033 \cdot \cos\left(\frac{2\pi \cdot J}{365}\right)\]</div>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>doy</strong> (<em>float</em>) – julian day of the year,
+<span class="math notranslate nohighlight">\(J\)</span>
+[-]</p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p><strong>ed</strong> – earth sun distance,
+<span class="math notranslate nohighlight">\(d_{r}\)</span>
+[AU]</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>float</p>
+</dd>
+</dl>
+<p class="rubric">Examples</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">import</span> <span class="nn">ETLook.solar_radiation</span> <span class="k">as</span> <span class="nn">solrad</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">solrad</span><span class="o">.</span><span class="n">earth_sun_distance</span><span class="p">(</span><span class="mi">180</span><span class="p">)</span>
+<span class="go">0.96703055420162642</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="pywapor.et_look_v2.solar_radiation.hour_angle">
+<span class="sig-name descname"><span class="pre">hour_angle</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">sc</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dtime</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">lon</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pywapor.et_look_v2.solar_radiation.hour_angle" title="Permalink to this definition"></a></dt>
+<dd><p>Computes the hour angle which is zero at noon and -pi at 0:00 am and
+pi at 12:00 pm</p>
+<div class="math notranslate nohighlight">
+\[\omega=\left(\frac{\pi}{12}\right)\cdot \left(t+s_{c}-12\right)\]</div>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>sc</strong> (<em>float</em>) – seasonal correction,
+<span class="math notranslate nohighlight">\(s_{c}\)</span>
+[hours]</p></li>
+<li><p><strong>dtime</strong> (<em>float</em>) – decimal time,
+<span class="math notranslate nohighlight">\(t\)</span>
+[hours]</p></li>
+<li><p><strong>lon</strong> (<em>float</em>) – longitude,
+<span class="math notranslate nohighlight">\(\phi\)</span>
+[rad]</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p><strong>ha</strong> – hour_angle,
+<span class="math notranslate nohighlight">\(\omega\)</span>
+[rad]</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>float</p>
+</dd>
+</dl>
+<p class="rubric">Examples</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">import</span> <span class="nn">ETLook.solar_radiation</span> <span class="k">as</span> <span class="nn">solrad</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">solrad</span><span class="o">.</span><span class="n">hour_angle</span><span class="p">(</span><span class="n">sc</span><span class="o">=</span><span class="n">solrad</span><span class="o">.</span><span class="n">seasonal_correction</span><span class="p">(</span><span class="mi">75</span><span class="p">),</span> <span class="n">dtime</span><span class="o">=</span><span class="mf">11.4</span><span class="p">)</span>
+<span class="go">-0.19793970172084141</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="pywapor.et_look_v2.solar_radiation.inst_solar_radiation_toa">
+<span class="sig-name descname"><span class="pre">inst_solar_radiation_toa</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">csza</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">iesd</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pywapor.et_look_v2.solar_radiation.inst_solar_radiation_toa" title="Permalink to this definition"></a></dt>
+<dd><p>Computes the instantaneous solar radiation at the top of
+the atmosphere [Wm-2].</p>
+<div class="math notranslate nohighlight">
+\[S_{toa}^{i} = S_{sun} \cdot d_{r} \cdot \phi\]</div>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>csza</strong> (<em>float</em>) – cosine solar zenith angle,
+<span class="math notranslate nohighlight">\(\phi\)</span>
+[-]</p></li>
+<li><p><strong>iesd</strong> (<em>float</em>) – inverse earth sun distance,
+<span class="math notranslate nohighlight">\(d_{r}\)</span>
+[AU]</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p><strong>ra_i_toa</strong> – instantaneous solar radiation at top of atmosphere,
+<span class="math notranslate nohighlight">\(S_{toa}^{i}\)</span>
+[Wm-2]</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>float</p>
+</dd>
+</dl>
+<p class="rubric">Examples</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">import</span> <span class="nn">ETLook.solar_radiation</span> <span class="k">as</span> <span class="nn">solrad</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">doy</span> <span class="o">=</span> <span class="mi">1</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">sc</span> <span class="o">=</span> <span class="n">solrad</span><span class="o">.</span><span class="n">seasonal_correction</span><span class="p">(</span><span class="n">doy</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">ha</span> <span class="o">=</span> <span class="n">solrad</span><span class="o">.</span><span class="n">hour_angle</span><span class="p">(</span><span class="n">sc</span><span class="p">,</span> <span class="n">dtime</span><span class="o">=</span><span class="mi">12</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">decl</span> <span class="o">=</span> <span class="n">solrad</span><span class="o">.</span><span class="n">declination</span><span class="p">(</span><span class="n">doy</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">csza</span> <span class="o">=</span> <span class="n">solrad</span><span class="o">.</span><span class="n">cosine_solar_zenith_angle</span><span class="p">(</span><span class="n">ha</span><span class="p">,</span> <span class="n">decl</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">iesd</span> <span class="o">=</span> <span class="n">solrad</span><span class="o">.</span><span class="n">inverse_earth_sun_distance</span><span class="p">(</span><span class="n">doy</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">solrad</span><span class="o">.</span><span class="n">inst_solar_radiation_toa</span><span class="p">(</span><span class="n">csza</span><span class="p">,</span> <span class="n">iesd</span><span class="p">)</span>
+<span class="go">1299.9181944414036</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="pywapor.et_look_v2.solar_radiation.inverse_earth_sun_distance">
+<span class="sig-name descname"><span class="pre">inverse_earth_sun_distance</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">doy</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pywapor.et_look_v2.solar_radiation.inverse_earth_sun_distance" title="Permalink to this definition"></a></dt>
+<dd><p>Computes the inverse earth sun distance (iesd) in Angstrom Unit where 1 AU is 1.496e8 km.</p>
+<div class="math notranslate nohighlight">
+\[d_{r}=1+0.033 \cdot \cos\left(\frac{2\pi \cdot J}{365}\right)\]</div>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>doy</strong> (<em>float</em>) – julian day of the year,
+<span class="math notranslate nohighlight">\(J\)</span>
+[-]</p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p><strong>iesd</strong> – inverse earth sun distance,
+<span class="math notranslate nohighlight">\(d_{r}\)</span>
+[AU]</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>float</p>
+</dd>
+</dl>
+<p class="rubric">Examples</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">import</span> <span class="nn">ETLook.solar_radiation</span> <span class="k">as</span> <span class="nn">solrad</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">solrad</span><span class="o">.</span><span class="n">inverse_earth_sun_distance</span><span class="p">(</span><span class="mi">180</span><span class="p">)</span>
+<span class="go">0.96703055420162642</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="pywapor.et_look_v2.solar_radiation.latitude_rad">
+<span class="sig-name descname"><span class="pre">latitude_rad</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">lat_deg</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pywapor.et_look_v2.solar_radiation.latitude_rad" title="Permalink to this definition"></a></dt>
+<dd><p>Converts latitude from degrees to radians.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>lat_deg</strong> (<em>float</em>) – latitude in degrees,
+<span class="math notranslate nohighlight">\(\lambda\)</span>
+[deg]</p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p><strong>lat</strong> – latitude,
+<span class="math notranslate nohighlight">\(\lambda\)</span>
+[rad]</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>float</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="pywapor.et_look_v2.solar_radiation.longitude_rad">
+<span class="sig-name descname"><span class="pre">longitude_rad</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">lon_deg</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pywapor.et_look_v2.solar_radiation.longitude_rad" title="Permalink to this definition"></a></dt>
+<dd><p>Converts longitude from degrees to radians.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>lon_deg</strong> (<em>float</em>) – longitude in degrees,
+<span class="math notranslate nohighlight">\(\phi\)</span>
+[deg]</p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p><strong>lon</strong> – longitude,
+<span class="math notranslate nohighlight">\(\phi\)</span>
+[rad]</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>float</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="pywapor.et_look_v2.solar_radiation.seasonal_correction">
+<span class="sig-name descname"><span class="pre">seasonal_correction</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">doy</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pywapor.et_look_v2.solar_radiation.seasonal_correction" title="Permalink to this definition"></a></dt>
+<dd><p>Computes the seasonal correction for solar time  in hours.</p>
+<div class="math notranslate nohighlight">
+\[b=\frac{2\pi\left(J-81\right)}{365}\]</div>
+<div class="math notranslate nohighlight">
+\[s_{c}= 0.1645 \cdot sin \left( 2b \right) - 0.1255 \cdot cos \left(b \right) - 0.025 \left(b\right)\]</div>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>doy</strong> (<em>float</em>) – julian day of the year,
+<span class="math notranslate nohighlight">\(J\)</span>
+[-]</p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p><strong>sc</strong> – seasonal correction,
+<span class="math notranslate nohighlight">\(s_{c}\)</span>
+[hours]</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>float</p>
+</dd>
+</dl>
+<p class="rubric">Examples</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">import</span> <span class="nn">ETLook.solar_radiation</span> <span class="k">as</span> <span class="nn">solrad</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">solrad</span><span class="o">.</span><span class="n">seasonal_correction</span><span class="p">(</span><span class="mi">180</span><span class="p">)</span>
+<span class="go">-0.052343379605521212</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="pywapor.et_look_v2.solar_radiation.slope_rad">
+<span class="sig-name descname"><span class="pre">slope_rad</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">slope_deg</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pywapor.et_look_v2.solar_radiation.slope_rad" title="Permalink to this definition"></a></dt>
+<dd><p>Converts slope from degrees to radians.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>slope_deg</strong> (<em>float</em>) – slope in degrees,
+<span class="math notranslate nohighlight">\(s\)</span>
+[deg]</p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p><strong>slope</strong> – slope,
+<span class="math notranslate nohighlight">\(\Delta\)</span>
+[rad]</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>float</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="pywapor.et_look_v2.solar_radiation.sunset_hour_angle">
+<span class="sig-name descname"><span class="pre">sunset_hour_angle</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">lat</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">decl</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pywapor.et_look_v2.solar_radiation.sunset_hour_angle" title="Permalink to this definition"></a></dt>
+<dd><p>Computes the sunset hour angle.</p>
+<div class="math notranslate nohighlight">
+\[w_{s}=\arccos(-\tan(\lambda)\cdot \tan(\delta))\]</div>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>decl</strong> (<em>float</em>) – solar declination,
+<span class="math notranslate nohighlight">\(\delta\)</span>
+[rad]</p></li>
+<li><p><strong>lat</strong> (<em>float</em>) – latitude,
+<span class="math notranslate nohighlight">\(\lambda\)</span>
+[rad]</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p><strong>ws</strong> – sunset hour angle,
+<span class="math notranslate nohighlight">\(w_{s}\)</span>
+[rad]</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>float</p>
+</dd>
+</dl>
+</dd></dl>
+
+<p id="id9"><dl class="footnote brackets">
+<dt class="label" id="footcite-tasumi2006based"><span class="brackets">1</span><span class="fn-backref">(<a href="#id1">1</a>,<a href="#id2">2</a>,<a href="#id3">3</a>,<a href="#id4">4</a>,<a href="#id5">5</a>,<a href="#id6">6</a>,<a href="#id7">7</a>,<a href="#id8">8</a>)</span></dt>
+<dd><p>Masahiro Tasumi. Dem based solar radiation estimation model for hydrological studies. <em>Hydr. Sci. and Tech.</em>, 22:197–208, 2006.</p>
+</dd>
+</dl>
+</p>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="roughness.html" class="btn btn-neutral float-left" title="roughness" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="stress.html" class="btn btn-neutral float-right" title="stress" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2021, FAO.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

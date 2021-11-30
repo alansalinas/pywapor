@@ -1,0 +1,933 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>pyWaPOR Introduction &mdash; pyWaPOR  documentation</title>
+      <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="../_static/css/theme.css" type="text/css" />
+  <!--[if lt IE 9]>
+    <script src="../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script data-url_root="../" id="documentation_options" src="../_static/documentation_options.js"></script>
+        <script src="../_static/jquery.js"></script>
+        <script src="../_static/underscore.js"></script>
+        <script src="../_static/doctools.js"></script>
+        <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+        <script defer="defer" src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+        <script>window.MathJax = {"tex": {"inlineMath": [["$", "$"], ["\\(", "\\)"]], "processEscapes": true}, "options": {"ignoreHtmlClass": "tex2jax_ignore|mathjax_ignore|document", "processHtmlClass": "tex2jax_process|mathjax_process|math|output_area"}}</script>
+    <script src="../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="Composites" href="composites.html" />
+    <link rel="prev" title="User Guide" href="../_user_guide.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+            <a href="../index.html" class="icon icon-home"> pyWaPOR
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../installation.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../data_sources.html">Data</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="../_user_guide.html">User Guide</a><ul class="current">
+<li class="toctree-l2 current"><a class="current reference internal" href="#">pyWaPOR Introduction</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#Installation">Installation</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#ETLook-Input">ETLook Input</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#Running-ETLook">Running ETLook</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#ETLook-Output">ETLook Output</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="composites.html">Composites</a></li>
+<li class="toctree-l2"><a class="reference internal" href="levels.html">Levels</a></li>
+<li class="toctree-l2"><a class="reference internal" href="wapor_vs_pywapor.html">pyWaPOR vs. WaPOR</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../_functions.html">Functions</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../bibliography.html">Bibliography</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">pyWaPOR</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../index.html" class="icon icon-home"></a> &raquo;</li>
+          <li><a href="../_user_guide.html">User Guide</a> &raquo;</li>
+      <li>pyWaPOR Introduction</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="../_sources/notebooks/pywapor_101.ipynb.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  
+<style>
+/* CSS for nbsphinx extension */
+
+/* remove conflicting styling from Sphinx themes */
+div.nbinput.container div.prompt *,
+div.nboutput.container div.prompt *,
+div.nbinput.container div.input_area pre,
+div.nboutput.container div.output_area pre,
+div.nbinput.container div.input_area .highlight,
+div.nboutput.container div.output_area .highlight {
+    border: none;
+    padding: 0;
+    margin: 0;
+    box-shadow: none;
+}
+
+div.nbinput.container > div[class*=highlight],
+div.nboutput.container > div[class*=highlight] {
+    margin: 0;
+}
+
+div.nbinput.container div.prompt *,
+div.nboutput.container div.prompt * {
+    background: none;
+}
+
+div.nboutput.container div.output_area .highlight,
+div.nboutput.container div.output_area pre {
+    background: unset;
+}
+
+div.nboutput.container div.output_area div.highlight {
+    color: unset;  /* override Pygments text color */
+}
+
+/* avoid gaps between output lines */
+div.nboutput.container div[class*=highlight] pre {
+    line-height: normal;
+}
+
+/* input/output containers */
+div.nbinput.container,
+div.nboutput.container {
+    display: -webkit-flex;
+    display: flex;
+    align-items: flex-start;
+    margin: 0;
+    width: 100%;
+}
+@media (max-width: 540px) {
+    div.nbinput.container,
+    div.nboutput.container {
+        flex-direction: column;
+    }
+}
+
+/* input container */
+div.nbinput.container {
+    padding-top: 5px;
+}
+
+/* last container */
+div.nblast.container {
+    padding-bottom: 5px;
+}
+
+/* input prompt */
+div.nbinput.container div.prompt pre {
+    color: #307FC1;
+}
+
+/* output prompt */
+div.nboutput.container div.prompt pre {
+    color: #BF5B3D;
+}
+
+/* all prompts */
+div.nbinput.container div.prompt,
+div.nboutput.container div.prompt {
+    width: 4.5ex;
+    padding-top: 5px;
+    position: relative;
+    user-select: none;
+}
+
+div.nbinput.container div.prompt > div,
+div.nboutput.container div.prompt > div {
+    position: absolute;
+    right: 0;
+    margin-right: 0.3ex;
+}
+
+@media (max-width: 540px) {
+    div.nbinput.container div.prompt,
+    div.nboutput.container div.prompt {
+        width: unset;
+        text-align: left;
+        padding: 0.4em;
+    }
+    div.nboutput.container div.prompt.empty {
+        padding: 0;
+    }
+
+    div.nbinput.container div.prompt > div,
+    div.nboutput.container div.prompt > div {
+        position: unset;
+    }
+}
+
+/* disable scrollbars on prompts */
+div.nbinput.container div.prompt pre,
+div.nboutput.container div.prompt pre {
+    overflow: hidden;
+}
+
+/* input/output area */
+div.nbinput.container div.input_area,
+div.nboutput.container div.output_area {
+    -webkit-flex: 1;
+    flex: 1;
+    overflow: auto;
+}
+@media (max-width: 540px) {
+    div.nbinput.container div.input_area,
+    div.nboutput.container div.output_area {
+        width: 100%;
+    }
+}
+
+/* input area */
+div.nbinput.container div.input_area {
+    border: 1px solid #e0e0e0;
+    border-radius: 2px;
+    /*background: #f5f5f5;*/
+}
+
+/* override MathJax center alignment in output cells */
+div.nboutput.container div[class*=MathJax] {
+    text-align: left !important;
+}
+
+/* override sphinx.ext.imgmath center alignment in output cells */
+div.nboutput.container div.math p {
+    text-align: left;
+}
+
+/* standard error */
+div.nboutput.container div.output_area.stderr {
+    background: #fdd;
+}
+
+/* ANSI colors */
+.ansi-black-fg { color: #3E424D; }
+.ansi-black-bg { background-color: #3E424D; }
+.ansi-black-intense-fg { color: #282C36; }
+.ansi-black-intense-bg { background-color: #282C36; }
+.ansi-red-fg { color: #E75C58; }
+.ansi-red-bg { background-color: #E75C58; }
+.ansi-red-intense-fg { color: #B22B31; }
+.ansi-red-intense-bg { background-color: #B22B31; }
+.ansi-green-fg { color: #00A250; }
+.ansi-green-bg { background-color: #00A250; }
+.ansi-green-intense-fg { color: #007427; }
+.ansi-green-intense-bg { background-color: #007427; }
+.ansi-yellow-fg { color: #DDB62B; }
+.ansi-yellow-bg { background-color: #DDB62B; }
+.ansi-yellow-intense-fg { color: #B27D12; }
+.ansi-yellow-intense-bg { background-color: #B27D12; }
+.ansi-blue-fg { color: #208FFB; }
+.ansi-blue-bg { background-color: #208FFB; }
+.ansi-blue-intense-fg { color: #0065CA; }
+.ansi-blue-intense-bg { background-color: #0065CA; }
+.ansi-magenta-fg { color: #D160C4; }
+.ansi-magenta-bg { background-color: #D160C4; }
+.ansi-magenta-intense-fg { color: #A03196; }
+.ansi-magenta-intense-bg { background-color: #A03196; }
+.ansi-cyan-fg { color: #60C6C8; }
+.ansi-cyan-bg { background-color: #60C6C8; }
+.ansi-cyan-intense-fg { color: #258F8F; }
+.ansi-cyan-intense-bg { background-color: #258F8F; }
+.ansi-white-fg { color: #C5C1B4; }
+.ansi-white-bg { background-color: #C5C1B4; }
+.ansi-white-intense-fg { color: #A1A6B2; }
+.ansi-white-intense-bg { background-color: #A1A6B2; }
+
+.ansi-default-inverse-fg { color: #FFFFFF; }
+.ansi-default-inverse-bg { background-color: #000000; }
+
+.ansi-bold { font-weight: bold; }
+.ansi-underline { text-decoration: underline; }
+
+
+div.nbinput.container div.input_area div[class*=highlight] > pre,
+div.nboutput.container div.output_area div[class*=highlight] > pre,
+div.nboutput.container div.output_area div[class*=highlight].math,
+div.nboutput.container div.output_area.rendered_html,
+div.nboutput.container div.output_area > div.output_javascript,
+div.nboutput.container div.output_area:not(.rendered_html) > img{
+    padding: 5px;
+    margin: 0;
+}
+
+/* fix copybtn overflow problem in chromium (needed for 'sphinx_copybutton') */
+div.nbinput.container div.input_area > div[class^='highlight'],
+div.nboutput.container div.output_area > div[class^='highlight']{
+    overflow-y: hidden;
+}
+
+/* hide copybtn icon on prompts (needed for 'sphinx_copybutton') */
+.prompt a.copybtn {
+    display: none;
+}
+
+/* Some additional styling taken form the Jupyter notebook CSS */
+div.rendered_html table {
+  border: none;
+  border-collapse: collapse;
+  border-spacing: 0;
+  color: black;
+  font-size: 12px;
+  table-layout: fixed;
+}
+div.rendered_html thead {
+  border-bottom: 1px solid black;
+  vertical-align: bottom;
+}
+div.rendered_html tr,
+div.rendered_html th,
+div.rendered_html td {
+  text-align: right;
+  vertical-align: middle;
+  padding: 0.5em 0.5em;
+  line-height: normal;
+  white-space: normal;
+  max-width: none;
+  border: none;
+}
+div.rendered_html th {
+  font-weight: bold;
+}
+div.rendered_html tbody tr:nth-child(odd) {
+  background: #f5f5f5;
+}
+div.rendered_html tbody tr:hover {
+  background: rgba(66, 165, 245, 0.2);
+}
+
+/* CSS overrides for sphinx_rtd_theme */
+
+/* 24px margin */
+.nbinput.nblast.container,
+.nboutput.nblast.container {
+    margin-bottom: 19px;  /* padding has already 5px */
+}
+
+/* ... except between code cells! */
+.nblast.container + .nbinput.container {
+    margin-top: -19px;
+}
+
+.admonition > p:before {
+    margin-right: 4px;  /* make room for the exclamation icon */
+}
+
+/* Fix math alignment, see https://github.com/rtfd/sphinx_rtd_theme/pull/686 */
+.math {
+    text-align: unset;
+}
+</style>
+<section id="pyWaPOR-Introduction">
+<h1>pyWaPOR Introduction<a class="headerlink" href="#pyWaPOR-Introduction" title="Permalink to this headline"></a></h1>
+<section id="Installation">
+<h2>Installation<a class="headerlink" href="#Installation" title="Permalink to this headline"></a></h2>
+<p>The pywapor package depends on several other packages, most of them get installed automatically when we install pywapor. The GDAL package needs to be installed manually however. Luckily, it is already installed on the backend computer used by Google Colab. We can verify that GDAL is installed by running the following commands.</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[1]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre>
+<span></span><span class="kn">from</span> <span class="nn">osgeo</span> <span class="kn">import</span> <span class="n">gdal</span>
+<span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Using gdal version&quot;</span><span class="p">,</span> <span class="n">gdal</span><span class="o">.</span><span class="n">__version__</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+Using gdal version 3.1.4
+</pre></div></div>
+</div>
+<p>Now that we know that Python is able to import the GDAL package, we can install pywapor by running the following command.</p>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[2]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre>
+<span></span><span class="o">!</span>pip install <span class="nv">pywapor</span><span class="o">==</span><span class="m">2</span>.3.4 --quiet
+</pre></div>
+</div>
+</div>
+<p>If everything went well, we can now import pywapor in Python, let’s try it (fingers crossed)!</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[1]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre>
+<span></span><span class="kn">import</span> <span class="nn">pywapor</span>
+<span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Using pywapor version:&quot;</span><span class="p">,</span> <span class="n">pywapor</span><span class="o">.</span><span class="n">__version__</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+Using pywapor version: 2.3.4
+</pre></div></div>
+</div>
+</section>
+<section id="ETLook-Input">
+<h2>ETLook Input<a class="headerlink" href="#ETLook-Input" title="Permalink to this headline"></a></h2>
+<p>In order to run the ETLook model, we first need to collect the necessary inputs. Two types of spatial data are required, temporal and static data. At the bottom of this notebook you can find a table specifying all the required inputs.</p>
+<p>Each of these variables can be collected from whichever source you wish to use, as long as you make sure the units are correct, the data is stored as a GeoTIFF (1 band per file, 1 file for each variable and date), the files all have the same no-data-value and they all have the same projection and resolution.</p>
+<p>For your convenience, the pywapor package has a function that can collect all this data from selected sources and make sure the data is stored in the correct format and folder structure.</p>
+<p>Because some of the data portals used require a user to login with a username and a password, we first need to set those up. Most importantly, we will need a <code class="docutils literal notranslate"><span class="pre">NASA</span> <span class="pre">Eearthdata</span> <span class="pre">Login</span></code> to be able to collect the MODIS, CHIRPS and MERRA2 datasets, which can be created <a class="reference external" href="https://urs.earthdata.nasa.gov/users/new">over here</a>.</p>
+<blockquote>
+<div><p>⚠️</p>
+<p>After creating your account, you still need to accept some ‘Terms of Use’, before you can continue with this notebook. To do that, login to your newly created account and go to</p>
+<p><code class="docutils literal notranslate"><span class="pre">Applications</span> <span class="pre">&gt;</span> <span class="pre">Authorized</span> <span class="pre">Apps</span> <span class="pre">&gt;</span> <span class="pre">Approve</span> <span class="pre">More</span> <span class="pre">Applications</span></code></p>
+<p>There, make sure the two following applications are authorized: 1. <code class="docutils literal notranslate"><span class="pre">NASA</span> <span class="pre">GESDISC</span> <span class="pre">DATA</span> <span class="pre">ARCHIVE</span></code> 2. <code class="docutils literal notranslate"><span class="pre">LP</span> <span class="pre">DAAC</span> <span class="pre">Data</span> <span class="pre">Pool</span></code></p>
+<p>⚠️</p>
+</div></blockquote>
+<p>Once you have your account set up, we can enter our username and password by running the following code.</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[4]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre>
+<span></span><span class="n">pywapor</span><span class="o">.</span><span class="n">collect</span><span class="o">.</span><span class="n">setup_dl_accounts</span><span class="o">.</span><span class="n">setup_account</span><span class="p">(</span><span class="s2">&quot;NASA&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+NASA account: working
+</pre></div></div>
+</div>
+<p>Next, we need a WAPOR API token. To get that token, you need to create an account <a class="reference external" href="https://wapor.apps.fao.org/home/WAPOR_2/1">here</a> and then go to <code class="docutils literal notranslate"><span class="pre">My</span> <span class="pre">WaPOR</span> <span class="pre">&gt;</span> <span class="pre">My</span> <span class="pre">Profile</span> <span class="pre">&gt;</span> <span class="pre">API</span> <span class="pre">Token</span></code>. Once you have the token, we can add it to our pywapor accounts.</p>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[5]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre>
+<span></span><span class="n">pywapor</span><span class="o">.</span><span class="n">collect</span><span class="o">.</span><span class="n">setup_dl_accounts</span><span class="o">.</span><span class="n">setup_account</span><span class="p">(</span><span class="s2">&quot;WAPOR&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<p>First we define a <code class="docutils literal notranslate"><span class="pre">startdate</span></code> and <code class="docutils literal notranslate"><span class="pre">enddate</span></code>, our boundingbox through <code class="docutils literal notranslate"><span class="pre">latlim</span></code> and <code class="docutils literal notranslate"><span class="pre">lonlim</span></code> and we give a <code class="docutils literal notranslate"><span class="pre">project_folder</span></code> in which all our data will be stored. Here I’ve chosen an period of exactly 10 days which is the default composite length of pyWAPOR. To learn more about composites, check out the dedicated notebook here. The given boundingbox will show us the Fayoum irrigation scheme in Egypt.</p>
+<p>Then we can run <code class="docutils literal notranslate"><span class="pre">pywapor.pre_et_look.main()</span></code> to start the downloading.</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[6]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre>
+<span></span><span class="n">project_folder</span> <span class="o">=</span> <span class="sa">r</span><span class="s2">&quot;/Users/hmcoerver/pywapor_notebooks&quot;</span>
+<span class="n">startdate</span> <span class="o">=</span> <span class="s2">&quot;2021-07-01&quot;</span>
+<span class="n">enddate</span> <span class="o">=</span> <span class="s2">&quot;2021-07-11&quot;</span>
+<span class="n">latlim</span> <span class="o">=</span> <span class="p">[</span><span class="mf">28.9</span><span class="p">,</span> <span class="mf">29.7</span><span class="p">]</span>
+<span class="n">lonlim</span> <span class="o">=</span> <span class="p">[</span><span class="mf">30.2</span><span class="p">,</span> <span class="mf">31.2</span><span class="p">]</span>
+
+<span class="n">pre_files</span> <span class="o">=</span> <span class="n">pywapor</span><span class="o">.</span><span class="n">pre_et_look</span><span class="o">.</span><span class="n">main</span><span class="p">(</span><span class="n">project_folder</span><span class="p">,</span> <span class="n">startdate</span><span class="p">,</span> <span class="n">enddate</span><span class="p">,</span> <span class="n">latlim</span><span class="p">,</span> <span class="n">lonlim</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+
+#################
+## PRE_ET_LOOK ##
+#################
+
+#### NDVI ####
+
+Download 16-daily MOD13 NDVI data for period 2021-07-01 till 2021-07-11
+Progress: |██████████████████████████████████████████████████| 100.0% Complete
+
+Download 16-daily MYD13 NDVI data for period 2021-07-01 till 2021-07-11
+Progress: |██████████████████████████████████████████████████| 100.0% Complete
+--&gt; Reprojecting datasets.
+--&gt; Calculating composites.
+
+#### ALBEDO ####
+
+Download daily MODIS Albedo data for period 2021-07-01 till 2021-07-11
+Progress: |██████████████████████████████████████████████████| 100.0% Complete
+--&gt; Reprojecting datasets.
+--&gt; Calculating composites.
+
+#### PRECIPITATION ####
+
+Downloading daily CHIRPS rainfall data for the period 2021-07-01 till 2021-07-11
+Progress: |██████████████████████████████████████████████████| 100.0% Complete
+--&gt; Reprojecting datasets.
+--&gt; Calculating composites.
+
+#### DEM ####
+
+#### SLOPE ASPECT ####
+
+#### LULC ####
+
+#### METEO ####
+</pre></div></div>
+</div>
+<div class="nboutput docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area stderr docutils container">
+<div class="highlight"><pre>
+slp:  86%|████████▌ | 66/77 [00:00&lt;00:00, 851.98it/s]
+</pre></div></div>
+</div>
+<div class="nboutput docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+## t2m ##
+--&gt; Reprojecting datasets.
+--&gt; Calculating composites.
+## t2m-min ##
+--&gt; Reprojecting datasets.
+--&gt; Calculating composites.
+## t2m-max ##
+--&gt; Reprojecting datasets.
+--&gt; Calculating composites.
+## u2m ##
+--&gt; Reprojecting datasets.
+--&gt; Calculating composites.
+## v2m ##
+--&gt; Reprojecting datasets.
+--&gt; Calculating composites.
+## qv2m ##
+--&gt; Reprojecting datasets.
+--&gt; Calculating composites.
+## tqv ##
+## ps ##
+## slp ##
+--&gt; Reprojecting datasets.
+--&gt; Calculating composites.
+
+#################
+## PRE_SE_ROOT ##
+#################
+
+#### NDVI ####
+
+Download 16-daily MOD13 NDVI data for period 2021-07-01 till 2021-07-11
+Progress: |██████████████████████████████████████████████████| 100.0% Complete
+
+Download 16-daily MYD13 NDVI data for period 2021-07-01 till 2021-07-11
+Progress: |██████████████████████████████████████████████████| 100.0% Complete
+--&gt; Reprojecting datasets.
+--&gt; Exporting timeseries.
+
+#### LST ####
+
+Download daily MOD11 Land Surface Temperature data for period 2021-07-01 till 2021-07-11
+Progress: |██████████████████████████████████████████████████| 100.0% Complete
+
+Download daily MYD11 Land Surface Temperature data for period 2021-07-01 till 2021-07-11
+Progress: |██████████████████████████████████████████████████| 100.0% Complete
+
+#### DEM ####
+
+#### METEO ####
+</pre></div></div>
+</div>
+<div class="nboutput docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area stderr docutils container">
+<div class="highlight"><pre>
+slp: 100%|██████████| 287/287 [00:01&lt;00:00, 218.98it/s]
+</pre></div></div>
+</div>
+<div class="nboutput docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+## Pair_inst_0 ##
+## Pair_inst ##
+## qv_inst ##
+## tair_inst ##
+## wv_inst ##
+## v2m_inst ##
+## u2m_inst ##
+
+#################
+## PRE_SE_ROOT ##
+##### DONE ######
+
+
+#### SE_ROOT ####
+--&gt; Calculating se_root.
+</pre></div></div>
+</div>
+<div class="nboutput docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area stderr docutils container">
+<div class="highlight"><pre>
+100%|██████████| 41/41 [00:40&lt;00:00,  1.02it/s]
+</pre></div></div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+--&gt; Reprojecting datasets.
+--&gt; Calculating composites.
+
+#### LAT LON ####
+
+#### SOLAR RADIATION ####
+
+Downloading daily MERRA swgnet data for the period 2021-07-01 till 2021-07-11
+Progress: |██████████████████████████████████████████████████| 100.0% Complete
+--&gt; Reprojecting datasets.
+--&gt; Calculating composites.
+
+#### TEMP. AMPLITUDE ####
+
+#################
+## PRE_ET_LOOK ##
+##### DONE ######
+
+</pre></div></div>
+</div>
+<p>After downloading the files, we can check if all the required files exist. Using the <code class="docutils literal notranslate"><span class="pre">`ls</span></code> unix command &lt;<a class="reference external" href="https://en.wikipedia.org/wiki/Ls">https://en.wikipedia.org/wiki/Ls</a>&gt;`__, we can see the contents of a folder, and with the asterices we can see the contents of recursive folders. Our <code class="docutils literal notranslate"><span class="pre">project_folder</span></code> now contains the following subdirectories and files.</p>
+<blockquote>
+<div><p>Actually, it also contains a folder called <code class="docutils literal notranslate"><span class="pre">RAW</span></code>, which you can see by running <code class="docutils literal notranslate"><span class="pre">!ls</span> <span class="pre">*/*</span></code> instead. This folder holds some intermediate files that were used to create the final ETLook inputs.</p>
+</div></blockquote>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[7]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre>
+<span></span><span class="o">!</span>ls level_1*/*
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+level_1/metadata_level_1.json
+
+level_1/20210701:
+P_24_20210701.tif         r0_20210701.tif           t_air_max_24_20210701.tif
+ndvi_20210701.tif         ra_24_20210701.tif        t_air_min_24_20210701.tif
+p_air_24_0_20210701.tif   se_root_20210701.tif      u2m_24_20210701.tif
+qv_24_20210701.tif        t_air_24_20210701.tif     v2m_24_20210701.tif
+
+level_1/SMC:
+SMC_-_-_inst_2021.07.01.09.24.tif SMC_-_-_inst_2021.07.06.11.24.tif
+SMC_-_-_inst_2021.07.01.09.30.tif SMC_-_-_inst_2021.07.07.08.42.tif
+SMC_-_-_inst_2021.07.01.11.00.tif SMC_-_-_inst_2021.07.07.08.48.tif
+SMC_-_-_inst_2021.07.01.11.06.tif SMC_-_-_inst_2021.07.07.10.30.tif
+SMC_-_-_inst_2021.07.02.08.24.tif SMC_-_-_inst_2021.07.07.12.00.tif
+SMC_-_-_inst_2021.07.02.08.30.tif SMC_-_-_inst_2021.07.07.12.06.tif
+SMC_-_-_inst_2021.07.02.11.42.tif SMC_-_-_inst_2021.07.08.09.30.tif
+SMC_-_-_inst_2021.07.02.11.48.tif SMC_-_-_inst_2021.07.08.11.06.tif
+SMC_-_-_inst_2021.07.03.09.12.tif SMC_-_-_inst_2021.07.08.11.12.tif
+SMC_-_-_inst_2021.07.03.10.48.tif SMC_-_-_inst_2021.07.09.08.36.tif
+SMC_-_-_inst_2021.07.03.10.54.tif SMC_-_-_inst_2021.07.09.11.48.tif
+SMC_-_-_inst_2021.07.04.08.12.tif SMC_-_-_inst_2021.07.09.11.54.tif
+SMC_-_-_inst_2021.07.04.08.18.tif SMC_-_-_inst_2021.07.10.09.18.tif
+SMC_-_-_inst_2021.07.04.11.30.tif SMC_-_-_inst_2021.07.10.09.24.tif
+SMC_-_-_inst_2021.07.04.11.36.tif SMC_-_-_inst_2021.07.10.10.54.tif
+SMC_-_-_inst_2021.07.05.09.00.tif SMC_-_-_inst_2021.07.10.11.00.tif
+SMC_-_-_inst_2021.07.05.10.36.tif SMC_-_-_inst_2021.07.11.08.18.tif
+SMC_-_-_inst_2021.07.05.10.42.tif SMC_-_-_inst_2021.07.11.08.24.tif
+SMC_-_-_inst_2021.07.06.08.00.tif SMC_-_-_inst_2021.07.11.11.36.tif
+SMC_-_-_inst_2021.07.06.08.06.tif SMC_-_-_inst_2021.07.11.11.42.tif
+SMC_-_-_inst_2021.07.06.11.18.tif
+
+level_1/static:
+aspect_deg.tif      lon_deg.tif         slope_deg.tif       z_obst_max_2021.tif
+land_mask_2021.tif  lue_max_2021.tif    t_amp_year_2021.tif
+lat_deg.tif         rs_min_2021.tif     z.tif
+</pre></div></div>
+</div>
+<p>Besides the tif files, which we need as input for ETLook, a json file has also been created (named <code class="docutils literal notranslate"><span class="pre">metadata_level_1.json</span></code> here). It contains information on how the input files were created. We can check the file like this.</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[8]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre>
+<span></span><span class="o">!</span>python -m json.tool level_1/metadata_level_1.json
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+{
+    &#34;pywapor_version&#34;: &#34;2.3.2&#34;,
+    &#34;created&#34;: &#34;11/29/2021, 18:57:23&#34;,
+    &#34;template_file&#34;: &#34;/Users/hmcoerver/pywapor_notebooks/RAW/MODIS/MOD13/NDVI_MOD13Q1_-_16-daily_2021.06.26.tif&#34;,
+    &#34;geotransform&#34;: &#34;[30.19847367188096, 0.0019653699789507215, 0.0, 29.7012637605054, 0.0, -0.0019653699789507215]&#34;,
+    &#34;resolution&#34;: &#34;[510, 408]&#34;,
+    &#34;inputs&#34;: {
+        &#34;latlim&#34;: &#34;[28.799999999999997, 29.8]&#34;,
+        &#34;lonlim&#34;: &#34;[30.099999999999998, 31.3]&#34;,
+        &#34;startdate&#34;: &#34;2021-07-01&#34;,
+        &#34;enddate&#34;: &#34;2021-07-11&#34;,
+        &#34;source_selection_name&#34;: &#34;level_1&#34;,
+        &#34;project_folder&#34;: &#34;/Users/hmcoerver/pywapor_notebooks&#34;
+    },
+    &#34;sources&#34;: {
+        &#34;METEO&#34;: [
+            &#34;GEOS5&#34;
+        ],
+        &#34;NDVI&#34;: [
+            &#34;MOD13&#34;,
+            &#34;MYD13&#34;
+        ],
+        &#34;ALBEDO&#34;: [
+            &#34;MDC43&#34;
+        ],
+        &#34;LST&#34;: [
+            &#34;MOD11&#34;,
+            &#34;MYD11&#34;
+        ],
+        &#34;LULC&#34;: [
+            &#34;WAPOR&#34;
+        ],
+        &#34;DEM&#34;: [
+            &#34;SRTM&#34;
+        ],
+        &#34;PRECIPITATION&#34;: [
+            &#34;CHIRPS&#34;
+        ],
+        &#34;TRANS&#34;: [
+            &#34;MERRA2&#34;
+        ]
+    }
+}
+</pre></div></div>
+</div>
+<p>Now that we know that all the required files exist, it is also a good idea to check if there is any data inside those files! For all we know right now, they might just be a bunch of empty files.</p>
+<p>We can create a simple map using the code below.</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[10]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre>
+<span></span><span class="kn">import</span> <span class="nn">matplotlib.pyplot</span> <span class="k">as</span> <span class="nn">plt</span>
+
+<span class="n">tif_file</span> <span class="o">=</span> <span class="n">pre_files</span><span class="p">[</span><span class="s2">&quot;ndvi&quot;</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span>
+<span class="n">ndvi_data</span> <span class="o">=</span> <span class="n">pywapor</span><span class="o">.</span><span class="n">general</span><span class="o">.</span><span class="n">processing_functions</span><span class="o">.</span><span class="n">open_as_array</span><span class="p">(</span><span class="n">tif_file</span><span class="p">)</span>
+
+<span class="n">fig</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">figure</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
+<span class="n">fig</span><span class="o">.</span><span class="n">clf</span><span class="p">()</span>
+<span class="n">fig</span><span class="o">.</span><span class="n">set_size_inches</span><span class="p">(</span><span class="mf">4.69</span><span class="p">,</span> <span class="mf">5.47</span><span class="p">)</span>
+<span class="n">ax</span> <span class="o">=</span> <span class="n">fig</span><span class="o">.</span><span class="n">gca</span><span class="p">()</span>
+<span class="n">pywapor</span><span class="o">.</span><span class="n">post_et_look</span><span class="o">.</span><span class="n">plot_img</span><span class="p">(</span><span class="n">ax</span><span class="p">,</span> <span class="n">ndvi_data</span><span class="p">,</span> <span class="s2">&quot;pywapor&quot;</span><span class="p">,</span> <span class="s2">&quot;NDVI [-]&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<img alt="../_images/notebooks_pywapor_101_18_0.png" src="../_images/notebooks_pywapor_101_18_0.png" />
+</div>
+</div>
+<p>Now that we have all the required input files its time to run the actual model!</p>
+</section>
+<section id="Running-ETLook">
+<h2>Running ETLook<a class="headerlink" href="#Running-ETLook" title="Permalink to this headline"></a></h2>
+<p>To run the model, we need to give at least two inputs to <code class="docutils literal notranslate"><span class="pre">pywapor.et_look_code.main()</span></code>:</p>
+<ol class="arabic simple">
+<li><p>The <code class="docutils literal notranslate"><span class="pre">project_folder</span></code>, wich we already defined.</p></li>
+<li><p>And the specific <code class="docutils literal notranslate"><span class="pre">date</span></code> for which to run the model. Here we’ll use <code class="docutils literal notranslate"><span class="pre">startdate</span></code>.</p></li>
+</ol>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[11]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre>
+<span></span><span class="n">files</span> <span class="o">=</span> <span class="n">pywapor</span><span class="o">.</span><span class="n">et_look</span><span class="o">.</span><span class="n">main</span><span class="p">(</span><span class="n">project_folder</span><span class="p">,</span> <span class="n">startdate</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+--&gt; Running ETLook_v2
+----&gt; u_24 will be calculated from u2m_24 and v2m_24.
+----&gt; trans_24 will be calculated from ra_24.
+----&gt; z_oro will be calculated from slope.
+----&gt; lw_offset will be constant at -0.3500.
+----&gt; lw_slope will be constant at 1.3500.
+----&gt; r0_bare will be constant at 0.3800.
+----&gt; r0_full will be constant at 0.1800.
+----&gt; rn_offset will be constant at -61.0000.
+----&gt; rn_slope will be constant at 0.9200.
+----&gt; t_opt will be constant at 25.0000.
+----&gt; vpd_slope will be constant at -0.3000.
+----&gt; resolution is ~205 meter.
+</pre></div></div>
+</div>
+<p>You’ll see an message indicating that <code class="docutils literal notranslate"><span class="pre">'se_root'</span></code> was <code class="docutils literal notranslate"><span class="pre">not</span> <span class="pre">found</span></code>. This is no problem, ETLook can calculate <code class="docutils literal notranslate"><span class="pre">se_root</span></code> with the inputs we’ve provided, but it can also be given as input in case you have some great soil moisture dataset lying around.</p>
+<p>Now that the model is finished, we can check again if any new files have been created, just like we did before.</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[12]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre>
+<span></span><span class="o">!</span>ls out_level_1*/*
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+e_24_mm_20210701.tif      et_ref_24_mm_20210701.tif se_root_20210701.tif
+et_24_mm_20210701.tif     int_mm_20210701.tif       t_24_mm_20210701.tif
+</pre></div></div>
+</div>
+<p>If everything went well, there should be a new folder called <code class="docutils literal notranslate"><span class="pre">out_level_1</span></code>, showing several output files that have been created.</p>
+</section>
+<section id="ETLook-Output">
+<h2>ETLook Output<a class="headerlink" href="#ETLook-Output" title="Permalink to this headline"></a></h2>
+<p>Like we did before, we can plot a map by giving a path to a tif-file.</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[13]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre>
+<span></span><span class="n">tif_file</span> <span class="o">=</span> <span class="n">files</span><span class="p">[</span><span class="s2">&quot;et_24_mm&quot;</span><span class="p">]</span>
+<span class="n">et_data</span> <span class="o">=</span> <span class="n">pywapor</span><span class="o">.</span><span class="n">general</span><span class="o">.</span><span class="n">processing_functions</span><span class="o">.</span><span class="n">open_as_array</span><span class="p">(</span><span class="n">tif_file</span><span class="p">)</span>
+
+<span class="n">fig</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">figure</span><span class="p">(</span><span class="mi">2</span><span class="p">)</span>
+<span class="n">fig</span><span class="o">.</span><span class="n">clf</span><span class="p">()</span>
+<span class="n">fig</span><span class="o">.</span><span class="n">set_size_inches</span><span class="p">(</span><span class="mf">4.69</span><span class="p">,</span> <span class="mf">5.47</span><span class="p">)</span>
+<span class="n">ax</span> <span class="o">=</span> <span class="n">fig</span><span class="o">.</span><span class="n">gca</span><span class="p">()</span>
+<span class="n">pywapor</span><span class="o">.</span><span class="n">post_et_look</span><span class="o">.</span><span class="n">plot_img</span><span class="p">(</span><span class="n">ax</span><span class="p">,</span> <span class="n">et_data</span><span class="p">,</span> <span class="s2">&quot;pywapor&quot;</span><span class="p">,</span> <span class="s2">&quot;ET [mm/day]&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<img alt="../_images/notebooks_pywapor_101_26_0.png" src="../_images/notebooks_pywapor_101_26_0.png" />
+</div>
+</div>
+<p>Or we can calculate some statistics.</p>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[14]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre>
+<span></span><span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+
+<span class="nb">print</span><span class="p">(</span><span class="s2">&quot;resolution:&quot;</span><span class="p">,</span> <span class="n">et_data</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="s2">&quot;total pixels:&quot;</span><span class="p">,</span> <span class="n">et_data</span><span class="o">.</span><span class="n">size</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="s2">&quot;number of pixels with missing data:&quot;</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">isnan</span><span class="p">(</span><span class="n">et_data</span><span class="p">)))</span>
+<span class="nb">print</span><span class="p">(</span><span class="s2">&quot;maximum value: </span><span class="si">{0:.2f}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">nanmax</span><span class="p">(</span><span class="n">et_data</span><span class="p">)))</span>
+<span class="nb">print</span><span class="p">(</span><span class="s2">&quot;minimum value: </span><span class="si">{0:.2f}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">nanmin</span><span class="p">(</span><span class="n">et_data</span><span class="p">)))</span>
+<span class="nb">print</span><span class="p">(</span><span class="s2">&quot;mean: </span><span class="si">{0:.2f}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">nanmean</span><span class="p">(</span><span class="n">et_data</span><span class="p">)))</span>
+<span class="nb">print</span><span class="p">(</span><span class="s2">&quot;median: </span><span class="si">{0:.2f}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">nanmedian</span><span class="p">(</span><span class="n">et_data</span><span class="p">)))</span>
+</pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<div class="highlight"><pre>
+resolution: (408, 510)
+total pixels: 208080
+number of pixels with missing data: 844
+maximum value: 10.97
+minimum value: 0.04
+mean: 2.32
+median: 0.38
+</pre></div></div>
+</div>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="../_user_guide.html" class="btn btn-neutral float-left" title="User Guide" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="composites.html" class="btn btn-neutral float-right" title="Composites" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2021, FAO.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

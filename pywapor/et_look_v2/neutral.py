@@ -10,8 +10,8 @@ def initial_soil_aerodynamic_resistance(u_24, z_obs=2):
     .. math ::
 
         r_{a,soil}^{0}=\frac{\ln\left(\frac{z_{obs}}{z_{0,soil}}\right)
-                       \ln\left(\frac{z_{obs}}{0.1z_{0,soil}}\right)}
-                       {k^{2}u_{obs}}
+                       \cdot \ln\left(\frac{z_{obs}}{0.1z_{0,soil}}\right)}
+                       {k^{2} \cdot u_{obs}}
 
 
     where the following constants are used
@@ -25,19 +25,19 @@ def initial_soil_aerodynamic_resistance(u_24, z_obs=2):
     Parameters
     ----------
     u_24 : float
-        daily wind speed at observation height
-        :math:`u_obs`
+        daily wind speed at observation height,
+        :math:`u_{obs}`
         [m/s]
 
     z_obs : float
-        observation height
+        observation height,
         :math:`z_{obs}`
         [m]
 
     Returns
     -------
     ra_soil_init : float
-        aerodynamic resistance without stability corrections
+        aerodynamic resistance without stability corrections, 
         :math:`r_{a,soil}^{0}`
         [s/m]
 
@@ -65,11 +65,11 @@ def initial_daily_evaporation(rn_24_soil, g0_24, ssvp_24, ad_24, vpd_24,
     Parameters
     ----------
     rn_24_soil : float
-        daily net radiation for soil
+        daily net radiation for soil, 
         :math:`Q_{soil}^{*}`
         [W m-2]
     g0_24 : float
-        daily soil heat flux
+        daily soil heat flux, 
         :math:`G`
         [W m-2]
     ssvp_24 : float
@@ -77,30 +77,30 @@ def initial_daily_evaporation(rn_24_soil, g0_24, ssvp_24, ad_24, vpd_24,
        :math:`\Delta`
        [mbar K-1]
     ad_24 : float
-        daily air density
+        daily air density, 
         :math:`\rho`
         [kg m-3]
     vpd_24 : float
-        daily vapour pressure deficit
+        daily vapour pressure deficit, 
         :math:`\Delta_{e}`
         [mbar]
     psy_24 : float
-        daily psychrometric constant
+        daily psychrometric constant, 
         :math:`\gamma`
         [mbar K-1]
     r_soil : float
-        soil resistance
+        soil resistance, 
         :math:`r_{soil}`
         [m s-1]
     ra_soil_init : float
-        initial soil aerodynamic resistance
+        initial soil aerodynamic resistance, 
         :math:`r_{a,soil}`
         [m s-1]
 
     Returns
     -------
     e_24_init : float
-        initial estimate radiation equivalent daily evaporation
+        initial estimate radiation equivalent daily evaporation, 
         :math:`E^{0}`
         [W m-2]
 
@@ -118,7 +118,7 @@ def initial_daily_evaporation_mm(e_24_init, lh_24):
 
     .. math ::
 
-        E^{0}=E^{0}d_{sec}\lambda_{24}
+        E^{0}=E^{0} \cdot d_{sec} \cdot \lambda_{24}
 
     where the following constants are used
 
@@ -127,18 +127,18 @@ def initial_daily_evaporation_mm(e_24_init, lh_24):
     Parameters
     ----------
     e_24_init : float
-        initial estimate daily evaporation
+        initial estimate daily evaporation, 
         :math:`E^{0}`
         [W m-2]
     lh_24 : float
-        daily latent heat of evaporation
+        daily latent heat of evaporation, 
         :math:`\lambda_{24}`
         [J/kg]
 
     Returns
     -------
     e_24_init_mm : float
-        initial estimate daily evaporation in mm
+        initial estimate daily evaporation in mm, 
         :math:`E^{0}`
         [mm d-1]
     """
@@ -152,8 +152,8 @@ def initial_canopy_aerodynamic_resistance(u_24, z0m, z_obs=2):
 
     .. math ::
 
-        r_{a,canopy}^{0}=\frac{\ln\left(\frac{z_{obs}}{z_{0,m}}\right)\ln
-        \left(\frac{z_{obs}}{0.1z_{0,m}}\right)}{k^{2}u_{obs}}
+        r_{a,canopy}^{0}=\frac{\ln\left(\frac{z_{obs}}{z_{0,m}}\right) \cdot \ln
+        \left(\frac{z_{obs}}{0.1z_{0,m}}\right)}{k^{2} \cdot u_{obs}}
 
     where the following constants are used
 
@@ -165,22 +165,22 @@ def initial_canopy_aerodynamic_resistance(u_24, z0m, z_obs=2):
     Parameters
     ----------
     u_24 : float
-        daily wind speed at observation height
-        :math:`u_obs`
+        daily wind speed at observation height, 
+        :math:`u_{obs}`
         [m/s]
     z0m : float
-        roughness length
+        roughness length, 
         :math:`z_{0,m}`
         [m]
     z_obs : float
-        observation height
+        observation height, 
         :math:`z_{obs}`
         [m]
 
     Returns
     -------
     ra_canopy_init : float
-        canopy resistance without stability corrections
+        canopy resistance without stability corrections, 
         :math:`r_{a,canopy}^{0}`
         [s/m]
     """
@@ -208,7 +208,7 @@ def initial_daily_transpiration(rn_24_canopy, ssvp_24, ad_24, vpd_24,
     Parameters
     ----------
     rn_24_canopy : float
-        daily net radiation for the canopy
+        daily net radiation for the canopy, 
         :math:`Q_{soil}^{*}`
         [W m-2]
     ssvp_24 : float
@@ -216,30 +216,30 @@ def initial_daily_transpiration(rn_24_canopy, ssvp_24, ad_24, vpd_24,
        :math:`\Delta`
        [mbar K-1]
     ad_24 : float
-        daily air density
+        daily air density, 
         :math:`\rho`
         [kg m-3]
     vpd_24 : float
-        daily vapour pressure deficit
+        daily vapour pressure deficit, 
         :math:`\Delta_{e}`
         [mbar]
     psy_24 : float
-        daily psychrometric constant
+        daily psychrometric constant, 
         :math:`\gamma`
         [mbar K-1]
     r_canopy : float
-        canopy resistance
+        canopy resistance, 
         :math:`r_{canopy}`
         [m s-1]
     ra_canopy_init : float
-        initial canopy aerodynamic resistance
+        initial canopy aerodynamic resistance, 
         :math:`r_{a,canopy}`
         [m s-1]
 
     Returns
     -------
     t_24_init : float
-        initial estimate radiation equivalent daily transpiration
+        initial estimate radiation equivalent daily transpiration, 
         :math:`T^{0}`
         [W m-2]
     """
@@ -256,7 +256,7 @@ def initial_daily_transpiration_mm(t_24_init, lh_24):
 
     .. math ::
 
-        T^{0}=T^{0}d_{sec}\lambda_{24}
+        T^{0}=T^{0} \cdot d_{sec} \cdot \lambda_{24}
 
     where the following constants are used
 
@@ -265,18 +265,18 @@ def initial_daily_transpiration_mm(t_24_init, lh_24):
     Parameters
     ----------
     t_24_init : float
-        initial estimate daily transpiration
+        initial estimate daily transpiration, 
         :math:`E^{0}`
         [W m-2]
     lh_24 : float
-        daily latent heat of evaporation
+        daily latent heat of evaporation, 
         :math:`\lambda_{24}`
         [J/kg]
 
     Returns
     -------
     t_24_init_mm : float
-        initial estimate daily transpiration in mm
+        initial estimate daily transpiration in mm, 
         :math:`T^{0}`
         [mm d-1]
     """

@@ -1,5 +1,6 @@
 """
-    The soil_moisture module contains all functions related to soil moisture data components.
+    The soil_moisture module contains all functions related to soil moisture data components,
+    as outlined by :footcite:t:`yang2015estimation`.
 
 """
 from pywapor.et_look_v2 import constants as c
@@ -14,18 +15,18 @@ def wet_bulb_temperature_inst(t_air_i, t_dew_i, p_air_i):
     Parameters
     ----------
     t_air_i : float
-        instantaneous air temperature
+        instantaneous air temperature, 
         :math:`T_{a}`
         [C]
     t_dew_i : float
-        instantaneous dew point temperature
+        instantaneous dew point temperature, 
         :math:`Td_{a}`
         [C]
 
     Returns
     -------
     t_wet_i : float
-        instantaneous wet bulb temperature
+        instantaneous wet bulb temperature, 
         :math:`Tw_{a}`
         [C]
     """
@@ -40,22 +41,22 @@ def wet_bulb_temperature_inst_new(t_air_i, qv_i, p_air_i):
     Parameters
     ----------
     t_air_i : float
-        instantaneous air temperature
+        instantaneous air temperature, 
         :math:`T_{a}`
         [C]
     qv_i : float
-        instantaneous specific humidity
+        instantaneous specific humidity, 
         :math:`q_{v,i}`
         [kg/kg]
     p_air_i : float
-        instantaneous air pressure
+        instantaneous air pressure, 
         :math:`P_{i}`
         [mbar]
 
     Returns
     -------
     t_wet_i : float
-        instantaneous wet bulb temperature
+        instantaneous wet bulb temperature, 
         :math:`Tw_{a}`
         [C]
     """
@@ -74,14 +75,14 @@ def dew_point_temperature_inst(vp_i):
     Parameters
     ----------
     vp_i : float
-        instantaneous vapour pressure
+        instantaneous vapour pressure, 
         :math:`e_{a}`
         [mbar]
 
     Returns
     -------
     t_dew_i : float
-        instantaneous dew point temperature
+        instantaneous dew point temperature, 
         :math:`Td_{a}`
         [K]
     """
@@ -97,14 +98,14 @@ def dew_point_temperature_coarse_inst(vp_i):
     Parameters
     ----------
     vp_i : float
-        instantaneous vapour pressure
+        instantaneous vapour pressure, 
         :math:`e_{a}`
         [mbar]
 
     Returns
     -------
     t_dew_coarse_i : float
-        instantaneous dew point temperature
+        instantaneous dew point temperature, 
         :math:`Td_{a}`
         [K]
     """
@@ -180,27 +181,29 @@ def wetbulb_temperature_iter(ta, td):
 # some internal functions for the stability correction based on Brutsaert
 def psi_m(y):
     r"""
-    Computes the stability correction for momentum based on
-    Brutsaert (1999) [2]_.
+    Computes the stability correction for momentum based on :footcite:t:`brutsaert1999aspects`.
 
     .. math ::
-        \Psi_{M}(y)=\ln(a+y)-3by^{\frac{1}{3}}+ \\
-        \frac{ba^{\frac{1}{3}}}{2}\ln[\frac{(1+x)^{2}}{(1-x+x^{2})}]+\\
-        \sqrt{3}ba^{\frac{1}{3}}\arctan[\frac{(2x-1)}{\sqrt{3}}]+\Psi_{0}
+
+        \Psi_{M}(y) = & \ln(a+y)-3by^{\frac{1}{3}} + \\
+        & \frac{ba^{\frac{1}{3}}}{2}\ln[\frac{(1+x)^{2}}{(1-x+x^{2})}] + \\
+        & \sqrt{3}ba^{\frac{1}{3}}\arctan[\frac{(2x-1)}{\sqrt{3}}]+\Psi_{0}
 
     where the following constants are used
 
     * :math:`a` = 0.33
     * :math:`b` = 0.41
 
-    in which
+    in which:
 
     .. math ::
+
         x = (\frac{y}{a})^{\frac{1}{3}}
 
-    and
+    and:
 
     .. math ::
+
         y = \frac{-(z-d)}{L}
 
     where :math:`L` is the monin obukhov length defined by
@@ -212,7 +215,8 @@ def psi_m(y):
     The symbol :math:`\Psi_{0}` denotes a constant of integration, given by
 
     .. math ::
-       \Psi_{0}=-\ln{a}+\sqrt{3}ba^{\frac{1}{3}}\frac{\pi}{6}
+
+        \Psi_{0}=-\ln({a}) + \sqrt{3} \cdot b \cdot a^{\frac{1}{3}} \cdot \frac{\pi}{6}
 
     Notes
     -----
@@ -220,11 +224,6 @@ def psi_m(y):
     This function is used internally by :func:`aerodynamical_resistance_bare`
     and :func:`aerodynamical_resistance_full` and :func:`wind_speed_soil`.
 
-    References
-    ----------
-    .. [2] Brutsaert, W., Aspect of bulk atmospheric boundary layer similarity
-        under free-convective conditions,
-        Reviews of Geophysics, 1999, 37(4), 439-451.
     """
     a = 0.33
     b = 0.41
@@ -243,9 +242,10 @@ def psi_m(y):
 def psi_h(y):
     r"""
     Computes the stability correction for momentum based on
-    Brutsaert (1999) [2]_.
+    :footcite:t:`brutsaert1999aspects`.
 
     .. math ::
+
         \Psi_{H}(y)=[\frac{(1-d)}{n}]\ln{\frac{(c+y^n)}{c}}
 
     where the following constants are used
@@ -257,6 +257,7 @@ def psi_h(y):
     in which
 
     .. math ::
+
         y = \frac{-(z-d)}{L}
 
     where :math:`L` is the monin obukhov length defined by
@@ -271,11 +272,6 @@ def psi_h(y):
     This function is used internally by :func:`aerodynamical_resistance_bare`
     and :func:`aerodynamical_resistance_full` and :func:`wind_speed_soil`.
 
-    References
-    ----------
-    .. [2] Brutsaert, W., Aspect of bulk atmospheric boundary layer similarity
-        under free-convective conditions,
-        Reviews of Geophysics, 1999, 37(4), 439-451.
     """
     c = 0.33
     d = 0.057
@@ -289,24 +285,25 @@ def initial_friction_velocity_inst(u_b_i, z0m, disp, z_b=100):
     corrections.
 
     .. math ::
-        u_{*}=\frac{ku_{b}}{\ln\left(\frac{z_{b}-d}{z_{0,m}}\right)}
+
+        u_{*}=\frac{k \cdot u_{b}}{\ln\left(\frac{z_{b}-d}{z_{0,m}}\right)}
 
     Parameters
     ----------
     u_b_i : float
-        instantaneous wind speed at blending height
+        instantaneous wind speed at blending height, 
         :math:`u_{b}`
         [m s-1]
     z0m : float
-        surface roughness
+        surface roughness, 
         :math:`z_{0,m}`
         [m]
     disp : float
-        displacement height
+        displacement height, 
         :math:`d`
         [m]
     z_b : float
-        blending height
+        blending height, 
         :math:`z_{b}`
         [m]
 
@@ -314,7 +311,7 @@ def initial_friction_velocity_inst(u_b_i, z0m, disp, z_b=100):
     Returns
     -------
     u_star_i_init : float
-        initial estimate of the instantaneous friction velocity
+        initial estimate of the instantaneous friction velocity, 
         :math:`u_{*,i}`
         [m s-1]
     """
@@ -323,9 +320,10 @@ def initial_friction_velocity_inst(u_b_i, z0m, disp, z_b=100):
 
 def atmospheric_emissivity_inst(vp_i, t_air_k_i):
     r"""
-    Computes the atmospheric emissivity according to Brutsaert [1]_.
+    Computes the atmospheric emissivity according to :footcite:t:`brutsaert1975derivable`.
 
     .. math ::
+
         \varepsilon_{a}=a\left(\frac{e_{a}}{T_{a}}\right)^{b}
 
     where the following constants are used
@@ -336,57 +334,53 @@ def atmospheric_emissivity_inst(vp_i, t_air_k_i):
     Parameters
     ----------
     vp_i : float
-        instantaneous vapour pressure
+        instantaneous vapour pressure, 
         :math:`e_{a}`
         [mbar]
     t_air_k_i : float
-        instantaneous air temperature
+        instantaneous air temperature, 
         :math:`T_{a}`
         [K]
 
     Returns
     -------
     emiss_atm_i : float
-        instantaneous atmospheric emissivity
+        instantaneous atmospheric emissivity, 
         :math:`\varepsilon_{a}`
         [-]
 
-    References
-    ----------
-    .. [1] Brutsaert, W., On a derivable formula for long-wave radiation
-        from clear skies, Water Resour. Res, 1975, 11, 742-744.
     """
     return 1.24 * (vp_i / t_air_k_i) ** (1. / 7.)
 
 
 def net_radiation_bare(ra_hor_clear_i, emiss_atm_i, t_air_k_i, lst, r0_bare=0.38):
     r"""
-    Computes the net radiation for the bare soil with zero evaporation
+    Computes the net radiation for the bare soil with zero evaporation.
 
     .. math ::
 
-        Q_{bare}^{*}=\left(1-\alpha_{0,bare}\right)S_{d}+\varepsilon_{s}\varepsilon_{a}\sigma T_{a}^{4}-\varepsilon_{s}\sigma T_{s}^{4}
+        Q_{bare}^{*}=\left(1-\alpha_{0,bare}\right)S_{d}+\varepsilon_{s} \cdot \varepsilon_{a} \cdot \sigma \cdot T_{a}^{4}-\varepsilon_{s} \cdot \sigma \cdot T_{s}^{4}
 
     Parameters
     ----------
     ra_hor_clear_i : float
-        Total clear-sky irradiance on a horizontal surface
+        Total clear-sky irradiance on a horizontal surface, 
         :math:`S_{d}`
         [W/m2]
     emiss_atm_i : float
-        instantaneous atmospheric emissivity
+        instantaneous atmospheric emissivity, 
         :math:`\varepsilon_{a}`
         [-]
     t_air_k_i : float
-        instantaneous air temperature
+        instantaneous air temperature, 
         :math:`T_{a}`
         [K]
     lst : float
-        surface temperature
+        surface temperature, 
         :math:`T_{0}`
         [K]
     r0_bare : float
-        dry bare soil surface albedo
+        dry bare soil surface albedo, 
         :math:`\alpha_{0, bare}`
         [-]
 
@@ -394,7 +388,7 @@ def net_radiation_bare(ra_hor_clear_i, emiss_atm_i, t_air_k_i, lst, r0_bare=0.38
     Returns
     -------
     rn_bare : float
-        net radiation bare soil
+        net radiation bare soil, 
         :math:`Q^*_{bare}`
         [Wm-2]
     """
@@ -410,39 +404,39 @@ def net_radiation_bare(ra_hor_clear_i, emiss_atm_i, t_air_k_i, lst, r0_bare=0.38
 
 def net_radiation_full(ra_hor_clear_i, emiss_atm_i, t_air_k_i, lst, r0_full=0.18):
     r"""
-    Computes the net radiation at full canopy with zero evaporation
+    Computes the net radiation at full canopy with zero evaporation.
 
     .. math ::
 
-        Q_{full}^{*}=\left(1-\alpha_{0,full}\right)S_{d}+\varepsilon_{c}\varepsilon_{a}\sigma T_{a}^{4}-\varepsilon_{c}\sigma T_{s}^{4}
+        Q_{full}^{*}=\left(1-\alpha_{0,full}\right) \cdot S_{d}+\varepsilon_{c} \cdot \varepsilon_{a} \cdot \sigma \cdot T_{a}^{4}-\varepsilon_{c} \cdot \sigma \cdot T_{s}^{4}
 
     Parameters
     ----------
     ra_hor_clear_i : float
-        Total clear-sky irradiance on a horizontal surface
+        Total clear-sky irradiance on a horizontal surface, 
         :math:`ra_hor_clear_i`
         [W/m2]
     emiss_atm_i : float
-        instantaneous atmospheric emissivity
+        instantaneous atmospheric emissivity, 
         :math:`P`
         [-]
     t_air_k_i : float
-        instantaneous air temperature
+        instantaneous air temperature, 
         :math:`T_{a}`
         [K]
     lst : float
-        surface temperature
+        surface temperature, 
         :math:`T_{0}`
         [K]
     r0_full : float
-        surface albedo full vegetation
+        surface albedo full vegetation, 
         :math:`\alpha_{0, full}`
         [-]
 
     Returns
     -------
     rn_full : float
-        net radiation full vegetation
+        net radiation full vegetation, 
         :math:`Q^*_{full}`
         [Wm-2]
     """
@@ -458,27 +452,27 @@ def net_radiation_full(ra_hor_clear_i, emiss_atm_i, t_air_k_i, lst, r0_full=0.18
 
 def sensible_heat_flux_bare(rn_bare, fraction_h_bare=0.65):
     r"""
-    Computes the bare soil sensible heat flux
+    Computes the bare soil sensible heat flux.
 
     .. math ::
 
-        H_{bare} = H_{f, bare}Q^*_{bare}
+        H_{bare} = H_{f, bare} \cdot Q^*_{bare}
 
     Parameters
     ----------
     rn_bare : float
-        net radiation bare soil
+        net radiation bare soil, 
         :math:`Q^*_{bare}`
         [Wm-2]
     fraction_h_bare : float
-        fraction of H of net radiation bare soil
+        fraction of H of net radiation bare soil, 
         :math:`H_{f, bare}`
         [-]
 
     Returns
     -------
     h_bare : float
-        sensible heat flux bare soil
+        sensible heat flux bare soil, 
         :math:`H_{bare}`
         [Wm-2]
      """
@@ -487,27 +481,27 @@ def sensible_heat_flux_bare(rn_bare, fraction_h_bare=0.65):
 
 def sensible_heat_flux_full(rn_full, fraction_h_full=0.95):
     r"""
-    Computes the full canopy sensible heat flux
+    Computes the full canopy sensible heat flux.
 
     .. math ::
 
-        H_{full} = H_{f, full}Q^*_{full}
+        H_{full} = H_{f, full} \cdot Q^*_{full}
 
     Parameters
     ----------
     rn_full : float
-        net radiation full vegetation
+        net radiation full vegetation, 
         :math:`Q^*_{full}`
         [Wm-2]
     fraction_h_full : float
-        fraction of H of net radiation full vegetation
+        fraction of H of net radiation full vegetation, 
         :math:`H_{f, full}`
         [-]
 
     Returns
     -------
     h_full : float
-        sensible heat flux full vegetation
+        sensible heat flux full vegetation, 
         :math:`H_{full}`
         [Wm-2]
      """
@@ -517,35 +511,36 @@ def sensible_heat_flux_full(rn_full, fraction_h_full=0.95):
 def wind_speed_blending_height_bare(u_i, z0m_bare=0.001, z_obs=10, z_b=100):
     r"""
     Computes the wind speed at blending height :math:`u_{b}` [m/s] using the
-    logarithmic wind profile
+    logarithmic wind profile.
 
     .. math ::
-        u_{b}=\frac{u_{obs}\ln\left(\frac{z_{b}}{z_{0,m}}\right)}
+
+        u_{b}=\frac{u_{obs} \cdot \ln\left(\frac{z_{b}}{z_{0,m}}\right)}
         {\ln\left(\frac{z_{obs}}{z_{0,m}}\right)}
 
     Parameters
     ----------
     u_i : float
-        instantaneous wind speed at observation height
+        instantaneous wind speed at observation height, 
         :math:`u_{obs}`
         [m/s]
     z_obs : float
-        observation height of wind speed
+        observation height of wind speed, 
         :math:`z_{obs}`
         [m]
     z_b : float
-        blending height
+        blending height, 
         :math:`z_{b}`
         [m]
     z0m_bare : float
-        surface roughness bare soil
+        surface roughness bare soil, 
         :math:`z_{0,m}`
         m
 
     Returns
     -------
     u_b_i_bare : float
-        instantaneous wind speed at blending height for bare soil
+        instantaneous wind speed at blending height for bare soil, 
         :math:`u_{b,i,bare}`
         [m/s]
     """
@@ -559,35 +554,36 @@ def wind_speed_blending_height_bare(u_i, z0m_bare=0.001, z_obs=10, z_b=100):
 def wind_speed_blending_height_full_inst(u_i, z0m_full=0.1, z_obs=10, z_b=100):
     r"""
     Computes the wind speed at blending height :math:`u_{b}` [m/s] using the
-    logarithmic wind profile
+    logarithmic wind profile.
 
     .. math ::
-        u_{b}=\frac{u_{obs}\ln\left(\frac{z_{b}}{z_{0,m}}\right)}
+
+        u_{b}=\frac{u_{obs} \cdot \ln\left(\frac{z_{b}}{z_{0,m}}\right)}
         {\ln\left(\frac{z_{obs}}{z_{0,m}}\right)}
 
     Parameters
     ----------
     u_i : float
-        instantaneous wind speed at observation height
+        instantaneous wind speed at observation height, 
         :math:`u_{obs}`
         [m/s]
     z_obs : float
-        observation height of wind speed
+        observation height of wind speed, 
         :math:`z_{obs}`
         [m]
     z_b : float
-        blending height
+        blending height, 
         :math:`z_{b}`
         [m]
     z0m_full : float
-        surface roughness vegetation
+        surface roughness vegetation, 
         :math:`z_{0,m}`
         [m]
 
     Returns
     -------
     u_b_i_full : float
-        instantaneous wind speed at blending height for full vegetation
+        instantaneous wind speed at blending height for full vegetation, 
         :math:`u_{b,i,full}`
         [m s-1]
     """
@@ -600,31 +596,31 @@ def wind_speed_blending_height_full_inst(u_i, z0m_full=0.1, z_obs=10, z_b=100):
 
 def friction_velocity_full_inst(u_b_i_full, z0m_full=0.1, disp_full=0.667, z_b=100):
     r"""
-    Like :func:`initial_friction_velocity_inst` but with full vegetation parameters
+    Like :func:`initial_friction_velocity_inst` but with full vegetation parameters.
 
     Parameters
     ----------
     u_b_i_full : float
-        instantaneous wind speed blending height for full vegetation
+        instantaneous wind speed blending height for full vegetation, 
         :math:`u_{b,d}`
         [m s-1]
     z0m_full : float
-        surface roughness vegetation
+        surface roughness vegetation, 
         :math:`z_{0,m,b}`
         [m]
     disp_full : float
-        displacement height vegetation
+        displacement height vegetation, 
         :math:`d^{b}`
         [m]
     z_b : float
-        blending height
+        blending height, 
         :math:`z_b`
         [m]
 
     Returns
     -------
     u_star_i_full : float
-        instantaneous friction velocity vegetation
+        instantaneous friction velocity vegetation, 
         :math:`u_{f}^{*}`
         [m s-1]
 
@@ -634,31 +630,31 @@ def friction_velocity_full_inst(u_b_i_full, z0m_full=0.1, disp_full=0.667, z_b=1
 
 def friction_velocity_bare_inst(u_b_i_bare, z0m_bare=0.001, disp_bare=0.0, z_b=100):
     r"""
-    Like :func:`initial_friction_velocity_inst` but with bare soil parameters
+    Like :func:`initial_friction_velocity_inst` but with bare soil parameters.
 
     Parameters
     ----------
     u_b_i_bare : float
-        instantaneous wind speed blending height bare soil
+        instantaneous wind speed blending height bare soil, 
         :math:`u_{b,d}`
         [W m-2]
     z0m_bare : float
-        surface roughness bare soil
+        surface roughness bare soil, 
         :math:`z_{0,m,b}`
         [m]
     disp_bare : float
-        displacement height bare soil
+        displacement height bare soil, 
         :math:`d^{b}`
         [m]
     z_b : float
-        blending height
+        blending height, 
         :math:`z_b`
         [m]
 
     Returns
     -------
     u_star_i_bare : float
-        instantaneous friction velocity bare soil
+        instantaneous friction velocity bare soil, 
         :math:`u_{b}^{*}`
         [m s-1]
 
@@ -668,31 +664,31 @@ def friction_velocity_bare_inst(u_b_i_bare, z0m_bare=0.001, disp_bare=0.0, z_b=1
 
 def monin_obukhov_length_bare(h_bare, ad_i, u_star_i_bare, t_air_k_i):
     r"""
-    Like :func:`unstable.monin_obukhov_length` but with bare soil parameters
+    Like :func:`unstable.monin_obukhov_length` but with bare soil parameters.
 
     Parameters
     ----------
     h_bare : float
-        sensible heat flux for dry bare soil
+        sensible heat flux for dry bare soil, 
         :math:`H_{b,d}`
         [W m-2]
     ad_i : float
-        instantaneous air density
+        instantaneous air density, 
         :math:`\rho`
         [k g m-3]
     u_star_i_bare : float
-        instantaneous friction velocity bare soil
+        instantaneous friction velocity bare soil, 
         :math:`u^{*}_{b}`
         [m s-1]
     t_air_k_i : float
-        instantaneous air temperature
+        instantaneous air temperature, 
         :math:`T_{a}`
         [K]
 
     Returns
     -------
     L_bare : float
-        monin obukhov length dry vegetation
+        monin obukhov length dry vegetation, 
         :math:`L_{b,d}`
         [m]
 
@@ -702,31 +698,31 @@ def monin_obukhov_length_bare(h_bare, ad_i, u_star_i_bare, t_air_k_i):
 
 def monin_obukhov_length_full(h_full, ad_i, u_star_i_full, t_air_k_i):
     r"""
-    Like :func:`unstable.monin_obukhov_length` but with full canopy parameters
+    Like :func:`unstable.monin_obukhov_length` but with full canopy parameters.
 
     Parameters
     ----------
     h_full : float
-        sensible heat flux for dry full vegetation
+        sensible heat flux for dry full vegetation, 
         :math:`H_{f,d}`
         [W m-2]
     ad_i : float
-        instantaneous air density
+        instantaneous air density, 
         :math:`\rho`
         [k g m-3]
     u_star_i_full : float
-        instantaneous friction velocity vegetation
+        instantaneous friction velocity vegetation, 
         :math:`u^{*}_{b}`
         [m s-1]
     t_air_k_i : float
-        instantaneous air temperature
+        instantaneous air temperature, 
         :math:`T_{a}`
         [K]
 
     Returns
     -------
     L_full : float
-        monin obukhov length dry vegetation
+        monin obukhov length dry vegetation, 
         :math:`L_{f,d}`
         [m]
 
@@ -739,45 +735,41 @@ def aerodynamical_resistance_full(u_i, L_full, z0m_full=0.1, disp_full=0.667, z_
     Computes the aerodynamical resistance for a full canopy.
 
     .. math ::
-        z_{1} = \frac{z_{obs}-d}{z_{0,m}}
 
-        z_{2} = \frac{z_{obs}-d}{L}
-
-        z_{3} = \frac{z_{0,m}}{L}
-
-        z_{4} = \frac{z_{obs}-d}{\frac{z_{0,m}}{7}}
-
-        z_{5} = \frac{\frac{z_{0,m}}{7}}{L}
-
-        r_{a,c}=\frac{(\ln(z_{1})-\phi_{m}(-z_{2})+\phi_{m}(-z_{3}))(\ln(z_{4})-\phi_{h}(-z_{2})+\phi_{h}(-z_{5}))}{k^{2}u}
+        z_{1} &= \frac{z_{obs}-d}{z_{0,m}} \\
+        z_{2} &= \frac{z_{obs}-d}{L} \\
+        z_{3} &= \frac{z_{0,m}}{L} \\
+        z_{4} &= \frac{z_{obs}-d}{\frac{z_{0,m}}{7}} \\
+        z_{5} &= \frac{\frac{z_{0,m}}{7}}{L} \\
+        r_{a,c} &= \frac{(\ln(z_{1})-\phi_{m}(-z_{2})+\phi_{m}(-z_{3})) \cdot (\ln(z_{4})-\phi_{h}(-z_{2})+\phi_{h}(-z_{5}))}{k^{2} \cdot u}
 
     Parameters
     ----------
     u_i : float
-        instantaneous wind speed at observation height
+        instantaneous wind speed at observation height, 
         :math:`u_{obs}`
         [m/s]
     z_obs : float
-        observation height of wind speed
+        observation height of wind speed, 
         :math:`z_{obs}`
         [m]
     disp_full : float
-        displacement height
+        displacement height, 
         :math:`d`
         [m]
     z0m_full : float
-        surface roughness
+        surface roughness, 
         :math:`z_{0,m}`
         [m]
     L_full : float
-        monin obukhov length
+        monin obukhov length, 
         :math:`L`
         [m]
 
     Returns
     -------
     rac : float
-        aerodynamical resistance canopy
+        aerodynamical resistance canopy, 
         :math:`r_{a,c}`
         [sm-1]
 
@@ -799,39 +791,38 @@ def aerodynamical_resistance_bare(u_i, L_bare, z0m_bare=0.001, disp_bare=0.0, z_
     Computes the aerodynamical resistance for a dry bare soil.
 
     .. math ::
-        z_{1} = \frac{z_{obs}-d}{z_{0,b,m}}
 
-        z_{2} = \frac{z_{obs}-d}{L_{b}}
-
-        r_{a,a}=\frac{(\ln(z_{1})-\phi_{m}(-z_{2}))(\ln(z_{1})-\phi_{h}(-z_{2}))}{k^{2}u}
+        z_{1} &= \frac{z_{obs}-d}{z_{0,b,m}} \\
+        z_{2} &= \frac{z_{obs}-d}{L_{b}} \\
+        r_{a,a} &= \frac{(\ln(z_{1})-\phi_{m}(-z_{2})) \cdot (\ln(z_{1})-\phi_{h}(-z_{2}))}{k^{2} \cdot u} \\
 
     Parameters
     ----------
     u_i : float
-        instantaneous wind speed at observation height
+        instantaneous wind speed at observation height, 
         :math:`u_{obs}`
         [m/s]
     z_obs : float
-        observation height of wind speed
+        observation height of wind speed, 
         :math:`z_{obs}`
         [m]
     disp_bare : float
-        displacement height
+        displacement height, 
         :math:`d`
         [m]
     z0m_bare : float
-        surface roughness
+        surface roughness, 
         :math:`z_{0,b,m}`
         [m]
     L_bare : float
-        monin obukhov length
+        monin obukhov length, 
         :math:`L_{b}`
         [m]
 
     Returns
     -------
     raa : float
-        aerodynamical resistance dry surface
+        aerodynamical resistance dry surface, 
         :math:`r_{a,a}`
         [sm-1]
 
@@ -846,32 +837,32 @@ def aerodynamical_resistance_bare(u_i, L_bare, z0m_bare=0.001, disp_bare=0.0, z_
 
 def wind_speed_soil_inst(u_i, L_bare, z_obs=10):
     r"""
-    Computes the instantaneous wind speed at soil surface
+    Computes the instantaneous wind speed at soil surface.
 
     .. math ::
 
-        u_{i,s}=u_{obs}\frac{\ln\left(\frac{z_{obs}}{z_{0}}\right)}
+        u_{i,s}=u_{obs} \cdot \frac{\ln\left(\frac{z_{obs}}{z_{0}}\right)}
               {\ln\left(\frac{z_{obs}}{z_{0,s}}\right)-\psi_{m}\left(\frac{-z_{0}}{L}\right)}
 
     Parameters
     ----------
     u_i : float
-        wind speed at observation height
+        wind speed at observation height, 
         :math:`u_{obs}`
         [m/s]
     z_obs : float
-        observation height of wind speed
+        observation height of wind speed, 
         :math:`z_{obs}`
         [m]
     L_bare : float
-        monin obukhov length
+        monin obukhov length, 
         :math:`L`
         [m]
 
     Returns
     -------
     u_i_soil : float
-        instantaneous wind speed just above soil surface
+        instantaneous wind speed just above soil surface, 
         :math:`u_{i,s}`
         [ms-1]
 
@@ -886,22 +877,27 @@ def wind_speed_soil_inst(u_i, L_bare, z_obs=10):
 
 def aerodynamical_resistance_soil(u_i_soil):
     r"""
-    Computes the aerodynamical resistance of the soil
+    Computes the aerodynamical resistance of the soil.
 
     .. math ::
-        r_{a,s}=\frac{1}{\left(0.0025T_{dif}^{\frac{1}{3}}+0.012u_{i,s}\right)}
+
+        r_{a,s}=\frac{1}{\left(0.0025 \cdot T_{dif}^{\frac{1}{3}}+0.012 \cdot u_{i,s}\right)}
+
+    where:
+
+    * :math:`T_{dif}` = 10.0
 
     Parameters
     ----------
     u_i_soil : float
-        instantaneous wind speed just above soil surface
+        instantaneous wind speed just above soil surface, 
         :math:`u_{i,s}`
         [m s-1]
 
     Returns
     -------
     ras : float
-        aerodynamical resistance
+        aerodynamical resistance, 
         :math:`r_{a,s}`
         [sm-1]
 
@@ -914,45 +910,45 @@ def maximum_temperature_full(
     ra_hor_clear_i, emiss_atm_i, t_air_k_i, ad_i, rac, r0_full=0.18
 ):
     r"""
-    Computes the maximum temperature under fully vegetated conditions
+    Computes the maximum temperature under fully vegetated conditions.
 
     .. math ::
 
-        T_{c,max}=\frac{\left(1-\alpha_{c}\right)S_{d}+\varepsilon_{c}\varepsilon_{a}\sigma
+        T_{c,max}=\frac{\left(1-\alpha_{c}\right) S_{d}+\varepsilon_{c}\varepsilon_{a}\sigma
                   T_{a}^{4}-\varepsilon_{c}\sigma T_{a}^{4}}{4\varepsilon_{s}\sigma
                   T_{a}^{3}+\rho C_{p}/r_{a,c}}+T_{a}
 
     Parameters
     ----------
     ra_hor_clear_i : float
-        Total clear-sky irradiance on a horizontal surface
+        Total clear-sky irradiance on a horizontal surface, 
         :math:`ra_hor_clear_i`
         [W/m2]
     emiss_atm_i : float
-        instantaneous atmospheric emissivity
+        instantaneous atmospheric emissivity, 
         :math:`P`
         [-]
     t_air_k_i : float
-        instantaneous air temperature
+        instantaneous air temperature, 
         :math:`T_{a}`
         [K]
     rac : float
-        aerodynamic resistance canopy
+        aerodynamic resistance canopy, 
         :math:`r_{a,c}`
         [sm-1]
     ad_i : float
-        instantaneous air density
+        instantaneous air density, 
         :math:`\rho`
         [kg m-3]
     r0_full : float
-        surface albedo full vegetation cover
+        surface albedo full vegetation cover, 
         :math:`\alpha_{0, full}`
         [-]
 
     Returns
     -------
     t_max_full : float
-        maximum temperature at full vegetation cover
+        maximum temperature at full vegetation cover, 
         :math:`T_{c,max}`
         [K]
 
@@ -974,7 +970,7 @@ def maximum_temperature_bare(
     ra_hor_clear_i, emiss_atm_i, t_air_k_i, ad_i, raa, ras, r0_bare=0.38
 ):
     r"""
-    Computes the maximum temperature under dry bare soil conditions
+    Computes the maximum temperature under dry bare soil conditions.
 
     .. math ::
 
@@ -985,38 +981,38 @@ def maximum_temperature_bare(
     Parameters
     ----------
     ra_hor_clear_i : float
-        Total clear-sky irradiance on a horizontal surface
+        Total clear-sky irradiance on a horizontal surface, 
         :math:`ra_hor_clear_i`
         [W/m2]
     emiss_atm_i : float
-        instantaneous atmospheric emissivity
+        instantaneous atmospheric emissivity, 
         :math:`P`
         [-]
     t_air_k_i : float
-        instantaneous air temperature
+        instantaneous air temperature, 
         :math:`T_{a}`
         [K]
     ad_i : float
-        instantaneous air density
+        instantaneous air density, 
         :math:`\rho`
         [kg m-3]
     raa : float
-        aerodynamical resistance
+        aerodynamical resistance, 
         :math:`r_{a,a}`
         [sm-1]
     ras : float
-        aerodynamical resistance
+        aerodynamical resistance, 
         :math:`r_{a,s}`
         [sm-1]
     r0_bare : float
-        dry bare soil surface albedo
+        dry bare soil surface albedo, 
         :math:`\alpha_{0, bare}`
         [-]
 
     Returns
     -------
     t_max_bare : float
-        maximum temperature at bare soil
+        maximum temperature at bare soil, 
         :math:`T_{c,max}`
         [K]
 
@@ -1035,25 +1031,25 @@ def maximum_temperature_bare(
 
 def maximum_temperature(t_max_bare, t_max_full, vc):
     r"""
-    Computes the maximum temperature at dry conditions
+    Computes the maximum temperature at dry conditions.
 
     .. math ::
 
-        T_{0,max} = c_{veg}(T_{c,max}-T_{s,max})+T_{s,max}
+        T_{0,max} = c_{veg} \cdot (T_{c,max}-T_{s,max})+T_{s,max}
 
 
     Parameters
     ----------
     t_max_bare : float
-        maximum temperature at bare soil
+        maximum temperature at bare soil, 
         :math:`T_{s,max}`
         [K]
     t_max_full : float
-        maximum temperature at full dry vegetation
+        maximum temperature at full dry vegetation, 
         :math:`T_{c,max}`
         [K]
     vc : float
-        vegetation cover
+        vegetation cover, 
         :math:`c_{veg}`
         [-]
 
@@ -1061,7 +1057,7 @@ def maximum_temperature(t_max_bare, t_max_full, vc):
     Returns
     -------
     lst_max : float
-        maximum temperature at dry conditions
+        maximum temperature at dry conditions, 
         :math:`T_{0,max}`
         [K]
 
@@ -1071,25 +1067,25 @@ def maximum_temperature(t_max_bare, t_max_full, vc):
 
 def minimum_temperature(t_wet_k_i, t_air_k_i, vc):
     r"""
-    Computes the maximum temperature at dry conditions
+    Computes the maximum temperature at dry conditions.
 
     .. math ::
 
-        T_{0,min} = c_{veg}(T_{a,i}-T_{w})+T_{w}
+        T_{0,min} = c_{veg} \cdot (T_{a,i}-T_{w})+T_{w}
 
 
     Parameters
     ----------
     t_wet_k_i : float
-        minimum temperature at bare soil
+        minimum temperature at bare soil, 
         :math:`T_{s,max}`
         [K]
     t_air_k_i : float
-        minimum temperature at full vegetation
+        minimum temperature at full vegetation, 
         :math:`T_{c,max}`
         [K]
     vc : float
-        vegetation cover
+        vegetation cover, 
         :math:`c_{veg}`
         [-]
 
@@ -1097,7 +1093,7 @@ def minimum_temperature(t_wet_k_i, t_air_k_i, vc):
     Returns
     -------
     lst_min : float
-        minimum temperature at wet conditions
+        minimum temperature at wet conditions, 
         :math:`T_{0,min}`
         [K]
 
@@ -1109,7 +1105,7 @@ def soil_moisture_from_maximum_temperature(lst_max, lst, lst_min):
     r"""
     Computes the relative root zone soil moisture based on estimates of
     maximum temperature and wet bulb temperature and measured land
-    surface temperature
+    surface temperature.
 
     .. math ::
 
@@ -1118,15 +1114,15 @@ def soil_moisture_from_maximum_temperature(lst_max, lst, lst_min):
     Parameters
     ----------
     lst : float
-        land surface temperature
+        land surface temperature, 
         :math:`T_{0}`
         [K]
     lst_max : float
-        maximum temperature at dry conditions
+        maximum temperature at dry conditions, 
         :math:`T_{0,max}`
         [K]
     lst_min : float
-        minimum temperature at wet conditions
+        minimum temperature at wet conditions, 
         :math:`T_{0, min}`
         [K]
 
@@ -1134,7 +1130,7 @@ def soil_moisture_from_maximum_temperature(lst_max, lst, lst_min):
     Returns
     -------
     se_root : float
-        relative root zone soil moisture (based on LST)
+        relative root zone soil moisture (based on LST), 
         :math:`\Theta`
         [%]
 
