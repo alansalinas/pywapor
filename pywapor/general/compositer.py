@@ -6,6 +6,7 @@ import pandas as pd
 from dask.diagnostics import ProgressBar
 import pywapor.post_et_look as pl
 import pywapor.general.processing_functions as PF
+from pywapor.general.logger import log
 
 def main(cmeta, dbs, epochs_info, temp_folder = None, example_ds = None,
                 lean_output = True, diagnostics = None):
@@ -145,7 +146,7 @@ def main(cmeta, dbs, epochs_info, temp_folder = None, example_ds = None,
     elif isinstance(composite_type, float):
         ds["composite"] = ds.band_data.groupby(ds["epochs"]).quantile(composite_type).rename({"epochs": "epoch"})
     else:
-        print("No valid composite_type selected.")
+        log.warning("No valid composite_type selected.")
 
     ds["epoch_starts"] = xr.DataArray(epoch_starts, coords = {"epoch": epochs})
     ds["epoch_ends"] = xr.DataArray(epoch_ends, coords = {"epoch": epochs})
@@ -180,7 +181,7 @@ def calculate_ds(ds, fh, label = None):
         fh = fh.replace(".nc", "_.nc")
     with ProgressBar(minimum = 30):
         if not isinstance(label, type(None)):
-            print(label)
+            log.info(label)
         ds.to_netcdf(fh)
     ds.close()
     ds = None

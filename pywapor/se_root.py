@@ -7,11 +7,15 @@ import pywapor.general.processing_functions as PF
 import pywapor.et_look_dev as ETLook_dev
 import pywapor.et_look_v2 as ETLook_v2
 import tqdm
+from pywapor.general.logger import log, adjust_logger
 
 def main(level_folder, ds_lst, ds_meteo, ds_ndvi, 
                     ds_temperature, example_ds, example_geoinfo, et_look_version = "v2"):
 
-    print("\n#### SE_ROOT ####")
+    log_write = True
+    log_level = "INFO"
+    adjust_logger(log_write, level_folder, log_level)
+    log.info("> SE_ROOT").add()
 
     # Version
     if et_look_version == "v2":
@@ -48,7 +52,7 @@ def main(level_folder, ds_lst, ds_meteo, ds_ndvi,
 
     files = list()
 
-    print("--> Calculating se_root.")
+    log.info("--> Calculating se_root.")
     for t in tqdm.tqdm(ds_se_root.time.values): # TODO adjust pywapor.et_look.se_root to remove this forloop
 
         id = ds_se_root.sel(time = t)
@@ -63,5 +67,7 @@ def main(level_folder, ds_lst, ds_meteo, ds_ndvi,
             PF.Save_as_tiff(fh, se_root_i.values, example_geoinfo[0], example_geoinfo[1])
 
         files.append(fh)
+
+    log.info("< SE_ROOT").sub()
 
     return files

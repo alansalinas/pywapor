@@ -33,5 +33,6 @@ setup(
         'tqdm',
         'dask',
         'rioxarray',
+        'python_log_indenter',
     ]
 )

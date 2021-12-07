@@ -15,11 +15,8 @@ import re
 import glob
 import requests
 import sys
-if sys.version_info[0] == 3:
-    import urllib.parse
-if sys.version_info[0] == 2:
-    import urlparse
-    import urllib2
+import tqdm
+import urllib.parse
 
 def DownloadData(Dir, Startdate, Enddate, latlim, lonlim, username, password, Waitbar, hdf_library, remove_hdf):
     """
@@ -48,13 +45,6 @@ def DownloadData(Dir, Startdate, Enddate, latlim, lonlim, username, password, Wa
     # Make an array of the days of which the NDVI is taken
     Dates = pd.date_range(Startdate, Enddate, freq = 'D')
 
-    # Create Waitbar
-    if Waitbar == 1:
-        import pywapor.general.waitbar_console as WaitbarConsole
-        total_amount = len(Dates)
-        amount = 0
-        WaitbarConsole.printWaitBar(amount, total_amount, prefix = 'Progress:', suffix = 'Complete', length = 50)
-
     # Check the latitude and longitude and otherwise set lat or lon on greatest extent
     if latlim[0] < -90 or latlim[1] > 90:
         print('Latitude above 90N or below 90S is not possible. Value set to maximum')
@@ -73,14 +63,24 @@ def DownloadData(Dir, Startdate, Enddate, latlim, lonlim, username, password, Wa
 
     # Define which MODIS tiles are required
     TilesVertical, TilesHorizontal = MOD11.DataAccess.Get_tiles_from_txt(latlim, lonlim)
-    
+
+    if Waitbar:
+        total_tiles_vert = len(range(int(TilesVertical[0]), int(TilesVertical[1])+1))
+        total_tiles_hort = len(range(int(TilesHorizontal[0]), int(TilesHorizontal[1])+1))
+        total_tiles = int(total_tiles_vert * total_tiles_hort * len(Dates))
+
+        waitbar = tqdm.tqdm(desc= f"Tile: 0 / {total_tiles}",
+                            position = 0,
+                            # total=total_size,
+                            unit='Bytes',
+                            unit_scale=True,)
+    else:
+        waitbar = None
+
     # Pass variables to parallel function and run
     args = [output_folder, TilesVertical, TilesHorizontal, lonlim, latlim, username, password, hdf_library]
     for Date in Dates:
-        RetrieveData(Date, args)
-        if Waitbar == 1:
-            amount += 1
-            WaitbarConsole.printWaitBar(amount, total_amount, prefix = 'Progress:', suffix = 'Complete', length = 50)
+        RetrieveData(Date, args, waitbar)
 
     # Remove all .hdf files
     if remove_hdf == 1:
@@ -95,7 +95,7 @@ def DownloadData(Dir, Startdate, Enddate, latlim, lonlim, username, password, Wa
 
     return()
 
-def RetrieveData(Date, args):
+def RetrieveData(Date, args, waitbar):
     """
     This function retrieves MCD43 Albedo data for a given date from the
     http://e4ftl01.cr.usgs.gov/ server.
@@ -115,31 +115,36 @@ def RetrieveData(Date, args):
     if not os.path.exists(ReffileName): 
 
         # Collect the data from the MODIS webpage and returns the data and lat and long in meters of those tiles
-        try:
-            Collect_data(TilesHorizontal, TilesVertical, Date, username, password, output_folder, hdf_library)
-            
-            # Define the output name of the collect data function
-            name_collect = os.path.join(output_folder, 'Merged.tif')
+        # try:
+        Collect_data(TilesHorizontal, TilesVertical, Date, username, password, output_folder, hdf_library, waitbar)
         
-            # Reproject the MODIS product to epsg_to
-            epsg_to ='4326'
-            name_reprojected = PF.reproject_MODIS(name_collect, epsg_to)
-        
-            # Clip the data to the users extend
-            data, geo = PF.clip_data(name_reprojected, latlim, lonlim)
-        
-            # Save results as Gtiff
-            PF.Save_as_tiff(name=ReffileName, data=data, geo=geo, projection='WGS84')
-        
-            # remove the side products
-            os.remove(name_collect)
-            os.remove(name_reprojected)
-        except:
-            print("Was not able to download the file")
+        # Define the output name of the collect data function
+        name_collect = os.path.join(output_folder, 'Merged.tif')
     
+        # Reproject the MODIS product to epsg_to
+        epsg_to ='4326'
+        name_reprojected = PF.reproject_MODIS(name_collect, epsg_to)
+    
+        # Clip the data to the users extend
+        data, geo = PF.clip_data(name_reprojected, latlim, lonlim)
+    
+        # Save results as Gtiff
+        PF.Save_as_tiff(name=ReffileName, data=data, geo=geo, projection='WGS84')
+    
+        # remove the side products
+        os.remove(name_collect)
+        os.remove(name_reprojected)
+        # except:
+        #     print("Was not able to download the file")
+    else:
+        if not isinstance(waitbar, type(None)):
+            waitbar_i = int(waitbar.desc.split(" ")[1])
+            waitbar_desc = str(waitbar.desc)
+            waitbar.set_description_str(waitbar_desc.replace(f": {waitbar_i} /", f": {waitbar_i+1} /"))
+
     return True
 
-def Collect_data(TilesHorizontal,TilesVertical,Date, username, password, output_folder, hdf_library):
+def Collect_data(TilesHorizontal,TilesVertical,Date, username, password, output_folder, hdf_library, waitbar):
     '''
     This function downloads all the needed MODIS tiles from https://e4ftl01.cr.usgs.gov/MOTA/MCD43A3.006/ as a hdf file.
 
@@ -216,17 +221,28 @@ def Collect_data(TilesHorizontal,TilesVertical,Date, username, password, output_
                                 file_name = os.path.join(output_folder,nameDownload.split('/')[-1])
                                 if os.path.isfile(file_name):
                                     downloaded = 1
+                                    if not isinstance(waitbar, type(None)):
+                                        waitbar_i = int(waitbar.desc.split(" ")[1])
+                                        waitbar_desc = str(waitbar.desc)
+                                        waitbar.set_description_str(waitbar_desc.replace(f": {waitbar_i} /", f": {waitbar_i+1} /"))
                                 else:
                                     x = requests.get(nameDownload, allow_redirects = False)
-                                    try:
-                                        y = requests.get(x.headers['location'], auth = (username, password))
-                                    except:
-                                        # from requests.packages.urllib3.exceptions import InsecureRequestWarning
-                                        # requests.packages.urllib3.disable_warnings(InsecureRequestWarning)
-                                        y = requests.get(x.headers['location'], auth = (username, password), verify = False)
-                                    z = open(file_name, 'wb')
-                                    z.write(y.content)
-                                    z.close()
+
+                                    resp = requests.get(x.headers['location'], auth = (username, password), stream=True)
+                                    total_size = int(resp.headers.get('content-length', 0))
+                                    
+                                    if not isinstance(waitbar, type(None)):
+                                        waitbar.reset(total = total_size)
+                                        waitbar_i = int(waitbar.desc.split(" ")[1])
+                                        waitbar_desc = str(waitbar.desc)
+                                        waitbar.set_description_str(waitbar_desc.replace(f": {waitbar_i} /", f": {waitbar_i+1} /"))
+                                    with open(file_name, 'wb') as z:
+                                        # z.write(resp.content)
+                                        for data in resp.iter_content(chunk_size=1024):
+                                            size = z.write(data)
+                                            if not isinstance(waitbar, type(None)):
+                                                waitbar.update(size)
+
                                     statinfo = os.stat(file_name)
                                     # Say that download was succesfull
                                     if int(statinfo.st_size) > 10000:

@@ -3,6 +3,7 @@ from pywapor.collect.MCD43.DataAccess import DownloadData
 import os
 import glob
 import pywapor
+from pywapor.general.logger import log
 
 def main(Dir, latlim, lonlim, Startdate, Enddate, Waitbar = 1, hdf_library = None, remove_hdf = 1):
     """
@@ -24,7 +25,7 @@ def main(Dir, latlim, lonlim, Startdate, Enddate, Waitbar = 1, hdf_library = Non
     """
     username, password = pywapor.collect.get_pw_un.get("NASA")
 
-    print('\nDownload daily MODIS Albedo data for period %s till %s' %(Startdate, Enddate))
+    log.info(f"MCD43 ({Startdate} - {Enddate})")
     DownloadData(Dir, Startdate, Enddate, latlim, lonlim, username, password, Waitbar, hdf_library, remove_hdf)
 
     output_files = glob.glob(os.path.join(Dir, 'MODIS', 'MCD43', "*.tif"))

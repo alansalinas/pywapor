@@ -27,7 +27,7 @@ def main(Dir, latlim, lonlim, Startdate, Enddate, Vars, Periods = [1,2,3,4,5,6,7
     if isinstance(Waitbar, tqdm.tqdm):
         waitbar = Waitbar
     elif Waitbar:
-        waitbar = tqdm.tqdm(total = no_vars * no_dates * no_periods, delay = 10)
+        waitbar = tqdm.tqdm(total = no_vars * no_dates * no_periods)
     else:
         waitbar = False
 
@@ -43,6 +43,9 @@ def main(Dir, latlim, lonlim, Startdate, Enddate, Vars, Periods = [1,2,3,4,5,6,7
 
             # Download data
             DownloadData(Dir, Var, Startdate, Enddate, latlim, lonlim, "three_hourly", Period, waitbar)
+
+    if Waitbar:
+        waitbar.close()
 
 if __name__ == '__main__':
     main(sys.argv)

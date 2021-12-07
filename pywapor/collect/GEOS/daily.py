@@ -22,7 +22,7 @@ def main(Dir, latlim, lonlim, Startdate, Enddate, Vars, Waitbar = True):
     no_vars = len(Vars)
 
     if Waitbar:
-        waitbar = tqdm.tqdm(total = no_vars * no_dates, delay = 30, position = 0)
+        waitbar = tqdm.tqdm(total = no_vars * no_dates, position = 0, unit = "tiles")
     else:
         waitbar = False
 
@@ -30,11 +30,13 @@ def main(Dir, latlim, lonlim, Startdate, Enddate, Vars, Waitbar = True):
     for Var in Vars:
 
         if Waitbar:
-            waitbar.set_description_str(Var)
+            waitbar.set_description_str("{:<11}".format(Var))
 
         # Download data
         all_files = {**all_files, **DownloadData(Dir, Var, Startdate, Enddate, latlim, lonlim, "daily", Period = '', Waitbar = waitbar)}
 
+    if Waitbar:
+        waitbar.close()
 
     return all_files
 

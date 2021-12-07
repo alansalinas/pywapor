@@ -8,12 +8,15 @@ import pandas as pd
 from datetime import time as datt
 import tqdm
 import warnings
+from pywapor.general.logger import log, adjust_logger
 
 def main(project_folder, startdate, enddate, latlim, lonlim, level = "level_1"):
 
-    print("\n#################")
-    print("## PRE_SE_ROOT ##")
-    print("#################")
+    log_write = True
+    log_level = "INFO"
+    adjust_logger(log_write, project_folder, log_level)
+
+    log.info("> PRE_SE_ROOT").add()
 
     # Disable Warnings
     warnings.filterwarnings('ignore')
@@ -41,7 +44,7 @@ def main(project_folder, startdate, enddate, latlim, lonlim, level = "level_1"):
     dl_args = (raw_folder, latlim, lonlim, startdate, enddate)
 
     #### NDVI ####
-    print(f"\n#### NDVI ####")
+    log.info(f"# NDVI").add()
     raw_ndvi_files = list()
     # Order is important! PROBV gets priority over MOD13, and MOD13 over MYD13.
     if "PROBAV" in source_selection["NDVI"]:
@@ -50,6 +53,7 @@ def main(project_folder, startdate, enddate, latlim, lonlim, level = "level_1"):
         raw_ndvi_files.append(c.MOD13.NDVI(*dl_args, remove_hdf = 0))
     if "MYD13" in source_selection["NDVI"]:
         raw_ndvi_files.append(c.MYD13.NDVI(*dl_args))
+    log.sub()
 
     cmeta = {
         "composite_type": False,
@@ -62,21 +66,23 @@ def main(project_folder, startdate, enddate, latlim, lonlim, level = "level_1"):
     ds_ndvi = ds.rename({"band_data": "ndvi"})
 
     #### LST ####
-    print(f"\n#### LST ####")
+    log.info("# LST").add()
     raw_lst_files = list()
     if "MOD11" in source_selection["LST"]:
         raw_lst_files.append(c.MOD11.LST(*dl_args))
     if "MYD11" in source_selection["LST"]:
         raw_lst_files.append(c.MYD11.LST(*dl_args))
+    log.sub()
+
     ds_lst = combine_lst(raw_lst_files)
 
     #### DEM ####
-    print(f"\n#### DEM ####")
+    log.info(f"# DEM")
     if "SRTM" in source_selection["DEM"]:
         raw_dem_file = c.SRTM.DEM(*dl_args[:3])
 
     #### METEO ####
-    print(f"\n#### METEO ####")
+    log.info("> METEO").add()
     if "MERRA2" in source_selection["METEO"]:
         freq = "H"
         periods, period_times = calc_periods(ds_lst.time.values, freq)
@@ -99,7 +105,7 @@ def main(project_folder, startdate, enddate, latlim, lonlim, level = "level_1"):
     ds_temperature = None
     ds_meteo = None
     for var_name, folder in raw_inst_meteo_paths[source_selection["METEO"][0]].items():
-        print(f"## {var_name} ##")
+        log.info(f"# {var_name}")
         for date, period in zip(ds_lst.time.values, ds_lst.periods.values):
             hour = int((period - 1) * {"3H": 3, "H": 1}[freq])
             hour_str = str(hour).zfill(2)
@@ -129,9 +135,9 @@ def main(project_folder, startdate, enddate, latlim, lonlim, level = "level_1"):
                 else:
                     ds_meteo = xr.concat([ds_meteo, ds_temp], dim = "time")
 
-    print("\n#################")
-    print("## PRE_SE_ROOT ##")
-    print("##### DONE ######\n")
+    log.sub()
+
+    log.info("< PRE_SE_ROOT").sub()
 
     return ds_lst, ds_meteo, ds_ndvi, ds_temperature
 

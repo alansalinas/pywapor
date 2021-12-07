@@ -17,11 +17,8 @@ import datetime
 import requests
 import glob
 import sys
-if sys.version_info[0] == 3:
-    import urllib.parse
-if sys.version_info[0] == 2:
-    import urlparse
-    import urllib2
+import tqdm
+import urllib.parse
 
 def DownloadData(Dir, Startdate, Enddate, latlim, lonlim, username, 
                 password, Waitbar, hdf_library, remove_hdf, buffer_dates = False):
@@ -57,13 +54,6 @@ def DownloadData(Dir, Startdate, Enddate, latlim, lonlim, username,
     # Make an array of the days of which the NDVI is taken
     Dates = Make_TimeStamps(Startdate,Enddate)
 
-    # Create Waitbar
-    if Waitbar == 1:
-        import pywapor.general.waitbar_console as WaitbarConsole
-        total_amount = len(Dates)
-        amount = 0
-        WaitbarConsole.printWaitBar(amount, total_amount, prefix = 'Progress:', suffix = 'Complete', length = 50)
-
     # Check the latitude and longitude and otherwise set lat or lon on greatest extent
     if latlim[0] < -90 or latlim[1] > 90:
         print('Latitude above 90N or below 90S is not possible. Value set to maximum')
@@ -83,13 +73,23 @@ def DownloadData(Dir, Startdate, Enddate, latlim, lonlim, username,
     # Define which MODIS tiles are required
     TilesVertical, TilesHorizontal = MOD11.DataAccess.Get_tiles_from_txt(latlim, lonlim) 
 
+    if Waitbar:
+        total_tiles_vert = len(range(int(TilesVertical[0]), int(TilesVertical[1])+1))
+        total_tiles_hort = len(range(int(TilesHorizontal[0]), int(TilesHorizontal[1])+1))
+        total_tiles = int(total_tiles_vert * total_tiles_hort * len(Dates))
+
+        waitbar = tqdm.tqdm(desc= f"Tile: 0 / {total_tiles}",
+                            position = 0,
+                            # total=total_size,
+                            unit='Bytes',
+                            unit_scale=True,)
+    else:
+        waitbar = None
+
     # Pass variables to parallel function and run
     args = [output_folder, TilesVertical, TilesHorizontal, latlim, lonlim, username, password, hdf_library]
     for Date in Dates:
-        RetrieveData(Date, args)
-        if Waitbar == 1:
-            amount += 1
-            WaitbarConsole.printWaitBar(amount, total_amount, prefix = 'Progress:', suffix = 'Complete', length = 50)
+        RetrieveData(Date, args, waitbar)
 
     # Remove all .hdf files
     if remove_hdf == 1:
@@ -104,7 +104,7 @@ def DownloadData(Dir, Startdate, Enddate, latlim, lonlim, username,
 
     return()
 
-def RetrieveData(Date, args):
+def RetrieveData(Date, args, waitbar):
     """
     This function retrieves MOD13 NDVI data for a given date from the
     http://e4ftl01.cr.usgs.gov/ server.
@@ -127,7 +127,7 @@ def RetrieveData(Date, args):
     
         # Collect the data from the MODIS webpage and returns the data and lat and long in meters of those tiles
         # try:
-        Collect_data(TilesHorizontal, TilesVertical, Date, username, password, output_folder, hdf_library)
+        Collect_data(TilesHorizontal, TilesVertical, Date, username, password, output_folder, hdf_library, waitbar)
         
         # Define the output name of the collect data function
         name_collect = os.path.join(output_folder, 'Merged.tif')
@@ -148,7 +148,11 @@ def RetrieveData(Date, args):
             
         # except:
         #     print("Was not able to download the file")
-
+    else:
+        if not isinstance(waitbar, type(None)):
+            waitbar_i = int(waitbar.desc.split(" ")[1])
+            waitbar_desc = str(waitbar.desc)
+            waitbar.set_description_str(waitbar_desc.replace(f": {waitbar_i} /", f": {waitbar_i+1} /"))
 
     return True
 
@@ -208,7 +212,7 @@ def Make_TimeStamps(Startdate,Enddate):
 
     return(Dates)
 
-def Collect_data(TilesHorizontal, TilesVertical, Date, username, password, output_folder, hdf_library):
+def Collect_data(TilesHorizontal, TilesVertical, Date, username, password, output_folder, hdf_library, waitbar):
     '''
     This function downloads all the needed MODIS tiles from http://e4ftl01.cr.usgs.gov/MOLT/MOD13Q1.006/ as a hdf file.
 
@@ -285,18 +289,28 @@ def Collect_data(TilesHorizontal, TilesVertical, Date, username, password, outpu
                                 if os.path.isfile(file_name):
                                     #print "file ", file_name, " already exists"
                                     downloaded = 1
+                                    if not isinstance(waitbar, type(None)):
+                                        waitbar_i = int(waitbar.desc.split(" ")[1])
+                                        waitbar_desc = str(waitbar.desc)
+                                        waitbar.set_description_str(waitbar_desc.replace(f": {waitbar_i} /", f": {waitbar_i+1} /"))
                                 else:
                                     x = requests.get(nameDownload, allow_redirects = False)
-                                    try:
-                                        y = requests.get(x.headers['location'], auth = (username, password))
-                                    except:
-                                        # from requests.packages.urllib3.exceptions import InsecureRequestWarning
-                                        # requests.packages.urllib3.disable_warnings(InsecureRequestWarning)
 
-                                        y = requests.get(x.headers['location'], auth = (username, password), verify = False)
-                                    z = open(file_name, 'wb')
-                                    z.write(y.content)
-                                    z.close()
+                                    resp = requests.get(x.headers['location'], auth = (username, password), stream=True)
+                                    total_size = int(resp.headers.get('content-length', 0))
+                                    
+                                    if not isinstance(waitbar, type(None)):
+                                        waitbar.reset(total = total_size)
+                                        waitbar_i = int(waitbar.desc.split(" ")[1])
+                                        waitbar_desc = str(waitbar.desc)
+                                        waitbar.set_description_str(waitbar_desc.replace(f": {waitbar_i} /", f": {waitbar_i+1} /"))
+                                    with open(file_name, 'wb') as z:
+                                        # z.write(resp.content)
+                                        for data in resp.iter_content(chunk_size=1024):
+                                            size = z.write(data)
+                                            if not isinstance(waitbar, type(None)):
+                                                waitbar.update(size)
+
                                     statinfo = os.stat(file_name)
                                     # Say that download was succesfull
                                     if int(statinfo.st_size) > 10000:
@@ -370,3 +384,21 @@ def Collect_data(TilesHorizontal, TilesVertical, Date, username, password, outpu
     sds = None
     
     return()
+
+if __name__ == "__main__":
+
+    import pywapor
+
+    Dir =r"/Volumes/Data/FAO/temp_test"
+    Startdate = "2021-06-01"
+    Enddate = "2021-07-01"
+    latlim = [28.9, 29.7]
+    lonlim = [30.2, 31.2]
+    username, password = pywapor.collect.get_pw_un.get("NASA")
+    Waitbar = 0
+    hdf_library = None
+    remove_hdf = False
+    buffer_dates = False
+
+    DownloadData(Dir, Startdate, Enddate, latlim, lonlim, username, 
+                password, Waitbar, hdf_library, remove_hdf, buffer_dates)

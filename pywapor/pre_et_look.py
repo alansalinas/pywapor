@@ -16,17 +16,20 @@ import xarray as xr
 import glob
 import warnings
 import shutil
+from pywapor.general.logger import log, adjust_logger
 
 def main(project_folder, startdate, enddate, latlim, lonlim, level = "level_1", 
         diagnostics = None, composite_length = "DEKAD"):
 
-    print("\n#################")
-    print("## PRE_ET_LOOK ##")
-    print("#################")
+    log_write = True
+    log_level = "INFO"
+    adjust_logger(log_write, project_folder, log_level)
 
-#%%
+    log.info("> PRE_ET_LOOK").add()
+
     # Disable Warnings
     warnings.filterwarnings('ignore')
+    
     all_files = dict()
 
     sdate = dat.strptime(startdate, "%Y-%m-%d").date()
@@ -58,7 +61,7 @@ def main(project_folder, startdate, enddate, latlim, lonlim, level = "level_1",
     unraw_file_templates = unraw_filepaths(epochs_info[1], level_folder, "{var}")
 
     #### NDVI ####
-    print(f"\n#### NDVI ####")
+    log.info("# NDVI").add()
     raw_ndvi_files = list()
     # Order is important! PROBV gets priority over MOD13, and MOD13 over MYD13.
     if "PROBAV" in source_selection["NDVI"]:
@@ -68,6 +71,7 @@ def main(project_folder, startdate, enddate, latlim, lonlim, level = "level_1",
         raw_ndvi_files.append(c.MOD13.NDVI(*dl_args))
     if "MYD13" in source_selection["NDVI"]:
         raw_ndvi_files.append(c.MYD13.NDVI(*dl_args))
+    log.sub()
 
     example_fh, example_ds, example_geoinfo = select_template(raw_ndvi_files)
 
@@ -86,7 +90,7 @@ def main(project_folder, startdate, enddate, latlim, lonlim, level = "level_1",
 #%%
 
     #### ALBEDO ####
-    print(f"\n#### ALBEDO ####")
+    log.info("# ALBEDO").add()
     raw_albedo_files = list()
     # Order is important! PROBV gets priority over MDC43.
     if "PROBAV" in source_selection["ALBEDO"]:
@@ -94,6 +98,7 @@ def main(project_folder, startdate, enddate, latlim, lonlim, level = "level_1",
         # raw_albedo_files.append(glob.glob(r"/Volumes/Data/FAO/WaPOR_vs_pyWaPOR/pyWAPOR_long_test/RAW/PROBAV/Albedo/*.tif"))
     if "MDC43" in source_selection["ALBEDO"]:
         raw_albedo_files.append(c.MCD43.ALBEDO(*dl_args))
+    log.sub()
 
     cmeta = {
         "composite_type": "mean",
@@ -107,11 +112,12 @@ def main(project_folder, startdate, enddate, latlim, lonlim, level = "level_1",
 
 #%%
     #### PRECIPITATION ####
-    print(f"\n#### PRECIPITATION ####")
+    log.info("# PRECIPITATION").add()
     raw_precip_files = list()
     if "CHIRPS" in source_selection["PRECIPITATION"]:
         raw_precip_files.append(c.CHIRPS.daily(*dl_args))
-
+    log.sub()
+    
     cmeta = {
         "composite_type": "mean",
         "temporal_interp": "linear",
@@ -124,7 +130,7 @@ def main(project_folder, startdate, enddate, latlim, lonlim, level = "level_1",
 
 #%%
     #### DEM ####
-    print(f"\n#### DEM ####")
+    log.info("# DEM")
     if "SRTM" in source_selection["DEM"]:
         raw_dem_file = c.SRTM.DEM(*dl_args[:3])
     
@@ -141,11 +147,11 @@ def main(project_folder, startdate, enddate, latlim, lonlim, level = "level_1",
     all_files["z"] = unraw_all(cmeta["var_name"], ds, [dem_file], example_geoinfo)
 
     #### SLOPE ASPECT ####
-    print(f"\n#### SLOPE ASPECT ####")
+    log.info("# SLOPE ASPECT")
     slope_aspect(dem_file, level_folder, example_fh)
 
     #### LULC ####
-    print(f"\n#### LULC ####")
+    log.info("# LULC")
     if "GLOBCOVER" in source_selection["LULC"]:
         raw_lulc_file = c.Globcover.Landuse(*dl_args[:3])
         raw_lulc_files = [(year, raw_lulc_file) for year in range(sdate.year, edate.year + 1)]
@@ -159,12 +165,11 @@ def main(project_folder, startdate, enddate, latlim, lonlim, level = "level_1",
     lulc_file_template = unraw_filepaths(None, level_folder, "{var}_{year}", static = True)[0]
     for year, raw_file in raw_lulc_files:
         for key, replace_values in lulc_values[source_selection["LULC"][0]].items():
-            # print(year, raw_file, key)
             unraw_replace_values(raw_file, lulc_file_template.format(var = key, year = year), replace_values, example_fh)
 
 #%%
     #### METEO ####
-    print(f"\n#### METEO ####")
+    log.info("> METEO").add()
     if "MERRA2" in source_selection["METEO"]:
         meteo_vars = ['t2m', 'u2m', 'v2m', 'q2m', 'tpw', 'ps', 'slp']
         raw_meteo_files = c.MERRA.daily_MERRA2(*dl_args, meteo_vars)
@@ -179,7 +184,7 @@ def main(project_folder, startdate, enddate, latlim, lonlim, level = "level_1",
 
     for var_name, raw_files in raw_meteo_files.items():
 
-        print(f"## {var_name} ##")
+        log.info(f"## {var_name} ##")
 
         if "t2m" in var_name:
             raw_files = [g.lapse_rate.lapse_rate_temperature(x, dem_file) for x in raw_files if "_K_" in x]
@@ -198,6 +203,7 @@ def main(project_folder, startdate, enddate, latlim, lonlim, level = "level_1",
         ds = g.compositer.main(cmeta, [raw_files], epochs_info, temp_folder, example_ds, diagnostics = diagnostics)
         all_files[meteo_name_convertor[var_name]] = unraw_all(meteo_name_convertor[var_name], ds, unraw_file_templates, example_geoinfo)
 
+    log.sub()
 #%%
     #### SE_ROOT ####
     ds_lst, ds_meteo, ds_ndvi, ds_temperature = pywapor.pre_se_root.main(project_folder, startdate, enddate, latlim, lonlim, level = source_selection)
@@ -216,11 +222,11 @@ def main(project_folder, startdate, enddate, latlim, lonlim, level = "level_1",
 
 #%%
     #### LAT LON ####
-    print(f"\n#### LAT LON ####")
+    log.info("# LAT LON")
     lat_lon(example_ds, level_folder, example_geoinfo)
 
     #### SOLAR RADIATION ####
-    print(f"\n#### SOLAR RADIATION ####")
+    log.info("# SOLAR-RADIATION")
     if "MERRA2" in source_selection["TRANS"]:
         raw_ra24_files = c.MERRA.daily_MERRA2(*dl_args, ['swgnet'])['swgnet']
 
@@ -235,7 +241,7 @@ def main(project_folder, startdate, enddate, latlim, lonlim, level = "level_1",
     all_files["ra_24"] = unraw_all(cmeta["var_name"], ds, unraw_file_templates, example_geoinfo)
 
     #### TEMP. AMPLITUDE #### # TODO add source selection and remove year data
-    print(f"\n#### TEMP. AMPLITUDE ####")
+    log.info("# TEMP.-AMPLITUDE")
     raw_temp_ampl_file = os.path.join(raw_folder, "GLDAS", "Temp_Amplitudes_global.tif")
     download_file_from_google_drive("1pqZnCn-1xkUC7o1csG24hwg22fV57gCH", raw_temp_ampl_file)
     temp_ampl_file_template = unraw_filepaths(None, level_folder, "t_amp_year_{year}", static = True)[0]
@@ -269,9 +275,8 @@ def main(project_folder, startdate, enddate, latlim, lonlim, level = "level_1",
 
     os.chdir(project_folder)
 
-    print("\n#################")
-    print("## PRE_ET_LOOK ##")
-    print("##### DONE ######\n")
+    log.info("< PRE_ET_LOOK")
+
 #%%
     return all_files
 
@@ -437,34 +442,23 @@ def save_response_content(response, destination):
             if chunk: # filter out keep-alive new chunks
                 f.write(chunk)
 
-# if __name__ == "__main__":
+if __name__ == "__main__":
 
-    # project_folder = r"/Volumes/Data/FAO/WaPOR_vs_pyWaPOR/pyWAPOR_v1"
-    # latlim = [28.9, 29.7]
-    # lonlim = [30.2, 31.2]
-    # startdate = "2021-07-01"
-    # enddate = "2021-07-10"
-    # composite_length = "DEKAD"
+    project_folder = r"/Users/hmcoerver/pywapor_notebooks"
+    latlim = [28.9, 29.7]
+    lonlim = [30.2, 31.2]
+    startdate = "2021-05-28"
+    enddate = "2021-06-03"
+    composite_length = 1
+    level = "level_1"
 
-    # level = {
-    #     "METEO": ["GEOS5"],
-    #     "NDVI": ["MOD13", "MYD13", "PROBAV"],
-    #     "ALBEDO": ["PROBAV"],
-    #     "LST": ["MOD11", "MYD11"],
-    #     "LULC": ["WAPOR"],
-    #     "DEM": ["SRTM"],
-    #     "PRECIPITATION": ["CHIRPS"],
-    #     "TRANS": ["MERRA2"],
-    # }
-    # level = "level_2"
-
-    # diagnostics = { # label          # lat      # lon
-    #                 "water":	    (29.44977,	30.58215),
-    #                 "desert":	    (29.12343,	30.51222),
-    #                 "agriculture":	(29.32301,	30.77599),
-    #                 "urban":	    (29.30962,	30.84109),
-    #                 }
+    diagnostics = { # label          # lat      # lon
+                    "water":	    (29.44977,	30.58215),
+                    "desert":	    (29.12343,	30.51222),
+                    "agriculture":	(29.32301,	30.77599),
+                    "urban":	    (29.30962,	30.84109),
+                    }
     # diagnostics = None
 
-    # all_files = main(project_folder, startdate, enddate, latlim, lonlim, level = level, 
-    #     diagnostics = diagnostics, composite_length = composite_length)
+    all_files = main(project_folder, startdate, enddate, latlim, lonlim, level = level, 
+        diagnostics = diagnostics, composite_length = composite_length)

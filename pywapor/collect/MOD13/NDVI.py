@@ -4,8 +4,9 @@ from datetime import date
 import glob
 import os
 import pywapor
+from pywapor.general.logger import log
 
-def main(Dir, latlim, lonlim, Startdate, Enddate, Waitbar = 1, 
+def main(Dir, latlim, lonlim, Startdate, Enddate, Waitbar = True, 
         hdf_library = None, remove_hdf = 1, buffer_dates = True):
 
     """
@@ -33,7 +34,7 @@ def main(Dir, latlim, lonlim, Startdate, Enddate, Waitbar = 1,
     
     username, password = pywapor.collect.get_pw_un.get("NASA")
 
-    print('\nDownload 16-daily MOD13 NDVI data for period %s till %s' %(Startdate, Enddate))
+    log.info(f"MOD13 ({Startdate} - {Enddate})")
     DownloadData(Dir, Startdate, Enddate, latlim, lonlim, username, password, 
                 Waitbar, hdf_library, remove_hdf, buffer_dates = buffer_dates)
 
