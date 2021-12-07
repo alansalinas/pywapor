@@ -1,7 +1,6 @@
 # pyWAPOR
 ![downloads](https://img.shields.io/pypi/dw/pywapor) [![version](https://img.shields.io/pypi/v/pywapor)](https://pypi.org/project/pywapor/) [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/bertcoerver/pywapor_notebooks/blob/main/pywapor_101.ipynb)
 
-
 This repository contains a Python implementation of the algorithm used to generate the [WaPOR](http://www.fao.org/in-action/remote-sensing-for-water-productivity/en/) [datasets](https://wapor.apps.fao.org/home/WAPOR_2/1). It can be used to calculate evaporation, transpiration and biomass production maps.
 
 ## Installation
@@ -28,14 +27,14 @@ pip install pywapor
 
 ## Usage
 
-To run the model for one dekad (from 2021-07-01 to 2021-07-10 in this case) for the Fayoum irrigation scheme in Egypt (but feel free to change the [boundingbox](http://bboxfinder.com) defined by `latlim` and `lonlim`) using mainly MODIS data, run the following code. 
+To run the model for one dekad (from 2021-07-01 to 2021-07-11 in this case) for the Fayoum irrigation scheme in Egypt (but feel free to change the [boundingbox](http://bboxfinder.com) defined by `latlim` and `lonlim`) using mainly MODIS data, run the following code. 
 
 ```python
 import pywapor
 
 # User inputs.
 startdate = "2021-07-01"
-enddate = "2021-07-10"
+enddate = "2021-07-11"
 latlim = [28.9, 29.7]
 lonlim = [30.2, 31.2]
 project_folder = r"/my_first_ETLook_run/"
@@ -43,7 +42,7 @@ project_folder = r"/my_first_ETLook_run/"
 # Download input data.
 pywapor.pre_et_look.main(project_folder, startdate, enddate, latlim, lonlim)
 
-# Run the model for one day.
+# Run the model for one dekad starting on 'startdate'.
 pywapor.et_look.main(project_folder, startdate)
 ```
 
@@ -59,7 +58,6 @@ Check out one of the Colab Notebooks below to learn more!
 | 5. | Soil Saturation | > Coming Soon < |
 
 \* Estimation of the time required in minutes, as in "active" + "download time". 
-
 
 ## Documentation
 ### WaPOR v2
