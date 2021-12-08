@@ -3,6 +3,7 @@ import sys
 from pywapor.collect.GEOS.DataAccess import DownloadData
 import pandas as pd
 import tqdm
+from pywapor.general.logger import log
 
 def main(Dir, latlim, lonlim, Startdate, Enddate, Vars, Periods = [1,2,3,4,5,6,7,8], Waitbar = True):
     """
@@ -27,8 +28,10 @@ def main(Dir, latlim, lonlim, Startdate, Enddate, Vars, Periods = [1,2,3,4,5,6,7
     if isinstance(Waitbar, tqdm.tqdm):
         waitbar = Waitbar
     elif Waitbar:
+        log.info("--> Downloading GEOS5 (hourly).")
         waitbar = tqdm.tqdm(total = no_vars * no_dates * no_periods)
     else:
+        log.info("--> Downloading GEOS5 (hourly).")
         waitbar = False
 
     for Var in Vars:

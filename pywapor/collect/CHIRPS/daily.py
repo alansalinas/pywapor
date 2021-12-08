@@ -18,7 +18,7 @@ def main(Dir, latlim, lonlim, Startdate, Enddate, Waitbar = 1):
 	Waitbar -- 1 (Default) will print a waitbar
 	"""
 
-	log.info(f"CHIRPS ({Startdate} - {Enddate})")
+	log.info(f"--> Downloading CHIRPS.")
 	# Download data
 	DownloadData(Dir, Startdate, Enddate, latlim, lonlim, Waitbar)
 

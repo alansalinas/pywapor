@@ -52,8 +52,8 @@ def download_data(download_dir, start_date, end_date, latitude_extent, longitude
     # Buffer the download to make sure that a decadal composite can be produced regarding of start
     # and end dates
     if buffer_dates:
-        start_date = start_date - timedelta(days=6)
-        end_date = end_date + timedelta(days=6)
+        start_date = start_date - timedelta(days=5)
+        end_date = end_date + timedelta(days=5)
     delta = end_date - start_date
 
     waitbar = tqdm(total = (delta.days + 1)*10, position = 0, unit_scale = True)

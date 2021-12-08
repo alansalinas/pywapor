@@ -2,8 +2,9 @@
 import sys
 from pywapor.collect.MERRA.DataAccess import DownloadData
 import pywapor
+from pywapor.general.logger import log
 
-def main(Dir, latlim, lonlim, Startdate, Enddate, Vars, Periods = list(range(1, 25)), Waitbar = 1):
+def main(Dir, latlim, lonlim, Startdate, Enddate, Vars, Periods = list(range(1, 25)), Waitbar = 1, verbose = True):
     """
     This function downloads MERRA inst data for a given variable, time
     interval, and spatial extent.
@@ -21,12 +22,11 @@ def main(Dir, latlim, lonlim, Startdate, Enddate, Vars, Periods = list(range(1, 
 
     username, password = pywapor.collect.get_pw_un.get("NASA")
 
+    if not verbose:
+        log.info("--> Downloading MERRA2 (hourly).")
     for Var in Vars:
 
         for Period in Periods:
-		
-            if Waitbar == 1:
-                print('\nDownloading hourly MERRA %s data for the period %s till %s, Period = %s' %(Var, Startdate, Enddate, Period))
 
             # Download data
             DownloadData(Dir, Var, Startdate, Enddate, latlim, lonlim, "hourly_MERRA2", Period, username, password, Waitbar, data_type = ["mean"])

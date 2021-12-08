@@ -44,7 +44,7 @@ def main(project_folder, startdate, enddate, latlim, lonlim, level = "level_1"):
     dl_args = (raw_folder, latlim, lonlim, startdate, enddate)
 
     #### NDVI ####
-    log.info(f"# NDVI").add()
+    log.info(f"# NDVI")
     raw_ndvi_files = list()
     # Order is important! PROBV gets priority over MOD13, and MOD13 over MYD13.
     if "PROBAV" in source_selection["NDVI"]:
@@ -53,7 +53,6 @@ def main(project_folder, startdate, enddate, latlim, lonlim, level = "level_1"):
         raw_ndvi_files.append(c.MOD13.NDVI(*dl_args, remove_hdf = 0))
     if "MYD13" in source_selection["NDVI"]:
         raw_ndvi_files.append(c.MYD13.NDVI(*dl_args))
-    log.sub()
 
     cmeta = {
         "composite_type": False,
@@ -66,13 +65,12 @@ def main(project_folder, startdate, enddate, latlim, lonlim, level = "level_1"):
     ds_ndvi = ds.rename({"band_data": "ndvi"})
 
     #### LST ####
-    log.info("# LST").add()
+    log.info("# LST")
     raw_lst_files = list()
     if "MOD11" in source_selection["LST"]:
         raw_lst_files.append(c.MOD11.LST(*dl_args))
     if "MYD11" in source_selection["LST"]:
         raw_lst_files.append(c.MYD11.LST(*dl_args))
-    log.sub()
 
     ds_lst = combine_lst(raw_lst_files)
 
@@ -88,7 +86,7 @@ def main(project_folder, startdate, enddate, latlim, lonlim, level = "level_1"):
         periods, period_times = calc_periods(ds_lst.time.values, freq)
         ds_lst["periods"] = xr.DataArray([x[2] for x in periods], {"time": ds_lst.time})
         meteo_vars = ['t2m', 'u2m', 'v2m', 'q2m', 'tpw', 'ps', 'slp']
-        waitbar = tqdm.tqdm(total = len(periods) * len(meteo_vars), delay = 10, initial = 1)
+        log.info("--> Downloading MERRA2 (hourly).")
         for sd, ed, period in periods:
             c.MERRA.hourly_MERRA2(*dl_args[:3], sd, ed, meteo_vars, [int(period)])
     elif "GEOS5" in source_selection["METEO"]:
@@ -96,6 +94,7 @@ def main(project_folder, startdate, enddate, latlim, lonlim, level = "level_1"):
         periods, period_times = calc_periods(ds_lst.time.values, freq)
         ds_lst["periods"] = xr.DataArray([x[2] for x in periods], {"time": ds_lst.time})
         meteo_vars = ['t2m', 'u2m', 'v2m', 'qv2m', 'tqv', 'ps', 'slp']
+        log.info("--> Downloading GEOS5 (hourly).")
         waitbar = tqdm.tqdm(total = len(periods) * len(meteo_vars), delay = 10, initial = 1)
         for sd, ed, period in periods:
             c.GEOS.three_hourly(*dl_args[:3], sd, ed, meteo_vars, [int(period)], Waitbar = waitbar)
@@ -105,7 +104,10 @@ def main(project_folder, startdate, enddate, latlim, lonlim, level = "level_1"):
     ds_temperature = None
     ds_meteo = None
     for var_name, folder in raw_inst_meteo_paths[source_selection["METEO"][0]].items():
-        log.info(f"# {var_name}")
+        renames = {"Pair_inst_0": "p_air_0_i", "Pair_inst": "p_air_i", # TODO Make this renaming unnesecary
+            "tair_inst": "t_air_i", "qv_inst": "qv_i", "u2m_inst": "u2m_i",
+            "lon": "lon_deg", "wv_inst": "wv_i", "lat": "lat_deg", "v2m_inst": "v2m_i"}
+        log.info(f"# {renames[var_name]}")
         for date, period in zip(ds_lst.time.values, ds_lst.periods.values):
             hour = int((period - 1) * {"3H": 3, "H": 1}[freq])
             hour_str = str(hour).zfill(2)
@@ -135,9 +137,9 @@ def main(project_folder, startdate, enddate, latlim, lonlim, level = "level_1"):
                 else:
                     ds_meteo = xr.concat([ds_meteo, ds_temp], dim = "time")
 
-    log.sub()
+    log.sub().info("< METEO")
 
-    log.info("< PRE_SE_ROOT").sub()
+    log.sub().info("< PRE_SE_ROOT")
 
     return ds_lst, ds_meteo, ds_ndvi, ds_temperature
 

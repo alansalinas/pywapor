@@ -33,7 +33,7 @@ def main(Dir, latlim, lonlim, Startdate, Enddate, Waitbar = 1,
 
     username, password = pywapor.collect.get_pw_un.get("NASA")
 
-    log.info(f"MYD13 ({Startdate} - {Enddate})")
+    log.info(f"--> Downloading MYD13.")
     DownloadData(Dir, Startdate, Enddate, latlim, lonlim, username, 
                 password, Waitbar, hdf_library, remove_hdf, buffer_dates = buffer_dates)
 

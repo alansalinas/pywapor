@@ -28,7 +28,7 @@ def main(Dir, latlim, lonlim, Startdate, Enddate, Waitbar = 1, hdf_library = Non
     """
     username, password = pywapor.collect.get_pw_un.get("NASA")
 
-    log.info(f"MYD11 ({Startdate} - {Enddate})")
+    log.info(f"--> Downloading MYD11.")
     files = DownloadData(Dir, Startdate, Enddate, latlim, lonlim, username, password, Waitbar, hdf_library, remove_hdf)
 
     return files

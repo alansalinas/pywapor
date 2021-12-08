@@ -34,7 +34,7 @@ def main(Dir, latlim, lonlim, Startdate, Enddate, Waitbar = True,
     
     username, password = pywapor.collect.get_pw_un.get("NASA")
 
-    log.info(f"MOD13 ({Startdate} - {Enddate})")
+    log.info(f"--> Downloading MOD13.")
     DownloadData(Dir, Startdate, Enddate, latlim, lonlim, username, password, 
                 Waitbar, hdf_library, remove_hdf, buffer_dates = buffer_dates)
 

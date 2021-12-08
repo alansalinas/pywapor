@@ -68,6 +68,6 @@ def main(level_folder, ds_lst, ds_meteo, ds_ndvi,
 
         files.append(fh)
 
-    log.info("< SE_ROOT").sub()
+    log.sub().info("< SE_ROOT")
 
     return files
