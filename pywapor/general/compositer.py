@@ -29,15 +29,24 @@ def main(cmeta, dbs, epochs_info, temp_folder = None, example_ds = None,
     temporal_interp = cmeta["temporal_interp"]
     spatial_interp = cmeta["spatial_interp"]
 
-    styling = { 1: ("*", "r", 1.0, "MOD13Q1"),
-                2: ("o", "g", 1.0, "MYD13Q1"),
-                3: ("v", "b", 1.0, "PROBAV"),
-                4: ("s", "y", 1.0, "MCD43A3"),
-                5: ("*", "purple", 1.0, "CHIRPS.v2.0"),
-                6: ("p", "darkblue", 1.0, "GEOS"),
-                7: ("h", "gray", 1.0, "MERRA"),
-                999: ("P", "orange", 1.0, "-"),
-                0: (".", "k", 0.7, "Interp.")}
+    styling = dict()
+    markers = ["*", "o", "v", "s", "*", "p", "h"]
+    colors =  ["r", "g", "b", "y", "purple", "darkblue", "gray", "orange"]
+    for i, fps in enumerate(dbs):
+        source = os.path.split(fps[0])[-1].split("_")[1]
+        styling[i+1] = (markers[i], colors[i], 1.0, source)
+    styling[999] = ("P", "orange", 1.0, "-")
+    styling[0] = (".", "k", 0.7, "Interp.")
+
+    # styling = { 1: ("*", "r", 1.0, "MOD13Q1"),
+    #             2: ("o", "g", 1.0, "MYD13Q1"),
+    #             3: ("v", "b", 1.0, "PROBAV"),
+    #             4: ("s", "y", 1.0, "MCD43A3"),
+    #             5: ("*", "purple", 1.0, "CHIRPS.v2.0"),
+    #             6: ("p", "darkblue", 1.0, "GEOS"),
+    #             7: ("h", "gray", 1.0, "MERRA"),
+    #             999: ("P", "orange", 1.0, "-"),
+    #             0: (".", "k", 0.7, "Interp.")}
 
     # Check if data is static
     if np.all([isinstance(composite_type, type(None)), 
@@ -118,7 +127,7 @@ def main(cmeta, dbs, epochs_info, temp_folder = None, example_ds = None,
     fh = os.path.join(temp_folder, "intermediate.nc")
 
     ds = ds.reindex({"time": ds.time.sortby("time")})
-    ds = calculate_ds(ds, fh, "--> Reprojecting datasets.").chunk({"time":-1})
+    ds = calculate_ds(ds, fh, "--> Resampling datasets.").chunk({"time":-1})
 
     if temporal_interp:
         ds_resampled = ds.interpolate_na(dim="time")

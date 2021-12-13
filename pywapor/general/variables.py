@@ -323,7 +323,7 @@ def get_source_validations():
     valid_sources = {
         "METEO": ["GEOS5", "MERRA2"],
         "NDVI": ["MOD13", "MYD13", "PROBAV"],
-        "ALBEDO": ["MDC43", "PROBAV"],
+        "ALBEDO": ["MCD43", "PROBAV"],
         "LST": ["MOD11", "MYD11"],
         "LULC": ["GLOBCOVER", "WAPOR"],
         "DEM": ["SRTM",],
@@ -337,7 +337,7 @@ def get_source_validations():
         "MOD13": (datetime.date(2000,2,18), datetime.date.today()),
         "MYD13": (datetime.date(2002,7,4), datetime.date.today()),
         "PROBAV": (datetime.date(2014,3,11), datetime.date.today()),
-        "MDC43": (datetime.date(2000,2,16), datetime.date.today()),
+        "MCD43": (datetime.date(2000,2,16), datetime.date.today()),
         "MOD11": (datetime.date(2000,2,24), datetime.date.today()),
         "MYD11": (datetime.date(2002,7,4), datetime.date.today()),
         "GLOBCOVER": (datetime.date(2009,1,1), datetime.date(2009,1,1)),

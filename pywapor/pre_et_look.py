@@ -19,7 +19,8 @@ import shutil
 from pywapor.general.logger import log, adjust_logger
 
 def main(project_folder, startdate, enddate, latlim, lonlim, level = "level_1", 
-        diagnostics = None, composite_length = "DEKAD"):
+        diagnostics = None, composite_length = "DEKAD", extra_sources = None,
+        extra_source_locations = None):
 
     if not os.path.exists(project_folder):
         os.makedirs(project_folder)
@@ -50,7 +51,7 @@ def main(project_folder, startdate, enddate, latlim, lonlim, level = "level_1",
         level = level_name
 
     source_selection = levels[level]
-    succes = g.tests.check_source_selection(source_selection, sdate, edate)[1]
+    succes = g.tests.check_source_selection(source_selection, sdate, edate, extra_sources)[1]
     assert succes, "invalid source_selection"
 
     raw_folder = os.path.join(project_folder, "RAW")
@@ -66,14 +67,16 @@ def main(project_folder, startdate, enddate, latlim, lonlim, level = "level_1",
     #### NDVI ####
     log.info("# NDVI")
     raw_ndvi_files = list()
-    # Order is important! PROBV gets priority over MOD13, and MOD13 over MYD13.
-    if "PROBAV" in source_selection["NDVI"]:
-        raw_ndvi_files.append(c.PROBAV.PROBAV_S5(*dl_args)[0])
-        # raw_ndvi_files.append(glob.glob(os.path.join(project_folder, "RAW/PROBAV/NDVI/*.tif")))
-    if "MOD13" in source_selection["NDVI"]:
-        raw_ndvi_files.append(c.MOD13.NDVI(*dl_args))
-    if "MYD13" in source_selection["NDVI"]:
-        raw_ndvi_files.append(c.MYD13.NDVI(*dl_args))
+    for source in source_selection["NDVI"]:
+        if source == "PROBAV":
+            raw_ndvi_files.append(c.PROBAV.PROBAV_S5(*dl_args)[0])
+        elif source == "MOD13":
+            raw_ndvi_files.append(c.MOD13.NDVI(*dl_args))
+        elif source == "MYD13":
+            raw_ndvi_files.append(c.MYD13.NDVI(*dl_args))
+        else:
+            #TODO fix: when sideloader return empty list (no files found), raw_ndvi_files should be cleaner from that empty list.
+            raw_ndvi_files.append(c.sideloader.search_product_files(source, extra_source_locations[source]))
 
     example_fh, example_ds, example_geoinfo = select_template(raw_ndvi_files)
 
@@ -91,12 +94,13 @@ def main(project_folder, startdate, enddate, latlim, lonlim, level = "level_1",
     #### ALBEDO ####
     log.info("# ALBEDO")
     raw_albedo_files = list()
-    # Order is important! PROBV gets priority over MDC43.
-    if "PROBAV" in source_selection["ALBEDO"]:
-        raw_albedo_files.append(c.PROBAV.PROBAV_S5(*dl_args)[1])
-        # raw_albedo_files.append(glob.glob(r"/Volumes/Data/FAO/WaPOR_vs_pyWaPOR/pyWAPOR_long_test/RAW/PROBAV/Albedo/*.tif"))
-    if "MDC43" in source_selection["ALBEDO"]:
-        raw_albedo_files.append(c.MCD43.ALBEDO(*dl_args))
+    for source in source_selection["ALBEDO"]:
+        if source == "PROBAV":
+            raw_albedo_files.append(c.PROBAV.PROBAV_S5(*dl_args)[1])
+        elif source == "MCD43":
+            raw_albedo_files.append(c.MCD43.ALBEDO(*dl_args))
+        else:
+            raw_albedo_files.append(c.sideloader.search_product_files(source, extra_source_locations[source]))
 
     cmeta = {
         "composite_type": "mean",
@@ -201,7 +205,9 @@ def main(project_folder, startdate, enddate, latlim, lonlim, level = "level_1",
     log.sub().info("< METEO")
 
     #### SE_ROOT ####
-    ds_lst, ds_meteo, ds_ndvi, ds_temperature = pywapor.pre_se_root.main(project_folder, startdate, enddate, latlim, lonlim, level = source_selection)
+    ds_lst, ds_meteo, ds_ndvi, ds_temperature = pywapor.pre_se_root.main(project_folder, startdate, enddate, latlim, 
+                                                                        lonlim, level = source_selection, extra_sources = extra_sources,
+                                                                        extra_source_locations = extra_source_locations)
     raw_se_root_files = pywapor.se_root.main(level_folder, ds_lst, ds_meteo, ds_ndvi, 
                                         ds_temperature, example_ds, example_geoinfo)
 
@@ -299,6 +305,9 @@ def select_template(fhs):
     example_ds = xr.open_dataset(example_fh).isel(band = 0).drop_vars(["band", "spatial_ref"]).rename({"x": "lon", "y": "lat"})
     example_geoinfo = PF.get_geoinfo(example_fh)
 
+    resolution = pywapor.et_look.get_geoinfo(example_fh)[0]
+    log.info(f"--> resampling resolution is ~{resolution:.0f} meter.")
+
     return example_fh, example_ds, example_geoinfo
 
 def slope_aspect(dem_file, project_folder, template_file):
@@ -362,6 +371,23 @@ def unraw_filepaths(periods_start, project_folder, var, static = False):
     return filepaths
 
 def create_dates(sdate, edate, period_length):
+    """Define composite lenghts
+
+    Parameters
+    ----------
+    sdate : str or datetime.datetime
+        Date from which to start.
+    edate : str or datetime.datetime
+        Enddate.
+    period_length : int or str
+        Amount of days between the returned dates, can also be "DEKAD" in which
+        case it will split each month in roughly 10-day segments.
+
+    Returns
+    -------
+    np.ndarray
+        [description]
+    """
     if isinstance(sdate, str):
         sdate = dat.strptime(sdate, "%Y-%m-%d")
     if isinstance(edate, str):
@@ -436,33 +462,80 @@ def save_response_content(response, destination):
             if chunk: # filter out keep-alive new chunks
                 f.write(chunk)
 
+def check_extra_product_names(extra_products):
+    """Product names need to be unique and can't contain underscores.
+    Variables for which new products can be added are 'NDVI', 'ALBEDO' and 
+    'LST'.
+
+    Parameters
+    ----------
+    extra_products : dict
+        Keys are variables (e.g. 'NDVI'), values are lists of new products.
+
+    """
+    valid_keys = ["NDVI", "ALBEDO", "LST"]
+
+    assert np.all([x in valid_keys for x in extra_products.keys()])
+
+    all_products = np.array(list(extra_products.values())).flatten()
+
+    assert all_products.size == np.unique(all_products).size
+    assert np.all(["_" not in x for x in all_products])
+
 if __name__ == "__main__":
 
     project_folder = r"/Users/hmcoerver/pywapor_notebooks"
     latlim = [28.9, 29.7]
     lonlim = [30.2, 31.2]
-    startdate = "2021-05-28"
-    enddate = "2021-05-29"
-    composite_length = 1 
-    # level = "level_1"
+    startdate = "2021-07-01"
+    enddate = "2021-07-11"
+    composite_length = 10
+    level = "level_1"
 
-    # diagnostics = { # label          # lat      # lon
-    #                 "water":	    (29.44977,	30.58215),
-    #                 "desert":	    (29.12343,	30.51222),
-    #                 "agriculture":	(29.32301,	30.77599),
-    #                 "urban":	    (29.30962,	30.84109),
-    #                 }
-    diagnostics = None
+    diagnostics = { # label          # lat      # lon
+                    "water":	    (29.44977,	30.58215),
+                    "desert":	    (29.12343,	30.51222),
+                    "agriculture":	(29.32301,	30.77599),
+                    "urban":	    (29.30962,	30.84109),
+                    }
+    # diagnostics = None
 
-    level = {'METEO': ['MERRA2'],
-            'NDVI': ['MOD13', 'MYD13'],
-            'ALBEDO': ['PROBAV'],
-            'LST': ['MOD11', 'MYD11'],
+    level = {'METEO': ['GEOS5'],
+            'NDVI': ['LS7NDVI', 'MOD13', 'MYD13'],
+            'ALBEDO': ['LS8ALBEDO', 'MCD43'],
+            'LST': ['LS7LST', 'LS8LST', 'MOD11', 'MYD11'],
             'LULC': ['WAPOR'],
             'DEM': ['SRTM'],
             'PRECIPITATION': ['CHIRPS'],
             'TRANS': ['MERRA2'],
-            "name": "test2"}
+            "name": "sideloading_yey"}
+
+    # Define new products.
+    extra_sources =  {"NDVI":      ["LS7NDVI", "LS8NDVI"],
+                        "LST":      ["LS7LST", "LS8LST"],
+                        "ALBEDO":   ["LS7ALBEDO", "LS8ALBEDO"]}
+
+    # Give product folder.
+    extra_source_locations = {
+        "LS7NDVI": r"/Users/hmcoerver/pywapor_notebooks/my_landsat_folder/NDVI",
+        "LS8NDVI": r"/Users/hmcoerver/pywapor_notebooks/my_landsat_folder/NDVI",
+        "LS7LST": r"/Users/hmcoerver/pywapor_notebooks/my_landsat_folder/LST",
+        "LS8LST": r"/Users/hmcoerver/pywapor_notebooks/my_landsat_folder/LST",
+        "LS7ALBEDO": r"/Users/hmcoerver/pywapor_notebooks/my_landsat_folder/ALBEDO",
+        "LS8ALBEDO": r"/Users/hmcoerver/pywapor_notebooks/my_landsat_folder/ALBEDO",
+    }
 
     all_files = main(project_folder, startdate, enddate, latlim, lonlim, level = level, 
-        diagnostics = diagnostics, composite_length = composite_length)
+        diagnostics = diagnostics, composite_length = composite_length, extra_sources = extra_sources,
+        extra_source_locations = extra_source_locations)
+
+
+    # check_extra_product_names(extra_sources)
+
+    # for product_name, path in extra_source_locations.items():
+    #     fps = search_product_files(product_name, path)
+
+    #     for fp in fps:
+    #         fn = os.path.split(fp)[-1]
+    #         check_filenames(fn)
+        

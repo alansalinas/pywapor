@@ -3,6 +3,7 @@ import numpy as np
 from datetime import datetime as dat
 import pywapor.collect as c
 import pywapor.general as g
+import pywapor
 import os
 import pandas as pd
 from datetime import time as datt
@@ -10,7 +11,8 @@ import tqdm
 import warnings
 from pywapor.general.logger import log, adjust_logger
 
-def main(project_folder, startdate, enddate, latlim, lonlim, level = "level_1"):
+def main(project_folder, startdate, enddate, latlim, lonlim, level = "level_1",
+        extra_sources = None, extra_source_locations = None):
 
     log_write = True
     log_level = "INFO"
@@ -35,7 +37,7 @@ def main(project_folder, startdate, enddate, latlim, lonlim, level = "level_1"):
         level = level_name
 
     source_selection = levels[level]
-    succes = g.tests.check_source_selection(source_selection, sdate, edate)[1]
+    succes = g.tests.check_source_selection(source_selection, sdate, edate, extra_sources)[1]
     assert succes, "invalid source_selection"
 
     raw_folder = os.path.join(project_folder, "RAW")
@@ -46,13 +48,15 @@ def main(project_folder, startdate, enddate, latlim, lonlim, level = "level_1"):
     #### NDVI ####
     log.info(f"# NDVI")
     raw_ndvi_files = list()
-    # Order is important! PROBV gets priority over MOD13, and MOD13 over MYD13.
-    if "PROBAV" in source_selection["NDVI"]:
-        raw_ndvi_files.append(c.PROBAV.PROBAV_S5(*dl_args)[0])
-    if "MOD13" in source_selection["NDVI"]:
-        raw_ndvi_files.append(c.MOD13.NDVI(*dl_args, remove_hdf = 0))
-    if "MYD13" in source_selection["NDVI"]:
-        raw_ndvi_files.append(c.MYD13.NDVI(*dl_args))
+    for source in source_selection["NDVI"]:
+        if source == "PROBAV":
+            raw_ndvi_files.append(c.PROBAV.PROBAV_S5(*dl_args)[0])
+        elif source == "MOD13":
+            raw_ndvi_files.append(c.MOD13.NDVI(*dl_args))
+        elif source == "MYD13":
+            raw_ndvi_files.append(c.MYD13.NDVI(*dl_args))
+        else:
+            raw_ndvi_files.append(c.sideloader.search_product_files(source, extra_source_locations[source]))
 
     cmeta = {
         "composite_type": False,
@@ -67,10 +71,13 @@ def main(project_folder, startdate, enddate, latlim, lonlim, level = "level_1"):
     #### LST ####
     log.info("# LST")
     raw_lst_files = list()
-    if "MOD11" in source_selection["LST"]:
-        raw_lst_files.append(c.MOD11.LST(*dl_args))
-    if "MYD11" in source_selection["LST"]:
-        raw_lst_files.append(c.MYD11.LST(*dl_args))
+    for source in source_selection["LST"]:
+        if source == "MOD11":
+            raw_lst_files.append(c.MOD11.LST(*dl_args))
+        elif source == "MYD11":
+            raw_lst_files.append(c.MYD11.LST(*dl_args))
+        else:
+            raw_lst_files.append(c.sideloader.search_product_files(source, extra_source_locations[source]))
 
     ds_lst = combine_lst(raw_lst_files)
 
