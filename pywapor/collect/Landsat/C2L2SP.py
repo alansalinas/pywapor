@@ -1,21 +1,21 @@
 """Functions to process Landsat 7 and 8 Collection-2 Level-2 scenes into
 NDVI, ALBEDO and LST GeoTIFFs that can be ingested into pywapor.pre_et_look.
-
-Bert Coerver (bert.coerver@fao.org)
 """
 
 import glob
 import os
 import tarfile
 import json
+import shutil
 import pywapor.general.processing_functions as PF
 import numpy as np
 import xarray as xr
 from osgeo import gdal
 from datetime import datetime
 from pywapor.general.logger import log
+from pywapor.collect.Landsat import ls_bitmasks
 
-def main(folder):
+def main(folder, max_lst_uncertainty = 1.5):
     """Processes Landsat 7 or 8 Collection-2 Level-2 tar-files into GeoTIFFs
     for NDVI, LST and ALBEDO.
 
@@ -60,8 +60,14 @@ def main(folder):
         # Open the data.
         data, mtl, proj, geot = open_data(ls_folder, to_open)
         
+        # Make cloud/shadow/quality mask.
+        valid = open_mask(ls_folder, mtl, proj, geot)
+
+        # Mask pixels.
+        data = data.where(valid)
+
         # Store some arguments needed to save the GeoTIFFS.
-        save_args = [ls_folder, mtl, proj, geot, "float32"]
+        save_args = [folder, mtl, proj, geot, "float32"]
         
         # Calculate the albedo.
         albedo = calc_albedo(data)
@@ -75,13 +81,19 @@ def main(folder):
 
         ## LST ##
         # Define which bands are required.
-        to_open = ["therm"]
+        to_open = ["therm", "therm_qa"]
 
         # Open the data.
         data, mtl, proj, geot = open_data(ls_folder, to_open)
         
+        # Create mask for pixels with an uncertainty greater than x Kelvin.
+        valid = data.sel(band = "therm_qa") <= max_lst_uncertainty * 100
+
+        # Apply mask.
+        data = data.where(valid)
+        
         # Store some arguments needed to create the GeoTIFFS.
-        save_args = [ls_folder, mtl, proj, geot, "float32"]
+        save_args = [folder, mtl, proj, geot, "float32"]
 
         # Calculate the lst.
         lst = calc_lst(data)
@@ -89,12 +101,89 @@ def main(folder):
         # Save the lst.
         lst_files.append(save_to_geotif(lst, ["LST"], *save_args)[0])
 
+        # Remove the untarred files and folder.
+        shutil.rmtree(ls_folder)
+
     return ndvi_files, albedo_files, lst_files
+
+def open_mask(ls_folder, mtl, proj, geot):
+    """Create a mask to remove clouds/shadows and oversaturated pixels
+    from the scene.
+
+    Parameters
+    ----------
+    ls_folder : str
+        Path to folder containing the scene images.
+    mtl : dict
+        Metadata of the landsat scene.
+    proj : str
+        Projection of the images to which the mask will be applied.
+    geot : tuple
+        Geotransform of the images to which the mask will be applied.
+
+    Returns
+    -------
+    xr.DataArray
+        Mask to apply to surface reflectance bands. True indicates pixels that
+        should be kept, False indicates pixels that should be removed.
+    """
+
+    # Find Landsat spacecraft number.
+    ls_number = ls_number_from_mtl(mtl)
+
+    # Define which general bands to open.
+    to_open = ["pixel_qa", "radsat_qa"]
+
+    # Look up the filepaths.
+    fps = find_files(ls_folder, to_open)
+
+    # Open the data.
+    qa_data = xr.concat([open_as_xr(fp, name) for name, fp in fps.items()], "band")
+    
+    # Check if projection and geotransform is the same as data to which the 
+    # mask will be applied.
+    _, _ = check_projs_geots(fps.values(), ref_proj_geot = (proj, geot))
+    
+    # Open the bit numbers.
+    pixel_qa_bits = ls_bitmasks.get_pixel_qa_bits(2, ls_number, 2)
+    
+    # Choose which labels to mask (see keys of 'pixel_qa_bits' for options).
+    if ls_number == 8:
+        pixel_qa_flags = ["dilated_cloud", "cirrus", "cloud", "cloud_shadow", "snow"]
+    elif ls_number == 7:
+        pixel_qa_flags = ["dilated_cloud", "cloud", "cloud_shadow", "snow"]
+    
+    # Load array into RAM.
+    qa_array = qa_data.sel(band="pixel_qa").band_data.values.astype("uint16")
+    
+    # Create the first mask.
+    mask1 = ls_bitmasks.get_mask(qa_array, pixel_qa_flags, pixel_qa_bits)
+
+    # Open the bit numbers
+    radsat_qa_bits = ls_bitmasks.get_radsat_qa_bits(2, ls_number, 2)
+    
+    # Choose which labels to mask (all in this case).
+    radsat_qa_flags = list(radsat_qa_bits.keys())
+    
+    # Load array into RAM.
+    qa_array = qa_data.sel(band="radsat_qa").band_data.values.astype("uint16")
+    
+    # Create the second mask.
+    mask2 = ls_bitmasks.get_mask(qa_array, radsat_qa_flags, radsat_qa_bits)
+    
+    # Combine the masks.
+    mask = np.invert(np.any([mask1, mask2], axis = 0))
+    
+    # Put the mask inside a xr.DataArray.
+    mask_xr = xr.DataArray(data = np.transpose(mask), 
+                            coords = qa_data.drop_dims(["band"]).coords)
+
+    return mask_xr
 
 def open_data(ls_folder, to_open):
     """Opens data in a folder created by unpacking a Landsat Collection-2 
-    Level-2 tar-file, applies scale and offset factors, and masks invalid
-    data.
+    Level-2 tar-file, applies scale and offset factors, and masks invalid 
+    values.
 
     Parameters
     ----------
@@ -185,9 +274,13 @@ def scale_offset_from_mtl(fp, mtl, type):
 
     addon = {True: "_ST_B", False: "_"}[type == "TEMPERATURE"]
 
-    scale = float(mtl[f'LEVEL2_SURFACE_{type}_PARAMETERS'][f'{type}_MULT_BAND{addon}{bandname}'])
-    offset = float(mtl[f'LEVEL2_SURFACE_{type}_PARAMETERS'][f'{type}_ADD_BAND{addon}{bandname}'])
-
+    try:
+        scale = float(mtl[f'LEVEL2_SURFACE_{type}_PARAMETERS'][f'{type}_MULT_BAND{addon}{bandname}'])
+        offset = float(mtl[f'LEVEL2_SURFACE_{type}_PARAMETERS'][f'{type}_ADD_BAND{addon}{bandname}'])
+    except KeyError:
+        log.warning(f"No scale/offset found for {fp}, setting to 1 and 0.")
+        scale = 1.0
+        offset = 0.0
     return scale, offset
 
 def find_scales_offsets(fps, mtl):
@@ -548,6 +641,9 @@ def search_path():
                     "swir1":    "*SR_B5.TIF",
                     "therm":    "*ST_B6.TIF",
                     "swir2":    "*SR_B7.TIF",
+                    "pixel_qa": "*QA_PIXEL.TIF",
+                    "radsat_qa":"*QA_RADSAT.TIF",
+                    "therm_qa": "*ST_QA.TIF",
                     },
                 8: {
                     "blue":     "*SR_B2.TIF",
@@ -557,6 +653,9 @@ def search_path():
                     "swir1":    "*SR_B6.TIF",
                     "swir2":    "*SR_B7.TIF",
                     "therm":    "*ST_B10.TIF",
+                    "pixel_qa": "*QA_PIXEL.TIF",
+                    "radsat_qa":"*QA_RADSAT.TIF",
+                    "therm_qa": "*ST_QA.TIF",
                     },
                 }
     return search_paths
@@ -588,7 +687,9 @@ def valid_range():
             "nir":      (7273, 43636),
             "swir1":    (7273, 43636),
             "swir2":    (7273, 43636), # Assuming, not in table...
-            "therm":    (1, 65535)},
+            "therm":    (1, 65535),
+            "therm_qa":  (0, 32767),
+            },
         8: {
             "aer":      (7273, 43636),
             "blue":     (7273, 43636),
@@ -597,7 +698,9 @@ def valid_range():
             "nir":      (7273, 43636),
             "swir1":    (1, 65535),
             "swir2":    (7273, 43636),
-            "therm":    (1, 65535)}
+            "therm":    (1, 65535),
+            "therm_qa": (0, 32767),
+            },
         }
     return valid_sr_range
 
@@ -626,13 +729,16 @@ def mask_invalid(ds, valid_range):
 
     return ds.where((ds.band_data >= min_xr) & (ds.band_data <= max_xr))
 
-def check_projs_geots(files):
+def check_projs_geots(files, ref_proj_geot = None):
     """Check if different files all have the same projection and geotransform.
 
     Parameters
     ----------
     files : list
         Paths to GeoTIFFS to be checked.
+    ref_proj_geot : tuple, optional
+        Extra projection and geotransform to check the files against. Default 
+        is None.
 
     Returns
     -------
@@ -648,7 +754,12 @@ def check_projs_geots(files):
     consistent_geots = np.unique(projs_geots[:,1]).size == 1
     assert consistent_projs
     assert consistent_geots
-    return projs_geots[:,0][0], projs_geots[:,1][0]
+    proj = projs_geots[:,0][0]
+    geot = projs_geots[:,1][0]
+    if not isinstance(ref_proj_geot, type(None)):
+        assert proj == ref_proj_geot[0]
+        assert geot == ref_proj_geot[1]
+    return proj, geot
 
 if __name__ == "__main__":
 

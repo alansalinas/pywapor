@@ -7,8 +7,8 @@ Description:
 This module preprocesses Landsat(7+8) data downloaded externaly
 
 """
-from .PrepareLandsat import main as PrepareLandsat
+from pywapor.collect.Landsat import C2L2SP, ls_bitmasks
 
-__all__ = ["PrepareLandsat"]
+__all__ = ["C2L2SP"]
 
 __version__ = '0.1'
