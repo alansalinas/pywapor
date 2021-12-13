@@ -8,6 +8,45 @@ import gzip
 import zipfile
 import numpy as np
 from scipy.interpolate import NearestNDInterpolator, LinearNDInterpolator
+from pywapor.general.logger import log
+
+def reproject_clip(source_fp, dest_fp = None, bb = None,
+                    compress = True, dstSRS = "epsg:4326"):
+    """Function that calls gdal.Warp().
+
+    Parameters
+    ----------
+    source_fp : [type]
+        [description]
+    dest_fp : [type], optional
+        [description], by default None
+    bb : tuple, optional
+        First item is latlim, second item is lonlim, by default None
+    compress : bool, optional
+        [description], by default True
+    dstSRS : str, optional
+        [description], by default "epsg:4326"
+    """
+    options_dict = {"dstSRS": dstSRS}
+    
+    if not isinstance(bb, type(None)):
+        options_dict["outputBounds"] = (bb[1][0], bb[0][0], 
+                                        bb[1][1], bb[0][1])
+    
+    if compress:
+        options_dict["creationOptions"] = ["COMPRESS=DEFLATE", "ZLEVEL=8"]
+
+    if isinstance(dest_fp, type(None)):
+        log.debug(f"Overwriting input file ({source_fp}).")
+        dest_fp = source_fp
+
+    options = gdal.WarpOptions(**options_dict)
+
+    out = gdal.Warp(dest_fp, source_fp, options = options)
+    out.FlushCache()
+    out = None
+
+    return dest_fp
 
 def apply_mask(a, indices, axis):
     """

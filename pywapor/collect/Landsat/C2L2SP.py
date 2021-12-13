@@ -15,7 +15,7 @@ from datetime import datetime
 from pywapor.general.logger import log
 from pywapor.collect.Landsat import ls_bitmasks
 
-def main(folder, max_lst_uncertainty = 1.5):
+def main(folder, max_lst_uncertainty = 2.5, bb = None):
     """Processes Landsat 7 or 8 Collection-2 Level-2 tar-files into GeoTIFFs
     for NDVI, LST and ALBEDO.
 
@@ -103,6 +103,10 @@ def main(folder, max_lst_uncertainty = 1.5):
 
         # Remove the untarred files and folder.
         shutil.rmtree(ls_folder)
+
+    if not isinstance(bb, type(None)):
+        for file in ndvi_files + albedo_files + lst_files:
+            PF.reproject_clip(file, bb = bb)
 
     return ndvi_files, albedo_files, lst_files
 
@@ -373,7 +377,8 @@ def create_fn(var, mtl):
     """
     ls_number = ls_number_from_mtl(mtl)
     date_time = acquired_at(mtl)
-    fn = f"{var}_LS{ls_number:02d}L2SP_K_-_{date_time:%Y.%m.%d.%H.%M}.tif"
+    unit = {"LST": "K", "NDVI": "-", "ALBEDO": "-"}
+    fn = f"{var}_LS{ls_number:01d}{var}_{unit[var]}_-_{date_time:%Y.%m.%d.%H.%M}.tif"
     return fn
 
 def calc_ndvi(data):
@@ -763,6 +768,9 @@ def check_projs_geots(files, ref_proj_geot = None):
 
 if __name__ == "__main__":
 
+    latlim = [28.9, 29.7]
+    lonlim = [30.2, 31.2]
+
     folder = r"/Users/hmcoerver/pywapor_notebooks/my_landsat_folder" 
 
-    ndvi_files, albedo_files, lst_files = main(folder)
+    ndvi_files, albedo_files, lst_files = main(folder, bb = (latlim, lonlim))
