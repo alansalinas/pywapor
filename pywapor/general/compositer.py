@@ -3,27 +3,39 @@ import numpy as np
 import xarray as xr
 from datetime import datetime as dat
 import pandas as pd
+import datetime
 from dask.diagnostics import ProgressBar
-import pywapor.post_et_look as pl
+import pywapor.post_et_look as post_et_look
 import pywapor.general.processing_functions as PF
 from pywapor.general.logger import log
 
 def main(cmeta, dbs, epochs_info, temp_folder = None, example_ds = None,
-                lean_output = True, diagnostics = None):
+        lean_output = True, diagnostics = None):
     """
     composite_type = "max", "mean", "min"
     temporal_interp = False, "linear", "nearest", "zero", "slinear", "quadratic", "cubic"
     spatial_interp = "nearest", "linear"
     """
 
-    if isinstance(temp_folder, type(None)):
+    if not isinstance(temp_folder, type(None)):
         fh = dbs[0][0]
         path = os.path.normpath(fh)
         parts = path.split(os.sep)
-        temp_folder = os.path.join(*parts[:-4], "temporary")
+        if not os.path.exists(temp_folder):
+            os.makedirs(temp_folder)
 
-    if not os.path.exists(temp_folder):
-        os.makedirs(temp_folder)
+    if isinstance(diagnostics, dict):
+        diags = {k:v for k,v in diagnostics.items()}
+        if "folder" in diags.keys():
+            graph_folder = diags.pop("folder")
+        else:
+            graph_folder = None
+        labels = [None, None]
+        log.info("--> Calculating diagnostics.")
+    else:
+        diags = None
+        labels = ["--> Resampling datasets.",
+                    "--> Calculating composites."]
 
     composite_type = cmeta["composite_type"]
     temporal_interp = cmeta["temporal_interp"]
@@ -37,16 +49,7 @@ def main(cmeta, dbs, epochs_info, temp_folder = None, example_ds = None,
         styling[i+1] = (markers[i], colors[i], 1.0, source)
     styling[999] = ("P", "orange", 1.0, "-")
     styling[0] = (".", "k", 0.7, "Interp.")
-
-    # styling = { 1: ("*", "r", 1.0, "MOD13Q1"),
-    #             2: ("o", "g", 1.0, "MYD13Q1"),
-    #             3: ("v", "b", 1.0, "PROBAV"),
-    #             4: ("s", "y", 1.0, "MCD43A3"),
-    #             5: ("*", "purple", 1.0, "CHIRPS.v2.0"),
-    #             6: ("p", "darkblue", 1.0, "GEOS"),
-    #             7: ("h", "gray", 1.0, "MERRA"),
-    #             999: ("P", "orange", 1.0, "-"),
-    #             0: (".", "k", 0.7, "Interp.")}
+    sources = {v[3]: k for k, v in styling.items()}
 
     # Check if data is static
     if np.all([isinstance(composite_type, type(None)), 
@@ -69,11 +72,12 @@ def main(cmeta, dbs, epochs_info, temp_folder = None, example_ds = None,
             date = dat.strptime(date_string, '%Y.%m.%d.%H.%M.tif')
         else:
             date = dat.strptime(date_string, '%Y.%m.%d.tif')
-            t_offsets = {"daily": 12, "16-daily": 192, 
-                        "daily-min":12, "daily-max":12, "5-daily": 60}
-            date = date + pd.Timedelta(hours = t_offsets[freq_string])
-
-        source = ds.encoding["source"].split("_")[-4]
+            t_offsets = {"daily": 12, "daily-min":12, "daily-max":12} # TODO get rid of daily-min/max
+            if freq_string in t_offsets.keys():
+                delta = t_offsets[freq_string]
+            else:
+                delta = float(freq_string.split("-")[0]) * 12
+            date = date + pd.Timedelta(hours = delta)
 
         ds = ds.drop_vars("spatial_ref")
         ds = ds.squeeze("band")
@@ -83,13 +87,6 @@ def main(cmeta, dbs, epochs_info, temp_folder = None, example_ds = None,
         ds = ds.rename_vars({"x": f"lon", "y": f"lat"})
         ds = ds.swap_dims({"x": f"lon", "y": f"lat"})
 
-        sources = {v[3]: k for k, v in styling.items()}
-
-        ds["band_data"] = ds.band_data.expand_dims("source")
-        ds = ds.assign_coords({"source": [source]})
-
-        ds["sources"] = np.isfinite(ds.band_data) * sources[source]
-
         return ds
 
     ds = None
@@ -98,50 +95,53 @@ def main(cmeta, dbs, epochs_info, temp_folder = None, example_ds = None,
 
     # Open tif-files and apply spatial interpolation
     for db in dbs:
-
         check_geots(db)
-
         sub_ds = xr.open_mfdataset(db, concat_dim = "time", engine="rasterio", combine = "nested",
                                         preprocess = preprocess_func)
-        dbs_names.append(sub_ds.source.values[0])
-
         if isinstance(example_ds, type(None)):
-            example_ds = sub_ds.isel(time = 0, 
-                                    source = 0).drop_vars(["source", "time"])
+            example_ds = sub_ds.isel(time = 0).drop_vars(["time"])
         else:
             sub_ds = sub_ds.interp_like(example_ds, method = spatial_interp, kwargs={"fill_value": "extrapolate"},)
 
+        source = db[0].split("_")[-4]
+        dbs_names.append(source)
+        sub_ds["sources"] = (np.isfinite(sub_ds.band_data) * sources[source])
+
+        if isinstance(diags, dict):
+            sub_ds = sub_ds.sel(lat = [v[0] for v in diags.values()],
+                        lon = [v[1] for v in diags.values()], method = "nearest")
+
         dss.append(sub_ds)
 
-    ds = xr.merge(dss)
-
-    for i, db_name in enumerate(dbs_names):
+    # This is where one dataset gets priority over another if there are sources
+    # at the exact same time. That's also why we can't use xr.merge() here.
+    for i, sub_ds in enumerate(dss):
         if i == 0:
-            ds_temp = ds.sel(source = db_name)
+            ds = sub_ds
         else:
-            # Combine datasets, this is where one ds is prioritised over another!
-            ds_temp = ds_temp.fillna(ds.sel(source = db_name))
+            ds = ds.combine_first(sub_ds)
 
-    ds = ds_temp
+    if not isinstance(temp_folder, type(None)):
+        fh = os.path.join(temp_folder, f"{cmeta['var_name']}_ts.nc")
+    else:
+        fh = None
 
-    fh = os.path.join(temp_folder, "intermediate.nc")
-
-    ds = ds.reindex({"time": ds.time.sortby("time")})
-    ds = calculate_ds(ds, fh, "--> Resampling datasets.").chunk({"time":-1})
-
-    if temporal_interp:
-        ds_resampled = ds.interpolate_na(dim="time")
-        ds_resampled = ds_resampled.resample({"time": "12H"}).interpolate(temporal_interp).drop("sources")
-        ds_resampled["sources"] = ds.sources
-        ds_resampled["sources"] = ds_resampled["sources"].fillna(0.0)
-        ds = ds_resampled
+    ds, fh_intermediate = calculate_ds(ds, fh, labels[0], 
+                                        cast = {"sources": np.uint8})
+    ds = ds.chunk("auto")
 
     if isinstance(epochs_info, type(None)):
-        fh = os.path.join(temp_folder, f"{cmeta['var_name']}_ts.nc")
-        ds = calculate_ds(ds, fh, "--> Exporting timeseries.")
         return ds
+    else:
+        epochs, epoch_starts, epoch_ends = epochs_info
 
-    epochs, epoch_starts, epoch_ends = epochs_info
+    if temporal_interp:
+        t_new = np.sort(np.unique(np.append(ds.time, [epoch_starts, epoch_ends, epoch_ends - datetime.timedelta(seconds=1)])))
+        ds_resampled = xr.merge([ds, xr.Dataset({"time": t_new})])
+        ds_resampled["sources"] = ds_resampled.sources.fillna(0.0)
+        ds_resampled = ds_resampled.interpolate_na(dim = "time", method = temporal_interp, 
+                                    max_gap = None) # TODO max_gap can be a datetime.timedelta object.
+        ds = ds_resampled
 
     da = xr.DataArray(epochs, coords={"time":epoch_starts})
     ds["epochs"] = da.reindex_like(ds["time"], method = "ffill", tolerance = epoch_ends[-1] - epoch_starts[-1])
@@ -164,38 +164,44 @@ def main(cmeta, dbs, epochs_info, temp_folder = None, example_ds = None,
     sources_styling = {str(k): v for k, v in styling.items() if v[3] in checklist}
     ds.attrs = {str(k): str(v) for k, v in {**cmeta, **sources_styling}.items()}
 
-    if diagnostics:
-        graph_folder = diagnostics.pop("folder")
-        ds_diags = ds.sel(lat = [v[0] for v in diagnostics.values()],
-                          lon = [v[1] for v in diagnostics.values()], method = "nearest")
-    else:
-        ds_diags = None
-
-    if lean_output: # TODO this option can be removed?
+    if lean_output:
         ds = ds.drop_vars(["band_data", "sources", "epochs", "time"])
 
-    fh = os.path.join(temp_folder, f"{cmeta['var_name']}_composite.nc")
-    ds = calculate_ds(ds, fh, label = "--> Calculating composites.")
+    if not isinstance(temp_folder, type(None)):
+        fh = os.path.join(temp_folder, f"{cmeta['var_name']}_composite.nc")
+    else:
+        fh = None
 
-    if not isinstance(diagnostics, type(None)):
-        fh = os.path.join(temp_folder, f"{cmeta['var_name']}_diags.nc")
-        ds_diags = calculate_ds(ds_diags, fh, label = "--> Calculating diagnostics.")
-        pl.plot_composite(ds_diags, diagnostics, graph_folder)
-        diagnostics["folder"] = graph_folder
+    ds, fh_composites = calculate_ds(ds, fh, label = labels[1])
+
+    if isinstance(diags, dict):
+        post_et_look.plot_composite(ds, diags, graph_folder)
+
+    if not isinstance(fh_intermediate, type(None)):
+        os.remove(fh_intermediate)
 
     return ds
 
-def calculate_ds(ds, fh, label = None):
-    while os.path.isfile(fh):
-        fh = fh.replace(".nc", "_.nc")
-    with ProgressBar(minimum = 30):
-        if not isinstance(label, type(None)):
-            log.info(label)
-        ds.to_netcdf(fh)
-    ds.close()
-    ds = None
-    ds = xr.open_dataset(fh)
-    return ds
+def calculate_ds(ds, fh = None, label = None, cast = None):
+    if isinstance(fh, str):
+        while os.path.isfile(fh): # TODO make overwrite instead, was giving weird results so did this for now.
+            fh = fh.replace(".nc", "_.nc")
+        with ProgressBar(minimum = 30):
+            if not isinstance(label, type(None)):
+                log.info(label)
+            if isinstance(cast, dict):
+                for k, v in cast.items():
+                    ds[k] = ds[k].astype(v)
+            ds.to_netcdf(fh)
+        ds.close()
+        ds = None
+        ds = xr.open_dataset(fh)
+    else:
+        with ProgressBar(minimum=30):
+            if not isinstance(label, type(None)):
+                log.info(label)
+            ds = ds.compute()
+    return ds, fh
 
 def check_geots(files):
     ref = PF.get_geoinfo(files[0])

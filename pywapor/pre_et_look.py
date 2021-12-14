@@ -57,7 +57,7 @@ def main(project_folder, startdate, enddate, latlim, lonlim, level = "level_1",
     raw_folder = os.path.join(project_folder, "RAW")
     level_folder = os.path.join(project_folder, level)
     temp_folder = os.path.join(project_folder, "temporary")
-    if diagnostics:
+    if isinstance(diagnostics, dict):
         diagnostics["folder"] = os.path.join(level_folder, "graphs")
 
     dl_args = (raw_folder, latlim, lonlim, startdate, enddate)
@@ -87,8 +87,13 @@ def main(project_folder, startdate, enddate, latlim, lonlim, level = "level_1",
         "var_name": "ndvi",
         "var_unit": "-",
     }
-    ds = g.compositer.main(cmeta, raw_ndvi_files, epochs_info, temp_folder, example_ds, 
-                                diagnostics = diagnostics)
+
+    ds = g.compositer.main(cmeta, raw_ndvi_files, epochs_info, temp_folder, example_ds)
+    
+    if isinstance(diagnostics, dict):
+        ds_diags = g.compositer.main(cmeta, raw_ndvi_files, epochs_info, None, example_ds, 
+                                    lean_output = False, diagnostics = diagnostics)
+
     all_files["ndvi"] = unraw_all(cmeta["var_name"], ds, unraw_file_templates, example_geoinfo)
 
     #### ALBEDO ####
@@ -109,7 +114,12 @@ def main(project_folder, startdate, enddate, latlim, lonlim, level = "level_1",
         "var_name": "r0",
         "var_unit": "-",
     }
-    ds = g.compositer.main(cmeta, raw_albedo_files, epochs_info, temp_folder, example_ds, diagnostics = diagnostics)
+    ds = g.compositer.main(cmeta, raw_albedo_files, epochs_info, temp_folder, example_ds)
+    
+    if isinstance(diagnostics, dict):
+        ds_diags = g.compositer.main(cmeta, raw_albedo_files, epochs_info, None, example_ds, 
+                                    lean_output = False, diagnostics = diagnostics)
+
     all_files["r0"] = unraw_all(cmeta["var_name"], ds, unraw_file_templates, example_geoinfo)
 
     #### PRECIPITATION ####
@@ -125,7 +135,12 @@ def main(project_folder, startdate, enddate, latlim, lonlim, level = "level_1",
         "var_name": "P_24",
         "var_unit": "mm/day",
     }
-    ds = g.compositer.main(cmeta, raw_precip_files, epochs_info, temp_folder, example_ds, diagnostics = diagnostics)
+    ds = g.compositer.main(cmeta, raw_precip_files, epochs_info, temp_folder, example_ds)
+    
+    if isinstance(diagnostics, dict):
+        ds_diags = g.compositer.main(cmeta, raw_precip_files, epochs_info, None, example_ds, 
+                                    lean_output = False, diagnostics = diagnostics)
+
     all_files["P_24"] = unraw_all(cmeta["var_name"], ds, unraw_file_templates, example_geoinfo)
 
     #### DEM ####
@@ -199,7 +214,11 @@ def main(project_folder, startdate, enddate, latlim, lonlim, level = "level_1",
             "var_name": meteo_name_convertor[var_name],
             "var_unit": units[meteo_name_convertor[var_name]],
         }
-        ds = g.compositer.main(cmeta, [raw_files], epochs_info, temp_folder, example_ds, diagnostics = diagnostics)
+        ds = g.compositer.main(cmeta, [raw_files], epochs_info, temp_folder, example_ds)
+        if isinstance(diagnostics, dict):
+            ds_diags = g.compositer.main(cmeta, [raw_files], epochs_info, None, example_ds, 
+                                        lean_output = False, diagnostics = diagnostics)
+
         all_files[meteo_name_convertor[var_name]] = unraw_all(meteo_name_convertor[var_name], ds, unraw_file_templates, example_geoinfo)
 
     log.sub().info("< METEO")
@@ -218,7 +237,11 @@ def main(project_folder, startdate, enddate, latlim, lonlim, level = "level_1",
         "var_name": "se_root",
         "var_unit": "-",
     }
-    ds = g.compositer.main(cmeta, [raw_se_root_files], epochs_info, temp_folder, example_ds, diagnostics = diagnostics)
+    ds = g.compositer.main(cmeta, [raw_se_root_files], epochs_info, temp_folder, example_ds)
+    if isinstance(diagnostics, dict):
+        ds_diags = g.compositer.main(cmeta, [raw_se_root_files], epochs_info, None, example_ds, 
+                                    lean_output = False, diagnostics = diagnostics)
+
     all_files["se_root"] = unraw_all(cmeta["var_name"], ds, unraw_file_templates, example_geoinfo)
 
     #### LAT LON ####
@@ -237,7 +260,11 @@ def main(project_folder, startdate, enddate, latlim, lonlim, level = "level_1",
         "var_name": "ra_24",
         "var_unit": "-",
     }
-    ds = g.compositer.main(cmeta, [raw_ra24_files], epochs_info, temp_folder, example_ds, diagnostics = diagnostics)
+    ds = g.compositer.main(cmeta, [raw_ra24_files], epochs_info, temp_folder, example_ds)
+    if isinstance(diagnostics, dict):
+        ds_diags = g.compositer.main(cmeta, [raw_ra24_files], epochs_info, None, example_ds, 
+                                    lean_output = False, diagnostics = diagnostics)
+
     all_files["ra_24"] = unraw_all(cmeta["var_name"], ds, unraw_file_templates, example_geoinfo)
 
     #### TEMP. AMPLITUDE #### # TODO add source selection and remove year data
@@ -277,7 +304,6 @@ def main(project_folder, startdate, enddate, latlim, lonlim, level = "level_1",
 
     log.sub().info("< PRE_ET_LOOK")
 
-#%%
     return all_files
 
 def unraw_all(var_name, ds, unraw_file_templates, example_geoinfo):
@@ -306,7 +332,7 @@ def select_template(fhs):
     example_geoinfo = PF.get_geoinfo(example_fh)
 
     resolution = pywapor.et_look.get_geoinfo(example_fh)[0]
-    log.info(f"--> resampling resolution is ~{resolution:.0f} meter.")
+    log.info(f"--> Resampling resolution is ~{resolution:.0f} meter.")
 
     return example_fh, example_ds, example_geoinfo
 
@@ -501,9 +527,9 @@ if __name__ == "__main__":
     # diagnostics = None
 
     level = {'METEO': ['GEOS5'],
-            'NDVI': ['LS7NDVI', 'MOD13', 'MYD13'],
-            'ALBEDO': ['LS8ALBEDO', 'MCD43'],
-            'LST': ['LS7LST', 'LS8LST', 'MOD11', 'MYD11'],
+            'NDVI': ['MOD13', 'MYD13'],
+            'ALBEDO': ['MCD43'],
+            'LST': ['MOD11', 'MYD11'],
             'LULC': ['WAPOR'],
             'DEM': ['SRTM'],
             'PRECIPITATION': ['CHIRPS'],
@@ -512,8 +538,8 @@ if __name__ == "__main__":
 
     # Define new products.
     extra_sources =  {"NDVI":      ["LS7NDVI", "LS8NDVI"],
-                        "LST":      ["LS7LST", "LS8LST"],
-                        "ALBEDO":   ["LS7ALBEDO", "LS8ALBEDO"]}
+                        "LST":     ["LS7LST", "LS8LST"],
+                        "ALBEDO":  ["LS7ALBEDO", "LS8ALBEDO"]}
 
     # Give product folder.
     extra_source_locations = {
@@ -528,14 +554,3 @@ if __name__ == "__main__":
     all_files = main(project_folder, startdate, enddate, latlim, lonlim, level = level, 
         diagnostics = diagnostics, composite_length = composite_length, extra_sources = extra_sources,
         extra_source_locations = extra_source_locations)
-
-
-    # check_extra_product_names(extra_sources)
-
-    # for product_name, path in extra_source_locations.items():
-    #     fps = search_product_files(product_name, path)
-
-    #     for fp in fps:
-    #         fn = os.path.split(fp)[-1]
-    #         check_filenames(fn)
-        
