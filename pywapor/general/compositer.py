@@ -39,6 +39,12 @@ def main(cmeta, dbs, epochs_info, temp_folder = None, example_ds = None,
 
     composite_type = cmeta["composite_type"]
     temporal_interp = cmeta["temporal_interp"]
+    if isinstance(cmeta["temporal_interp_freq"], int):
+        periods = cmeta["temporal_interp_freq"]
+        freq = None
+    else:
+        periods = None
+        freq = cmeta["temporal_interp_freq"]
     spatial_interp = cmeta["spatial_interp"]
 
     styling = dict()
@@ -52,8 +58,8 @@ def main(cmeta, dbs, epochs_info, temp_folder = None, example_ds = None,
     sources = {v[3]: k for k, v in styling.items()}
 
     # Check if data is static
-    if np.all([isinstance(composite_type, type(None)), 
-                isinstance(temporal_interp, type(None)),
+    if np.all([isinstance(composite_type, type(False)), 
+                isinstance(temporal_interp, type(False)),
                 len(dbs) == 1,
                 len(dbs[0]) == 1]):
         ds = xr.open_dataset(dbs[0][0], engine="rasterio")
@@ -136,11 +142,15 @@ def main(cmeta, dbs, epochs_info, temp_folder = None, example_ds = None,
         epochs, epoch_starts, epoch_ends = epochs_info
 
     if temporal_interp:
-        t_new = np.sort(np.unique(np.append(ds.time, [epoch_starts, epoch_ends, epoch_ends - datetime.timedelta(seconds=1)])))
+        t_new = calc_interpolation_times(epochs_info, freq = freq, periods = periods)
         ds_resampled = xr.merge([ds, xr.Dataset({"time": t_new})])
         ds_resampled["sources"] = ds_resampled.sources.fillna(0.0)
-        ds_resampled = ds_resampled.interpolate_na(dim = "time", method = temporal_interp, 
-                                    max_gap = None) # TODO max_gap can be a datetime.timedelta object.
+        if ds.time.size > 1:
+            ds_resampled = ds_resampled.interpolate_na(dim = "time", method = temporal_interp, 
+                                        max_gap = None) # TODO max_gap can be a datetime.timedelta object.
+        else:
+            ds_resampled = ds_resampled.ffill(dim="time")
+            ds_resampled = ds_resampled.bfill(dim="time")
         ds = ds_resampled
 
     da = xr.DataArray(epochs, coords={"time":epoch_starts})
@@ -193,15 +203,13 @@ def calculate_ds(ds, fh = None, label = None, cast = None):
                 for k, v in cast.items():
                     ds[k] = ds[k].astype(v)
             ds.to_netcdf(fh)
-        ds.close()
-        ds = None
-        ds = xr.open_dataset(fh)
+        new_ds = xr.open_dataset(fh)
     else:
         with ProgressBar(minimum=30):
             if not isinstance(label, type(None)):
                 log.info(label)
-            ds = ds.compute()
-    return ds, fh
+            new_ds = ds.compute()
+    return new_ds, fh
 
 def check_geots(files):
     ref = PF.get_geoinfo(files[0])
@@ -209,43 +217,67 @@ def check_geots(files):
         checker = PF.get_geoinfo(fh)
         assert ref == checker, f"ERROR: {files[0]} does not have same geotransform/projection as {fh}."
 
-# if __name__ == "__main__":
+def calc_interpolation_times(epochs_info, freq = "2D", periods = None):
+    new_t = np.array([], dtype = np.datetime64)
+    for epoch_start, epoch_end in zip(epochs_info[1], epochs_info[2]):
+        if isinstance(periods, type(None)):
+            part_freq = freq
+        else:
+            part_freq = f"{int((epoch_end - epoch_start)/periods)}N"
+        new_part_t = pd.date_range(epoch_start, epoch_end, freq = part_freq)
+        new_t = np.append(new_t, new_part_t)
+    new_t = np.sort(np.unique(new_t))
+    return new_t
 
-#     import pywapor
+if __name__ == "__main__":
 
-#     project_folder = r"/Users/hmcoerver/On My Mac/pyWAPOR/example_data"
-#     latlim = [28.9, 29.7]
-#     lonlim = [30.2, 31.2]
-#     startdate = "2021-06-01"
-#     enddate = "2021-08-01"
+    import pywapor
 
-#     epochs_info = pywapor.pre_et_look.create_dates(startdate, enddate, 6)
+    project_folder = r"/Users/hmcoerver/pywapor_notebooks"
+    latlim = [28.9, 29.7]
+    lonlim = [30.2, 31.2]
+    startdate = "2017-05-01"
+    enddate = "2021-07-11"
 
-#     cmeta = {
-#         "composite_type": "mean",
-#         "temporal_interp": False,
-#         "spatial_interp": "nearest",
-#         "var_name": "ndvi",
-#         "var_unit": "-",
-#     }
+    epochs_info = pywapor.pre_et_look.create_dates(startdate, enddate, "DEKAD")
 
-#     dbs = [['/Users/hmcoerver/On My Mac/pyWAPOR/example_data/RAW/MODIS/MOD13/NDVI_MOD13Q1_-_16-daily_2021.06.26.tif',
-#     '/Users/hmcoerver/On My Mac/pyWAPOR/example_data/RAW/MODIS/MOD13/NDVI_MOD13Q1_-_16-daily_2021.07.28.tif',
-#     '/Users/hmcoerver/On My Mac/pyWAPOR/example_data/RAW/MODIS/MOD13/NDVI_MOD13Q1_-_16-daily_2021.07.12.tif',
-#     '/Users/hmcoerver/On My Mac/pyWAPOR/example_data/RAW/MODIS/MOD13/NDVI_MOD13Q1_-_16-daily_2021.05.25.tif',
-#     '/Users/hmcoerver/On My Mac/pyWAPOR/example_data/RAW/MODIS/MOD13/NDVI_MOD13Q1_-_16-daily_2021.08.13.tif',
-#     '/Users/hmcoerver/On My Mac/pyWAPOR/example_data/RAW/MODIS/MOD13/NDVI_MOD13Q1_-_16-daily_2021.06.10.tif',
-#     '/Users/hmcoerver/On My Mac/pyWAPOR/example_data/RAW/MODIS/MOD13/NDVI_MOD13Q1_-_16-daily_2021.08.29.tif'],
-#     ['/Users/hmcoerver/On My Mac/pyWAPOR/example_data/RAW/MODIS/MYD13/NDVI_MYD13Q1_-_16-daily_2021.06.18.tif',
-#     '/Users/hmcoerver/On My Mac/pyWAPOR/example_data/RAW/MODIS/MYD13/NDVI_MYD13Q1_-_16-daily_2021.08.21.tif',
-#     '/Users/hmcoerver/On My Mac/pyWAPOR/example_data/RAW/MODIS/MYD13/NDVI_MYD13Q1_-_16-daily_2021.07.04.tif',
-#     '/Users/hmcoerver/On My Mac/pyWAPOR/example_data/RAW/MODIS/MYD13/NDVI_MYD13Q1_-_16-daily_2021.07.20.tif',
-#     '/Users/hmcoerver/On My Mac/pyWAPOR/example_data/RAW/MODIS/MYD13/NDVI_MYD13Q1_-_16-daily_2021.08.05.tif',
-#     '/Users/hmcoerver/On My Mac/pyWAPOR/example_data/RAW/MODIS/MYD13/NDVI_MYD13Q1_-_16-daily_2021.06.02.tif']]
-    
-#     temp_folder = None
-#     example_ds = None
-#     lean_output = False 
-#     diagnostics = None
+    cmeta ={
+                "composite_type": 'mean',
+                "temporal_interp": 'nearest',
+                "temporal_interp_freq": "10D",
+                "spatial_interp": "linear",
+                "var_name": "lulc",
+                "var_unit": "-",
+            }
 
-#     main(cmeta, dbs, epochs_info, lean_output = False)
+    dbs = [[r"/Users/hmcoerver/pywapor_notebooks/RAW/WAPOR/LULC_WAPOR_-_365-daily_2018.01.01.tif",
+            r"/Users/hmcoerver/pywapor_notebooks/RAW/WAPOR/LULC_WAPOR_-_365-daily_2019.01.01.tif",
+            r"/Users/hmcoerver/pywapor_notebooks/RAW/WAPOR/LULC_WAPOR_-_365-daily_2020.01.01.tif"]]
+
+    # dbs = [[r"/Users/hmcoerver/pywapor_notebooks/RAW/GLOBCOVER/Landuse/lulc_GLOBCOVER_-_365-daily_2009.01.01.tif"]]
+
+    temp_folder = os.path.join(project_folder, "temporary")
+    example_ds = None
+    lean_output = True 
+    diagnostics = None
+
+    ds = main(cmeta, dbs, epochs_info, temp_folder = temp_folder, example_ds = example_ds,
+        lean_output = lean_output, diagnostics = diagnostics)
+
+    diagnostics = { # label          # lat      # lon
+                    "water":	    (29.44977,	30.58215),
+                    "desert":	    (29.12343,	30.51222),
+                    "agriculture":	(29.32301,	30.77599),
+                    "urban":	    (29.30962,	30.84109),
+                    }
+
+    ds_diags = main(cmeta, dbs, epochs_info, None, example_ds, 
+                    lean_output = False, diagnostics = diagnostics)
+
+#%%
+
+
+
+
+
+#%%

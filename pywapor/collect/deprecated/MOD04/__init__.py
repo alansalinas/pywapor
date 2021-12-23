@@ -1,8 +1,5 @@
 # -*- coding: utf-8 -*-
 """
-Authors: Tim Hessels
-Module: Collect/MOD04
-
 Description:
 This module downloads MOD04 AOD550 data from
 https://ladsweb.modaps.eosdis.nasa.gov. Use the MOD04.AOD550 function to

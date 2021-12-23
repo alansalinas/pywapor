@@ -1,15 +1,17 @@
-import xarray as xr
-import numpy as np
-from datetime import datetime as dat
-import pywapor.collect as c
-import pywapor.general as g
-import pywapor
-import os
-import pandas as pd
-from datetime import time as datt
 import tqdm
 import warnings
+import os
+import xarray as xr
+import numpy as np
+import pandas as pd
+import pywapor.enhancers as enhance
+import pywapor.collect as c
+import pywapor.general as g
+from pywapor.collect.downloader import download_sources
 from pywapor.general.logger import log, adjust_logger
+from datetime import datetime as dat
+from datetime import time as datt
+
 
 def main(project_folder, startdate, enddate, latlim, lonlim, level = "level_1",
         extra_sources = None, extra_source_locations = None):
@@ -43,24 +45,22 @@ def main(project_folder, startdate, enddate, latlim, lonlim, level = "level_1",
     raw_folder = os.path.join(project_folder, "RAW")
     temp_folder = os.path.join(project_folder, "temporary")
 
-    dl_args = (raw_folder, latlim, lonlim, startdate, enddate)
+    dl_args = {
+                "Dir": raw_folder, 
+                "latlim": latlim, 
+                "lonlim": lonlim, 
+                "Startdate": startdate, 
+                "Enddate": enddate,
+                }
 
     #### NDVI ####
     log.info(f"# NDVI")
-    raw_ndvi_files = list()
-    for source in source_selection["NDVI"]:
-        if source == "PROBAV":
-            raw_ndvi_files.append(c.PROBAV.PROBAV_S5(*dl_args)[0])
-        elif source == "MOD13":
-            raw_ndvi_files.append(c.MOD13.NDVI(*dl_args))
-        elif source == "MYD13":
-            raw_ndvi_files.append(c.MYD13.NDVI(*dl_args))
-        else:
-            raw_ndvi_files.append(c.sideloader.search_product_files(source, extra_source_locations[source]))
+    raw_ndvi_files = download_sources("NDVI", source_selection["NDVI"], dl_args, extra_source_locations)
 
     cmeta = {
         "composite_type": False,
         "temporal_interp": False,
+        "temporal_interp_freq": 1,
         "spatial_interp": "nearest",
         "var_name": "NDVI",
         "var_unit": "-",
@@ -70,21 +70,13 @@ def main(project_folder, startdate, enddate, latlim, lonlim, level = "level_1",
 
     #### LST ####
     log.info("# LST")
-    raw_lst_files = list()
-    for source in source_selection["LST"]:
-        if source == "MOD11":
-            raw_lst_files.append(c.MOD11.LST(*dl_args))
-        elif source == "MYD11":
-            raw_lst_files.append(c.MYD11.LST(*dl_args))
-        else:
-            raw_lst_files.append(c.sideloader.search_product_files(source, extra_source_locations[source]))
+    raw_lst_files = download_sources("LST", source_selection["LST"], dl_args, extra_source_locations)
 
     ds_lst = combine_lst(raw_lst_files)
 
     #### DEM ####
     log.info(f"# DEM")
-    if "SRTM" in source_selection["DEM"]:
-        raw_dem_file = c.SRTM.DEM(*dl_args[:3])
+    raw_dem_file = download_sources("DEM", source_selection["DEM"], dl_args, extra_source_locations)[0][0]
 
     #### METEO ####
     log.info("> METEO").add()
@@ -95,7 +87,11 @@ def main(project_folder, startdate, enddate, latlim, lonlim, level = "level_1",
         meteo_vars = ['t2m', 'u2m', 'v2m', 'q2m', 'tpw', 'ps', 'slp']
         log.info("--> Downloading MERRA2 (hourly).")
         for sd, ed, period in periods:
-            c.MERRA.hourly_MERRA2(*dl_args[:3], sd, ed, meteo_vars, [int(period)])
+            dl_args["Startdate"] = sd
+            dl_args["Enddate"] = ed
+            dl_args["Vars"] = meteo_vars
+            dl_args["Periods"] = [int(period)]
+            c.MERRA2.hourly_MERRA2(**dl_args)
     elif "GEOS5" in source_selection["METEO"]:
         freq = "3H"
         periods, period_times = calc_periods(ds_lst.time.values, freq)
@@ -104,7 +100,11 @@ def main(project_folder, startdate, enddate, latlim, lonlim, level = "level_1",
         log.info("--> Downloading GEOS5 (hourly).")
         waitbar = tqdm.tqdm(total = len(periods) * len(meteo_vars), delay = 10, initial = 1)
         for sd, ed, period in periods:
-            c.GEOS.three_hourly(*dl_args[:3], sd, ed, meteo_vars, [int(period)], Waitbar = waitbar)
+            dl_args["Startdate"] = sd
+            dl_args["Enddate"] = ed
+            dl_args["Vars"] = meteo_vars
+            dl_args["Periods"] = [int(period)]
+            c.GEOS5.three_hourly(**dl_args, Waitbar = waitbar)
 
     #### INST. METEO ####
     raw_inst_meteo_paths = g.variables.get_raw_meteo_paths("inst")
@@ -121,7 +121,7 @@ def main(project_folder, startdate, enddate, latlim, lonlim, level = "level_1",
             date_str = pd.Timestamp(date).strftime("%Y.%m.%d")
             raw_file = os.path.join(*folder).format(raw_folder = raw_folder, date = date_str, hour = hour_str)
             if var_name == "tair_inst":
-                raw_file = g.lapse_rate.lapse_rate_temperature(raw_file, raw_dem_file)
+                raw_file = enhance.lapse_rate.lapse_rate_temperature(raw_file, raw_dem_file)
                 meteo_datetime = dat.combine(pd.Timestamp(date).date(), period_times[period])
                 da_var = xr.open_dataset(raw_file).squeeze("band").rename({"band_data": var_name, "x": "lon", "y": "lat"})[var_name]
                 da_var = da_var.assign_coords({"time": meteo_datetime}).expand_dims("time", axis = 0)
@@ -207,3 +207,36 @@ def combine_lst(lst_files):
     ds.attrs["time"] = "<UTC> time"
 
     return ds
+
+if __name__ == "__main__":
+
+    project_folder = r"/Users/hmcoerver/pywapor_notebooks"
+    latlim = [28.9, 29.7]
+    lonlim = [30.2, 31.2]
+    startdate = "2021-07-01"
+    enddate = "2021-07-11"
+    composite_length = "DEKAD"
+    level = "level_1"
+    extra_sources = None
+    extra_source_locations = None
+
+    diagnostics = { # label          # lat      # lon
+                    "water":	    (29.44977,	30.58215),
+                    "desert":	    (29.12343,	30.51222),
+                    "agriculture":	(29.32301,	30.77599),
+                    "urban":	    (29.30962,	30.84109),
+                    }
+    # diagnostics = None
+
+    level = {'METEO': ['MERRA2'],
+            'NDVI': ['MYD13'],
+            'ALBEDO': ['MCD43'],
+            'LST': ['MOD11', 'MYD11'],
+            'LULC': ['WAPOR'],
+            'DEM': ['SRTM'],
+            'PRECIPITATION': ['CHIRPS'],
+            'SOLAR_RADIATION': ['MERRA2'],
+            "name": "level_1"}
+
+    main(project_folder, startdate, enddate, latlim, lonlim, level = level,
+        extra_sources = extra_sources, extra_source_locations = extra_source_locations)

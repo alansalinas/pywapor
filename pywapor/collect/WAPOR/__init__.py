@@ -25,7 +25,8 @@ watertools.Collect.WAPOR.Get_Layer(r"G:\Project_MetaMeta\Input_Data2", "2011-01-
 """
 
 from .Get_Layer import main as Get_Layer
+from pywapor.collect.WAPOR.Get_Layer import LULC
 
 
-__all__ = ['Get_Layer']
+__all__ = ['Get_Layer', 'LULC']
 __version__ = '0.0.0'

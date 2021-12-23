@@ -1,10 +1,10 @@
 # -*- coding: utf-8 -*-
 import sys
-from pywapor.collect.MERRA.DataAccess import DownloadData
+from pywapor.collect.MERRA2.DataAccess import DownloadData
 import pywapor
 from pywapor.general.logger import log
 
-def main(Dir, latlim, lonlim, Startdate, Enddate, Vars, Periods = list(range(1, 25)), Waitbar = 1, verbose = True):
+def main(Dir, latlim, lonlim, Startdate, Enddate, Vars, Periods = list(range(1, 25)), Waitbar = False, verbose = True):
     """
     This function downloads MERRA inst data for a given variable, time
     interval, and spatial extent.

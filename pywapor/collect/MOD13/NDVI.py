@@ -40,5 +40,5 @@ def main(Dir, latlim, lonlim, Startdate, Enddate, Waitbar = True,
 
     return glob.glob(os.path.join(Dir, "MODIS", "MOD13", "*.tif"))
 
-if __name__ == '__main__':
-    main(sys.argv) 
+# if __name__ == '__main__':
+#     main(sys.argv) 

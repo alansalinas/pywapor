@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 import sys
-from pywapor.collect.GEOS.DataAccess import DownloadData
+from pywapor.collect.GEOS5.DataAccess import DownloadData
 import tqdm
 import pandas as pd
 from pywapor.general.logger import log
@@ -22,21 +22,37 @@ def main(Dir, latlim, lonlim, Startdate, Enddate, Vars, Waitbar = True):
     no_dates = len(pd.date_range(Startdate, Enddate, freq="D"))
     no_vars = len(Vars)
 
-    log.info("--> Downloading GEOS5 (daily).")
-
     if Waitbar:
         waitbar = tqdm.tqdm(total = no_vars * no_dates, position = 0, unit = "tiles")
     else:
         waitbar = False
 
-    all_files = dict()
+    all_files = list()
     for Var in Vars:
+
+        log.info(f"--> Downloading GEOS5 (daily) {Var}.")
+
+        if Var == "t2m":
+            filter = "t2m_"
+        elif Var == "t2m-max":
+            Var = "t2m"
+            filter = "t2m-max_"
+        elif Var == "t2m-min":
+            Var = "t2m"
+            filter = "t2m-min_"
+        else:
+            filter = None
 
         if Waitbar:
             waitbar.set_description_str("{:<11}".format(Var))
 
         # Download data
-        all_files = {**all_files, **DownloadData(Dir, Var, Startdate, Enddate, latlim, lonlim, "daily", Period = '', Waitbar = waitbar)}
+        new_files = DownloadData(Dir, Var, Startdate, Enddate, latlim, lonlim, "daily", Period = '', Waitbar = waitbar)
+        
+        if not isinstance(filter, type(None)):
+            new_files = [x for x in new_files if filter in x]
+        
+        all_files = all_files + new_files
 
     if Waitbar:
         waitbar.close()

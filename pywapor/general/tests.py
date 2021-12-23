@@ -23,7 +23,7 @@ def check_source_selection(source_selection, startdate, enddate,
                 valid_dates[key] = (datetime.date(1900, 1, 1), datetime.date.today())
 
     temporal_sources = ["METEO", "NDVI", "ALBEDO", "LST", 
-                    "PRECIPITATION", "TRANS"]
+                    "PRECIPITATION", "SOLAR_RADIATION"]
 
     check_keys = np.all([key in valid_sources.keys() for key in source_selection.keys()])
     assert check_keys, "invalid key in source_selection"
@@ -32,7 +32,7 @@ def check_source_selection(source_selection, startdate, enddate,
     assert len(source_selection["METEO"]) == 1, "only one METEO source can be selected."
     assert len(source_selection["PRECIPITATION"]) == 1, "only one PRECIPITATION source can be selected."
     assert len(source_selection["LULC"]) == 1, "only one LULC source can be selected."
-    assert len(source_selection["TRANS"]) == 1, "only one TRANS source can be selected."
+    assert len(source_selection["SOLAR_RADIATION"]) == 1, "only one TRANS source can be selected."
     assert len(source_selection["NDVI"]) >= 1, "At least one NDVI source needs to be selected."
     assert len(source_selection["ALBEDO"]) >= 1, "At least one ALBEDO source needs to be selected."
     assert len(source_selection["LST"]) >= 1, "At least one LST source needs to be selected."

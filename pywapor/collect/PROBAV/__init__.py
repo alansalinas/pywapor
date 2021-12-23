@@ -1,8 +1,5 @@
 # -*- coding: utf-8 -*-
 """
-Authors: Laust Færch
-Module: Collect/PROBAV
-
 Description:
 This module downloads Proba-V NDVI data from
 https://www.vito-eodata.be/PDF/datapool/.
@@ -25,8 +22,10 @@ You need to register as a user (which is free) to use this module
 
 # # print(sys.path)
 
-from .PROBAV_S5 import main as PROBAV_S5
+# from .PROBAV_S5 import main as PROBAV_S5
+from pywapor.collect.PROBAV.PROBAV_S5 import ALBEDO
+from pywapor.collect.PROBAV.PROBAV_S5 import NDVI
 
-__all__ = ["PROBAV_S5"]
+__all__ = ["ALBEDO", "NDVI"]
 
 __version__ = '0.1'

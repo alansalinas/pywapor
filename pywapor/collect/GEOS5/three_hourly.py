@@ -1,9 +1,10 @@
 # -*- coding: utf-8 -*-
 import sys
-from pywapor.collect.GEOS.DataAccess import DownloadData
+from pywapor.collect.GEOS5.DataAccess import DownloadData
 import pandas as pd
 import tqdm
 from pywapor.general.logger import log
+import datetime
 
 def main(Dir, latlim, lonlim, Startdate, Enddate, Vars, Periods = [1,2,3,4,5,6,7,8], Waitbar = True):
     """
@@ -20,7 +21,6 @@ def main(Dir, latlim, lonlim, Startdate, Enddate, Vars, Periods = [1,2,3,4,5,6,7
 	Periods -- [1,2,3,4,5,6,7,8] Period that needs to be downloaded. 1 period is 3 hour starting from noon
     Waitbar -- 1 (Default) Will print a waitbar
     """
-
     no_vars = len(Vars)
     no_periods = len(Periods)
     no_dates = len(pd.date_range(Startdate, Enddate, freq="D"))
@@ -50,5 +50,5 @@ def main(Dir, latlim, lonlim, Startdate, Enddate, Vars, Periods = [1,2,3,4,5,6,7
     if Waitbar:
         waitbar.close()
 
-if __name__ == '__main__':
-    main(sys.argv)
+# if __name__ == '__main__':
+#     main(sys.argv)

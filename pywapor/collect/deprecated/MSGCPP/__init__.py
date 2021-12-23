@@ -1,11 +1,5 @@
 # -*- coding: utf-8 -*-
 """
-Authors: Tim Hessels
-Contact: timhessels@hotmail.com
-Repository: WAPOR
-Module: WAPOR/Collect/MSGCPP
-
-Description:
 This module downloads daily or instantanious MSGCPP data from
 http://msgcpp.knmi.nl/portal/ server. The MSGCPP data is available since 2017-01-01 till the present.
 The datasets will be stored in the user defined outputfolder in GEOTIFF format.

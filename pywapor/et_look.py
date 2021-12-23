@@ -96,7 +96,6 @@ def main(project_folder, date, level = "level_1", et_look_version = "v2",
         "{0}_{1}.tif".format(value["file_name"], date_str))
 
     # Inputs
-    
     id = {v["array_name"]: open_array(k, v, date, folders) for k, v in vars.inputs.items()}
     if not isinstance(input_data, type(None)):
         id = {**id, **input_data}

@@ -271,20 +271,20 @@ order = [
 def get_raw_meteo_paths(type = "all"):
 
     meteo_raw_paths_GEOS = {
-        "Pair_24_0":    ("{raw_folder}", "GEOS5", "Sea_Level_Pressure", "daily", "slp_GEOS_kpa_daily_{date}.tif"),
-        "Pair_inst_0":  ("{raw_folder}", "GEOS5", "Sea_Level_Pressure", "three_hourly", "slp_GEOS_kpa_3-hourly_{date}_H{hour}.M00.tif"),
-        "Pair_inst":    ("{raw_folder}", "GEOS5", "Surface_Pressure", "three_hourly", "ps_GEOS_kpa_3-hourly_{date}_H{hour}.M00.tif"),
-        "qv_24":        ("{raw_folder}", "GEOS5", "Specific_Humidity", "daily", "qv2m_GEOS_kg-kg-1_daily_{date}.tif"),
-        "qv_inst":      ("{raw_folder}", "GEOS5", "Specific_Humidity", "three_hourly", "qv2m_GEOS_kg-kg-1_3-hourly_{date}_H{hour}.M00.tif"),
-        "tair_24":      ("{raw_folder}", "GEOS5", "Air_Temperature", "daily", "t2m_GEOS_K_daily_{date}.tif"),
-        "tair_inst":    ("{raw_folder}", "GEOS5", "Air_Temperature", "three_hourly", "t2m_GEOS_K_3-hourly_{date}_H{hour}.M00.tif"),
-        "tair_max_24":  ("{raw_folder}", "GEOS5", "Air_Temperature", "daily", "t2m_GEOS_K_daily-max_{date}.tif"),
-        "tair_min_24":  ("{raw_folder}", "GEOS5", "Air_Temperature", "daily", "t2m_GEOS_K_daily-min_{date}.tif"),
-        "wv_inst":      ("{raw_folder}", "GEOS5", "Total_Precipitable_Water_Vapor", "three_hourly", "tqv_GEOS_mm_3-hourly_{date}_H{hour}.M00.tif"),
-        "v2m_inst":     ("{raw_folder}", "GEOS5", "Northward_Wind", "three_hourly", "v2m_GEOS_m-s-1_3-hourly_{date}_H{hour}.M00.tif"),
-        "u2m_inst":     ("{raw_folder}", "GEOS5", "Eastward_Wind", "three_hourly", "u2m_GEOS_m-s-1_3-hourly_{date}_H{hour}.M00.tif"),
-        "v2m_24":       ("{raw_folder}", "GEOS5", "Northward_Wind", "daily", "v2m_GEOS_m-s-1_daily_{date}.tif"),
-        "u2m_24":       ("{raw_folder}", "GEOS5", "Eastward_Wind", "daily", "u2m_GEOS_m-s-1_daily_{date}.tif"),
+        "Pair_24_0":    ("{raw_folder}", "GEOS5", "Sea_Level_Pressure", "daily", "slp_GEOS5_kpa_daily_{date}.tif"),
+        "Pair_inst_0":  ("{raw_folder}", "GEOS5", "Sea_Level_Pressure", "three_hourly", "slp_GEOS5_kpa_3-hourly_{date}_H{hour}.M00.tif"),
+        "Pair_inst":    ("{raw_folder}", "GEOS5", "Surface_Pressure", "three_hourly", "ps_GEOS5_kpa_3-hourly_{date}_H{hour}.M00.tif"),
+        "qv_24":        ("{raw_folder}", "GEOS5", "Specific_Humidity", "daily", "qv2m_GEOS5_kg-kg-1_daily_{date}.tif"),
+        "qv_inst":      ("{raw_folder}", "GEOS5", "Specific_Humidity", "three_hourly", "qv2m_GEOS5_kg-kg-1_3-hourly_{date}_H{hour}.M00.tif"),
+        "tair_24":      ("{raw_folder}", "GEOS5", "Air_Temperature", "daily", "t2m_GEOS5_K_daily_{date}.tif"),
+        "tair_inst":    ("{raw_folder}", "GEOS5", "Air_Temperature", "three_hourly", "t2m_GEOS5_K_3-hourly_{date}_H{hour}.M00.tif"),
+        "tair_max_24":  ("{raw_folder}", "GEOS5", "Air_Temperature", "daily", "t2m-max_GEOS5_K_daily_{date}.tif"),
+        "tair_min_24":  ("{raw_folder}", "GEOS5", "Air_Temperature", "daily", "t2m-min_GEOS5_K_daily_{date}.tif"),
+        "wv_inst":      ("{raw_folder}", "GEOS5", "Total_Precipitable_Water_Vapor", "three_hourly", "tqv_GEOS5_mm_3-hourly_{date}_H{hour}.M00.tif"),
+        "v2m_inst":     ("{raw_folder}", "GEOS5", "Northward_Wind", "three_hourly", "v2m_GEOS5_m-s-1_3-hourly_{date}_H{hour}.M00.tif"),
+        "u2m_inst":     ("{raw_folder}", "GEOS5", "Eastward_Wind", "three_hourly", "u2m_GEOS5_m-s-1_3-hourly_{date}_H{hour}.M00.tif"),
+        "v2m_24":       ("{raw_folder}", "GEOS5", "Northward_Wind", "daily", "v2m_GEOS5_m-s-1_daily_{date}.tif"),
+        "u2m_24":       ("{raw_folder}", "GEOS5", "Eastward_Wind", "daily", "u2m_GEOS5_m-s-1_daily_{date}.tif"),
     }
 
     meteo_raw_paths_MERRA = {
@@ -328,7 +328,7 @@ def get_source_validations():
         "LULC": ["GLOBCOVER", "WAPOR"],
         "DEM": ["SRTM",],
         "PRECIPITATION": ["CHIRPS",],
-        "TRANS": ["MERRA2"],
+        "SOLAR_RADIATION": ["MERRA2"],
     }
 
     valid_dates = {
@@ -358,18 +358,18 @@ def get_source_level_selections():
         "LULC": ["WAPOR"],
         "DEM": ["SRTM"],
         "PRECIPITATION": ["CHIRPS"],
-        "TRANS": ["MERRA2"],
+        "SOLAR_RADIATION": ["MERRA2"],
     }
 
     source_selection_level1 = {
         "METEO": ["GEOS5"],
         "NDVI": ["MOD13", "MYD13"],
-        "ALBEDO": ["MDC43"],
+        "ALBEDO": ["MCD43"],
         "LST": ["MOD11", "MYD11"],
         "LULC": ["WAPOR"],
         "DEM": ["SRTM"],
         "PRECIPITATION": ["CHIRPS"],
-        "TRANS": ["MERRA2"],
+        "SOLAR_RADIATION": ["MERRA2"],
     }
 
     levels = {"level_1": source_selection_level1, 

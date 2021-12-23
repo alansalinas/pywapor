@@ -1,9 +1,3 @@
-# -*- coding: utf-8 -*-
-"""
-WaterSat
-author: Tim Martijn Hessels
-Created on Tue Feb 19 08:47:49 2019
-"""
 
 import os
 import numpy as np
@@ -19,13 +13,13 @@ def DownloadData(Dir, Var, Startdate, Enddate, latlim, lonlim, TimeStep, Period,
 
     import pywapor.general.processing_functions as PF
 
-    all_files = dict()
-    if "mean" in data_type:
-        all_files[Var] = list()
-    if "max" in data_type:
-        all_files[f"{Var}-max"] = list()
-    if "min" in data_type:
-        all_files[f"{Var}-min"] = list()
+    all_files = list()
+    # if "mean" in data_type:
+    #     all_files[Var] = list()
+    # if "max" in data_type:
+    #     all_files[f"{Var}-max"] = list()
+    # if "min" in data_type:
+    #     all_files[f"{Var}-min"] = list()
 
     # Add extra buffer to ensure good spatial interpolation
     buffer_pixels = 0
@@ -135,6 +129,14 @@ def DownloadData(Dir, Var, Startdate, Enddate, latlim, lonlim, TimeStep, Period,
                 
             if Date.month == 9 and Date.year == 2020:
                 number2 = 1
+            elif Date.month == 6 and Date.year == 2021:
+                number2 = 1
+            elif Date.month == 7 and Date.year == 2021:
+                number2 = 1
+            elif Date.month == 8 and Date.year == 2021:
+                number2 = 1
+            elif Date.month == 9 and Date.year == 2021:
+                number2 = 1
             else:
                 number2 = 0
                             
@@ -174,12 +176,13 @@ def DownloadData(Dir, Var, Startdate, Enddate, latlim, lonlim, TimeStep, Period,
                         resp.raise_for_status()
                     except requests.exceptions.HTTPError as e:
                         if N < 5:
+
                             N += 1
-                            log.warning(f"N = {N}")
+                            log.warning(f"N = {N}, {url_MERRA}")
                             time.sleep(5)
                             continue
                         else:
-                            return "Error: " + str(e)
+                            raise e
 
                     if not isinstance(waitbar, type(None)):
                         waitbar.reset(total = total_size)
@@ -238,21 +241,21 @@ def DownloadData(Dir, Var, Startdate, Enddate, latlim, lonlim, TimeStep, Period,
             # Save as tiff file
             if "mean" in data_type: 
                 PF.Save_as_tiff(output_name, data_end, geo_out, proj)
-                all_files[Var].append(output_name)
+                all_files.append(output_name)
             if "min" in data_type:
                 PF.Save_as_tiff(output_name_min, data_min, geo_out, proj)
-                all_files[f"{Var}-min"].append(output_name_min)
+                all_files.append(output_name_min)
             if "max" in data_type:
                 PF.Save_as_tiff(output_name_max, data_max, geo_out, proj)
-                all_files[f"{Var}-max"].append(output_name_max)
+                all_files.append(output_name_max)
 
         else:
             if os.path.isfile(output_name):
-                all_files[Var].append(output_name)
+                all_files.append(output_name)
             if os.path.isfile(output_name_min):
-                all_files[f"{Var}-min"].append(output_name_min)
+                all_files.append(output_name_min)
             if os.path.isfile(output_name_max):
-                all_files[f"{Var}-max"].append(output_name_max)
+                all_files.append(output_name_max)
 
             if not isinstance(waitbar, type(None)):
                 waitbar_i = int(waitbar.desc.split(" ")[1])

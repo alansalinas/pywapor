@@ -1,9 +1,4 @@
-# -*- coding: utf-8 -*-
-"""
-WaterSat
-author: Tim Martijn Hessels
-Created on Sun Sep 15 18:40:44 2019
-"""
+
 
 import requests, json, time
 import pandas as pd
@@ -157,7 +152,10 @@ def WAPOR(output_folder, Startdate, Enddate, latlim, lonlim, Parameter, auth_tok
             End_month_payload = (Date_end + timedelta(days = 1)).month
             End_year_payload = (Date_end + timedelta(days = 1)).year
 
-        file_name_temp = os.path.join(output_folder_para, "%s_WAPOR_%s_%s.%02d.%02d.tif" %(Parameter, dimension, Date_end.year, Date_end.month, Start_day_payload))
+        if Parameter == 'L1_LCC_A':
+            file_name_temp = os.path.join(output_folder_para, f"LULC_WAPOR_-_365-daily_{Date_end.year}.01.01.tif")
+        else:
+            file_name_temp = os.path.join(output_folder_para, "%s_WAPOR_%s_%s.%02d.%02d.tif" %(Parameter, dimension, Date_end.year, Date_end.month, Start_day_payload))
     
         if not os.path.exists(file_name_temp):   
             

@@ -70,4 +70,4 @@ def main(level_folder, ds_lst, ds_meteo, ds_ndvi,
 
     log.sub().info("< SE_ROOT")
 
-    return files
+    return [files]

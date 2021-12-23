@@ -1,9 +1,4 @@
-# -*- coding: utf-8 -*-
-"""
-WaterSat
-author: Tim Martijn Hessels
-Created on Mon Feb 18 20:50:36 2019
-"""
+
 
 import os
 import urllib
@@ -31,7 +26,7 @@ def DownloadData(output_folder, latlim, lonlim):
         os.makedirs(output_folder_end)
 
     # Define end output
-    filename_out_tiff = os.path.join(output_folder_end, "LC_GLOBCOVER_V2.3.tif")   
+    filename_out_tiff = os.path.join(output_folder_end, "LULC_GLOBCOVER_-_365-daily_2009.01.01.tif")   
 
     if not os.path.exists(filename_out_tiff):
 
@@ -82,4 +77,4 @@ def DownloadData(output_folder, latlim, lonlim):
         # remove temporary folder
         shutil.rmtree(output_folder_temp)
         
-        
+    return filename_out_tiff

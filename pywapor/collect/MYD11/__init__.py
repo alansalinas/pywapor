@@ -1,7 +1,5 @@
 # -*- coding: utf-8 -*-
 """
-Authors: Tim Hessels
-Module: Collect/MYD11
 
 Description:
 This module downloads MYD11 LST data from
@@ -15,7 +13,7 @@ MYD11.LST(Dir='C:/Temp3/', Startdate='2003-12-01', Enddate='2003-12-30',
            latlim=[41, 45], lonlim=[-8, -5])
 """
 
-from .LST import main as LST
+from pywapor.collect.MYD11.LST import main as LST
 
 __all__ = ['LST']
 
