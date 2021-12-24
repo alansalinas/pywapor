@@ -7,7 +7,7 @@ import pandas as pd
 import pywapor.enhancers as enhance
 import pywapor.collect as c
 import pywapor.general as g
-from pywapor.collect.downloader import download_sources
+from pywapor.collect.downloader import collect_sources
 from pywapor.general.logger import log, adjust_logger
 from datetime import datetime as dat
 from datetime import time as datt
@@ -39,8 +39,8 @@ def main(project_folder, startdate, enddate, latlim, lonlim, level = "level_1",
         level = level_name
 
     source_selection = levels[level]
-    succes = g.tests.check_source_selection(source_selection, sdate, edate, extra_sources)[1]
-    assert succes, "invalid source_selection"
+    # succes = g.tests.check_source_selection(source_selection, sdate, edate, extra_sources)[1]
+    # assert succes, "invalid source_selection"
 
     raw_folder = os.path.join(project_folder, "RAW")
     temp_folder = os.path.join(project_folder, "temporary")
@@ -55,28 +55,28 @@ def main(project_folder, startdate, enddate, latlim, lonlim, level = "level_1",
 
     #### NDVI ####
     log.info(f"# NDVI")
-    raw_ndvi_files = download_sources("NDVI", source_selection["NDVI"], dl_args, extra_source_locations)
+    raw_ndvi_files = collect_sources("NDVI", source_selection["NDVI"], dl_args, extra_source_locations)
 
     cmeta = {
         "composite_type": False,
         "temporal_interp": False,
         "temporal_interp_freq": 1,
         "spatial_interp": "nearest",
-        "var_name": "NDVI",
+        "var_name": "ndvi",
         "var_unit": "-",
     }
-    ds = g.compositer.main(cmeta, raw_ndvi_files, None, temp_folder, None, lean_output = False)
-    ds_ndvi = ds.rename({"band_data": "ndvi"})
+    ds_ndvi = g.compositer.main(cmeta, raw_ndvi_files, None, temp_folder, None, lean_output = False)
+    # ds_ndvi = ds.rename({"band_data": "ndvi"})
 
     #### LST ####
     log.info("# LST")
-    raw_lst_files = download_sources("LST", source_selection["LST"], dl_args, extra_source_locations)
+    raw_lst_files = collect_sources("LST", source_selection["LST"], dl_args, extra_source_locations)
 
     ds_lst = combine_lst(raw_lst_files)
 
     #### DEM ####
     log.info(f"# DEM")
-    raw_dem_file = download_sources("DEM", source_selection["DEM"], dl_args, extra_source_locations)[0][0]
+    raw_dem_file = collect_sources("DEM", source_selection["DEM"], dl_args, extra_source_locations)[0][0]
 
     #### METEO ####
     log.info("> METEO").add()

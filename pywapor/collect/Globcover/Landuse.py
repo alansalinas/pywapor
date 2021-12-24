@@ -2,6 +2,7 @@
 from pywapor.collect.GLOBCOVER.DataAccess import DownloadData
 import sys
 import os
+from pywapor.general.logger import log
 
 def main(Dir, latlim, lonlim, Waitbar = 1, **kwargs):
     """
@@ -13,6 +14,7 @@ def main(Dir, latlim, lonlim, Waitbar = 1, **kwargs):
     lonlim -- [xmin, xmax]
 
     """
+    log.info("--> Downloading GLOBCOVER.")
 
     # Download and process the data
     outpath = DownloadData(Dir, latlim, lonlim)

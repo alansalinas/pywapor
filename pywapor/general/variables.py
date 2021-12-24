@@ -359,6 +359,13 @@ def get_source_level_selections():
         "DEM": ["SRTM"],
         "PRECIPITATION": ["CHIRPS"],
         "SOLAR_RADIATION": ["MERRA2"],
+        't_air_24': ["GEOS5"],
+        't_air_min_24': ["GEOS5"], 
+        't_air_max_24': ["GEOS5"],
+        'u2m_24': ["GEOS5"],
+        'v2m_24': ["GEOS5"],
+        'p_air_24_0': ["GEOS5"],
+        'qv_24': ["GEOS5"],
     }
 
     source_selection_level1 = {
@@ -370,6 +377,13 @@ def get_source_level_selections():
         "DEM": ["SRTM"],
         "PRECIPITATION": ["CHIRPS"],
         "SOLAR_RADIATION": ["MERRA2"],
+        't_air_24': ["GEOS5"],
+        't_air_min_24': ["GEOS5"], 
+        't_air_max_24': ["GEOS5"],
+        'u2m_24': ["GEOS5"],
+        'v2m_24': ["GEOS5"],
+        'p_air_24_0': ["GEOS5"],
+        'qv_24': ["GEOS5"],
     }
 
     levels = {"level_1": source_selection_level1, 

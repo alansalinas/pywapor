@@ -2,7 +2,7 @@
 import os
 from pywapor.collect.SRTM.DataAccess import DownloadData
 import sys
-
+from pywapor.general.logger import log
 
 def main(Dir, latlim, lonlim, **kwargs):
     """
@@ -16,6 +16,8 @@ def main(Dir, latlim, lonlim, **kwargs):
     latlim -- [ymin, ymax]
     lonlim -- [xmin, xmax]
     """
+
+    log.info("--> Downloading SRTM.")
 
     # Create directory if not exists for the output
     output_folder = os.path.join(Dir, 'SRTM', 'DEM')

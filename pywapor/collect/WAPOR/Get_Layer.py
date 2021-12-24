@@ -4,6 +4,7 @@ from pywapor.collect.WAPOR.DataAccess import WAPOR
 import os
 import glob
 import pywapor
+from pywapor.general.logger import log
 
 def main(Dir, latlim, lonlim, Startdate, Enddate, Parameter, Area = None, Version = "2"):
     
@@ -49,6 +50,8 @@ def LULC(Dir, latlim, lonlim, Startdate, Enddate, Area = None, Version = "2"):
     -- version: (string) default is 2, but if version 1 is required use this parameter (options are "1" or "2")
 
     """
+
+    log.info("--> Downloading WAPOR.")
     auth_token = pywapor.collect.get_pw_un.get("WAPOR")[0]
 
     files = WAPOR(Dir, Startdate, Enddate, latlim, lonlim, 'L1_LCC_A', auth_token, Area = Area, Version = Version)

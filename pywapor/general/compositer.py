@@ -5,9 +5,16 @@ from datetime import datetime as dat
 import pandas as pd
 import datetime
 from dask.diagnostics import ProgressBar
+from pywapor.collect.downloader import collect_sources
 import pywapor.post_et_look as post_et_look
 import pywapor.general.processing_functions as PF
-from pywapor.general.logger import log
+from pywapor.general.logger import log, adjust_logger
+from pywapor.enhancers.temperature import kelvin_to_celsius
+import pywapor.enhancers.lulc as lulc
+from functools import partial
+
+def remove_var(ds, var, out_var = None):
+    return ds.drop_vars([var])
 
 def main(cmeta, dbs, epochs_info, temp_folder = None, example_ds = None,
         lean_output = True, diagnostics = None):
@@ -16,6 +23,35 @@ def main(cmeta, dbs, epochs_info, temp_folder = None, example_ds = None,
     temporal_interp = False, "linear", "nearest", "zero", "slinear", "quadratic", "cubic"
     spatial_interp = "nearest", "linear"
     """
+
+    source_enhancements = {
+        ("MERRA2",  "t_air_24"):        [kelvin_to_celsius],
+        ("MERRA2",  "t_air_min_24"):    [kelvin_to_celsius],
+        ("MERRA2",  "t_air_max_24"):    [kelvin_to_celsius],
+        ("GEOS5",   "t_air_24"):        [kelvin_to_celsius],
+        ("GEOS5",   "t_air_min_24"):    [kelvin_to_celsius],
+        ("GEOS5",   "t_air_max_24"):    [kelvin_to_celsius],
+        ("GLOBCOVER", "lulc"):          [partial(lulc.lulc_to_x, out_var = "land_mask", 
+                                                    convertor = lulc.globcover_to_land_mask()),
+                                        partial(lulc.lulc_to_x, out_var = "rs_min", 
+                                                    convertor = lulc.globcover_to_rs_min()),
+                                        partial(lulc.lulc_to_x, out_var = "lue_max", 
+                                                    convertor = lulc.globcover_to_lue_max()),
+                                        partial(lulc.lulc_to_x, out_var = "z_obst_max", 
+                                                    convertor = lulc.globcover_to_z_obst_max()),
+                                        remove_var,
+                                        ],
+        ("WAPOR", "lulc"):              [partial(lulc.lulc_to_x, out_var = "land_mask", 
+                                                    convertor = lulc.wapor_to_land_mask()),
+                                        partial(lulc.lulc_to_x, out_var = "rs_min", 
+                                                    convertor = lulc.wapor_to_rs_min()),
+                                        partial(lulc.lulc_to_x, out_var = "lue_max", 
+                                                    convertor = lulc.wapor_to_lue_max()),
+                                        partial(lulc.lulc_to_x, out_var = "z_obst_max", 
+                                                    convertor = lulc.wapor_to_z_obst_max()),
+                                        remove_var,
+                                        ],
+    }
 
     if not isinstance(temp_folder, type(None)):
         fh = dbs[0][0]
@@ -66,14 +102,19 @@ def main(cmeta, dbs, epochs_info, temp_folder = None, example_ds = None,
         ds = ds.rename_vars({"x": f"lon", "y": f"lat"})
         ds = ds.swap_dims({"x": f"lon", "y": f"lat"})
         ds = ds.interp_like(example_ds, method = "linear", kwargs={"fill_value": "extrapolate"},)
+        ds, fh_intermediate = calculate_ds(ds, None, labels[0], 
+                                        cast = {"sources": np.uint8})
         ds = ds.rename({"band": "epoch"}).assign_coords({"epoch": [-9999]})
-        ds = ds.rename({"band_data": "composite"})
+        ds = ds.rename({"band_data": f"{cmeta['var_name']}_composite"})
         return ds
 
     def preprocess_func(ds):
 
         date_string = ds.encoding["source"].split("_")[-1]
         freq_string = ds.encoding["source"].split("_")[-2]
+        unit_string = ds.encoding["source"].split("_")[-3]
+        source_string = ds.encoding["source"].split("_")[-4]
+
         if len(date_string.split(".")) > 4:
             date = dat.strptime(date_string, '%Y.%m.%d.%H.%M.tif')
         else:
@@ -93,6 +134,9 @@ def main(cmeta, dbs, epochs_info, temp_folder = None, example_ds = None,
         ds = ds.rename_vars({"x": f"lon", "y": f"lat"})
         ds = ds.swap_dims({"x": f"lon", "y": f"lat"})
 
+        ds.band_data.attrs = {"unit": unit_string,
+                              "source": source_string}
+
         return ds
 
     ds = None
@@ -104,28 +148,60 @@ def main(cmeta, dbs, epochs_info, temp_folder = None, example_ds = None,
         check_geots(db)
         sub_ds = xr.open_mfdataset(db, concat_dim = "time", engine="rasterio", combine = "nested",
                                         preprocess = preprocess_func)
+        sub_ds = sub_ds.rename({"band_data": cmeta["var_name"]})
+
+        variable = cmeta["var_name"]
+        source = sub_ds[variable].source
+
+        dbs_names.append(source)
+        sub_ds["sources"] = (np.isfinite(sub_ds[variable]) * sources[source])
+
+        if (source, variable) in source_enhancements.keys():
+            for enhancer in source_enhancements[(source, variable)]:
+                sub_ds = enhancer(sub_ds, variable)
+                if isinstance(enhancer, partial):
+                    func_name = enhancer.func.__name__
+                    if "out_var" in enhancer.keywords:
+                        new_var = enhancer.keywords['out_var']
+                        label = f"--> Creating new variable `{new_var}`."
+                    else:
+                        label = f"--> Applying '{func_name}' to `{variable}` from {source}."
+                else:
+                    func_name = enhancer.__name__
+                    label = f"--> Applying '{func_name}' to `{variable}` from {source}."
+                if not isinstance(diags, type(None)):
+                    label = None
+                sub_ds, _ = calculate_ds(sub_ds, label = label)
+
         if isinstance(example_ds, type(None)):
             example_ds = sub_ds.isel(time = 0).drop_vars(["time"])
         else:
             sub_ds = sub_ds.interp_like(example_ds, method = spatial_interp, kwargs={"fill_value": "extrapolate"},)
 
-        source = db[0].split("_")[-4]
-        dbs_names.append(source)
-        sub_ds["sources"] = (np.isfinite(sub_ds.band_data) * sources[source])
-
         if isinstance(diags, dict):
+            # Select the pixels that contain the diagnostics points.
             sub_ds = sub_ds.sel(lat = [v[0] for v in diags.values()],
-                        lon = [v[1] for v in diags.values()], method = "nearest")
+                                lon = [v[1] for v in diags.values()], method = "nearest")
+            # Remove pixels that where selected twice, in case diagnostics points
+            # lie within the same pixel (usually only necessary for very coarse data).
+            sub_ds = sub_ds.isel(lat = np.unique(sub_ds.lat, return_index = True)[1], 
+                                 lon = np.unique(sub_ds.lon, return_index = True)[1])
 
         dss.append(sub_ds)
 
+    results = check_units(get_units(dss), strictness = "med") # TODO: Move to "high"
+    assert np.all(results.values()), f"Combining data with different units: {get_units(dss)}"
+
     # This is where one dataset gets priority over another if there are sources
-    # at the exact same time. That's also why we can't use xr.merge() here.
+    # at the exact same time. That's also why we can't simply use xr.merge() here.
     for i, sub_ds in enumerate(dss):
         if i == 0:
             ds = sub_ds
         else:
             ds = ds.combine_first(sub_ds)
+
+    all_variables = list(ds.keys())
+    all_variables.remove('sources')
 
     if not isinstance(temp_folder, type(None)):
         fh = os.path.join(temp_folder, f"{cmeta['var_name']}_ts.nc")
@@ -156,16 +232,18 @@ def main(cmeta, dbs, epochs_info, temp_folder = None, example_ds = None,
     da = xr.DataArray(epochs, coords={"time":epoch_starts})
     ds["epochs"] = da.reindex_like(ds["time"], method = "ffill", tolerance = epoch_ends[-1] - epoch_starts[-1])
 
-    if composite_type == "max":
-        ds["composite"] = ds.band_data.groupby(ds["epochs"]).max().rename({"epochs": "epoch"})
-    elif composite_type == "mean":
-        ds["composite"] = ds.band_data.groupby(ds["epochs"]).mean().rename({"epochs": "epoch"})
-    elif composite_type == "min":
-        ds["composite"] = ds.band_data.groupby(ds["epochs"]).min().rename({"epochs": "epoch"})
-    elif isinstance(composite_type, float):
-        ds["composite"] = ds.band_data.groupby(ds["epochs"]).quantile(composite_type).rename({"epochs": "epoch"})
-    else:
-        log.warning("No valid composite_type selected.")
+    for var in all_variables:
+        if composite_type == "max":
+            ds[f"{var}_composite"] = ds[var].groupby(ds["epochs"]).max().rename({"epochs": "epoch"})
+        elif composite_type == "mean":
+            ds[f"{var}_composite"] = ds[var].groupby(ds["epochs"]).mean().rename({"epochs": "epoch"})
+        elif composite_type == "min":
+            ds[f"{var}_composite"] = ds[var].groupby(ds["epochs"]).min().rename({"epochs": "epoch"})
+        elif isinstance(composite_type, float):
+            ds[f"{var}_composite"] = ds[var].groupby(ds["epochs"]).quantile(composite_type).rename({"epochs": "epoch"})
+        else:
+            log.warning("No valid composite_type selected.")
+        ds[f"{var}_composite"].attrs = ds[var].attrs
 
     ds["epoch_starts"] = xr.DataArray(epoch_starts, coords = {"epoch": epochs})
     ds["epoch_ends"] = xr.DataArray(epoch_ends, coords = {"epoch": epochs})
@@ -175,7 +253,8 @@ def main(cmeta, dbs, epochs_info, temp_folder = None, example_ds = None,
     ds.attrs = {str(k): str(v) for k, v in {**cmeta, **sources_styling}.items()}
 
     if lean_output:
-        ds = ds.drop_vars(["band_data", "sources", "epochs", "time"])
+        # Keep only the composites.
+        ds = ds.drop_vars(all_variables + ["sources", "epochs", "time"])
 
     if not isinstance(temp_folder, type(None)):
         fh = os.path.join(temp_folder, f"{cmeta['var_name']}_composite.nc")
@@ -185,10 +264,11 @@ def main(cmeta, dbs, epochs_info, temp_folder = None, example_ds = None,
     ds, fh_composites = calculate_ds(ds, fh, label = labels[1])
 
     if isinstance(diags, dict):
-        post_et_look.plot_composite(ds, diags, graph_folder)
+        for var in all_variables:
+            post_et_look.plot_composite(ds, diags, graph_folder, band_name = var)
 
-    if not isinstance(fh_intermediate, type(None)):
-        os.remove(fh_intermediate)
+    # if not isinstance(fh_intermediate, type(None)):
+    #     os.remove(fh_intermediate)
 
     return ds
 
@@ -229,55 +309,109 @@ def calc_interpolation_times(epochs_info, freq = "2D", periods = None):
     new_t = np.sort(np.unique(new_t))
     return new_t
 
+def get_units(dss):
+    units = dict()
+    for sub_ds in dss:
+        variables = list(sub_ds.keys())
+        for var in variables:
+            if hasattr(sub_ds[var], "unit"):
+                unit = sub_ds[var].unit
+            else:
+                unit = "unknown"
+            if var in units.keys():
+                units[var] = np.append(units[var], unit)
+            else:
+                units[var] = np.array([unit])
+    return units
+
+def check_units(units, strictness = "low"):
+    """[summary]
+
+    Parameters
+    ----------
+    dss : [type]
+        [description]
+    strictness : str, optional
+        low - Units need to be the same, but 'unknown' units are assumed to be correct.
+        med - Units need to be the same and 'unknown' units are assumed to be different.
+        high - All units must be known and identical.
+
+    Examples
+    --------
+    >>> units = {"test1": np.array(["C", "C","unknown"]),
+             "test2": np.array(["C", "C", "K"]),
+             "test3": np.array(["C", "C", "C"]),
+             "test4": np.array(["unknown", "unknown", "unknown"])}
+
+    >>> check_units(units)
+    {'test1': True, 'test2': False, 'test3': True, 'test4': True}
+    >>> check_units(units, strictness = "med")
+    {'test1': False, 'test2': False, 'test3': True, 'test4': True}
+    >>> check_units(units, strictness = "high")
+    {'test1': False, 'test2': False, 'test3': True, 'test4': False}
+    """
+    results = dict()
+    if strictness == "low":
+        for k, v in units.items():
+            check = np.unique(v[v!="unknown"]).size <= 1
+            results[k] = check
+    if strictness == "med":
+        for k, v in units.items():
+            check = np.unique(v).size == 1
+            results[k] = check
+    if strictness == "high":
+        for k, v in units.items():
+            check = np.unique(v).size == 1 and "unknown" not in v
+            results[k] = check
+    return results
+
 if __name__ == "__main__":
 
     import pywapor
+    import pywapor.general.pre_defaults as defaults
 
     project_folder = r"/Users/hmcoerver/pywapor_notebooks"
     latlim = [28.9, 29.7]
     lonlim = [30.2, 31.2]
-    startdate = "2017-05-01"
+    startdate = "2021-07-01"
     enddate = "2021-07-11"
 
     epochs_info = pywapor.pre_et_look.create_dates(startdate, enddate, "DEKAD")
 
-    cmeta ={
-                "composite_type": 'mean',
-                "temporal_interp": 'nearest',
-                "temporal_interp_freq": "10D",
-                "spatial_interp": "linear",
-                "var_name": "lulc",
-                "var_unit": "-",
-            }
+    var = "LULC"
 
-    dbs = [[r"/Users/hmcoerver/pywapor_notebooks/RAW/WAPOR/LULC_WAPOR_-_365-daily_2018.01.01.tif",
-            r"/Users/hmcoerver/pywapor_notebooks/RAW/WAPOR/LULC_WAPOR_-_365-daily_2019.01.01.tif",
-            r"/Users/hmcoerver/pywapor_notebooks/RAW/WAPOR/LULC_WAPOR_-_365-daily_2020.01.01.tif"]]
+    cmeta = defaults.composite_defaults()[var]
 
-    # dbs = [[r"/Users/hmcoerver/pywapor_notebooks/RAW/GLOBCOVER/Landuse/lulc_GLOBCOVER_-_365-daily_2009.01.01.tif"]]
+    sources = ["WAPOR"]
+
+    dl_args = {
+                "Dir": os.path.join(project_folder, "RAW"), 
+                "latlim": latlim, 
+                "lonlim": lonlim, 
+                "Startdate": startdate, 
+                "Enddate": enddate,
+                }
+
+    dbs = collect_sources(var, sources, dl_args)
 
     temp_folder = os.path.join(project_folder, "temporary")
     example_ds = None
     lean_output = True 
     diagnostics = None
 
-    ds = main(cmeta, dbs, epochs_info, temp_folder = temp_folder, example_ds = example_ds,
-        lean_output = lean_output, diagnostics = diagnostics)
+    # ds = main(cmeta, dbs, epochs_info, temp_folder = temp_folder, example_ds = example_ds,
+    #     lean_output = lean_output, diagnostics = diagnostics)
 
-    diagnostics = { # label          # lat      # lon
-                    "water":	    (29.44977,	30.58215),
-                    "desert":	    (29.12343,	30.51222),
-                    "agriculture":	(29.32301,	30.77599),
-                    "urban":	    (29.30962,	30.84109),
-                    }
+    # diagnostics = { # label          # lat      # lon
+    #                 "water":	    (29.44977,	30.58215),
+    #                 "desert":	    (29.12343,	30.51222),
+    #                 "agriculture":	(29.32301,	30.77599),
+    #                 "urban":	    (29.30962,	30.84109),
+    #                 }
 
-    ds_diags = main(cmeta, dbs, epochs_info, None, example_ds, 
-                    lean_output = False, diagnostics = diagnostics)
+    # temp_folder = None
+    # lean_output = False
 
-#%%
+    # ds_diags = main(cmeta, dbs, epochs_info, temp_folder = temp_folder, example_ds = example_ds,
+    #     lean_output = lean_output, diagnostics = diagnostics)
 
-
-
-
-
-#%%

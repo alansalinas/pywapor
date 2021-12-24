@@ -470,7 +470,7 @@ def plot_composite(ds, diagnostics, out_folder = None, band_name = "band_data"):
         ndvis = ts[band_name].values
         sources = ts.sources.values
 
-        ndvi_composites = ts.composite.values
+        ndvi_composites = ts[f"{band_name}_composite"].values
         epoch_starts = ts.epoch_starts.values
         epoch_ends = ts.epoch_ends.values
 

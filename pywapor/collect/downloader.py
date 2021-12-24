@@ -1,6 +1,6 @@
 import pywapor.collect as c
 
-def download_sources(param, sources, dl_args, extra_source_locations = None):
+def collect_sources(param, sources, dl_args, extra_source_locations = None):
     files = list()
     for source in sources:
 

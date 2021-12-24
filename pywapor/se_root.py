@@ -9,8 +9,10 @@ import pywapor.et_look_v2 as ETLook_v2
 import tqdm
 from pywapor.general.logger import log, adjust_logger
 
-def main(level_folder, ds_lst, ds_meteo, ds_ndvi, 
-                    ds_temperature, example_ds, example_geoinfo, et_look_version = "v2"):
+def main(level_folder, dss, example_info, et_look_version = "v2"):
+
+    ds_lst, ds_meteo, ds_ndvi, ds_temperature = dss
+    example_fh, example_ds, example_geoinfo = example_info
 
     log_write = True
     log_level = "INFO"

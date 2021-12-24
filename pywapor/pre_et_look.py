@@ -12,12 +12,12 @@ import xarray as xr
 import pandas as pd
 import numpy as np
 import pywapor.general as g
-import pywapor.enhancers as enhance
 import pywapor.general.processing_functions as pf
 import pywapor.general.pre_defaults as defaults
 from datetime import datetime as dat
 from osgeo import gdal
-from pywapor.collect.downloader import download_sources
+from pywapor.enhancers.temperature import kelvin_to_celsius
+from pywapor.collect.downloader import collect_sources
 from pywapor.general.logger import log, adjust_logger
 
 def main(project_folder, startdate, enddate, latlim, lonlim, level = "level_1", 
@@ -42,7 +42,6 @@ def main(project_folder, startdate, enddate, latlim, lonlim, level = "level_1",
     edate = dat.strptime(enddate, "%Y-%m-%d").date()
     epochs_info = create_dates(sdate, edate, composite_length)
 
-    #### Check if selected sources and dates are valid
     levels = g.variables.get_source_level_selections()
 
     if isinstance(level, dict):
@@ -53,12 +52,10 @@ def main(project_folder, startdate, enddate, latlim, lonlim, level = "level_1",
         level = level_name
 
     source_selection = levels[level]
-    succes = g.tests.check_source_selection(source_selection, sdate, edate, extra_sources)[1]
-    assert succes, "invalid source_selection"
+    # succes = g.tests.check_source_selection(source_selection, sdate, edate, extra_sources)[1]
+    # assert succes, "invalid source_selection"
 
-    raw_folder = os.path.join(project_folder, "RAW")
-    level_folder = os.path.join(project_folder, level)
-    temp_folder = os.path.join(project_folder, "temporary")
+    level_folder, temp_folder, raw_folder = get_folders(project_folder, level)
     if isinstance(diagnostics, dict):
         diagnostics["folder"] = os.path.join(level_folder, "graphs")
 
@@ -70,85 +67,64 @@ def main(project_folder, startdate, enddate, latlim, lonlim, level = "level_1",
                 "Enddate": enddate,
                 }
 
-    unraw_file_templates = unraw_filepaths(epochs_info[1], level_folder, "{var}")
+    all_vars = [
+                "NDVI",
+                "SE_ROOT",
+                "ALBEDO", "PRECIPITATION", 
+                "DEM", 
+                "LULC", 
+                "SOLAR_RADIATION", 
+                't_air_24', 
+                't_air_min_24', 't_air_max_24', 
+                'u2m_24', 'v2m_24', 'p_air_24_0', 'qv_24'
+                ]
 
-    #### NDVI ####
-    var = "NDVI"
-    log.info(f"# {var}")
-    raw_ndvi_files = download_sources(var, source_selection[var], 
+    dss = list()
+
+    for var in all_vars:
+
+        log.info(f"# {var}")
+
+        if var == "SE_ROOT":
+            dss = pywapor.pre_se_root.main(project_folder, startdate, enddate, latlim, 
+                                            lonlim, level = source_selection, extra_sources = extra_sources,
+                                            extra_source_locations = extra_source_locations)
+            raw_files = pywapor.se_root.main(level_folder, dss, example_info)
+        else:
+            raw_files = collect_sources(var, source_selection[var], 
                                         dl_args, extra_source_locations)
-    example_fh, example_ds, example_geoinfo = select_template(raw_ndvi_files)
-    all_files[var] = unraw_all(var, raw_ndvi_files, epochs_info, temp_folder, 
-                example_ds, unraw_file_templates, example_geoinfo)
 
-    #### ALBEDO ####
-    var = "ALBEDO"
-    log.info(f"# {var}")
-    raw_albedo_files = download_sources(var, source_selection[var], 
-                                        dl_args, extra_source_locations)
-    all_files[var] = unraw_all(var, raw_albedo_files, epochs_info, temp_folder, 
-                example_ds, unraw_file_templates, example_geoinfo)
+        if 'example_info' not in vars():
+            example_info = select_template(raw_files)
+        
+        all_files[var] = unraw_all(var, raw_files, epochs_info, project_folder, 
+                        level, example_info, diagnostics)
 
-    #### PRECIPITATION ####
-    var = "PRECIPITATION"
-    log.info(f"# {var}")
-    raw_precip_files = download_sources(var, source_selection[var], 
-                                        dl_args, extra_source_locations)
-    all_files[var] = unraw_all(var, raw_precip_files, epochs_info, temp_folder, 
-                example_ds, unraw_file_templates, example_geoinfo)
+        # dss.append(ds)
 
-    #### DEM ####
-    var = "DEM"
-    log.info(f"# {var}")
-    raw_dem_files = download_sources(var, source_selection[var], 
-                                        dl_args, extra_source_locations)
-    dem_file = unraw_filepaths(None, level_folder, "z", static = True)
-    all_files[var] = unraw_all(var, raw_dem_files, epochs_info, temp_folder, 
-                example_ds, dem_file, example_geoinfo)
+    # complete_ds = xr.merge(dss, combine_attrs = "drop")
 
-    #### LULC ####
-    var = "LULC"
-    log.info(f"# {var}")
-    raw_lulc_files = download_sources(var, source_selection[var], 
-                                        dl_args, extra_source_locations)
-    # lulc_values = enhance.landcover_converter.get_lulc_values()
-    all_files[var] = unraw_all(var, raw_lulc_files, epochs_info, temp_folder, 
-                example_ds, unraw_file_templates, example_geoinfo)
+    # composite_enhancements = {
+    #     "t_air_24":     [lapse_rate],
+    #     "t_air_min_24": [lapse_rate],
+    #     "t_air_max_24": [lapse_rate],
+    # }
 
-    #### METEO ####
-    log.info("> METEO").add()
-    meteo_vars = ['t_air_24', 't_air_min_24', 't_air_max_24', 
-                  'u2m_24', 'v2m_24', 'p_air_24_0', 'qv_24']
-    for meteo_var in meteo_vars:
-        raw_meteo_files = download_sources(meteo_var, source_selection["METEO"], 
-                                            dl_args, extra_source_locations)
-        all_files[meteo_var] = unraw_all(meteo_var, raw_meteo_files, epochs_info, 
-                                    temp_folder, example_ds, unraw_file_templates, 
-                                    example_geoinfo)
-    log.sub().info("< METEO")
+    # for var, enhancers in enhancements_2.items():
+    #     if var not in list(complete_ds.keys()):
+    #         log.warning(f"--> Skipping enhancements of {var}.")
+    #         continue
+    #     for enhancer in enhancers:
+    #         if not callable(enhancer):
+    #             log.warning(f"--> Skipping enhancer because it's not callable {enhancer}.")
+    #             continue
+    #         complete_ds = enhancer(complete_ds, var)
 
-    #### SE_ROOT ####
-    ds_lst, ds_meteo, ds_ndvi, ds_temperature = pywapor.pre_se_root.main(project_folder, startdate, enddate, latlim, 
-                                                                        lonlim, level = source_selection, extra_sources = extra_sources,
-                                                                        extra_source_locations = extra_source_locations)
-    raw_se_root_files = pywapor.se_root.main(level_folder, ds_lst, ds_meteo, ds_ndvi, 
-                                        ds_temperature, example_ds, example_geoinfo)
-
-    var = "SE_ROOT"
-    all_files[var] = unraw_all(var, raw_se_root_files, epochs_info, temp_folder, 
-                                example_ds, unraw_file_templates, example_geoinfo)
-
-    #### SOLAR RADIATION ####
-    var = "SOLAR_RADIATION"
-    log.info(f"# {var}")
-    raw_ra24_files = download_sources(var, source_selection[var], 
-                                        dl_args, extra_source_locations)
-    all_files[var] = unraw_all(var, raw_ra24_files, epochs_info, temp_folder, 
-                                example_ds, unraw_file_templates, example_geoinfo)
+    example_fh, example_ds, example_geoinfo = example_info
 
     #### SLOPE ASPECT ####
     log.info("# SLOPE ASPECT")
-    slope_aspect(dem_file, level_folder, example_fh)
+    slope_aspect(all_files["DEM"][0], level_folder, example_fh)
 
     #### LAT LON ####
     log.info("# LAT LON")
@@ -193,26 +169,74 @@ def main(project_folder, startdate, enddate, latlim, lonlim, level = "level_1",
 
     return all_files
 
-def unraw_all(var, raw_files, epochs_info, temp_folder, example_ds, unraw_file_templates, example_geoinfo):
+def get_folders(project_folder, level_name = None):
+    """Define some folders based on a root-folder.
+
+    Parameters
+    ----------
+    project_folder : str
+        Path to root-folder.
+    level_name : str, optional
+        Name of the source selection level, by default None.
+
+    Returns
+    -------
+    str
+        Path to level-folder.
+    str
+        Path to temporary-data-folder.
+    str
+        Path to raw-folder.
+    """
+    if not isinstance(level_name, type(None)):
+        level_folder = os.path.join(project_folder, level_name)
+    else:
+        level_folder = None
+    temp_folder = os.path.join(project_folder, "temporary")
+    raw_folder = os.path.join(project_folder, "RAW")
+    return level_folder, temp_folder, raw_folder
+
+def unraw_all(var, raw_files, epochs_info, project_folder, level_name, 
+                example_info, diagnostics = None):
+
+    example_fh, example_ds, example_geoinfo = example_info
+    level_folder, temp_folder = get_folders(project_folder, level_name)[:2]
+
     cmeta = defaults.composite_defaults()[var]
+
+    if np.all([cmeta["composite_type"] == False, 
+               cmeta["temporal_interp"] == False,
+               len(raw_files) == 1,
+               len(raw_files[0]) == 1]):
+        unraw_file_templates = unraw_filepaths(None, level_folder, cmeta["var_name"], static = True)
+    else:
+        unraw_file_templates = unraw_filepaths(epochs_info[1], level_folder, "{var}")
+   
     ds = g.compositer.main(cmeta, raw_files, epochs_info, temp_folder, example_ds)
     if isinstance(diagnostics, dict):
         ds_diags = g.compositer.main(cmeta, raw_files, epochs_info, None, example_ds, 
                                     lean_output = False, diagnostics = diagnostics)
-    files = ds_to_geotiff(cmeta["var_name"], ds, unraw_file_templates, example_geoinfo)
+
+    var_names = [x for x in list(ds.keys()) if "_composite" in x]
+    files = ds_to_geotiff(var_names, ds, unraw_file_templates, example_geoinfo)
+
     return files
 
-def ds_to_geotiff(var_name, ds, unraw_file_templates, example_geoinfo):
-    unrawed_files = list()
-    assert ds.epoch.size == len(unraw_file_templates)
-    for i, fh in enumerate(unraw_file_templates):
-        if not -9999 in ds["epoch"].values:
-            fh_date = pd.Timestamp(dat.strptime(fh.split("_")[-1], "%Y%m%d.tif"))
-            assert fh_date == pd.Timestamp(ds.epoch_starts.isel(epoch = i).values)
-        array = np.copy(ds.composite.isel(epoch = i).values)
-        real_fh = fh.format(var = var_name)
-        pf.Save_as_tiff(real_fh, array, example_geoinfo[0], example_geoinfo[1])
-        unrawed_files.append(real_fh)
+def ds_to_geotiff(var_names, ds, unraw_file_templates, example_geoinfo, var_name_cutoff = "_composite"):
+
+    for var_name in var_names:
+
+        unrawed_files = list()
+        assert ds.epoch.size == len(unraw_file_templates)
+        for i, fh in enumerate(unraw_file_templates):
+            if not -9999 in ds["epoch"].values:
+                fh_date = pd.Timestamp(dat.strptime(fh.split("_")[-1], "%Y%m%d.tif"))
+                assert fh_date == pd.Timestamp(ds.epoch_starts.isel(epoch = i).values)
+            array = np.copy(ds[var_name].isel(epoch = i).values)
+            real_fh = fh.format(var = var_name.replace(var_name_cutoff,""))
+            pf.Save_as_tiff(real_fh, array, example_geoinfo[0], example_geoinfo[1])
+            unrawed_files.append(real_fh)
+
     ds.close()
     ds = None
     return unrawed_files
@@ -333,6 +357,19 @@ def create_dates(sdate, edate, period_length):
     return epochs, periods_start, periods_end
 
 def unraw(raw_file, unraw_file, template_file, method):
+    """Will be deprecated soon.
+
+    Parameters
+    ----------
+    raw_file : [type]
+        [description]
+    unraw_file : [type]
+        [description]
+    template_file : [type]
+        [description]
+    method : [type]
+        [description]
+    """
     if not os.path.exists(unraw_file) and os.path.exists(raw_file):
         geo_ex, proj_ex = pf.get_geoinfo(template_file)[0:2]
         array = pf.reproj_file(raw_file, template_file, method)
@@ -424,15 +461,15 @@ if __name__ == "__main__":
                     }
     # diagnostics = None
 
-    level = {'METEO': ['MERRA2'],
-            'NDVI': ['MYD13'],
-            'ALBEDO': ['MCD43'],
-            'LST': ['MOD11', 'MYD11'],
-            'LULC': ['WAPOR'],
-            'DEM': ['SRTM'],
-            'PRECIPITATION': ['CHIRPS'],
-            'SOLAR_RADIATION': ['MERRA2'],
-            "name": "level_1"}
+    # level = {'METEO': ['MERRA2'],
+    #         'NDVI': ['MYD13'],
+    #         'ALBEDO': ['MCD43'],
+    #         'LST': ['MOD11', 'MYD11'],
+    #         'LULC': ['WAPOR'],
+    #         'DEM': ['SRTM'],
+    #         'PRECIPITATION': ['CHIRPS'],
+    #         'SOLAR_RADIATION': ['MERRA2'],
+    #         "name": "level_1"}
 
     # # Define new products.
     # extra_sources =  {"NDVI":      ["LS7NDVI", "LS8NDVI"],
@@ -455,7 +492,7 @@ if __name__ == "__main__":
 
     # all_final_files = pywapor.et_look.main(project_folder, startdate)
 
-    # param = "SOLAR_RADIATION"
+    # param = "t_air_24"
     # sources = ["GEOS5"]
 
     # dl_args = {
@@ -466,7 +503,7 @@ if __name__ == "__main__":
     #             "Enddate": enddate,
     #             }
 
-    # files = download_sources(param, sources, dl_args)
+    # files = collect_sources(param, sources, dl_args)
 
 
 
