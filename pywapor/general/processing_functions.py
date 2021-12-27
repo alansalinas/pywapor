@@ -555,7 +555,7 @@ def gap_filling(dataset, NoDataValue, method = 1):
 
     return (EndProduct)  
     
-def calc_dlat_dlon(geo_out, size_X, size_Y):
+def calc_dlat_dlon(geo_out, size_X, size_Y, lat_lon = None):
     """
     This functions calculated the distance between each pixel in meter.
 
@@ -575,10 +575,12 @@ def calc_dlat_dlon(geo_out, size_X, size_Y):
     dlon: array
         Array containing the horizontal distance between each pixel in meters
     """
-
-    # Create the lat/lon rasters
-    lon = np.arange(size_X + 1)*geo_out[1]+geo_out[0] - 0.5 * geo_out[1]
-    lat = np.arange(size_Y + 1)*geo_out[5]+geo_out[3] - 0.5 * geo_out[5]
+    if isinstance(lat_lon, type(None)):
+        # Create the lat/lon rasters
+        lon = np.arange(size_X + 1)*geo_out[1]+geo_out[0] - 0.5 * geo_out[1]
+        lat = np.arange(size_Y + 1)*geo_out[5]+geo_out[3] - 0.5 * geo_out[5]
+    else:
+        lat, lon = lat_lon
 
     dlat_2d = np.array([lat,]*int(np.size(lon,0))).transpose()
     dlon_2d =  np.array([lon,]*int(np.size(lat,0)))

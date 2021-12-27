@@ -2,7 +2,6 @@
 """
 """
 import os
-import json
 import glob
 import warnings
 import shutil
@@ -11,14 +10,18 @@ import pywapor
 import xarray as xr
 import pandas as pd
 import numpy as np
+import pywapor.enhancers.dem as dem
 import pywapor.general as g
 import pywapor.general.processing_functions as pf
 import pywapor.general.pre_defaults as defaults
 from datetime import datetime as dat
 from osgeo import gdal
-from pywapor.enhancers.temperature import kelvin_to_celsius
+from pywapor.enhancers.temperature import lapse_rate
 from pywapor.collect.downloader import collect_sources
 from pywapor.general.logger import log, adjust_logger
+from pywapor.enhancers.apply_enhancers import apply_enhancer
+from pywapor.general.compositer import calculate_ds
+from functools import partial
 
 def main(project_folder, startdate, enddate, latlim, lonlim, level = "level_1", 
         diagnostics = None, composite_length = "DEKAD", extra_sources = None,
@@ -79,7 +82,7 @@ def main(project_folder, startdate, enddate, latlim, lonlim, level = "level_1",
                 'u2m_24', 'v2m_24', 'p_air_24_0', 'qv_24'
                 ]
 
-    dss = list()
+    datasets = list()
 
     for var in all_vars:
 
@@ -96,41 +99,40 @@ def main(project_folder, startdate, enddate, latlim, lonlim, level = "level_1",
 
         if 'example_info' not in vars():
             example_info = select_template(raw_files)
-        
-        all_files[var] = unraw_all(var, raw_files, epochs_info, project_folder, 
+
+        ds = unraw_all(var, raw_files, epochs_info, project_folder, 
                         level, example_info, diagnostics)
 
-        # dss.append(ds)
+        # all_files[var] = files
+        datasets.append(ds)
 
-    # complete_ds = xr.merge(dss, combine_attrs = "drop")
+    ds = xr.merge(datasets, combine_attrs = "drop")
 
-    # composite_enhancements = {
-    #     "t_air_24":     [lapse_rate],
-    #     "t_air_min_24": [lapse_rate],
-    #     "t_air_max_24": [lapse_rate],
-    # }
+    log.info("> Composite enhancers.").add()
 
-    # for var, enhancers in enhancements_2.items():
-    #     if var not in list(complete_ds.keys()):
-    #         log.warning(f"--> Skipping enhancements of {var}.")
-    #         continue
-    #     for enhancer in enhancers:
-    #         if not callable(enhancer):
-    #             log.warning(f"--> Skipping enhancer because it's not callable {enhancer}.")
-    #             continue
-    #         complete_ds = enhancer(complete_ds, var)
+    composite_enhancements = {
+        "t_air_24_composite":     [lapse_rate],
+        "t_air_min_24_composite": [lapse_rate],
+        "t_air_max_24_composite": [lapse_rate],
+        "z_composite":            [partial(dem.to_slope, out_var = "slope"), 
+                                   partial(dem.to_aspect, out_var = "aspect"),
+                                   partial(dem.to_lat, out_var = "lat_deg"),
+                                   partial(dem.to_lon, out_var = "lon_deg"),]
+    }
+
+    for variable, enhancers in composite_enhancements.items():
+        if variable not in list(ds.keys()):
+            continue
+        log.info(f"# {variable}")
+        for enhancer in enhancers:
+            ds, label = apply_enhancer(ds, variable, enhancer)
+            ds, _ = calculate_ds(ds, label = label)
+
+    log.sub().info("< Composite enhancers.")
 
     example_fh, example_ds, example_geoinfo = example_info
 
-    #### SLOPE ASPECT ####
-    log.info("# SLOPE ASPECT")
-    slope_aspect(all_files["DEM"][0], level_folder, example_fh)
-
-    #### LAT LON ####
-    log.info("# LAT LON")
-    lat_lon(example_ds, level_folder, example_geoinfo)
-
-    #### TEMP. AMPLITUDE #### # TODO add source selection and remove year data
+    # #### TEMP. AMPLITUDE #### # TODO add source selection and remove year data
     log.info("# TEMP.-AMPLITUDE")
     raw_temp_ampl_file = os.path.join(raw_folder, "GLDAS", "Temp_Amplitudes_global.tif")
     download_file_from_google_drive("1pqZnCn-1xkUC7o1csG24hwg22fV57gCH", raw_temp_ampl_file)
@@ -138,25 +140,6 @@ def main(project_folder, startdate, enddate, latlim, lonlim, level = "level_1",
     raw_temp_ampl_files = [(year, raw_temp_ampl_file) for year in range(sdate.year, edate.year + 1)]
     for year, raw_file in raw_temp_ampl_files:
         unraw(raw_file, temp_ampl_file_template.format(year = year), example_fh, 6)
-
-    #### METADATA ####
-    metadata = dict()
-    metadata["pywapor_version"] = pywapor.__version__
-    metadata["created"] = dat.now().strftime("%m/%d/%Y, %H:%M:%S")
-    metadata["template_file"] = example_fh
-    metadata["geotransform"] = "[{0}, {1}, {2}, {3}, {4}, {5}]".format(*pf.get_geoinfo(example_fh)[0])
-    metadata["resolution"] = "[{0}, {1}]".format(*pf.get_geoinfo(example_fh)[2:])
-    metadata["inputs"] = dict()
-    metadata["inputs"]["latlim"] = "[{0}, {1}]".format(*latlim)
-    metadata["inputs"]["lonlim"] = "[{0}, {1}]".format(*lonlim)
-    metadata["inputs"]["startdate"] = startdate
-    metadata["inputs"]["enddate"] = enddate
-    metadata["inputs"]["source_selection_name"] = level
-    metadata["inputs"]["project_folder"] = project_folder
-    metadata["sources"] = source_selection
-    json_file = os.path.join(level_folder, f"metadata_{level}.json")
-    with open(json_file, 'w+') as f:
-        json.dump(metadata, f, indent = 4 )
 
     for fh in glob.glob(os.path.join(temp_folder, "*.nc")):
         os.remove(fh)
@@ -167,7 +150,7 @@ def main(project_folder, startdate, enddate, latlim, lonlim, level = "level_1",
 
     log.sub().info("< PRE_ET_LOOK")
 
-    return all_files
+    return ds
 
 def get_folders(project_folder, level_name = None):
     """Define some folders based on a root-folder.
@@ -204,23 +187,23 @@ def unraw_all(var, raw_files, epochs_info, project_folder, level_name,
 
     cmeta = defaults.composite_defaults()[var]
 
-    if np.all([cmeta["composite_type"] == False, 
-               cmeta["temporal_interp"] == False,
-               len(raw_files) == 1,
-               len(raw_files[0]) == 1]):
-        unraw_file_templates = unraw_filepaths(None, level_folder, cmeta["var_name"], static = True)
-    else:
-        unraw_file_templates = unraw_filepaths(epochs_info[1], level_folder, "{var}")
+    # if np.all([cmeta["composite_type"] == False, 
+    #            cmeta["temporal_interp"] == False,
+    #            len(raw_files) == 1,
+    #            len(raw_files[0]) == 1]):
+    #     unraw_file_templates = unraw_filepaths(None, level_folder, cmeta["var_name"], static = True)
+    # else:
+    #     unraw_file_templates = unraw_filepaths(epochs_info[1], level_folder, "{var}")
    
     ds = g.compositer.main(cmeta, raw_files, epochs_info, temp_folder, example_ds)
     if isinstance(diagnostics, dict):
         ds_diags = g.compositer.main(cmeta, raw_files, epochs_info, None, example_ds, 
                                     lean_output = False, diagnostics = diagnostics)
 
-    var_names = [x for x in list(ds.keys()) if "_composite" in x]
-    files = ds_to_geotiff(var_names, ds, unraw_file_templates, example_geoinfo)
+    # var_names = [x for x in list(ds.keys()) if "_composite" in x]
+    # files = ds_to_geotiff(var_names, ds, unraw_file_templates, example_geoinfo)
 
-    return files
+    return ds
 
 def ds_to_geotiff(var_names, ds, unraw_file_templates, example_geoinfo, var_name_cutoff = "_composite"):
 
@@ -255,52 +238,6 @@ def select_template(fhs):
     log.info(f"--> Resampling resolution is ~{resolution:.0f} meter.")
 
     return example_fh, example_ds, example_geoinfo
-
-def slope_aspect(dem_file, project_folder, template_file):
-
-    slope_file = unraw_filepaths(None, project_folder, "slope_deg", static = True)[0]
-    aspect_file = unraw_filepaths(None, project_folder, "aspect_deg", static = True)[0]
-
-    if not os.path.exists(slope_file) or not os.path.exists(aspect_file):
-
-        dem = pf.open_as_array(dem_file)
-
-        # constants
-        geo_ex, proj_ex, size_x_ex, size_y_ex = pf.get_geoinfo(template_file)
-        dlat, dlon = pf.calc_dlat_dlon(geo_ex, size_x_ex, size_y_ex)            
-
-        pixel_spacing = (np.nanmean(dlon) + np.nanmean(dlat)) / 2
-        rad2deg = 180.0 / np.pi  # Factor to transform from rad to degree
-
-        # The slope output raster map contains slope values, stated in degrees of inclination from the horizontal
-        # Calculate slope
-        x, y = np.gradient(dem, pixel_spacing, pixel_spacing)
-        hypotenuse_array = np.hypot(x,y)
-        slope = np.arctan(hypotenuse_array) * rad2deg
-
-        # calculate aspect
-        aspect = np.arctan2(y/pixel_spacing, -x/pixel_spacing) * rad2deg
-        aspect = 180 + aspect
-
-        # Save as tiff files
-        pf.Save_as_tiff(slope_file, slope, geo_ex, proj_ex)
-        pf.Save_as_tiff(aspect_file, aspect, geo_ex, proj_ex)
-
-    return slope_file, aspect_file
-
-def lat_lon(ds, project_folder, example_geoinfo):
-
-    lat_file = unraw_filepaths(None, project_folder, "lat_deg", static = True)[0]
-    lon_file = unraw_filepaths(None, project_folder, "lon_deg", static = True)[0]
-
-    lat_deg = np.rot90(np.tile(ds.lat, ds.lon.size).reshape(ds.band_data.shape[::-1]), 3)
-    lon_deg = np.tile(ds.lon, ds.lat.size).reshape(ds.band_data.shape)
-    if not os.path.exists(lon_file):
-        pf.Save_as_tiff(lon_file, lon_deg, example_geoinfo[0], example_geoinfo[1])
-    if not os.path.exists(lat_file):
-        pf.Save_as_tiff(lat_file, lat_deg, example_geoinfo[0], example_geoinfo[1])
-
-    return lat_file, lon_file
 
 def unraw_filepaths(periods_start, project_folder, var, static = False):
     filepaths = list()
@@ -374,15 +311,6 @@ def unraw(raw_file, unraw_file, template_file, method):
         geo_ex, proj_ex = pf.get_geoinfo(template_file)[0:2]
         array = pf.reproj_file(raw_file, template_file, method)
         pf.Save_as_tiff(unraw_file, array, geo_ex, proj_ex)
-
-def unraw_replace_values(raw_file, unraw_file, replace_values, template_file):
-    if not os.path.exists(unraw_file) and os.path.exists(raw_file):
-        array = pf.reproj_file(raw_file, template_file, 1)
-        replaced_array = np.ones_like(array) * np.nan
-        for key, value in replace_values.items():
-            replaced_array[array == key] = value
-        geo_ex, proj_ex = pf.get_geoinfo(template_file)[0:2]
-        pf.Save_as_tiff(unraw_file, replaced_array, geo_ex, proj_ex)
 
 def download_file_from_google_drive(id, destination):
     
@@ -486,7 +414,7 @@ if __name__ == "__main__":
     #     "LS8ALBEDO": r"/Users/hmcoerver/pywapor_notebooks/my_landsat_folder/ALBEDO",
     # }
 
-    all_files = main(project_folder, startdate, enddate, latlim, lonlim, level = level, 
+    ds = main(project_folder, startdate, enddate, latlim, lonlim, level = level, 
         diagnostics = diagnostics, composite_length = composite_length, extra_sources = extra_sources,
         extra_source_locations = extra_source_locations)
 

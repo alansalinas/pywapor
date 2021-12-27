@@ -3,15 +3,15 @@ import numpy as np
 import xarray as xr
 from datetime import datetime as dat
 import pandas as pd
-import datetime
 from dask.diagnostics import ProgressBar
 from pywapor.collect.downloader import collect_sources
 import pywapor.post_et_look as post_et_look
 import pywapor.general.processing_functions as PF
-from pywapor.general.logger import log, adjust_logger
+from pywapor.general.logger import log
 from pywapor.enhancers.temperature import kelvin_to_celsius
 import pywapor.enhancers.lulc as lulc
 from functools import partial
+from pywapor.enhancers.apply_enhancers import apply_enhancer
 
 def remove_var(ds, var, out_var = None):
     return ds.drop_vars([var])
@@ -158,19 +158,8 @@ def main(cmeta, dbs, epochs_info, temp_folder = None, example_ds = None,
 
         if (source, variable) in source_enhancements.keys():
             for enhancer in source_enhancements[(source, variable)]:
-                sub_ds = enhancer(sub_ds, variable)
-                if isinstance(enhancer, partial):
-                    func_name = enhancer.func.__name__
-                    if "out_var" in enhancer.keywords:
-                        new_var = enhancer.keywords['out_var']
-                        label = f"--> Creating new variable `{new_var}`."
-                    else:
-                        label = f"--> Applying '{func_name}' to `{variable}` from {source}."
-                else:
-                    func_name = enhancer.__name__
-                    label = f"--> Applying '{func_name}' to `{variable}` from {source}."
-                if not isinstance(diags, type(None)):
-                    label = None
+                sub_ds, label = apply_enhancer(sub_ds, variable, enhancer, source = source, 
+                                log_it = isinstance(diags, type(None)))
                 sub_ds, _ = calculate_ds(sub_ds, label = label)
 
         if isinstance(example_ds, type(None)):
