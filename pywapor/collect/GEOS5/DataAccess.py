@@ -3,6 +3,7 @@ import os
 import numpy as np
 import pandas as pd
 import urllib
+import datetime
 
 def DownloadData(Dir, Var, Startdate, Enddate, latlim, lonlim, TimeStep, Period, Waitbar):
 
@@ -36,6 +37,8 @@ def DownloadData(Dir, Var, Startdate, Enddate, latlim, lonlim, TimeStep, Period,
     unit  = VarInfo.units[Var]
     types  = VarInfo.types[Var]
 
+    p_ts = VariablesInfo.period_times
+
     # Create output folder
     output_folder = os.path.join(Dir, "GEOS5", Parameter, TimeStep)
     if not os.path.exists(output_folder):
@@ -66,7 +69,10 @@ def DownloadData(Dir, Var, Startdate, Enddate, latlim, lonlim, TimeStep, Period,
         if TimeStep == "three_hourly":
             IDz_start = IDz_end = int(((Date - pd.Timestamp("2017-12-01")).days) * 8) + (Period - 1)
             Hour = int((Period - 1) * 3)
-            output_name = os.path.join(output_folder, "%s_GEOS5_%s_3-hourly_%d.%02d.%02d_H%02d.M00.tif"%(Var, unit, Date.year, Date.month, Date.day, Hour))
+
+            date = datetime.datetime.combine(Date, p_ts[Period])
+            fn = f"{Var}_GEOS5_{unit}_inst_{date:%Y.%m.%d.%H.%M}.tif"
+            output_name = os.path.join(output_folder, fn)
 
         if TimeStep == "daily":
             IDz_start = int(((Date - pd.Timestamp("2017-12-01")).days) * 8)
@@ -219,6 +225,15 @@ class VariablesInfo:
              'tqv': 'state',
              'ps': 'state',
              'slp': 'state'}
+
+    period_times = {1: datetime.time(1, 30),
+                    2: datetime.time(4, 30),
+                    3: datetime.time(7, 30),
+                    4: datetime.time(10, 30),
+                    5: datetime.time(13, 30),
+                    6: datetime.time(16, 30),
+                    7: datetime.time(19, 30),
+                    8: datetime.time(22, 30)}
 
     def __init__(self, step):
         if step == 'three_hourly':

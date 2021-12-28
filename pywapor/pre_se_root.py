@@ -4,14 +4,16 @@ import os
 import xarray as xr
 import numpy as np
 import pandas as pd
-import pywapor.enhancers as enhance
 import pywapor.collect as c
 import pywapor.general as g
 from pywapor.collect.downloader import collect_sources
 from pywapor.general.logger import log, adjust_logger
 from datetime import datetime as dat
 from datetime import time as datt
-
+from pywapor.general.compositer import check_geots, preprocess_func
+from pywapor.enhancers.temperature import kelvin_to_celsius, lapse_rate
+from pywapor.enhancers.apply_enhancers import apply_enhancer
+from pywapor.general.compositer import calculate_ds
 
 def main(project_folder, startdate, enddate, latlim, lonlim, level = "level_1",
         extra_sources = None, extra_source_locations = None):
@@ -66,7 +68,6 @@ def main(project_folder, startdate, enddate, latlim, lonlim, level = "level_1",
         "var_unit": "-",
     }
     ds_ndvi = g.compositer.main(cmeta, raw_ndvi_files, None, temp_folder, None, lean_output = False)
-    # ds_ndvi = ds.rename({"band_data": "ndvi"})
 
     #### LST ####
     log.info("# LST")
@@ -74,84 +75,58 @@ def main(project_folder, startdate, enddate, latlim, lonlim, level = "level_1",
 
     ds_lst = combine_lst(raw_lst_files)
 
-    #### DEM ####
-    log.info(f"# DEM")
-    raw_dem_file = collect_sources("DEM", source_selection["DEM"], dl_args, extra_source_locations)[0][0]
-
     #### METEO ####
     log.info("> METEO").add()
-    if "MERRA2" in source_selection["METEO"]:
-        freq = "H"
-        periods, period_times = calc_periods(ds_lst.time.values, freq)
-        ds_lst["periods"] = xr.DataArray([x[2] for x in periods], {"time": ds_lst.time})
-        meteo_vars = ['t2m', 'u2m', 'v2m', 'q2m', 'tpw', 'ps', 'slp']
-        log.info("--> Downloading MERRA2 (hourly).")
-        for sd, ed, period in periods:
-            dl_args["Startdate"] = sd
-            dl_args["Enddate"] = ed
-            dl_args["Vars"] = meteo_vars
-            dl_args["Periods"] = [int(period)]
-            c.MERRA2.hourly_MERRA2(**dl_args)
-    elif "GEOS5" in source_selection["METEO"]:
-        freq = "3H"
-        periods, period_times = calc_periods(ds_lst.time.values, freq)
-        ds_lst["periods"] = xr.DataArray([x[2] for x in periods], {"time": ds_lst.time})
-        meteo_vars = ['t2m', 'u2m', 'v2m', 'qv2m', 'tqv', 'ps', 'slp']
-        log.info("--> Downloading GEOS5 (hourly).")
-        waitbar = tqdm.tqdm(total = len(periods) * len(meteo_vars), delay = 10, initial = 1)
-        for sd, ed, period in periods:
-            dl_args["Startdate"] = sd
-            dl_args["Enddate"] = ed
-            dl_args["Vars"] = meteo_vars
-            dl_args["Periods"] = [int(period)]
-            c.GEOS5.three_hourly(**dl_args, Waitbar = waitbar)
 
-    #### INST. METEO ####
-    raw_inst_meteo_paths = g.variables.get_raw_meteo_paths("inst")
-    ds_temperature = None
-    ds_meteo = None
-    for var_name, folder in raw_inst_meteo_paths[source_selection["METEO"][0]].items():
-        renames = {"Pair_inst_0": "p_air_0_i", "Pair_inst": "p_air_i", # TODO Make this renaming unnesecary
-            "tair_inst": "t_air_i", "qv_inst": "qv_i", "u2m_inst": "u2m_i",
-            "lon": "lon_deg", "wv_inst": "wv_i", "lat": "lat_deg", "v2m_inst": "v2m_i"}
-        log.info(f"# {renames[var_name]}")
-        for date, period in zip(ds_lst.time.values, ds_lst.periods.values):
-            hour = int((period - 1) * {"3H": 3, "H": 1}[freq])
-            hour_str = str(hour).zfill(2)
-            date_str = pd.Timestamp(date).strftime("%Y.%m.%d")
-            raw_file = os.path.join(*folder).format(raw_folder = raw_folder, date = date_str, hour = hour_str)
-            if var_name == "tair_inst":
-                raw_file = enhance.lapse_rate.lapse_rate_temperature(raw_file, raw_dem_file)
-                meteo_datetime = dat.combine(pd.Timestamp(date).date(), period_times[period])
-                da_var = xr.open_dataset(raw_file).squeeze("band").rename({"band_data": var_name, "x": "lon", "y": "lat"})[var_name]
-                da_var = da_var.assign_coords({"time": meteo_datetime}).expand_dims("time", axis = 0)
-                ds_temp = xr.Dataset({var_name: da_var})
-                if isinstance(ds_temperature, type(None)):
-                    ds_temperature = ds_temp
-                elif np.datetime64(meteo_datetime) in ds_temperature.time:
-                    ds_temperature = xr.merge([ds_temperature, ds_temp])
-                else:
-                    ds_temperature = xr.concat([ds_temperature, ds_temp], dim = "time")
-            else:
-                meteo_datetime = dat.combine(pd.Timestamp(date).date(), period_times[period])
-                da_var = xr.open_dataset(raw_file).squeeze("band").rename({"band_data": var_name, "x": "lon", "y": "lat"})[var_name]
-                da_var = da_var.assign_coords({"time": meteo_datetime}).expand_dims("time", axis = 0)
-                ds_temp = xr.Dataset({var_name: da_var})
-                if isinstance(ds_meteo, type(None)):
-                    ds_meteo = ds_temp
-                elif np.datetime64(meteo_datetime) in ds_meteo.time:
-                    ds_meteo = xr.merge([ds_meteo, ds_temp])
-                else:
-                    ds_meteo = xr.concat([ds_meteo, ds_temp], dim = "time")
+    all_vars = ["t_air_i", "u2m_i", "v2m_i", "qv_i", 
+                "wv_i", "p_air_i", "p_air_0_i"]
+
+    meteo_source = source_selection["METEO"][0]
+    meteo_freq = {"GEOS5": "3H", "MERRA2": "H"}[meteo_source]
+
+    sds, eds, prds = calc_periods(ds_lst.time.values, meteo_freq)
+
+    dl_args["Startdate"] = sds
+    dl_args["Enddate"] = eds
+    dl_args["Periods"] = prds
+
+    dss = list()
+
+    meteo_enhancements = {
+        ("MERRA2",  "t_air_i"):        [kelvin_to_celsius],
+        ("GEOS5",   "t_air_i"):        [kelvin_to_celsius],
+    }
+
+    for var in all_vars:
+        db = collect_sources(var, [meteo_source], dl_args, 
+                                extra_source_locations = extra_source_locations)[0]
+
+        check_geots(db)
+        ds = xr.open_mfdataset(db, concat_dim = "time", engine="rasterio", 
+                                combine = "nested", preprocess = preprocess_func)
+        ds = ds.rename({"band_data": var})
+
+        if (meteo_source, var) in meteo_enhancements.keys():
+            for enhancer in meteo_enhancements[(meteo_source, var)]:
+                ds, label = apply_enhancer(ds, var, enhancer, 
+                                                source = meteo_source)
+                ds, _ = calculate_ds(ds, label = label)
+
+        dss.append(ds)
+
+    ds_meteo = xr.merge(dss)
 
     log.sub().info("< METEO")
 
     log.sub().info("< PRE_SE_ROOT")
 
-    return ds_lst, ds_meteo, ds_ndvi, ds_temperature
+    return ds_lst, ds_meteo, ds_ndvi
 
 def calc_periods(times, freq):
-    periods = list()
+
+    sds = list()
+    eds = list()
+    prds = list()
 
     for now_time in times:
 
@@ -165,11 +140,11 @@ def calc_periods(times, freq):
         Time_nearest = min(DateTime, key=lambda DateTime: abs(DateTime - now_time))
         period = np.argwhere(DateTime ==Time_nearest)[0][0] + 1
 
-        periods.append((starttime, endtime, period))
+        sds.append(starttime)
+        eds.append(endtime)
+        prds.append([period])
 
-    period_times = {i+1: datt(time.hour, time.minute) for i, time in enumerate(DateTime)}
-
-    return periods, period_times
+    return sds, eds, prds
 
 def combine_lst(lst_files):
     ds = None
@@ -208,35 +183,35 @@ def combine_lst(lst_files):
 
     return ds
 
-if __name__ == "__main__":
+# if __name__ == "__main__":
 
-    project_folder = r"/Users/hmcoerver/pywapor_notebooks"
-    latlim = [28.9, 29.7]
-    lonlim = [30.2, 31.2]
-    startdate = "2021-07-01"
-    enddate = "2021-07-11"
-    composite_length = "DEKAD"
-    level = "level_1"
-    extra_sources = None
-    extra_source_locations = None
+    # project_folder = r"/Users/hmcoerver/pywapor_notebooks"
+    # latlim = [28.9, 29.7]
+    # lonlim = [30.2, 31.2]
+    # startdate = "2021-07-01"
+    # enddate = "2021-07-11"
+    # composite_length = "DEKAD"
+    # level = "level_1"
+    # extra_sources = None
+    # extra_source_locations = None
 
-    diagnostics = { # label          # lat      # lon
-                    "water":	    (29.44977,	30.58215),
-                    "desert":	    (29.12343,	30.51222),
-                    "agriculture":	(29.32301,	30.77599),
-                    "urban":	    (29.30962,	30.84109),
-                    }
-    # diagnostics = None
+    # diagnostics = { # label          # lat      # lon
+    #                 "water":	    (29.44977,	30.58215),
+    #                 "desert":	    (29.12343,	30.51222),
+    #                 "agriculture":	(29.32301,	30.77599),
+    #                 "urban":	    (29.30962,	30.84109),
+    #                 }
+    # # diagnostics = None
 
-    level = {'METEO': ['MERRA2'],
-            'NDVI': ['MYD13'],
-            'ALBEDO': ['MCD43'],
-            'LST': ['MOD11', 'MYD11'],
-            'LULC': ['WAPOR'],
-            'DEM': ['SRTM'],
-            'PRECIPITATION': ['CHIRPS'],
-            'SOLAR_RADIATION': ['MERRA2'],
-            "name": "level_1"}
+    # level = {'METEO': ['MERRA2'],
+    #         'NDVI': ['MYD13'],
+    #         'ALBEDO': ['MCD43'],
+    #         'LST': ['MOD11', 'MYD11'],
+    #         'LULC': ['WAPOR'],
+    #         'DEM': ['SRTM'],
+    #         'PRECIPITATION': ['CHIRPS'],
+    #         'SOLAR_RADIATION': ['MERRA2'],
+    #         "name": "level_1"}
 
-    main(project_folder, startdate, enddate, latlim, lonlim, level = level,
-        extra_sources = extra_sources, extra_source_locations = extra_source_locations)
+    # main(project_folder, startdate, enddate, latlim, lonlim, level = level,
+    #     extra_sources = extra_sources, extra_source_locations = extra_source_locations)

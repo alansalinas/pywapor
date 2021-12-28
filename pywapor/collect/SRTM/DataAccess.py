@@ -177,7 +177,7 @@ def DownloadData(output_folder, latlim, lonlim):
 
 
     # name of the end result
-    output_DEM_name = "DEM_SRTM_m_3s.tif" 
+    output_DEM_name = "DEM_SRTM_m_-_2000.02.01.00.00.tif" 
     
     Save_name = os.path.join(output_folder, output_DEM_name)
 

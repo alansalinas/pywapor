@@ -3,6 +3,7 @@ import sys
 from pywapor.collect.MERRA2.DataAccess import DownloadData
 import pywapor
 from pywapor.general.logger import log
+import numpy as np
 
 def main(Dir, latlim, lonlim, Startdate, Enddate, Vars, Periods = list(range(1, 25)), Waitbar = False, verbose = True):
     """
@@ -22,14 +23,32 @@ def main(Dir, latlim, lonlim, Startdate, Enddate, Vars, Periods = list(range(1, 
 
     username, password = pywapor.collect.get_pw_un.get("NASA")
 
+    all_files = list()
+
+    if not isinstance(Startdate, list):
+        Startdate = [Startdate]
+    if not isinstance(Enddate, list):
+        Startdate = [Enddate]
+
+    if not isinstance(Periods[0], list):
+        Periods = [Periods for _ in Startdate]
+    
     if not verbose:
         log.info("--> Downloading MERRA2 (hourly).")
+    
     for Var in Vars:
 
-        for Period in Periods:
+        for sd, ed, periods in zip(Startdate, Enddate, Periods):
 
-            # Download data
-            DownloadData(Dir, Var, Startdate, Enddate, latlim, lonlim, "hourly_MERRA2", Period, username, password, Waitbar, data_type = ["mean"])
+            for period in periods:
+
+                # Download data
+                files = DownloadData(Dir, Var, sd, ed, latlim, lonlim, "hourly_MERRA2", period, username, password, Waitbar, data_type = ["mean"])
+                all_files = all_files + files
+
+    all_files = np.unique(all_files).tolist()
+
+    return all_files
 
 if __name__ == '__main__':
     main(sys.argv)

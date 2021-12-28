@@ -25,7 +25,7 @@ def main(Dir, latlim, lonlim, **kwargs):
         os.makedirs(output_folder)
 
     # Define the output map and create this if not exists
-    nameEnd = os.path.join(output_folder, 'DEM_SRTM_m_3s.tif')
+    nameEnd = os.path.join(output_folder, 'DEM_SRTM_m_-_2000.02.01.00.00.tif')
 
     if not os.path.exists(nameEnd):
 

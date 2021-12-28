@@ -40,6 +40,7 @@ def DownloadData(Dir, Var, Startdate, Enddate, latlim, lonlim, TimeStep, Period,
     VarInfo = VariablesInfo(TimeStep)
     Parameter = VarInfo.names[Var]
     unit  = VarInfo.units[Var]
+    p_ts = VariablesInfo.period_times
 
     # Create output folder
     output_folder = os.path.join(Dir, "MERRA2", Parameter, TimeStep) 
@@ -77,8 +78,13 @@ def DownloadData(Dir, Var, Startdate, Enddate, latlim, lonlim, TimeStep, Period,
         if TimeStep == "hourly_MERRA2":
             if Period < 1 or Period > 24:
                 raise ValueError(f"Invalid Period (={Period}).")
-            Hour = int((Period - 1) * 1)
-            output_name = os.path.join(output_folder, "%s_MERRA_%s_hourly_%d.%02d.%02d_H%02d.M00.tif"%(Var, unit, Date.year, Date.month, Date.day, Hour))
+
+            date = datetime.datetime.combine(Date, 
+                                    p_ts[Period])
+            
+            fn = f"{Var}_MERRA2_{unit}_inst_{date:%Y.%m.%d.%H.%M}.tif"
+            output_name = os.path.join(output_folder, fn)
+
             output_folder_temp = os.path.join(Dir, "MERRA2", "Temp")
             if not os.path.exists(output_folder_temp):
                 os.makedirs(output_folder_temp)
@@ -337,6 +343,31 @@ class VariablesInfo:
              'slp': 'state',
              'swgnet': 'state'
              }
+
+    period_times = {1: datetime.time(0, 30),
+                    2: datetime.time(1, 30),
+                    3: datetime.time(2, 30),
+                    4: datetime.time(3, 30),
+                    5: datetime.time(4, 30),
+                    6: datetime.time(5, 30),
+                    7: datetime.time(6, 30),
+                    8: datetime.time(7, 30),
+                    9: datetime.time(8, 30),
+                    10: datetime.time(9, 30),
+                    11: datetime.time(10, 30),
+                    12: datetime.time(11, 30),
+                    13: datetime.time(12, 30),
+                    14: datetime.time(13, 30),
+                    15: datetime.time(14, 30),
+                    16: datetime.time(15, 30),
+                    17: datetime.time(16, 30),
+                    18: datetime.time(17, 30),
+                    19: datetime.time(18, 30),
+                    20: datetime.time(19, 30),
+                    21: datetime.time(20, 30),
+                    22: datetime.time(21, 30),
+                    23: datetime.time(22, 30),
+                    24: datetime.time(23, 30)}
 
     def __init__(self, step):
             

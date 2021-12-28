@@ -13,8 +13,39 @@ import pywapor.enhancers.lulc as lulc
 from functools import partial
 from pywapor.enhancers.apply_enhancers import apply_enhancer
 
-def remove_var(ds, var, out_var = None):
+def remove_var(ds, var):
     return ds.drop_vars([var])
+
+def preprocess_func(ds):
+
+    date_string = ds.encoding["source"].split("_")[-1]
+    freq_string = ds.encoding["source"].split("_")[-2]
+    unit_string = ds.encoding["source"].split("_")[-3]
+    source_string = ds.encoding["source"].split("_")[-4]
+
+    if len(date_string.split(".")) > 4:
+        date = dat.strptime(date_string, '%Y.%m.%d.%H.%M.tif')
+    else:
+        date = dat.strptime(date_string, '%Y.%m.%d.tif')
+        t_offsets = {"daily": 12, "daily-min":12, "daily-max":12} # TODO get rid of daily-min/max
+        if freq_string in t_offsets.keys():
+            delta = t_offsets[freq_string]
+        else:
+            delta = float(freq_string.split("-")[0]) * 12
+        date = date + pd.Timedelta(hours = delta)
+
+    ds = ds.drop_vars("spatial_ref")
+    ds = ds.squeeze("band")
+    ds = ds.drop_vars("band")
+    ds = ds.expand_dims("time", axis = 0)
+    ds = ds.assign_coords({"time": [date]})
+    ds = ds.rename_vars({"x": f"lon", "y": f"lat"})
+    ds = ds.swap_dims({"x": f"lon", "y": f"lat"})
+
+    ds.band_data.attrs = {"unit": unit_string,
+                            "source": source_string}
+
+    return ds
 
 def main(cmeta, dbs, epochs_info, temp_folder = None, example_ds = None,
         lean_output = True, diagnostics = None):
@@ -106,37 +137,6 @@ def main(cmeta, dbs, epochs_info, temp_folder = None, example_ds = None,
                                         cast = {"sources": np.uint8})
         ds = ds.rename({"band": "epoch"}).assign_coords({"epoch": [-9999]})
         ds = ds.rename({"band_data": f"{cmeta['var_name']}_composite"})
-        return ds
-
-    def preprocess_func(ds):
-
-        date_string = ds.encoding["source"].split("_")[-1]
-        freq_string = ds.encoding["source"].split("_")[-2]
-        unit_string = ds.encoding["source"].split("_")[-3]
-        source_string = ds.encoding["source"].split("_")[-4]
-
-        if len(date_string.split(".")) > 4:
-            date = dat.strptime(date_string, '%Y.%m.%d.%H.%M.tif')
-        else:
-            date = dat.strptime(date_string, '%Y.%m.%d.tif')
-            t_offsets = {"daily": 12, "daily-min":12, "daily-max":12} # TODO get rid of daily-min/max
-            if freq_string in t_offsets.keys():
-                delta = t_offsets[freq_string]
-            else:
-                delta = float(freq_string.split("-")[0]) * 12
-            date = date + pd.Timedelta(hours = delta)
-
-        ds = ds.drop_vars("spatial_ref")
-        ds = ds.squeeze("band")
-        ds = ds.drop_vars("band")
-        ds = ds.expand_dims("time", axis = 0)
-        ds = ds.assign_coords({"time": [date]})
-        ds = ds.rename_vars({"x": f"lon", "y": f"lat"})
-        ds = ds.swap_dims({"x": f"lon", "y": f"lat"})
-
-        ds.band_data.attrs = {"unit": unit_string,
-                              "source": source_string}
-
         return ds
 
     ds = None

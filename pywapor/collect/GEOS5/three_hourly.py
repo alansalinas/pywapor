@@ -5,6 +5,7 @@ import pandas as pd
 import tqdm
 from pywapor.general.logger import log
 import datetime
+import numpy as np
 
 def main(Dir, latlim, lonlim, Startdate, Enddate, Vars, Periods = [1,2,3,4,5,6,7,8], Waitbar = True):
     """
@@ -22,33 +23,41 @@ def main(Dir, latlim, lonlim, Startdate, Enddate, Vars, Periods = [1,2,3,4,5,6,7
     Waitbar -- 1 (Default) Will print a waitbar
     """
     no_vars = len(Vars)
-    no_periods = len(Periods)
-    no_dates = len(pd.date_range(Startdate, Enddate, freq="D"))
 
     if isinstance(Waitbar, tqdm.tqdm):
         waitbar = Waitbar
     elif Waitbar:
         log.info("--> Downloading GEOS5 (hourly).")
-        waitbar = tqdm.tqdm(total = no_vars * no_dates * no_periods)
+        waitbar = tqdm.tqdm(total = no_vars * sum([len(x) for x in Periods]))
     else:
         log.info("--> Downloading GEOS5 (hourly).")
         waitbar = False
+
+    all_files = list()
 
     for Var in Vars:
 
         if Waitbar:
             waitbar.set_description_str(Var)
 
-        for Period in Periods:
-		
-            # if Waitbar == 1:
-            #     print('\nDownloading 3-hourly GEOS %s data for the period %s till %s, Period = %s' %(Var, Startdate, Enddate, Period))
+        for sd, ed, periods in zip(Startdate, Enddate, Periods):
 
-            # Download data
-            DownloadData(Dir, Var, Startdate, Enddate, latlim, lonlim, "three_hourly", Period, waitbar)
+            for Period in periods:
+            
+                # if Waitbar == 1:
+                #     print('\nDownloading 3-hourly GEOS %s data for the period %s till %s, Period = %s' %(Var, Startdate, Enddate, Period))
+
+                # Download data
+                files = DownloadData(Dir, Var, sd, ed, latlim, lonlim, "three_hourly", Period, waitbar)
+                all_files = all_files + files
+
 
     if Waitbar:
         waitbar.close()
+
+    all_files = np.unique(all_files).tolist()
+
+    return all_files
 
 # if __name__ == '__main__':
 #     main(sys.argv)
