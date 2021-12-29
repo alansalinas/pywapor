@@ -146,7 +146,7 @@ def RetrieveData(Date, args, waitbar):
 
 def Collect_data(TilesHorizontal,TilesVertical,Date, username, password, output_folder, hdf_library, waitbar):
     '''
-    This function downloads all the needed MODIS tiles from https://e4ftl01.cr.usgs.gov/MOTA/MCD43A3.006/ as a hdf file.
+    This function downloads all the needed MODIS tiles from https://e4ftl01.cr.usgs.gov/MOTA/MCD43A3.061/ as a hdf file.
 
     Keywords arguments:
     TilesHorizontal -- [TileMin,TileMax] max and min horizontal tile number
@@ -170,7 +170,7 @@ def Collect_data(TilesHorizontal,TilesVertical,Date, username, password, output_
             countX=Horizontal - TilesHorizontal[0] + 1
 
             # Download the MODIS NDVI data
-            url = 'https://e4ftl01.cr.usgs.gov/MOTA/MCD43A3.006/' + Date.strftime('%Y') + '.' + Date.strftime('%m') + '.' + Date.strftime('%d') + '/'
+            url = 'https://e4ftl01.cr.usgs.gov/MOTA/MCD43A3.061/' + Date.strftime('%Y') + '.' + Date.strftime('%m') + '.' + Date.strftime('%d') + '/'
 
 		      # Reset the begin parameters for downloading
             downloaded = 0
