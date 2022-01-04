@@ -62,7 +62,7 @@ def celsius_to_kelvin(ds, var, out_var = None):
 
     return ds
 
-def lapse_rate(ds, var, out_var = None, lapse_var = "z_composite", 
+def lapse_rate(ds, var, out_var = None, lapse_var = "z", 
                 radius = 0.25, lapse_rate = -0.006):
     """Apply a lapse-rate to `var` inside `ds` based on the difference between
     the actual value of `lapse_var` and its local (defined by `radius`) mean.
@@ -93,24 +93,24 @@ def lapse_rate(ds, var, out_var = None, lapse_var = "z_composite",
     
     if "t_diff" not in list(ds.keys()):
 
-        log.info(f"--> Calculating local means of `{lapse_var}`.")
+        log.info(f"--> Calculating local means (r = {radius:.2f}°) of `{lapse_var}`.")
         
         pixel_size = (np.median(np.diff(ds.lon)), 
                         np.median(np.diff(ds.lat)))
-        dem = ds[lapse_var].sel(epoch = -9999).values
+        dem = ds[lapse_var].values
         
         dem_coarse = local_mean(dem, pixel_size, radius)
         t_diff = (dem - dem_coarse) * lapse_rate
-        ds["t_diff"] = xr.DataArray(t_diff[np.newaxis,...], 
-                                    coords = {"epoch": [-9999],
+        ds["t_diff"] = xr.DataArray(t_diff, 
+                                    coords = {
                                                 "lat": ds.lat, 
                                                 "lon": ds.lon})
-    
+
     new_data = ds[var] + ds["t_diff"]
 
     if not isinstance(out_var, type(None)):
         ds[out_var] = new_data
-    else: 
+    else:
         ds[var] = new_data
 
     return ds

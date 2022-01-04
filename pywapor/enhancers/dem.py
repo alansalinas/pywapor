@@ -9,14 +9,14 @@ def to_slope(ds, var, out_var = None):
     # pixel_spacing = (np.nanmean(dlon) + np.nanmean(dlat)) / 2
     # rad2deg = 180.0 / np.pi  # Factor to transform from rad to degree
 
-    dem = ds[var].sel(epoch = -9999).values
+    dem = ds[var].values
 
     x, y = np.gradient(dem, np.nanmean(dlon), np.nanmean(dlat))
     hypotenuse_array = np.hypot(x,y)
     slope = np.arctan(hypotenuse_array) * 180.0 / np.pi
 
-    new_data = xr.DataArray(slope[np.newaxis,...], 
-                                    coords = {"epoch": [-9999],
+    new_data = xr.DataArray(slope, 
+                                    coords = {
                                                 "lat": ds.lat, 
                                                 "lon": ds.lon})
     
@@ -34,15 +34,15 @@ def to_aspect(ds, var, out_var = None):
     # pixel_spacing = (np.nanmean(dlon) + np.nanmean(dlat)) / 2
     # rad2deg = 180.0 / np.pi  # Factor to transform from rad to degree
 
-    dem = ds[var].sel(epoch = -9999).values
+    dem = ds[var].values
 
     x, y = np.gradient(dem, np.nanmean(dlon), np.nanmean(dlat))
 
     aspect = np.arctan2(y/np.nanmean(dlat), 
                         -x/np.nanmean(dlon)) * 180.0 / np.pi + 180.0
     
-    new_data = xr.DataArray(aspect[np.newaxis,...], 
-                                    coords = {"epoch": [-9999],
+    new_data = xr.DataArray(aspect, 
+                                    coords = {
                                                 "lat": ds.lat, 
                                                 "lon": ds.lon})
     
@@ -57,8 +57,8 @@ def to_lat(ds, var, out_var = None):
 
     lat_deg = np.rot90(np.tile(ds.lat, ds.lon.size).reshape((ds.lon.size,ds.lat.size)), 3)
 
-    new_data = xr.DataArray(lat_deg[np.newaxis,...], 
-                                    coords = {"epoch": [-9999],
+    new_data = xr.DataArray(lat_deg, 
+                                    coords = {
                                                 "lat": ds.lat, 
                                                 "lon": ds.lon})
     
@@ -73,8 +73,8 @@ def to_lon(ds, var, out_var = None):
 
     lon_deg = np.tile(ds.lon, ds.lat.size).reshape((ds.lat.size,ds.lon.size))
 
-    new_data = xr.DataArray(lon_deg[np.newaxis,...], 
-                                    coords = {"epoch": [-9999],
+    new_data = xr.DataArray(lon_deg, 
+                                    coords = {
                                                 "lat": ds.lat, 
                                                 "lon": ds.lon})
     

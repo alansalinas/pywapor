@@ -32,7 +32,7 @@ def reproject_clip(source_fp, dest_fp = None, bb = None,
     if not isinstance(bb, type(None)):
         options_dict["outputBounds"] = (bb[1][0], bb[0][0], 
                                         bb[1][1], bb[0][1])
-    
+
     if compress:
         options_dict["creationOptions"] = ["COMPRESS=DEFLATE", "ZLEVEL=8"]
 

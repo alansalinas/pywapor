@@ -2,64 +2,6 @@ import requests
 import pywapor
 import os
 import time
-import numpy as np
-from datetime import datetime as dat
-import datetime
-
-def check_source_selection(source_selection, startdate, enddate, 
-                            extra_sources = None):
-
-    if isinstance(startdate, str):
-        startdate = dat.strptime(startdate, "%Y-%m-%d").date()
-    if isinstance(enddate, str):
-        enddate = dat.strptime(enddate, "%Y-%m-%d").date()
-
-    valid_sources, valid_dates = pywapor.general.variables.get_source_validations()
-
-    if not isinstance(extra_sources, type(None)):
-        for key, sources in extra_sources.items():
-            valid_sources[key] += sources
-            for key in sources:
-                valid_dates[key] = (datetime.date(1900, 1, 1), datetime.date.today())
-
-    temporal_sources = ["METEO", "NDVI", "ALBEDO", "LST", 
-                    "PRECIPITATION", "SOLAR_RADIATION"]
-
-    check_keys = np.all([key in valid_sources.keys() for key in source_selection.keys()])
-    assert check_keys, "invalid key in source_selection"
-
-    assert len(source_selection["DEM"]) == 1, "only one DEM source can be selected."
-    assert len(source_selection["METEO"]) == 1, "only one METEO source can be selected."
-    assert len(source_selection["PRECIPITATION"]) == 1, "only one PRECIPITATION source can be selected."
-    assert len(source_selection["LULC"]) == 1, "only one LULC source can be selected."
-    assert len(source_selection["SOLAR_RADIATION"]) == 1, "only one TRANS source can be selected."
-    assert len(source_selection["NDVI"]) >= 1, "At least one NDVI source needs to be selected."
-    assert len(source_selection["ALBEDO"]) >= 1, "At least one ALBEDO source needs to be selected."
-    assert len(source_selection["LST"]) >= 1, "At least one LST source needs to be selected."
-
-    results = dict()
-    all_results = list()
-
-    for var, sources in source_selection.items():
-
-        check1 = [source in valid_sources[var] for source in sources]
-        if var in temporal_sources:
-            check2 = [startdate >= valid_dates[source][0] for source in sources]
-            check3 = [enddate <= valid_dates[source][1] for source in sources]
-        else:
-            check2 = [True]
-            check3 = [True]
-
-        results[var] = {source: {"valid_source:": check1[i],
-                                 "valid_startdate:": check2[i],
-                                 "valid_enddate:": check3[i],
-                                } for i, source in enumerate(sources)}
-
-        all_results.append(np.all([check1, check2, check3]))
-    
-    succes = np.all(all_results)
-
-    return results, succes
 
 def nasa_account(user_pw = None):
 

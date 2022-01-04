@@ -1,5 +1,5 @@
 import numpy as np
-import gdal
+from osgeo import gdal
 import pywapor.general.processing_functions as PF
 import warnings
 import os

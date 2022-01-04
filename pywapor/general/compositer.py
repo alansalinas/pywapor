@@ -135,8 +135,10 @@ def main(cmeta, dbs, epochs_info, temp_folder = None, example_ds = None,
         ds = ds.interp_like(example_ds, method = "linear", kwargs={"fill_value": "extrapolate"},)
         ds, fh_intermediate = calculate_ds(ds, None, labels[0], 
                                         cast = {"sources": np.uint8})
-        ds = ds.rename({"band": "epoch"}).assign_coords({"epoch": [-9999]})
-        ds = ds.rename({"band_data": f"{cmeta['var_name']}_composite"})
+        # ds = ds.rename({"band": "epoch"}).assign_coords({"epoch": [-9999]})
+        ds = ds.isel(band = 0)
+        ds = ds.drop_vars(["band"])
+        ds = ds.rename({"band_data": f"{cmeta['var_name']}"})
         return ds
 
     ds = None
@@ -191,6 +193,10 @@ def main(cmeta, dbs, epochs_info, temp_folder = None, example_ds = None,
 
     all_variables = list(ds.keys())
     all_variables.remove('sources')
+
+    for var in all_variables:
+        ds[var].attrs = {"sources": dbs_names,
+                         "unit": get_units(dss)[var][0]}
 
     if not isinstance(temp_folder, type(None)):
         fh = os.path.join(temp_folder, f"{cmeta['var_name']}_ts.nc")
@@ -292,7 +298,11 @@ def calc_interpolation_times(epochs_info, freq = "2D", periods = None):
         if isinstance(periods, type(None)):
             part_freq = freq
         else:
-            part_freq = f"{int((epoch_end - epoch_start)/periods)}N"
+            delta = epoch_end - epoch_start
+            if isinstance(delta, np.timedelta64):
+                part_freq = f"{int(delta/periods)}N"
+            else:
+                part_freq = f"{int(delta.value/periods)}N"
         new_part_t = pd.date_range(epoch_start, epoch_end, freq = part_freq)
         new_t = np.append(new_t, new_part_t)
     new_t = np.sort(np.unique(new_t))
@@ -367,11 +377,11 @@ if __name__ == "__main__":
 
     epochs_info = pywapor.pre_et_look.create_dates(startdate, enddate, "DEKAD")
 
-    var = "LULC"
+    var = "ndvi"
 
     cmeta = defaults.composite_defaults()[var]
 
-    sources = ["WAPOR"]
+    sources = ["MOD13", "MYD13"]
 
     dl_args = {
                 "Dir": os.path.join(project_folder, "RAW"), 

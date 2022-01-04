@@ -41,7 +41,7 @@ def main(level_folder, dss, example_info, et_look_version = "v2"):
 
     ds_se_root = ds_se_root.rename({"lat": "lat_deg", "lon": "lon_deg"})
 
-    se_root_folder = os.path.join(level_folder, "SMC")
+    se_root_folder = os.path.join(level_folder, "smc")
     if not os.path.exists(se_root_folder):
         os.mkdir(se_root_folder)
 

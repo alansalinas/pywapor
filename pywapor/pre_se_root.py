@@ -27,9 +27,6 @@ def main(project_folder, startdate, enddate, latlim, lonlim, level = "level_1",
     # Disable Warnings
     warnings.filterwarnings('ignore')
 
-    sdate = dat.strptime(startdate, "%Y-%m-%d").date()
-    edate = dat.strptime(enddate, "%Y-%m-%d").date()
-
     #### Check if selected sources and dates are valid
     levels = g.variables.get_source_level_selections()
 
@@ -41,8 +38,6 @@ def main(project_folder, startdate, enddate, latlim, lonlim, level = "level_1",
         level = level_name
 
     source_selection = levels[level]
-    # succes = g.tests.check_source_selection(source_selection, sdate, edate, extra_sources)[1]
-    # assert succes, "invalid source_selection"
 
     raw_folder = os.path.join(project_folder, "RAW")
     temp_folder = os.path.join(project_folder, "temporary")
@@ -56,8 +51,8 @@ def main(project_folder, startdate, enddate, latlim, lonlim, level = "level_1",
                 }
 
     #### NDVI ####
-    log.info(f"# NDVI")
-    raw_ndvi_files = collect_sources("NDVI", source_selection["NDVI"], dl_args, extra_source_locations)
+    log.info(f"# ndvi")
+    raw_ndvi_files = collect_sources("ndvi", source_selection["ndvi"], dl_args, extra_source_locations)
 
     cmeta = {
         "composite_type": False,
@@ -70,8 +65,8 @@ def main(project_folder, startdate, enddate, latlim, lonlim, level = "level_1",
     ds_ndvi = g.compositer.main(cmeta, raw_ndvi_files, None, temp_folder, None, lean_output = False)
 
     #### LST ####
-    log.info("# LST")
-    raw_lst_files = collect_sources("LST", source_selection["LST"], dl_args, extra_source_locations)
+    log.info("# lst")
+    raw_lst_files = collect_sources("lst", source_selection["lst"], dl_args, extra_source_locations)
 
     ds_lst = combine_lst(raw_lst_files)
 
@@ -81,15 +76,6 @@ def main(project_folder, startdate, enddate, latlim, lonlim, level = "level_1",
     all_vars = ["t_air_i", "u2m_i", "v2m_i", "qv_i", 
                 "wv_i", "p_air_i", "p_air_0_i"]
 
-    meteo_source = source_selection["METEO"][0]
-    meteo_freq = {"GEOS5": "3H", "MERRA2": "H"}[meteo_source]
-
-    sds, eds, prds = calc_periods(ds_lst.time.values, meteo_freq)
-
-    dl_args["Startdate"] = sds
-    dl_args["Enddate"] = eds
-    dl_args["Periods"] = prds
-
     dss = list()
 
     meteo_enhancements = {
@@ -98,6 +84,16 @@ def main(project_folder, startdate, enddate, latlim, lonlim, level = "level_1",
     }
 
     for var in all_vars:
+
+        meteo_source = source_selection[var][0]
+        meteo_freq = {"GEOS5": "3H", "MERRA2": "H"}[meteo_source]
+
+        sds, eds, prds = calc_periods(ds_lst.time.values, meteo_freq)
+
+        dl_args["Startdate"] = sds
+        dl_args["Enddate"] = eds
+        dl_args["Periods"] = prds
+
         db = collect_sources(var, [meteo_source], dl_args, 
                                 extra_source_locations = extra_source_locations)[0]
 
@@ -114,7 +110,7 @@ def main(project_folder, startdate, enddate, latlim, lonlim, level = "level_1",
 
         dss.append(ds)
 
-    ds_meteo = xr.merge(dss)
+    ds_meteo = xr.merge(dss, combine_attrs = "drop")
 
     log.sub().info("< METEO")
 
