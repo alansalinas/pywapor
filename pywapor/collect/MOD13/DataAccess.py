@@ -257,12 +257,7 @@ def Collect_data(TilesHorizontal, TilesVertical, Date, username, password, outpu
 
             if not downloaded == 1:
 
-                # Get files on FTP server
-                if sys.version_info[0] == 3:
-                    f = urllib.request.urlopen(url)
-
-                if sys.version_info[0] == 2:
-                    f = urllib2.urlopen(url)
+                f = urllib.request.urlopen(url)
 
                 # Sum all the files on the server
                 soup = BeautifulSoup(f, "lxml")
@@ -274,11 +269,7 @@ def Collect_data(TilesHorizontal, TilesVertical, Date, username, password, outpu
                     if int(Vfile) is int(Vertical) and int(Hfile) is int(Horizontal):
 
                         # Define the whole url name
-                        if sys.version_info[0] == 3:
-                            full_url = urllib.parse.urljoin(url, i['href'])
-
-                        if sys.version_info[0] == 2:
-                            full_url = urlparse.urljoin(url, i['href'])
+                        full_url = urllib.parse.urljoin(url, i['href'])
 
                         # if not downloaded try to download file
                         while downloaded == 0:

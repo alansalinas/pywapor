@@ -1,5 +1,4 @@
 # -*- coding: utf-8 -*-
-import sys
 from pywapor.collect.GEOS5.DataAccess import DownloadData
 import tqdm
 import pandas as pd
@@ -22,15 +21,25 @@ def main(Dir, latlim, lonlim, Startdate, Enddate, Vars, Waitbar = True):
     no_dates = len(pd.date_range(Startdate, Enddate, freq="D"))
     no_vars = len(Vars)
 
+    if len(Vars) == 1:
+        log.info(f"--> Downloading GEOS5 (daily), {Vars[0]}.")
+    else:
+        log.info(f"--> Downloading GEOS5 (daily), {Vars}.")
+
     if Waitbar:
-        waitbar = tqdm.tqdm(total = no_vars * no_dates, position = 0, unit = "tiles")
+        # waitbar = tqdm.tqdm(total = no_vars * no_dates, position = 0, unit = "tiles")
+
+        waitbar = tqdm.tqdm(desc= f"Tile: 0 / {no_vars * no_dates}",
+                            position = 0,
+                            # total=total_size,
+                            unit='Bytes',
+                            unit_scale=True,)
+
     else:
         waitbar = False
 
     all_files = list()
     for Var in Vars:
-
-        log.info(f"--> Downloading GEOS5 (daily) {Var}.")
 
         if Var == "t2m":
             filter = "t2m_"
@@ -43,8 +52,8 @@ def main(Dir, latlim, lonlim, Startdate, Enddate, Vars, Waitbar = True):
         else:
             filter = None
 
-        if Waitbar:
-            waitbar.set_description_str("{:<11}".format(Var))
+        # if Waitbar:
+        #     waitbar.set_description_str("{:<11}".format(Var))
 
         # Download data
         new_files = DownloadData(Dir, Var, Startdate, Enddate, latlim, lonlim, "daily", Period = '', Waitbar = waitbar)
@@ -60,4 +69,13 @@ def main(Dir, latlim, lonlim, Startdate, Enddate, Vars, Waitbar = True):
     return all_files
 
 if __name__ == '__main__':
-    main(sys.argv)
+    
+    Dir = r"/Users/hmcoerver/pywapor_notebooks/RAW"
+    latlim = [-40.0, 20.0]
+    lonlim = [80.0, 100.0]
+    Startdate = "2021-07-01"
+    Enddate = "2021-07-03"
+
+    Vars = ['u2m']
+
+    main(Dir, latlim, lonlim, Startdate, Enddate, Vars, Waitbar = True)

@@ -24,28 +24,34 @@ def main(Dir, latlim, lonlim, Startdate, Enddate, Vars, Periods = [1,2,3,4,5,6,7
     """
     no_vars = len(Vars)
 
-    if isinstance(Waitbar, tqdm.tqdm):
-        waitbar = Waitbar
-    elif Waitbar:
-        log.info("--> Downloading GEOS5 (hourly).")
-        waitbar = tqdm.tqdm(total = no_vars * sum([len(x) for x in Periods]))
+    total = 0
+    for sd, ed, periods in zip(Startdate, Enddate, Periods):
+        no = len(pd.date_range(sd, ed, freq = "D")) * len(periods)
+        total += no
+
+    super_total = total * no_vars
+
+    if len(Vars) == 1:
+        log.info(f"--> Downloading GEOS5 (3-hourly), {Vars[0]}.")
     else:
-        log.info("--> Downloading GEOS5 (hourly).")
-        waitbar = False
+        log.info(f"--> Downloading GEOS5 (3-hourly), {Vars}.")
+
+    if Waitbar:
+        # waitbar = tqdm.tqdm(total = no_vars * no_dates, position = 0, unit = "tiles")
+
+        waitbar = tqdm.tqdm(desc= f"Tile: 0 / {super_total}",
+                            position = 0,
+                            # total=total_size,
+                            unit='Bytes',
+                            unit_scale=True,)
 
     all_files = list()
 
     for Var in Vars:
 
-        if Waitbar:
-            waitbar.set_description_str(Var)
-
         for sd, ed, periods in zip(Startdate, Enddate, Periods):
 
             for Period in periods:
-            
-                # if Waitbar == 1:
-                #     print('\nDownloading 3-hourly GEOS %s data for the period %s till %s, Period = %s' %(Var, Startdate, Enddate, Period))
 
                 # Download data
                 files = DownloadData(Dir, Var, sd, ed, latlim, lonlim, "three_hourly", Period, waitbar)
@@ -59,5 +65,16 @@ def main(Dir, latlim, lonlim, Startdate, Enddate, Vars, Periods = [1,2,3,4,5,6,7
 
     return all_files
 
-# if __name__ == '__main__':
-#     main(sys.argv)
+if __name__ == '__main__':
+    
+    Dir = r"/Users/hmcoerver/pywapor_notebooks/RAW"
+    latlim = [-40.0, 20.0]
+    lonlim = [80.0, 100.0]
+    Startdate = ["2021-07-01"]
+    Enddate = ["2021-07-03"]
+    Periods = [[1,2,3]]
+
+    Vars = ['u2m']
+
+    main(Dir, latlim, lonlim, Startdate, Enddate, Vars, Periods, Waitbar = True)
+

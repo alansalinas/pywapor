@@ -1,4 +1,3 @@
-
 import os
 import numpy as np
 import pandas as pd
@@ -7,10 +6,6 @@ import datetime
 
 def DownloadData(Dir, Var, Startdate, Enddate, latlim, lonlim, TimeStep, Period, Waitbar):
 
-    # if TimeStep == "daily" and Var == "t2m":
-    #     all_files = {Var: list(), "t2m-min": list(), "t2m-max": list()}
-    # else:
-    #     all_files = {Var: list()}
     all_files = list()
 
     # Add extra buffer to ensure good spatial interpolation
@@ -24,12 +19,12 @@ def DownloadData(Dir, Var, Startdate, Enddate, latlim, lonlim, TimeStep, Period,
     # Check the latitude and longitude and otherwise set lat or lon on greatest extent
     if latlim[0] < -90 or latlim[1] > 90:
         print('Latitude above 90N or below 90S is not possible. Value set to maximum')
-        latlim[0] = np.max(latlim[0], -90)
-        latlim[1] = np.min(latlim[1], 90)
-    if lonlim[0] < -180 or lonlim[1] > 180:
+        latlim[0] = np.max([latlim[0], -90])
+        latlim[1] = np.min([latlim[1], 90])
+    if lonlim[0] < -180 or lonlim[1] > 179.68750000000:
         print('Longitude must be between 180E and 180W. Now value is set to maximum')
-        lonlim[0] = np.max(lonlim[0], -180)
-        lonlim[1] = np.min(lonlim[1], 180)
+        lonlim[0] = np.max([lonlim[0], -180.])
+        lonlim[1] = np.min([lonlim[1], 179.68750000000])
 
     # Get information of the parameter
     VarInfo = VariablesInfo(TimeStep)
@@ -56,13 +51,6 @@ def DownloadData(Dir, Var, Startdate, Enddate, latlim, lonlim, TimeStep, Period,
 
     Dates = pd.date_range(Startdate, Enddate, freq = "D")
 
-    # Create Waitbar
-    # if Waitbar == 1:
-    #     import pywapor.general.waitbar_console as WaitbarConsole
-    #     total_amount = len(Dates)
-    #     amount = 0
-    #     WaitbarConsole.printWaitBar(amount, total_amount, prefix = 'Progress:', suffix = 'Complete', length = 50)
-
     for Date in Dates:
 
         # Define the IDz
@@ -74,11 +62,16 @@ def DownloadData(Dir, Var, Startdate, Enddate, latlim, lonlim, TimeStep, Period,
             fn = f"{Var}_GEOS5_{unit}_inst_{date:%Y.%m.%d.%H.%M}.tif"
             output_name = os.path.join(output_folder, fn)
 
+            values = (IDx[1] - IDx[0]) * (IDy[1] - IDy[0])
+
         if TimeStep == "daily":
             IDz_start = int(((Date - pd.Timestamp("2017-12-01")).days) * 8)
             IDz_end = IDz_start + 7
             output_name = os.path.join(output_folder, "%s_GEOS5_%s_daily_%d.%02d.%02d.tif"%(Var, unit, Date.year, Date.month, Date.day))
-
+            
+            values = (IDx[1] - IDx[0]) * (IDy[1] - IDy[0]) * (IDz_end - IDz_start)
+        
+        tot_size = values * 13.5
 
         if not os.path.exists(output_name):
 
@@ -90,6 +83,17 @@ def DownloadData(Dir, Var, Startdate, Enddate, latlim, lonlim, TimeStep, Period,
             downloaded = 0
             N = 0
 
+            waitbar_i = int(Waitbar.desc.split(" ")[1])
+            waitbar_desc = str(Waitbar.desc)
+            Waitbar.set_description_str(waitbar_desc.replace(f": {waitbar_i} /", f": {waitbar_i+1} /")) 
+
+            def progress(block_num, block_size, _, waitbar = Waitbar):
+                
+                if block_num == 0:
+                    waitbar.reset(total = tot_size)
+
+                waitbar.update(block_size)
+
             # if not downloaded try to download file
             while downloaded == 0:
                 # try:
@@ -98,7 +102,7 @@ def DownloadData(Dir, Var, Startdate, Enddate, latlim, lonlim, TimeStep, Period,
                 pathtext = os.path.join(output_folder,'temp%s.txt' %str(IDz_start))
 
                 # Download the data
-                urllib.request.urlretrieve(url_GEOS, filename=pathtext)
+                _ = urllib.request.urlretrieve(url_GEOS, filename=pathtext, reporthook = progress)
 
                 # Reshape data
                 datashape = [int(IDy[1] - IDy[0] + 1), int(IDx[1] - IDx[0] + 1)]
@@ -162,17 +166,12 @@ def DownloadData(Dir, Var, Startdate, Enddate, latlim, lonlim, TimeStep, Period,
                     PF.Save_as_tiff(output_name, data_end_min, geo_out, proj)
                     all_files.append(output_name)
 
-                # If download was not succesfull
-                # except:
-
-                #     # Try another time
-                #     N = N + 1
-
-                #     # Stop trying after 10 times
-                #     if N == 10:
-                #         print('Data from ' + Date.strftime('%Y-%m-%d') + ' is not available')
-                #         downloaded = 1
         else:
+
+            waitbar_i = int(Waitbar.desc.split(" ")[1])
+            waitbar_desc = str(Waitbar.desc)
+            Waitbar.set_description_str(waitbar_desc.replace(f": {waitbar_i} /", f": {waitbar_i+1} /")) 
+
             if os.path.isfile(output_name):
                 all_files.append(output_name)
             if TimeStep == "daily" and Var == "t2m":
@@ -183,10 +182,10 @@ def DownloadData(Dir, Var, Startdate, Enddate, latlim, lonlim, TimeStep, Period,
                 if os.path.isfile(output_name):
                     all_files.append(output_name)
 
-        if Waitbar:
-            Waitbar.update(1)
-            # amount += 1
-            # WaitbarConsole.printWaitBar(amount, total_amount, prefix = 'Progress:', suffix = 'Complete', length = 50)
+        if not isinstance(Waitbar, type(None)):
+            if not isinstance(Waitbar.total, type(None)):
+                Waitbar.update(n= Waitbar.total - Waitbar.n)
+                Waitbar.refresh()
 
     return all_files
 
