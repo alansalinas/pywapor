@@ -3,6 +3,7 @@ import tqdm
 import os
 import urllib
 from pywapor.general.logger import log
+from pywapor.general.pre_defaults import composite_defaults
 
 def get_cog(url, out_file, bb, srs = "EPSG:4326"):
 
@@ -62,14 +63,25 @@ def collect(Dir, latlim, lonlim, vars = ['land_mask', 'lw_offset',
 
     log("--> Downloading STATICS.")
 
+    cmetas = composite_defaults()
+
     for var in vars:
 
-        out_file = os.path.join(Dir, "STATICS", f"{var}.tif")
+        var_name = var.replace("_", "-")
+
+        if var in cmetas.keys():
+            unit = cmetas[var]["var_unit"]
+            fn = f"{var_name}_STATICS_{unit}_-_-.tif"
+        else:
+            fn = f"{var_name}_STATICS_unknown_-_-.tif"
+
+        out_file = os.path.join(Dir, "STATICS", fn)
         url = os.path.join(base_url, f"L1_{var}.cog.tif")
 
-        out = get_cog(url, out_file, bb)
+        if not os.path.isfile(out_file):
+            out_file = get_cog(url, out_file, bb)
 
-        files.append(out)
+        files.append(out_file)
 
     return files
 

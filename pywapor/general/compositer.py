@@ -139,6 +139,11 @@ def main(cmeta, dbs, epochs_info, temp_folder = None, example_ds = None,
         ds = ds.isel(band = 0)
         ds = ds.drop_vars(["band"])
         ds = ds.rename({"band_data": f"{cmeta['var_name']}"})
+
+        unit_string = dbs[0][0].split("_")[-3]
+        source_string = dbs[0][0].split("_")[-4]
+        ds[cmeta['var_name']].attrs = {"unit": unit_string,
+                        "sources": [source_string]}
         return ds
 
     ds = None

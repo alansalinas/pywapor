@@ -76,10 +76,10 @@ def main(project_folder, startdate, enddate, latlim, lonlim, level = "level_1",
     all_vars = [
                 "ndvi",
                 "se_root",
-                "r0", "p_24", 
-                "z", 
-                "lulc", 
-                "ra_24", 
+                "r0", "p_24",
+                "z",
+                "lulc",
+                "ra_24",
                 't_air_24', 't_air_min_24', 't_air_max_24', 
                 'u2m_24', 'v2m_24', 'p_air_0_24', 'qv_24',
                 'lw_offset', 'lw_slope', 'r0_bare', 'r0_full', 'rn_offset', 
@@ -213,7 +213,7 @@ def select_template(fhs):
 
     # Determine amount of pixels in each file.
     sizes = [gdal.Open(fh).RasterXSize * gdal.Open(fh).RasterYSize for fh in fhs]
-    
+
     # Find index of file with most pixels.
     idx = np.argmax(sizes)
 
