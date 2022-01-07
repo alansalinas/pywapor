@@ -3,6 +3,7 @@ import os
 import numpy as np
 import pandas as pd
 import pywapor
+import pywapor.general as g
 import pywapor.general.processing_functions as PF
 import pywapor.et_look_dev as ETLook_dev
 import pywapor.et_look_v2 as ETLook_v2
@@ -130,6 +131,8 @@ def main(input_data, se_root_version = "v2", export_vars = "default", export_to_
     else:
         raise ValueError
 
+    ds = g.variables.fill_attrs(ds)
+
     fp, fn = os.path.split(input_data)
     fn = fn.replace("_input", "_output")
     ds, fh = calculate_ds(ds, os.path.join(fp, fn), "--> Saving outputs.")
@@ -223,9 +226,7 @@ if __name__ == "__main__":
 
     se_root_version = "v2"
 
-    raw_files = main(ds, se_root_version = se_root_version, export_to_tif = True)
-
-#%%
+    raw_files = main(ds, se_root_version = se_root_version, export_vars = "all", export_to_tif = False)
 
 
     

@@ -132,6 +132,8 @@ def main(project_folder, startdate, enddate, latlim, lonlim, level = "level_1",
 
     ds_se_root = xr.merge([ds_lst2, ds_meteo3, ds_ndvi3])
 
+    ds_se_root = g.variables.fill_attrs(ds_se_root)
+
     ds_se_root.attrs["geotransform"] = example_geoinfo[0]
     ds_se_root.attrs["projection"] = example_geoinfo[1]
     ds_se_root.attrs["pixel_size"] = resolution

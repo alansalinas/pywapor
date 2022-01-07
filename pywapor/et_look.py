@@ -5,6 +5,7 @@ import numpy as np
 import warnings
 import pywapor.et_look_dev as ETLook_dev
 import pywapor.et_look_v2 as ETLook_v2
+import pywapor.general as g
 import pywapor.general.outputs as out
 import pywapor.general.variables as vars
 import pywapor.general.processing_functions as PF
@@ -246,6 +247,8 @@ def main(input_data, et_look_version = "v2", export_vars = "default", export_to_
         ds = PF.ds_remove_except(ds, keep_vars)
     else:
         raise ValueError
+
+    ds = g.variables.fill_attrs(ds)
     
     fp, fn = os.path.split(input_data)
     fn = fn.replace("_input", "_output")

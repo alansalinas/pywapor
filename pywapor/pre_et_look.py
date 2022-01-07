@@ -14,7 +14,6 @@ import pywapor.general as g
 import pywapor.general.processing_functions as pf
 import pywapor.general.pre_defaults as defaults
 from datetime import datetime as dat
-from osgeo import gdal
 from pywapor.enhancers.temperature import lapse_rate
 from pywapor.collect.downloader import collect_sources
 from pywapor.general.logger import log, adjust_logger
@@ -148,6 +147,8 @@ def main(project_folder, startdate, enddate, latlim, lonlim, level = "level_1",
 
     log.sub().info("< Composite enhancers.")
 
+    ds = g.variables.fill_attrs(ds)
+
     ds.attrs["geotransform"] = example_info[2][0]
     ds.attrs["projection"] = example_info[2][1]
     ds.attrs["pixel_size"] = example_info[3]
@@ -172,7 +173,7 @@ def main(project_folder, startdate, enddate, latlim, lonlim, level = "level_1",
 
     log.sub().info("< PRE_ET_LOOK")
 
-    return ds, fh
+    return ds, out_fh
 
 def get_folders(project_folder, level_name = None):
     """Define some folders based on a root-folder.
@@ -314,13 +315,13 @@ if __name__ == "__main__":
     #     "LS8ALBEDO": r"/Users/hmcoerver/pywapor_notebooks/my_landsat_folder/ALBEDO",
     # }
 
-    # ds_in, fh_in = main(project_folder, startdate, enddate, latlim, lonlim, level = level, 
-    #     diagnostics = diagnostics, composite_length = composite_length, extra_sources = extra_sources,
-    #     extra_source_locations = extra_source_locations, se_root_version = se_root_version)
+    ds_in, fh_in = main(project_folder, startdate, enddate, latlim, lonlim, level = level, 
+        diagnostics = diagnostics, composite_length = composite_length, extra_sources = extra_sources,
+        extra_source_locations = extra_source_locations, se_root_version = se_root_version)
 
-    fh_in = r"/Users/hmcoerver/pywapor_notebooks/level_1/et_look_input_.nc"
+    # fh_in = r"/Users/hmcoerver/pywapor_notebooks/level_1/et_look_input_.nc"
 
-    out = pywapor.et_look.main(fh_in,export_to_tif = True)
+    out = pywapor.et_look.main(fh_in, export_vars = "all")
 
     # param = "t_air_24"
     # sources = ["GEOS5"]

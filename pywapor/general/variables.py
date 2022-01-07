@@ -1,352 +1,7 @@
 import datetime
+from attr import attr
 
-inputs = {
-    "r0":                       {"time": "daily", "array_name": "r0"},
-    "ndvi":                     {"time": "daily", "array_name": "ndvi"}, 
-    "lst":                      {"time": "daily", "array_name": "lst"},
-    "dtime":                     {"time": "daily", "array_name": "dtime"},
-    "lat_deg":                      {"time": "static", "array_name": "lat_deg"},
-    "lon_deg":                      {"time": "static", "array_name": "lon_deg"},
-    "z":                      {"time": "static", "array_name": "z"},
-    "slope_deg":                    {"time": "static", "array_name": "slope_deg"},
-    "aspect_deg":                   {"time": "static", "array_name": "aspect_deg"},
-    "land_mask":                 {"time": "yearly", "array_name": "land_mask"},
-    "lue_max":                   {"time": "yearly", "array_name": "lue_max"},
-    "p_air_24_0":                {"time": "daily", "array_name": "p_air_0_24"},
-    "Pair_inst_0":              {"time": "daily", "array_name": "p_air_0_i"},
-    "Pair_inst":                {"time": "daily", "array_name": "p_air_i"},
-    "P_24":            {"time": "daily", "array_name": "P_24"},
-    "qv_24":                    {"time": "daily", "array_name": "qv_24"},
-    "qv_inst":                  {"time": "daily", "array_name": "qv_i"},
-    "t_air_24":                  {"time": "daily", "array_name": "t_air_24"},
-    "t_air_max_24":              {"time": "daily", "array_name": "t_air_max_24"},
-    "t_air_min_24":              {"time": "daily", "array_name": "t_air_min_24"},
-    "tair_inst":                {"time": "daily", "array_name": "t_air_i"},
-    "t_amp_year":                 {"time": "yearly", "array_name": "t_amp_year"},
-    "u_24":                  {"time": "daily", "array_name": "u_24"},
-    "wind_inst":                {"time": "daily", "array_name": "u_i"},
-    "wv_inst":                  {"time": "daily", "array_name": "wv_i"},
-    "trans_24":                 {"time": "daily", "array_name": "trans_24"},
-    "se_root":                  {"time": "daily", "array_name": "se_root"},
-    "z_obst_max":  {"time": "yearly", "array_name": "z_obst_max"},
-    "rs_min": {"time": "yearly", "array_name": "rs_min"},
-    "SR_24":                    {"time": "daily", "array_name": "ra_24"},
-    "z_oro":                    {"time": "daily", "array_name": "z_oro"},
-    "lw_offset":                {"time": "static", "array_name": "lw_offset"},
-    "lw_slope":                 {"time": "static", "array_name": "lw_slope"},
-    "r0_bare":                  {"time": "static", "array_name": "r0_bare"},
-    "r0_full":                  {"time": "static", "array_name": "r0_full"},
-    "rn_offset":                {"time": "static", "array_name": "rn_offset"},
-    "rn_slope":                 {"time": "static", "array_name": "rn_slope"},
-    "t_opt":                    {"time": "static", "array_name": "t_opt"},
-    "vpd_slope":                {"time": "static", "array_name": "vpd_slope"},
-    "u2m_24":                      {"time": "daily", "array_name": "u2m_24"},
-    "v2m_24":                      {"time": "daily", "array_name": "v2m_24"},
-    "ra_24":                    {"time": "daily", "array_name": "ra_24"},
-}
-
-outputs = {
-    'B0c':                  {'file_name': 'B0c'},
-    'Bhc':                  {'file_name': 'Bhc'},
-    'Dhc':                  {'file_name': 'Dhc'},
-    'Tl2':                  {'file_name': 'Tl2'},
-    'ad_24':                {'file_name': 'ad_24'},
-    'ad_dry_24':            {'file_name': 'ad_dry_24'},
-    'ad_dry_i':             {'file_name': 'ad_dry_i'},
-    'ad_i':                 {'file_name': 'ad_i'},
-    'ad_moist_24':          {'file_name': 'ad_moist_24'},
-    'ad_moist_i':           {'file_name': 'ad_moist_i'},
-    'aspect':               {'file_name': 'aspect'},
-    'biomass_prod':         {'file_name': 'biomass_prod_kg-ha'}, #
-    'diffusion_index':      {'file_name': 'diffusion_index'},
-    'disp':                 {'file_name': 'disp'},
-    'e_24':                 {'file_name': 'e_24'},
-    'e_24_init':            {'file_name': 'e_24_init'},
-    'e_24_mm':              {'file_name': 'e_24_mm'},
-    'emiss_atm_i':          {'file_name': 'emiss_atm_i'},
-    'et_24_mm':             {'file_name': 'et_24_mm'},
-    'et_ref_24':            {'file_name': 'et_ref_24'},
-    'et_ref_24_mm':         {'file_name': 'et_ref_24_mm'},
-    'g0_24':                {'file_name': 'g0_24'},
-    'g0_bs':                {'file_name': 'g0_bs'},
-    'h0':                   {'file_name': 'h0'},
-    'h0ref':                {'file_name': 'h0ref'},
-    'h_canopy_24_init':     {'file_name': 'h_canopy_24_init'},
-    'h_soil_24_init':       {'file_name': 'h_soil_24_init'},
-    'ha':                   {'file_name': 'ha'},
-    'int_mm':               {'file_name': 'int_mm'},
-    'int_wm2':              {'file_name': 'int_wm2'},
-    'l_net':                {'file_name': 'l_net'},
-    'lai':                  {'file_name': 'LAI'}, #
-    'lai_eff':              {'file_name': 'LAI_eff'}, #
-    'lat':                  {'file_name': 'lat'},
-    'lh_24':                {'file_name': 'lh_24'},
-    'lon':                  {'file_name': 'lon'},
-    'lst_max':              {'file_name': 'lst_max'},
-    'lst_min':              {'file_name': 'lst_min'},
-    'm':                    {'file_name': 'm'},
-    'p_air_24':             {'file_name': 'p_air_24'},
-    'psy_24':               {'file_name': 'psy_24'},
-    'r_canopy':             {'file_name': 'r_canopy'},
-    'r_canopy_0':           {'file_name': 'r_canopy_0'},
-    'r_soil':               {'file_name': 'r_soil'},
-    'ra_24':                {'file_name': 'ra_24'},
-    'ra_24_toa':            {'file_name': 'ra_24_toa'},
-    'ra_24_toa_flat':       {'file_name': 'ra_24_toa_flat'}, #
-    'ra_canopy_init':       {'file_name': 'ra_canopy_init'},
-    'ra_hor_clear_i':       {'file_name': 'ra_hor_clear_i'},
-    'ra_soil_init':         {'file_name': 'ra_soil_init'},
-    'raa':                  {'file_name': 'raa'},
-    'rac':                  {'file_name': 'rac'},
-    'ras':                  {'file_name': 'ras'},
-    'rn_24':                {'file_name': 'rn_24'},
-    'rn_24_canopy':         {'file_name': 'rn_24_canopy'},
-    'rn_24_grass':          {'file_name': 'rn_24_grass'},
-    'rn_24_soil':           {'file_name': 'rn_24_soil'},
-    'rn_bare':              {'file_name': 'rn_bare'},
-    'rn_full':              {'file_name': 'rn_full'},
-    'rotm':                 {'file_name': 'rotm'},
-    'se_root':              {'file_name': 'se_root'},
-    'sf_soil':              {'file_name': 'sf_soil'},
-    'slope':                {'file_name': 'slope'},
-    'ssvp_24':              {'file_name': 'ssvp_24'},
-    'stress_moist':         {'file_name': 'stress_moist'},
-    'stress_rad':           {'file_name': 'stress_rad'},
-    'stress_temp':          {'file_name': 'stress_temp'},
-    'stress_vpd':           {'file_name': 'stress_vpd'},
-    'svp_24':               {'file_name': 'svp_24'},
-    't_24':                 {'file_name': 't_24'},
-    't_24_init':            {'file_name': 't_24_init'},
-    't_24_mm':              {'file_name': 't_24_mm'},
-    'tpot_24':              {'file_name': 'tpot_24'},
-    'tpot_24_mm':           {'file_name': 'tpot_24_mm'},
-    't_air_k_24':           {'file_name': 't_air_k_24'},
-    't_air_k_i':            {'file_name': 't_air_k_i'},
-    't_dew_i':              {'file_name': 't_dew_i'},
-    't_max_bare':           {'file_name': 't_max_bare'},
-    't_max_full':           {'file_name': 't_max_full'},
-    't_min_bare':           {'file_name': 't_min_bare'},
-    't_min_full':           {'file_name': 't_min_full'},
-    't_wet_i':              {'file_name': 't_wet_i'},
-    't_wet_k_i':            {'file_name': 't_wet_k_i'},
-    'u_b_24':               {'file_name': 'u_b_24'},
-    'u_b_i_bare':           {'file_name': 'u_b_i_bare'},
-    'u_b_i_full':           {'file_name': 'u_b_i_full'},
-    'u_i_soil':             {'file_name': 'u_i_soil'},
-    'u_star_24_init':       {'file_name': 'u_star_24_init'},
-    'u_star_24_soil_init':  {'file_name': 'u_star_24_soil_init'},
-    'u_star_i_bare':        {'file_name': 'u_star_i_bare'},
-    'u_star_i_full':        {'file_name': 'u_star_i_full'},
-    'vc':                   {'file_name': 'vc'},
-    'vp_24':                {'file_name': 'vp_24'},
-    'vp_i':                 {'file_name': 'vp_i'},
-    'vpd_24':               {'file_name': 'vpd_24'},
-    'w_i':                  {'file_name': 'w_i'},
-    'ws':                   {'file_name': 'ws'},
-    'z0m':                  {'file_name': 'z0m'},
-    'z_obst':               {'file_name': 'z_obst'},
-    'z_oro':                {'file_name': 'z_oro'},
-    'L_bare':               {'file_name': 'L_bare'},
-    'L_full':               {'file_name': 'L_full'},
-    'trans_24':             {'file_name': 'trans_24'}
-}
-
-order = [
-    "vc",
-    "lai",
-    "lai_eff",
-    "sf_soil",
-    "lat",
-    "ws",
-    "slope",
-    "aspect",
-    "ra_24_toa",
-    "ra_24_toa_flat",
-    "diffusion_index",
-    "ra_24",
-    "trans_24",#
-    "stress_rad",
-    "p_air_0_24",#
-    "p_air_24",
-    "vp_24",
-    "t_air_24",
-    "svp_24",
-    "vpd_24",
-    "stress_vpd",
-    "stress_temp",
-    "rs_min",#
-    "r_canopy_0",
-    "t_air_k_24",
-    "l_net",
-    "int_mm",
-    "lh_24",
-    "int_wm2",
-    "rn_24",
-    "rn_24_canopy",
-
-    "t_air_k_i",
-    "vp_i",
-    "ad_moist_i",
-    "ad_dry_i",
-    "ad_i",
-    "u_b_i_bare",
-    "lon",
-    "ha",
-    "h0",
-    "h0ref",
-    "m",
-    "rotm",
-    "Tl2",
-    "B0c",
-    "Bhc",
-    "Dhc",
-    "ra_hor_clear_i",
-    "emiss_atm_i",
-    "rn_bare",
-    "rn_full",
-    "h_bare",
-    "h_full",
-    "u_b_i_full",
-    "u_star_i_bare",
-    "u_star_i_full",
-    "L_bare",
-    "L_full",
-    "u_i_soil",
-    "ras",
-    "raa",
-    "rac",
-    "t_max_bare",
-    "t_max_full",
-    "w_i",
-    "t_dew_i",
-    "t_wet_i",
-    "lst_max",
-    "t_wet_k_i",
-    "lst_min",
-    "t_min_bare",
-    "t_min_full",
-    "lst_min",
-
-    "se_root",
-    "stress_moist",
-    "r_canopy",
-    "z_oro",
-    "z_obst",
-    "z0m",
-    "ra_canopy_init",
-    "u_b_24",
-    "ad_dry_24",
-    "ad_moist_24",
-    "ad_24",
-    "psy_24",
-    "ssvp_24",
-    "t_24_init",
-    "h_canopy_24_init",
-    "disp",
-    "u_star_24_init",
-    "t_24",
-    "t_24_mm",
-    "tpot_24",
-    "tpot_24_mm",
-    "rn_24_soil",
-    "r_soil",
-    "ra_soil_init",
-    "u_star_24_soil_init",
-    "g0_bs",
-    "g0_24",
-    "e_24_init",
-    "h_soil_24_init",
-    "e_24",
-    "e_24_mm",
-    "et_24_mm",
-    "rn_24_grass",
-    "et_ref_24",
-    "et_ref_24_mm",
-    "lue",
-    "fpar",
-    "apar",
-    "biomass_prod_kg-ha",
-]
-
-# def get_raw_meteo_paths(type = "all"):
-
-#     meteo_raw_paths_GEOS = {
-#         "Pair_24_0":    ("{raw_folder}", "GEOS5", "Sea_Level_Pressure", "daily", "slp_GEOS5_kpa_daily_{date}.tif"),
-#         "Pair_inst_0":  ("{raw_folder}", "GEOS5", "Sea_Level_Pressure", "three_hourly", "slp_GEOS5_kpa_3-hourly_{date}_H{hour}.M00.tif"),
-#         "Pair_inst":    ("{raw_folder}", "GEOS5", "Surface_Pressure", "three_hourly", "ps_GEOS5_kpa_3-hourly_{date}_H{hour}.M00.tif"),
-#         "qv_24":        ("{raw_folder}", "GEOS5", "Specific_Humidity", "daily", "qv2m_GEOS5_kg-kg-1_daily_{date}.tif"),
-#         "qv_inst":      ("{raw_folder}", "GEOS5", "Specific_Humidity", "three_hourly", "qv2m_GEOS5_kg-kg-1_3-hourly_{date}_H{hour}.M00.tif"),
-#         "tair_24":      ("{raw_folder}", "GEOS5", "Air_Temperature", "daily", "t2m_GEOS5_K_daily_{date}.tif"),
-#         "tair_inst":    ("{raw_folder}", "GEOS5", "Air_Temperature", "three_hourly", "t2m_GEOS5_K_3-hourly_{date}_H{hour}.M00.tif"),
-#         "tair_max_24":  ("{raw_folder}", "GEOS5", "Air_Temperature", "daily", "t2m-max_GEOS5_K_daily_{date}.tif"),
-#         "tair_min_24":  ("{raw_folder}", "GEOS5", "Air_Temperature", "daily", "t2m-min_GEOS5_K_daily_{date}.tif"),
-#         "wv_inst":      ("{raw_folder}", "GEOS5", "Total_Precipitable_Water_Vapor", "three_hourly", "tqv_GEOS5_mm_3-hourly_{date}_H{hour}.M00.tif"),
-#         "v2m_inst":     ("{raw_folder}", "GEOS5", "Northward_Wind", "three_hourly", "v2m_GEOS5_m-s-1_3-hourly_{date}_H{hour}.M00.tif"),
-#         "u2m_inst":     ("{raw_folder}", "GEOS5", "Eastward_Wind", "three_hourly", "u2m_GEOS5_m-s-1_3-hourly_{date}_H{hour}.M00.tif"),
-#         "v2m_24":       ("{raw_folder}", "GEOS5", "Northward_Wind", "daily", "v2m_GEOS5_m-s-1_daily_{date}.tif"),
-#         "u2m_24":       ("{raw_folder}", "GEOS5", "Eastward_Wind", "daily", "u2m_GEOS5_m-s-1_daily_{date}.tif"),
-#     }
-
-#     meteo_raw_paths_MERRA = {
-#         "Pair_24_0":    ("{raw_folder}", "MERRA2", "Sea_Level_Pressure", "daily_MERRA2", "slp_MERRA_kpa_daily_{date}.tif"),
-#         "Pair_inst_0":  ("{raw_folder}", "MERRA2", "Sea_Level_Pressure", "hourly_MERRA2", "slp_MERRA_kpa_hourly_{date}_H{hour}.M00.tif"),
-#         "Pair_inst":    ("{raw_folder}", "MERRA2", "Surface_Pressure", "hourly_MERRA2", "ps_MERRA_kpa_hourly_{date}_H{hour}.M00.tif"),
-#         "qv_24":        ("{raw_folder}", "MERRA2", "Specific_Humidity", "daily_MERRA2", "q2m_MERRA_kg-kg-1_daily_{date}.tif"),
-#         "qv_inst":      ("{raw_folder}", "MERRA2", "Specific_Humidity", "hourly_MERRA2", "q2m_MERRA_kg-kg-1_hourly_{date}_H{hour}.M00.tif"),
-#         "tair_24":      ("{raw_folder}", "MERRA2", "Air_Temperature", "daily_MERRA2", "t2m_MERRA_K_daily_{date}.tif"),
-#         "tair_inst":    ("{raw_folder}", "MERRA2", "Air_Temperature", "hourly_MERRA2", "t2m_MERRA_K_hourly_{date}_H{hour}.M00.tif"),
-#         "tair_max_24":  ("{raw_folder}", "MERRA2", "Air_Temperature", "daily_MERRA2", "t2mmax_MERRA_K_daily_{date}.tif"),
-#         "tair_min_24":  ("{raw_folder}", "MERRA2", "Air_Temperature", "daily_MERRA2", "t2mmin_MERRA_K_daily_{date}.tif"),
-#         "wv_inst":      ("{raw_folder}", "MERRA2", "Total_Precipitable_Water_Vapor", "hourly_MERRA2", "tpw_MERRA_mm_hourly_{date}_H{hour}.M00.tif"),
-#         "v2m_inst":     ("{raw_folder}", "MERRA2", "Northward_Wind", "hourly_MERRA2", "v2m_MERRA_m-s-1_hourly_{date}_H{hour}.M00.tif"),
-#         "u2m_inst":     ("{raw_folder}", "MERRA2", "Eastward_Wind", "hourly_MERRA2", "u2m_MERRA_m-s-1_hourly_{date}_H{hour}.M00.tif"),
-#         "v2m_24":       ("{raw_folder}", "MERRA2", "Northward_Wind", "daily_MERRA2", "v2m_MERRA_m-s-1_daily_{date}.tif"),
-#         "u2m_24":       ("{raw_folder}", "MERRA2", "Eastward_Wind", "daily_MERRA2", "u2m_MERRA_m-s-1_daily_{date}.tif"),
-#         "u2m_24":       ("{raw_folder}", "MERRA2", "Eastward_Wind", "daily_MERRA2", "u2m_MERRA_m-s-1_daily_{date}.tif"),
-#     }
-
-#     if type == "all":
-#         raw_meteo_paths = {"MERRA2": meteo_raw_paths_MERRA,
-#                         "GEOS5": meteo_raw_paths_GEOS}
-#     if type == "inst":
-#         raw_meteo_paths = {"MERRA2": {k: v for k,v in meteo_raw_paths_MERRA.items() if "inst" in k},
-#                         "GEOS5": {k: v for k,v in meteo_raw_paths_GEOS.items() if "inst" in k}}   
-
-#     if type == "non-inst":
-#         raw_meteo_paths = {"MERRA2": {k: v for k,v in meteo_raw_paths_MERRA.items() if "inst" not in k},
-#                 "GEOS5": {k: v for k,v in meteo_raw_paths_GEOS.items() if "inst" not in k}}   
-
-#     return raw_meteo_paths
-
-def get_source_validations():
-    
-    valid_sources = {
-        "METEO": ["GEOS5", "MERRA2"],
-        "NDVI": ["MOD13", "MYD13", "PROBAV"],
-        "ALBEDO": ["MCD43", "PROBAV"],
-        "LST": ["MOD11", "MYD11"],
-        "LULC": ["GLOBCOVER", "WAPOR"],
-        "DEM": ["SRTM",],
-        "PRECIPITATION": ["CHIRPS",],
-        "SOLAR_RADIATION": ["MERRA2"],
-    }
-
-    valid_dates = {
-        "GEOS5": (datetime.date(2017,12,1), datetime.date.today()),
-        "MERRA2": (datetime.date(1980,1,1), datetime.date.today()),
-        "MOD13": (datetime.date(2000,2,18), datetime.date.today()),
-        "MYD13": (datetime.date(2002,7,4), datetime.date.today()),
-        "PROBAV": (datetime.date(2014,3,11), datetime.date.today()),
-        "MCD43": (datetime.date(2000,2,16), datetime.date.today()),
-        "MOD11": (datetime.date(2000,2,24), datetime.date.today()),
-        "MYD11": (datetime.date(2002,7,4), datetime.date.today()),
-        "GLOBCOVER": (datetime.date(2009,1,1), datetime.date(2009,1,1)),
-        "WAPOR": (datetime.date(2009,1,1), datetime.date(2020,1,1)),
-        "CHIRPS": (datetime.date(1981,1,1), datetime.date.today()),
-        "SRTM": (datetime.date(2009,1,1), datetime.date(2009,1,1)),
-    }
-
-    return valid_sources, valid_dates
+from dask.local import finish_task
 
 def get_source_level_selections():
 
@@ -436,198 +91,804 @@ def get_password_reqs():
                     "WAPOR": ["WAPOR"],}
     return password_reqs
 
-def get_temp_input_data_reqs():
-    temporal_input_data_req = [
-        {"name": "Albedo",
-        "unit": "[-]",
-        "quantity": "Albedo",
-        "level": "surface",
-        "time": "instanteneous",
-        "filepath": "{input_folder}/{level}/{year}{month}{day}/ALBEDO_{year}{month}{day}.tif"},
+def fill_attrs(ds):
 
-        {"name": "Land Surface Temperature",
-        "unit": "[K]",
-        "quantity": "Temperature",
-        "level": "surface",
-        "time": "instanteneous",
-        "filepath": "{input_folder}/{level}/{year}{month}{day}/LST_{year}{month}{day}.tif"},
+    defs = get_var_definitions()
 
-        {"name": "Normalized Difference Vegetation Index",
-        "unit": "[-]",
-        "quantity": "Normalized Difference Vegetation Index",
-        "level": "surface",
-        "time": "instanteneous",
-        "filepath": "{input_folder}/{level}/{year}{month}{day}/NDVI_{year}{month}{day}.tif"},
+    for var in list(ds.variables):
 
-        {"name": "Air Pressure at sea level (daily average)",
-        "unit": "[kPa]",
-        "quantity": "Air Pressure",
-        "level": "sea",
-        "time": "daily average",
-        "filepath": "{input_folder}/{level}/{year}{month}{day}/Pair_24_0_{year}{month}{day}.tif"},
+        if var in defs.keys():
 
-        {"name": "Air Pressure at sea level (instanteneous)", 
-        "unit": "[kPa]",
-        "quantity": "Air Pressure",
-        "level": "sea",
-        "time": "instanteneous",
-        "filepath": "{input_folder}/{level}/{year}{month}{day}/Pair_inst_0_{year}{month}{day}.tif"},
+            attributes = defs[var]
 
-        {"name": "Air Pressure at surface level (instanteneous)",
-        "unit": "[kPa]",
-        "quantity": "Air Pressure",
-        "level": "surface",
-        "time": "instanteneous",
-        "filepath": "{input_folder}/{level}/{year}{month}{day}/Pair_inst_{year}{month}{day}.tif"},
+            _ = attributes.pop("definition")
 
-        {"name": "Precipitation",
-        "unit": "[mm/day]",
-        "quantity": "Precipitation",
-        "level": "surface",
-        "time": "instanteneous",
-        "filepath": "{input_folder}/{level}/{year}{month}{day}/Precipitation_{year}{month}{day}.tif"},
+            for k, v in attributes.items():
+                ds[var].attrs[k] = v
+    
+    return ds
 
-        {"name": "Specific Humidity (daily average)", 
-        "unit": "[kg/kg]",
-        "quantity": "Specific Humidity",
-        "level": "surface",
-        "time": "daily average",
-        "filepath": "{input_folder}/{level}/{year}{month}{day}/qv_24_{year}{month}{day}.tif"},
+def get_var_definitions():
 
-        {"name": "Specific Humidity (instanteneous)", "unit": "[kg/kg]",
-        "quantity": "Specific Humidity",
-        "level": "surface",
-        "time": "instanteneous",
-        "filepath": "{input_folder}/{level}/{year}{month}{day}/qv_inst_{year}{month}{day}.tif"},
+    defs = {
+        "B0c": {
+            "long_name": "Beam irradiance normal to the solar beam",
+            "units": "W m-2",
+            "definition": ""
+        },
+        "Bhc": {
+            "long_name": "Beam irradiance at a horizontal surface",
+            "units": "W m-2",
+            "definition": ""
+        },
+        "Dhc": {
+            "long_name": "Diffuse irradiance at a horizontal surface",
+            "units": "W m-2",
+            "definition": ""
+        },
+        "G0": {
+            "long_name": "Ext rad normal to solar beam",
+            "units": "W m-2",
+            "definition": ""
+        },
+        "L_bare": {
+            "long_name": "Monin obukhov length dry vegetation",
+            "units": "m",
+            "definition": ""
+        },
+        "L_full": {
+            "long_name": "Monin obukhov length wet vegetation",
+            "units": "m",
+            "definition": ""
+        },
+        "Tl2": {
+            "long_name": "Airmass 2 linke atmospheric turbidity factor",
+            "units": "-",
+            "definition": ""
+        },
+        "ad_24": {
+            "long_name": "Daily air density",
+            "units": "kg m-3",
+            "definition": ""
+        },
+        "ad_dry_24": {
+            "long_name": "Daily dry air density",
+            "units": "kg m-3",
+            "definition": ""
+        },
+        "ad_dry_i": {
+            "long_name": "Instantaneous dry air density",
+            "units": "kg m-3",
+            "definition": ""
+        },
+        "ad_i": {
+            "long_name": "Instantaneous air density",
+            "units": "kg m-3",
+            "definition": ""
+        },
+        "ad_moist_24": {
+            "long_name": "Daily moist air density",
+            "units": "kg m-3",
+            "definition": ""
+        },
+        "ad_moist_i": {
+            "long_name": "Instantaneous moist air density",
+            "units": "kg m-3",
+            "definition": ""
+        },
+        "angle": {
+            "long_name": "",
+            "units": "",
+            "definition": ""
+        },
+        "aspect": {
+            "long_name": "Aspect (0 is north; pi is south)",
+            "units": "radians",
+            "definition": ""
+        },
+        "band": {
+            "long_name": "",
+            "units": "",
+            "definition": ""
+        },
+        "day_angle": {
+            "long_name": "Day angle",
+            "units": [
+                "-",
+                "radians"
+            ],
+            "definition": ""
+        },
+        "dd": {
+            "long_name": "Damping depth",
+            "units": "m",
+            "definition": ""
+        },
+        "decl": {
+            "long_name": "Solar declination",
+            "units": "radians",
+            "definition": ""
+        },
+        "disp": {
+            "long_name": "Displacement height",
+            "units": "m",
+            "definition": ""
+        },
+        "doy": {
+            "long_name": "Day of year",
+            "units": "-",
+            "definition": ""
+        },
+        "dtime": {
+            "long_name": "Decimal time",
+            "units": "hours",
+            "definition": ""
+        },
+        "e_24": {
+            "long_name": "Daily evaporation energy equivalent",
+            "units": "W m-2",
+            "definition": ""
+        },
+        "e_24_init": {
+            "long_name": "Initial estimate radiation equivalent daily evaporation",
+            "units": "W m-2",
+            "definition": ""
+        },
+        "e_24_mm": {
+            "long_name": "Daily evaporation in mm",
+            "units": "mm day-1",
+            "definition": ""
+        },
+        "emiss_atm_i": {
+            "long_name": "Instantaneous atmospheric emissivity",
+            "units": "-",
+            "definition": ""
+        },
+        # "epoch": {
+        #     "long_name": "",
+        #     "units": "",
+        #     "definition": ""
+        # },
+        # "epoch_ends": {
+        #     "long_name": "",
+        #     "units": "",
+        #     "definition": ""
+        # },
+        # "epoch_starts": {
+        #     "long_name": "",
+        #     "units": "",
+        #     "definition": ""
+        # },
+        "et_24_mm": {
+            "long_name": "Daily evapotranspiration in mm",
+            "units": "mm day-1",
+            "definition": ""
+        },
+        "et_ref_24": {
+            "long_name": "Daily reference evapotranspiration (well watered grass) energy equivalent",
+            "units": "W m-2",
+            "definition": ""
+        },
+        "et_ref_24_mm": {
+            "long_name": "Reference evapotranspiration (well watered grass)",
+            "units": "mm day-1",
+            "definition": ""
+        },
+        "g0_24": {
+            "long_name": "Daily soil heat flux",
+            "units": "W m-2",
+            "definition": ""
+        },
+        "g0_bs": {
+            "long_name": "Bare soil heat flux",
+            "units": "W m-2",
+            "definition": ""
+        },
+        "h0": {
+            "long_name": "Solar elevation angle",
+            "units": "degrees",
+            "definition": ""
+        },
+        "h0ref": {
+            "long_name": "Solar elevation angle corrected for refraction",
+            "units": "degrees",
+            "definition": ""
+        },
+        "h_bare": {
+            "long_name": "Sensible heat flux for dry bare soil",
+            "units": "W m-2",
+            "definition": ""
+        },
+        "h_canopy_24_init": {
+            "long_name": "Initial estimate of the sensible heat flux",
+            "units": "W m-2",
+            "definition": ""
+        },
+        "h_full": {
+            "long_name": "Sensible heat flux full vegetation",
+            "units": "W m-2",
+            "definition": ""
+        },
+        "h_soil_24_init": {
+            "long_name": "Initial estimate of the sensible heat flux for soil",
+            "units": "W m-2",
+            "definition": ""
+        },
+        "ha": {
+            "long_name": "Solar hour angle",
+            "units": "radians",
+            "definition": ""
+        },
+        "ied": { # TODO check this with iesd
+            "long_name": "Inverse earth sun distance",
+            "units": "AU",
+            "definition": ""
+        },
+        "iesd": {
+            "long_name": "Inverse earth sun distance",
+            "units": "AU",
+            "definition": ""
+        },
+        "int_mm": {
+            "long_name": "Interception",
+            "units": "mm day-1",
+            "definition": ""
+        },
+        "int_wm2": {
+            "long_name": "Interception",
+            "units": "W m-2",
+            "definition": ""
+        },
+        "l_net": {
+            "long_name": "Daily net longwave radiation",
+            "units": "W m-2",
+            "definition": ""
+        },
+        "lai": {
+            "long_name": "Leaf area index",
+            "units": "-",
+            "definition": ""
+        },
+        "lai_eff": {
+            "long_name": "Effective leaf area index",
+            "units": "-",
+            "definition": ""
+        },
+        "land_mask": {
+            "long_name": "Land use classification",
+            "units": "-",
+            "definition": ""
+        },
+        "lat": {
+            "long_name": "Latitude",
+            "units": "degrees",
+            "definition": ""
+        },
+        "lat_deg": {
+            "long_name": "Latitude in degrees",
+            "units": "degrees",
+            "definition": ""
+        },
+        "lat_rad": {
+            "long_name": "",
+            "units": "",
+            "definition": ""
+        },
+        "lh_24": {
+            "long_name": "Daily latent heat of evaporation",
+            "units": "J kg-1",
+            "definition": ""
+        },
+        "lon": {
+            "long_name": "Longitude",
+            "units": "degrees",
+            "definition": ""
+        },
+        "lon_deg": {
+            "long_name": "Longitude in degrees",
+            "units": "degrees",
+            "definition": ""
+        },
+        "lon_rad": {
+            "long_name": "Longitude in radians",
+            "units": "radians",
+            "definition": ""
+        },
+        "lst": {
+            "long_name": "Land surface temperature",
+            "units": "K",
+            "definition": ""
+        },
+        "lst_max": {
+            "long_name": "Maximum temperature at dry conditions",
+            "units": "K",
+            "definition": ""
+        },
+        "lst_min": {
+            "long_name": "Minimum temperature at wet conditions",
+            "units": "K",
+            "definition": ""
+        },
+        "lue_max": {
+            "long_name": "",
+            "units": "",
+            "definition": ""
+        },
+        "lw_offset": {
+            "long_name": "Offset of the tau-term in the FAO-56 longwave radiation relationship",
+            "units": "-",
+            "definition": ""
+        },
+        "lw_slope": {
+            "long_name": "Slope of the tau-term in the FAO-56 longwave radiation relationship",
+            "units": "-",
+            "definition": ""
+        },
+        "m": {
+            "long_name": "Relative optical airmass",
+            "units": "-",
+            "definition": ""
+        },
+        "ndvi": {
+            "long_name": "Normalized difference vegetation index",
+            "units": "-",
+            "definition": ""
+        },
+        "p_24": {
+            "long_name": "Daily precipitation",
+            "units": "mm day-1",
+            "definition": ""
+        },
+        "p_air_0_24": {
+            "long_name": "Daily air pressure at sea level",
+            "units": "mbar",
+            "definition": ""
+        },
+        "p_air_0_i": {
+            "long_name": "Instantaneous air pressure at sea level",
+            "units": "-",
+            "definition": ""
+        },
+        "p_air_24": {
+            "long_name": "Daily air pressure",
+            "units": "mbar",
+            "definition": ""
+        },
+        "p_air_i": {
+            "long_name": "Instantaneous air pressure",
+            "units": "mbar",
+            "definition": ""
+        },
+        "psy_24": {
+            "long_name": "Daily psychrometric constant",
+            "units": "mbar K-1",
+            "definition": ""
+        },
+        "quantile": {
+            "long_name": "",
+            "units": "",
+            "definition": ""
+        },
+        "qv_24": {
+            "long_name": "Daily specific humidity",
+            "units": "kg kg-1",
+            "definition": ""
+        },
+        "qv_i": {
+            "long_name": "Instantaneous specific humidity",
+            "units": "kg kg-1",
+            "definition": ""
+        },
+        "r0": {
+            "long_name": "Albedo",
+            "units": "-",
+            "definition": ""
+        },
+        "r0_bare": {
+            "long_name": "Dry bare soil surface albedo",
+            "units": "-",
+            "definition": ""
+        },
+        "r0_full": {
+            "long_name": "Surface albedo under full vegetation cover",
+            "units": "-",
+            "definition": ""
+        },
+        "r_canopy": {
+            "long_name": "Canopy resistance",
+            "units": "s m-1",
+            "definition": ""
+        },
+        "r_canopy_0": {
+            "long_name": "Atmospheric canopy resistance",
+            "units": "s m-1",
+            "definition": ""
+        },
+        "r_soil": {
+            "long_name": "Soil resistance",
+            "units": "s m-1",
+            "definition": ""
+        },
+        "ra_24": {
+            "long_name": "Daily solar radiation",
+            "units": "W m-2",
+            "definition": ""
+        },
+        "ra_24_toa_flat": {
+            "long_name": "Daily solar radiation at the top of atmosphere for a flat surface",
+            "units": "W m-2",
+            "definition": ""
+        },
+        "ra_canopy_init": {
+            "long_name": "Initial canopy aerodynamic resistance",
+            "units": "s m-1",
+            "definition": ""
+        },
+        "ra_hor_clear_i": {
+            "long_name": "Total clear-sky irradiance on a horizontal surface",
+            "units": "W m-2",
+            "definition": ""
+        },
+        "ra_soil_init": {
+            "long_name": "Initial soil aerodynamic resistance",
+            "units": "s m-1",
+            "definition": ""
+        },
+        "raa": {
+            "long_name": "Aerodynamical resistance dry surface",
+            "units": "s m-1",
+            "definition": ""
+        },
+        "rac": {
+            "long_name": "Aerodynamical resistance canopy",
+            "units": "s m-1",
+            "definition": ""
+        },
+        "ras": {
+            "long_name": "Aerodynamical resistance",
+            "units": "s m-1",
+            "definition": ""
+        },
+        "rn_24": {
+            "long_name": "Daily net radiation",
+            "units": "W m-2",
+            "definition": ""
+        },
+        "rn_24_canopy": {
+            "long_name": "Daily net radiation for the canopy",
+            "units": "W m-2",
+            "definition": ""
+        },
+        "rn_24_grass": {
+            "long_name": "Daily net radiation for reference grass",
+            "units": "W m-2",
+            "definition": ""
+        },
+        "rn_24_soil": {
+            "long_name": "Daily net radiation for soil",
+            "units": "W m-2",
+            "definition": ""
+        },
+        "rn_bare": {
+            "long_name": "Net radiation bare soil",
+            "units": "W m-2",
+            "definition": ""
+        },
+        "rn_full": {
+            "long_name": "Net radiation full vegetation",
+            "units": "W m-2",
+            "definition": ""
+        },
+        "rn_offset": {
+            "long_name": "Offset rn/g0-relation water",
+            "units": "-",
+            "definition": ""
+        },
+        "rn_slope": {
+            "long_name": "Slope rn/g0-relation water",
+            "units": "-",
+            "definition": ""
+        },
+        "rotm": {
+            "long_name": "Rayleigh optical thickness at airmass m",
+            "units": "-",
+            "definition": ""
+        },
+        "rs_min": {
+            "long_name": "Minimal stomatal resistance",
+            "units": "s m-1",
+            "definition": ""
+        },
+        "sc": {
+            "long_name": "Seasonal correction",
+            "units": "hours",
+            "definition": ""
+        },
+        "se_root": {
+            "long_name": "Relative root zone soil moisture (based on lst)",
+            "units": "-",
+            "definition": ""
+        },
+        "sf_soil": {
+            "long_name": "Soil fraction",
+            "units": "-",
+            "definition": ""
+        },
+        "slope": {
+            "long_name": "Slope",
+            "units": "radians",
+            "definition": ""
+        },
+        "sources": {
+            "long_name": "",
+            "units": "",
+            "definition": ""
+        },
+        "spatial_ref": {
+            "long_name": "",
+            "units": "",
+            "definition": ""
+        },
+        "ssvp_24": {
+            "long_name": "Daily slope of saturated vapour pressure curve",
+            "units": "mbar K-1",
+            "definition": ""
+        },
+        "stc": {
+            "long_name": "Soil thermal conductivity",
+            "units": "W m-1 K-1",
+            "definition": ""
+        },
+        "stress_moist": {
+            "long_name": "Stress factor for root zone soil moisture",
+            "units": "-",
+            "definition": ""
+        },
+        "stress_rad": {
+            "long_name": "Stress factor for radiation",
+            "units": "-",
+            "definition": ""
+        },
+        "stress_temp": {
+            "long_name": "Stress factor for air temperature",
+            "units": "-",
+            "definition": ""
+        },
+        "stress_vpd": {
+            "long_name": "Stress factor for vapour pressure deficit",
+            "units": "-",
+            "definition": ""
+        },
+        "svp_24": {
+            "long_name": "Daily saturated vapour pressure",
+            "units": "mbar",
+            "definition": ""
+        },
+        "t_24": {
+            "long_name": "Daily transpiration energy equivalent",
+            "units": "W m-2",
+            "definition": ""
+        },
+        "t_24_init": {
+            "long_name": "Initial estimate radiation equivalent daily transpiration",
+            "units": "W m-2",
+            "definition": ""
+        },
+        "t_24_mm": {
+            "long_name": "Daily transpiration in mm",
+            "units": "mm day-1",
+            "definition": ""
+        },
+        "t_air_24": {
+            "long_name": "Daily air temperature",
+            "units": "C",
+            "definition": ""
+        },
+        "t_air_i": {
+            "long_name": "Instantaneous air temperature",
+            "units": "C",
+            "definition": ""
+        },
+        "t_air_k_24": {
+            "long_name": "Daily air temperature in kelvin",
+            "units": "K",
+            "definition": ""
+        },
+        "t_air_k_i": {
+            "long_name": "Instantaneous air temperature in kelvin",
+            "units": "K",
+            "definition": ""
+        },
+        "t_air_max_24": {
+            "long_name": "Daily maximum temperature",
+            "units": "C",
+            "definition": ""
+        },
+        "t_air_min_24": {
+            "long_name": "Daily minimum temperature",
+            "units": "C",
+            "definition": ""
+        },
+        "t_amp_year": {
+            "long_name": "Yearly air temperature amplitude",
+            "units": "K",
+            "definition": ""
+        },
+        "t_diff": {
+            "long_name": "",
+            "units": "",
+            "definition": ""
+        },
+        "t_max_bare": {
+            "long_name": "Maximum temperature at bare soil",
+            "units": "K",
+            "definition": ""
+        },
+        "t_max_full": {
+            "long_name": "Maximum temperature at full vegetation cover",
+            "units": "K",
+            "definition": ""
+        },
+        "t_opt": {
+            "long_name": "Optimum air temperature for plant growth",
+            "units": "C",
+            "definition": ""
+        },
+        "t_wet_i": {
+            "long_name": "Instantaneous wet bulb temperature",
+            "units": "C",
+            "definition": ""
+        },
+        "t_wet_k_i": {
+            "long_name": "Instantaneous wet bulb temperature in kelvin",
+            "units": "K",
+            "definition": ""
+        },
+        # "time": {
+        #     "long_name": "",
+        #     "units": "",
+        #     "definition": ""
+        # },
+        "trans_24": {
+            "long_name": "Daily atmospheric transmissivity",
+            "units": "-",
+            "definition": ""
+        },
+        "u2m_24": {
+            "long_name": "",
+            "units": "",
+            "definition": ""
+        },
+        "u2m_i": {
+            "long_name": "",
+            "units": "",
+            "definition": ""
+        },
+        "u_24": {
+            "long_name": "Daily wind speed at observation height",
+            "units": "m s-1",
+            "definition": ""
+        },
+        "u_b_24": {
+            "long_name": "Daily wind speed at blending height",
+            "units": "m s-1",
+            "definition": ""
+        },
+        "u_b_i_bare": {
+            "long_name": "Instantaneous wind speed at blending height for bare soil",
+            "units": "m s-1",
+            "definition": ""
+        },
+        "u_b_i_full": {
+            "long_name": "Instantaneous wind speed at blending height for full vegetation",
+            "units": "m s-1",
+            "definition": ""
+        },
+        "u_i": {
+            "long_name": "Instantaneous wind speed at observation height",
+            "units": "m s-1",
+            "definition": ""
+        },
+        "u_i_soil": {
+            "long_name": "Instantaneous wind speed just above soil surface",
+            "units": "m s-1",
+            "definition": ""
+        },
+        "u_star_24_init": {
+            "long_name": "Initial estimate of the daily friction velocity",
+            "units": "m s-1",
+            "definition": ""
+        },
+        "u_star_24_soil_init": {
+            "long_name": "Initial estimate of the daily friction velocity for soil",
+            "units": "m s-1",
+            "definition": ""
+        },
+        "u_star_i_bare": {
+            "long_name": "Instantaneous friction velocity bare soil",
+            "units": "m s-1",
+            "definition": ""
+        },
+        "u_star_i_full": {
+            "long_name": "Instantaneous friction velocity vegetation",
+            "units": "m s-1",
+            "definition": ""
+        },
+        "v2m_24": {
+            "long_name": "Daily average northward wind speed",
+            "units": "m s-1",
+            "definition": ""
+        },
+        "v2m_i": {
+            "long_name": "Instantaneous northward wind speed",
+            "units": "m s-1",
+            "definition": ""
+        },
+        "vc": {
+            "long_name": "Vegetation cover",
+            "units": "-",
+            "definition": ""
+        },
+        "vhc": {
+            "long_name": "Volumetric heat capacity",
+            "units": "J m-3 K-1",
+            "definition": ""
+        },
+        "vp_24": {
+            "long_name": "Daily vapour pressure",
+            "units": "mbar",
+            "definition": ""
+        },
+        "vp_i": {
+            "long_name": "Instantaneous vapour pressure",
+            "units": "mbar",
+            "definition": ""
+        },
+        "vpd_24": {
+            "long_name": "Daily vapour pressure deficit",
+            "units": "mbar",
+            "definition": ""
+        },
+        "vpd_slope": {
+            "long_name": "Vapour pressure stress curve slope",
+            "units": "mbar-1",
+            "definition": ""
+        },
+        "ws": {
+            "long_name": "Sunset hour angle",
+            "units": "radians",
+            "definition": ""
+        },
+        "wv_i": {
+            "long_name": "Instantaneous total column atmospheric water vapor",
+            "units": "kg m-2",
+            "definition": ""
+        },
+        "z": {
+            "long_name": "Elevation above sea level",
+            "units": "m",
+            "definition": ""
+        },
+        "z0m": {
+            "long_name": "Surface roughness",
+            "units": "m",
+            "definition": ""
+        },
+        "z_obst": {
+            "long_name": "Obstacle height",
+            "units": "m",
+            "definition": ""
+        },
+        "z_obst_max": {
+            "long_name": "Maximum obstacle height",
+            "units": "m",
+            "definition": ""
+        },
+        "z_oro": {
+            "long_name": "Orographic roughness",
+            "units": "m",
+            "definition": ""
+        }
+    }
 
-        {"name": "Air Temperature (daily average)", "unit": "[C]",
-        "quantity": "Temperature",
-        "level": "surface",
-        "time": "daily average",
-        "filepath": "{input_folder}/{level}/{year}{month}{day}/tair_24_{year}{month}{day}.tif"},
-
-        {"name": "Air Temperature (instanteneous)", "unit": "[C]",
-        "quantity": "Temperature",
-        "level": "surface",
-        "time": "instanteneous",
-        "filepath": "{input_folder}/{level}/{year}{month}{day}/tair_inst_{year}{month}{day}.tif"},
-
-        {"name": "Air Temperature (daily maximum)", "unit": "[C]",
-        "quantity": "Temperature",
-        "level": "surface",
-        "time": "daily maximum",
-        "filepath": "{input_folder}/{level}/{year}{month}{day}/tair_max_24_{year}{month}{day}.tif"},
-
-        {"name": "Air Temperature (daily minimum)", "unit": "[C]",
-        "quantity": "Temperature",
-        "level": "surface",
-        "time": "daily minimum",
-        "filepath": "{input_folder}/{level}/{year}{month}{day}/tair_min_24_{year}{month}{day}.tif"},
-
-        {"name": "Transmissivity", "unit": "[-]",
-        "quantity": "Transmissivity",
-        "level": "column",
-        "time": "daily average",
-        "filepath": "{input_folder}/{level}/{year}{month}{day}/Trans_24_{year}{month}{day}.tif"},
-
-        {"name": "Windspeed (daily average)", "unit": "[m/s]",
-        "quantity": "Windspeed",
-        "level": "surface",
-        "time": "daily average",
-        "filepath": "{input_folder}/{level}/{year}{month}{day}/wind_24_{year}{month}{day}.tif"},
-
-        {"name": "Windspeed (instanteneous)", "unit": "[m/s]",
-        "quantity": "Windspeed",
-        "level": "surface",
-        "time": "instanteneous",
-        "filepath": "{input_folder}/{level}/{year}{month}{day}/wind_inst_{year}{month}{day}.tif"},
-
-        {"name": "Total Precipitable Water Vapour", "unit": "[mm]",
-        "quantity": "Total Precipitable Water Vapour",
-        "level": "column",
-        "time": "instanteneous",
-        "filepath": "{input_folder}/{level}/{year}{month}{day}/wv_inst_{year}{month}{day}.tif"},
-
-        {"name": "Instantaneous Data Time", "unit": "[hour]",
-        "quantity": "Time",
-        "level": "surface",
-        "time": "instanteneous",
-        "filepath": "{input_folder}/{level}/{year}{month}{day}/Time_{year}{month}{day}.tif"},
-    ]
-
-    return temporal_input_data_req
-
-def get_static_input_data_reqs():
-    static_input_data_req = [
-        {"name": "Latitude",
-        "unit": "[DD]",
-        "quantity": "Latitude",
-        "level": "surface",
-        "time": "invariant",
-        "filepath": "{input_folder}/{level}/static/Lat.tif"},
-
-        {"name": "Longitude",
-        "unit": "[DD]",
-        "quantity": "Longitude",
-        "level": "surface",
-        "time": "invariant",
-        "filepath": "{input_folder}/{level}/static/Lon.tif"},
-
-        {"name": "Slope",
-        "unit": "[degrees]",
-        "quantity": "Slope",
-        "level": "surface",
-        "time": "invariant",
-        "filepath": "{input_folder}/{level}/static/Slope.tif"},
-
-        {"name": "Slope Aspect",
-        "unit": "[degrees]",
-        "quantity": "Aspect",
-        "level": "surface",
-        "time": "invariant",
-        "filepath": "{input_folder}/{level}/static/Aspect.tif"},
-
-        {"name": "Bulk Stomatal Resistance",
-        "unit": "[s/m]",
-        "quantity": "Resistance",
-        "level": "surface",
-        "time": "yearly",
-        "filepath": "{input_folder}/{level}/static/Bulk_Stomatal_resistance_{year}.tif"},
-
-        {"name": "Digital Elevation Model",
-        "unit": "[m.a.s.l]",
-        "quantity": "Altitude",
-        "level": "surface",
-        "time": "invariant",
-        "filepath": "{input_folder}/{level}/static/DEM.tif"},
-
-        {"name": "Landmask",
-        "unit": "[-]",
-        "quantity": "Landmask",
-        "level": "surface",
-        "time": "yearly",
-        "filepath": "{input_folder}/{level}/static/LandMask_{year}.tif"},
-
-        {"name": "Maximum Light Use Efficiency",
-        "unit": "[gr/MJ]",
-        "quantity": "Efficiency",
-        "level": "surface",
-        "time": "yearly",
-        "filepath": "{input_folder}/{level}/static/LUEmax_{year}.tif"},
-
-        {"name": "Maximum Obstacle Height",
-        "unit": "[m]",
-        "quantity": "Height",
-        "level": "surface",
-        "time": "yearly",
-        "filepath": "{input_folder}/{level}/static/Maximum_Obstacle_Height_{year}.tif"},
-
-        {"name": "Air Temperature (yearly amplitude)",
-        "unit": "[K]",
-        "quantity": "Temperature",
-        "level": "surface",
-        "time": "yearly",
-        "filepath": "{input_folder}/{level}/static/Tair_amp_{year}.tif"},
-
-    ]
-    return static_input_data_req
+    return defs
