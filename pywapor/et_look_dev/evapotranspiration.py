@@ -1,5 +1,6 @@
 from pywapor.et_look_dev import constants as c
 import numpy as np
+import xarray as xr
 
 def evaporative_fraction(et_24_mm, lh_24, rn_24, g0_24):
     r"""
@@ -95,7 +96,10 @@ def interception_mm(P_24, vc, lai, int_max=0.2):
 
     res = int_max * lai * (1 - (1 / (1 + ((vc * P_24) / (int_max * lai)))))
 
-    res[zero_mask] = 0
+    if isinstance(res, xr.DataArray):
+        res = xr.where(zero_mask, 0.0, res)
+    else:
+        res[zero_mask] = 0
 
     return res
 

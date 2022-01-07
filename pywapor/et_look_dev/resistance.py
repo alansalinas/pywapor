@@ -1,5 +1,5 @@
-
 import numpy as np
+import xarray as xr
 
 def atmospheric_canopy_resistance(lai_eff, stress_rad, stress_vpd,
                                   stress_temp, rs_min=70, rcan_max=1000000.):
@@ -55,7 +55,10 @@ def atmospheric_canopy_resistance(lai_eff, stress_rad, stress_vpd,
     max_mask = np.logical_or(bulk_stress == 0, lai_eff == 0)
 
     r_canopy_0 = (rs_min / lai_eff) / bulk_stress
-    r_canopy_0[max_mask] = rcan_max
+    if isinstance(r_canopy_0, xr.DataArray):
+        r_canopy_0 = xr.where(max_mask, rcan_max, r_canopy_0)
+    else:
+        r_canopy_0[max_mask] = rcan_max
 
     return r_canopy_0
 
@@ -96,7 +99,10 @@ def canopy_resistance(r_canopy_0, stress_moist, rcan_max=1000000.):
     272.5
     """
 
-    r_canopy = np.where(stress_moist == 0, rcan_max, r_canopy_0/stress_moist)
+    if isinstance(r_canopy_0, xr.DataArray):
+        r_canopy = xr.where(stress_moist == 0, rcan_max, r_canopy_0/stress_moist)
+    else:
+        r_canopy = np.where(stress_moist == 0, rcan_max, r_canopy_0/stress_moist)
 
     return r_canopy
 
@@ -141,7 +147,11 @@ def soil_resistance(se_top, land_mask=1, r_soil_pow=-2.1, r_soil_min=800):
     998.1153098304111
     """
     se_top = np.minimum(0.5, se_top)
-    res = np.ones(land_mask.shape) * r_soil_min * se_top ** r_soil_pow
-    res[land_mask == 2] = 0
+    if isinstance(land_mask, xr.DataArray):
+        res = xr.ones_like(land_mask) * r_soil_min * se_top ** r_soil_pow
+        res = xr.where(land_mask == 2, 0, res)
+    else:
+        res = np.ones(land_mask.shape) * r_soil_min * se_top ** r_soil_pow
+        res[land_mask == 2] = 0
 
     return res

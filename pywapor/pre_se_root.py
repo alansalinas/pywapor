@@ -1,6 +1,7 @@
 import tqdm
 import warnings
 import os
+import copy
 import xarray as xr
 import numpy as np
 import pandas as pd
@@ -14,6 +15,7 @@ from pywapor.general.compositer import check_geots, preprocess_func
 from pywapor.enhancers.temperature import kelvin_to_celsius, lapse_rate
 from pywapor.enhancers.apply_enhancers import apply_enhancer
 from pywapor.general.compositer import calculate_ds
+from pywapor.general import processing_functions as pf
 
 def main(project_folder, startdate, enddate, latlim, lonlim, level = "level_1",
         extra_sources = None, extra_source_locations = None):
@@ -27,19 +29,21 @@ def main(project_folder, startdate, enddate, latlim, lonlim, level = "level_1",
     # Disable Warnings
     warnings.filterwarnings('ignore')
 
-    #### Check if selected sources and dates are valid
+    # Load required variable sources.
     levels = g.variables.get_source_level_selections()
 
-    if isinstance(level, dict):
-        level_name = "custom"
-        if "name" in level.keys():
-            level_name = level.pop("name")
-        levels[level_name] = level
-        level = level_name
-
-    source_selection = levels[level]
+    if isinstance(level, str):
+        source_selection = levels[level]
+        level_name = level
+    elif isinstance(level, dict):
+        source_selection = copy.copy(level)
+        if "level_name" in source_selection.keys():
+            level_name = source_selection.pop("level_name")
+        else:
+            level_name = "custom"
 
     raw_folder = os.path.join(project_folder, "RAW")
+    level_folder = os.path.join(project_folder, level_name)
     temp_folder = os.path.join(project_folder, "temporary")
 
     dl_args = {
@@ -63,6 +67,9 @@ def main(project_folder, startdate, enddate, latlim, lonlim, level = "level_1",
         "var_unit": "-",
     }
     ds_ndvi = g.compositer.main(cmeta, raw_ndvi_files, None, temp_folder, None, lean_output = False)
+
+    # example_ds = ds_ndvi.isel(time = 0).drop_vars(["time", "sources"])
+    example_fh, example_ds, example_geoinfo, resolution = pf.select_template(raw_ndvi_files)
 
     #### LST ####
     log.info("# lst")
@@ -114,9 +121,28 @@ def main(project_folder, startdate, enddate, latlim, lonlim, level = "level_1",
 
     log.sub().info("< METEO")
 
+    # spatial interpolation
+    ds_lst2 = ds_lst.interp_like(example_ds, method = "linear", kwargs={"fill_value": "extrapolate"},)
+    ds_meteo2 = ds_meteo.interp_like(example_ds, method = "linear", kwargs={"fill_value": "extrapolate"},)
+    ds_ndvi2 = ds_ndvi.interp_like(example_ds, method = "linear", kwargs={"fill_value": "extrapolate"},)
+
+    # temporal interpolation
+    ds_meteo3 = ds_meteo2.interp(time = ds_lst2.time, method = "nearest", kwargs={"fill_value": "extrapolate"},) # TODO download more meteo data and switch to linear
+    ds_ndvi3 = ds_ndvi2.interp(time = ds_lst.time, method = "linear", kwargs={"fill_value": "extrapolate"},)
+
+    ds_se_root = xr.merge([ds_lst2, ds_meteo3, ds_ndvi3])
+
+    ds_se_root.attrs["geotransform"] = example_geoinfo[0]
+    ds_se_root.attrs["projection"] = example_geoinfo[1]
+    ds_se_root.attrs["pixel_size"] = resolution
+    ds_se_root.attrs["example_file"] = example_fh
+
+    fh = os.path.join(level_folder, "se_root_input.nc")
+    ds, fh = calculate_ds(ds_se_root, fh, "--> Resampling datasets.")
+
     log.sub().info("< PRE_SE_ROOT")
 
-    return ds_lst, ds_meteo, ds_ndvi
+    return ds, fh
 
 def calc_periods(times, freq):
 

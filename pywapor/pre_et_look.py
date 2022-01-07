@@ -21,10 +21,11 @@ from pywapor.general.logger import log, adjust_logger
 from pywapor.enhancers.apply_enhancers import apply_enhancer
 from pywapor.general.compositer import calculate_ds
 from functools import partial
+import copy
 
 def main(project_folder, startdate, enddate, latlim, lonlim, level = "level_1", 
         diagnostics = None, composite_length = "DEKAD", extra_sources = None,
-        extra_source_locations = None):
+        extra_source_locations = None, se_root_version = "v2"):
 
     # Create project folder.
     if not os.path.exists(project_folder):
@@ -46,27 +47,27 @@ def main(project_folder, startdate, enddate, latlim, lonlim, level = "level_1",
     epochs_info = create_dates(sdate, edate, composite_length)
 
     # Load required variable sources.
-    levels = g.variables.get_source_level_selections()
-
-    if isinstance(level, dict):
-        level_name = "custom"
-        if "name" in level.keys():
-            level_name = level.pop("name")
-        levels[level_name] = level
-        level = level_name
-
-    source_selection = levels[level]
+    if isinstance(level, str):
+        levels = g.variables.get_source_level_selections()
+        source_selection = levels[level]
+        level_name = level
+    elif isinstance(level, dict):
+        source_selection = copy.copy(level)
+        if "level_name" in source_selection.keys():
+            level_name = source_selection.pop("level_name")
+        else:
+            level_name = "custom"
 
     # Define folders.
-    level_folder, temp_folder, raw_folder = get_folders(project_folder, level)
+    level_folder, temp_folder, raw_folder = get_folders(project_folder, level_name)
     if isinstance(diagnostics, dict):
         diagnostics["folder"] = os.path.join(level_folder, "graphs")
 
     # Define download arguments.
     dl_args = {
                 "Dir": raw_folder, 
-                "latlim": latlim, 
-                "lonlim": lonlim, 
+                "latlim": latlim,
+                "lonlim": lonlim,
                 "Startdate": startdate, 
                 "Enddate": enddate,
                 }
@@ -96,10 +97,10 @@ def main(project_folder, startdate, enddate, latlim, lonlim, level = "level_1",
 
         # Run pre_se_root and se_root.
         if var == "se_root":
-            dss = pywapor.pre_se_root.main(project_folder, startdate, enddate, latlim, 
-                                            lonlim, level = source_selection, extra_sources = extra_sources,
-                                            extra_source_locations = extra_source_locations)
-            raw_files = pywapor.se_root.main(level_folder, dss, example_info)
+            ds_in = pywapor.pre_se_root.main(project_folder, startdate, enddate, latlim, 
+                                            lonlim, level = level, extra_sources = extra_sources,
+                                            extra_source_locations = extra_source_locations)[0]
+            raw_files = [pywapor.se_root.main(ds_in, se_root_version = se_root_version)["se_root"]]
         # Download RAW-data.
         else:
             raw_files = collect_sources(var, source_selection[var], 
@@ -107,7 +108,7 @@ def main(project_folder, startdate, enddate, latlim, lonlim, level = "level_1",
 
         # Define resampling parameters.
         if 'example_info' not in vars():
-            example_info = select_template(raw_files)
+            example_info = pf.select_template(raw_files)
 
         # Create composites.
         ds = unraw_all(var, raw_files, epochs_info, temp_folder, 
@@ -146,6 +147,11 @@ def main(project_folder, startdate, enddate, latlim, lonlim, level = "level_1",
             ds, _ = calculate_ds(ds, label = label)
 
     log.sub().info("< Composite enhancers.")
+
+    ds.attrs["geotransform"] = example_info[2][0]
+    ds.attrs["projection"] = example_info[2][1]
+    ds.attrs["pixel_size"] = example_info[3]
+    ds.attrs["example_file"] = example_info[0]
 
     # Save pre_et_look-output (i.e. et_look-input).
     all_vars = [var for var in list(ds.variables) if "lon" in ds[var].coords 
@@ -207,27 +213,6 @@ def unraw_all(var, raw_files, epochs_info, temp_folder,
 
     return ds
 
-def select_template(fhs):
-    # Flatten a list-of-lists into a  single list.
-    fhs = [val for sublist in fhs for val in sublist]
-
-    # Determine amount of pixels in each file.
-    sizes = [gdal.Open(fh).RasterXSize * gdal.Open(fh).RasterYSize for fh in fhs]
-
-    # Find index of file with most pixels.
-    idx = np.argmax(sizes)
-
-    # Create resample info.
-    example_fh = fhs[idx]
-    example_ds = xr.open_dataset(example_fh).isel(band = 0).drop_vars(["band", "spatial_ref"]).rename({"x": "lon", "y": "lat"})
-    example_geoinfo = pf.get_geoinfo(example_fh)
-
-    # Calculate pixel size in meters.
-    resolution = pywapor.et_look.get_geoinfo(example_fh)[0]
-    log.info(f"--> Resampling resolution is ~{resolution:.0f} meter.")
-
-    return example_fh, example_ds, example_geoinfo
-
 def create_dates(sdate, edate, period_length):
     """Define composite lenghts
 
@@ -279,6 +264,7 @@ if __name__ == "__main__":
     level = "level_1"
     extra_sources = None
     extra_source_locations = None
+    se_root_version = "v2"
 
     diagnostics = { # label          # lat      # lon
                     "water":	    (29.44977,	30.58215),
@@ -328,11 +314,13 @@ if __name__ == "__main__":
     #     "LS8ALBEDO": r"/Users/hmcoerver/pywapor_notebooks/my_landsat_folder/ALBEDO",
     # }
 
-    ds, fh = main(project_folder, startdate, enddate, latlim, lonlim, level = level, 
-        diagnostics = diagnostics, composite_length = composite_length, extra_sources = extra_sources,
-        extra_source_locations = extra_source_locations)
+    # ds_in, fh_in = main(project_folder, startdate, enddate, latlim, lonlim, level = level, 
+    #     diagnostics = diagnostics, composite_length = composite_length, extra_sources = extra_sources,
+    #     extra_source_locations = extra_source_locations, se_root_version = se_root_version)
 
-    # all_final_files = pywapor.et_look.main(project_folder, startdate)
+    fh_in = r"/Users/hmcoerver/pywapor_notebooks/level_1/et_look_input_.nc"
+
+    out = pywapor.et_look.main(fh_in,export_to_tif = True)
 
     # param = "t_air_24"
     # sources = ["GEOS5"]

@@ -1,7 +1,7 @@
 import numpy as np
 from pywapor.et_look_v2 import constants as con
+import xarray as xr
 import warnings
-
 
 def longitude_rad(lon_deg):
     r"""
@@ -724,20 +724,32 @@ def daily_solar_radiation_toa_new(sc, decl, iesd, lat, doy, slope=0, aspect=0):
         aspect = np.zeros(lat.shape)
         
     gamma = np.deg2rad(np.rad2deg(aspect)-180)                               # Surface aspect angle (radians)
-    a,b,c = Constants(decl,slope,gamma,lat)
+    # a,b,c = Constants(decl,slope,gamma,lat)
 
-    ra24 = np.zeros(np.shape(lat))*np.nan
+    if isinstance(lat, xr.DataArray):
+        ra24 = xr.zeros_like(lat) * np.nan
+    else:
+        ra24 = np.zeros(np.shape(lat))*np.nan
+
     dr = 1 + 0.033 * np.cos(doy*2*np.pi/365)  # Inverse relative distance Earth-Sun
     constant=con.sol*dr/(2*np.pi)
     TwoPeriod= TwoPeriods(decl,slope,lat)  # all input in radians
 
     #2.) calculate the 24-hours extraterrestrial radiation (2 periods)
-    ID = np.where(np.ravel(TwoPeriod==True))
-    ra24.flat[ID]=TwoPeriodSun(constant, decl, slope.flat[ID], gamma.flat[ID], lat.flat[ID])
+    if isinstance(lat, xr.DataArray):
+        ra24_2periods = TwoPeriodSun(constant, decl, slope, gamma, lat)
+        ra24 = xr.where(TwoPeriod, ra24_2periods, ra24)
+    else:
+        ID = np.where(np.ravel(TwoPeriod==True))
+        ra24.flat[ID]=TwoPeriodSun(constant, decl, slope.flat[ID], gamma.flat[ID], lat.flat[ID])
 
     #3.) calculate the 24-hours extraterrestrial radiation (1 period)
-    ID = np.where(np.ravel(TwoPeriod==False))
-    ra24.flat[ID]=OnePeriodSun(constant, decl, slope.flat[ID], gamma.flat[ID], lat.flat[ID])
+    if isinstance(lat, xr.DataArray):
+        ra24_1periods = OnePeriodSun(constant, decl, slope, gamma, lat)
+        ra24 = xr.where(TwoPeriod == False, ra24_1periods, ra24)
+    else:
+        ID = np.where(np.ravel(TwoPeriod==False))
+        ra24.flat[ID]=OnePeriodSun(constant, decl, slope.flat[ID], gamma.flat[ID], lat.flat[ID])
 
     # Horizontal surface
     ws = np.arccos(-np.tan(decl) * np.tan(lat))  # Sunrise/sunset time angle
@@ -747,9 +759,14 @@ def daily_solar_radiation_toa_new(sc, decl, iesd, lat, doy, slope=0, aspect=0):
     # cos_theta_flat = (np.sin(delta) * np.sin(phi) + np.cos(delta) * np.cos(phi) * np.cos(w))
 
     # Mountain radiation
-    ra24 = np.where(ra24 > 0.1 * Ra_hor_24, ra24 / np.cos(slope),
-                           Ra_hor_24)
-    ra24[ra24 > 600.0] = 600.0
+    if isinstance(lat, xr.DataArray):
+        mask = ra24 > 0.1 * Ra_hor_24
+        ra24 = xr.where(mask, ra24 / np.cos(slope), Ra_hor_24)
+        ra24 = xr.where(ra24 > 600.00, 600.00, ra24)
+    else:
+        ra24 = np.where(ra24 > 0.1 * Ra_hor_24, ra24 / np.cos(slope),
+                            Ra_hor_24)
+        ra24[ra24 > 600.0] = 600.0
     
     return ra24
 
@@ -776,23 +793,35 @@ def TwoPeriodSun(constant,delta,s,gamma,phi):
     Angle_B1 = AngleSlope(a,b,c,B1)
     Angle_B2 = AngleSlope(a,b,c,B2)
 
-    B1[abs(Angle_B1) > 0.001] = np.pi - B1[abs(Angle_B1) > 0.001]
-    B2[abs(Angle_B2) > 0.001] = -np.pi - B2[abs(Angle_B2) > 0.001]
+    if isinstance(gamma, xr.DataArray):
+        B1 = xr.where(abs(Angle_B1) > 0.001, np.pi - B1, B1)
+        B2 = xr.where(abs(Angle_B2) > 0.001, -np.pi - B2, B2)
+    else:
+        B1[abs(Angle_B1) > 0.001] = np.pi - B1[abs(Angle_B1) > 0.001]
+        B2[abs(Angle_B2) > 0.001] = -np.pi - B2[abs(Angle_B2) > 0.001]
 
     # Check if two periods really exist
-    ID = np.ravel_multi_index(np.where(np.logical_and(B2 >= A1, B1 >= A2) == True),a.shape)
-    Val = IntegrateSlope(constant,B2.flat[ID],B1.flat[ID],delta,s.flat[ID],gamma.flat[ID],phi.flat[ID])
-    ID = ID[Val < 0]
+    if isinstance(gamma, xr.DataArray):
+        Val = IntegrateSlope(constant,B2,B1,delta,s,gamma,phi)
+        mask = np.logical_and(np.logical_and(B2 >= A1, B1 >= A2), Val < 0)
+        Vals = np.zeros_like(B1)
+        vals1 = IntegrateSlope(constant,A1,B2,delta,s,gamma,phi) + IntegrateSlope(constant,B1,A2,delta,s,gamma,phi)
+        Vals = xr.where(mask, vals1, Vals)
+        mask = Vals == 0
+        vals2 = IntegrateSlope(constant,A1,A2,delta,s,gamma,phi)
+        Vals = xr.where(mask, vals2, Vals)
+    else:
+        ID = np.ravel_multi_index(np.where(np.logical_and(B2 >= A1, B1 >= A2) == True),a.shape)
+        Val = IntegrateSlope(constant,B2.flat[ID],B1.flat[ID],delta,s.flat[ID],gamma.flat[ID],phi.flat[ID])
+        ID = ID[Val < 0]
+        # Finally calculate resulting values
+        Vals = np.zeros(B1.shape)
+        Vals.flat[ID] = (IntegrateSlope(constant,A1.flat[ID],B2.flat[ID],delta,s.flat[ID],gamma.flat[ID],phi.flat[ID])  +
+                    IntegrateSlope(constant,B1.flat[ID],A2.flat[ID],delta,s.flat[ID],gamma.flat[ID],phi.flat[ID]))
+        ID = np.ravel_multi_index(np.where(Vals == 0),a.shape)
+        Vals.flat[ID] = IntegrateSlope(constant,A1.flat[ID],A2.flat[ID],delta,s.flat[ID],gamma.flat[ID],phi.flat[ID])
 
-    # Finally calculate resulting values
-    Vals = np.zeros(B1.shape)
-
-    Vals.flat[ID] = (IntegrateSlope(constant,A1.flat[ID],B2.flat[ID],delta,s.flat[ID],gamma.flat[ID],phi.flat[ID])  +
-                   IntegrateSlope(constant,B1.flat[ID],A2.flat[ID],delta,s.flat[ID],gamma.flat[ID],phi.flat[ID]))
-    ID = np.ravel_multi_index(np.where(Vals == 0),a.shape)
-    Vals.flat[ID] = IntegrateSlope(constant,A1.flat[ID],A2.flat[ID],delta,s.flat[ID],gamma.flat[ID],phi.flat[ID])
-
-    return(Vals)
+    return Vals 
 
 #------------------------------------------------------------------------------
 def IntegrateSlope(constant,sunrise,sunset,delta,s,gamma,phi):
@@ -802,36 +831,63 @@ def IntegrateSlope(constant,sunrise,sunset,delta,s,gamma,phi):
     '''
     # correct the sunset and sunrise angels for days that have no sunset or no sunrise
     SunOrNoSun = np.logical_or(((np.abs(delta + phi)) > (np.pi/2)),((np.abs(delta - phi)) > (np.pi/2)))
-    integral=np.zeros(s.shape)
-    ID = np.where(np.ravel(SunOrNoSun==True))
+    if isinstance(SunOrNoSun, xr.DataArray):
+        integral = xr.zeros_like(s)
+        mask = SunOrNoSun
+    else:
+        integral=np.zeros(s.shape)
+        ID = np.where(np.ravel(SunOrNoSun==True))
+
+    sunset1=np.pi
+    sunrise1=-np.pi
 
     # No sunset
-    IDNoSunset = np.where(np.ravel(abs(delta+phi.flat[ID])>(np.pi/2)))
-    if np.any(IDNoSunset) == True:
-        sunset1=np.pi
-        sunrise1=-np.pi
-        integral.flat[IDNoSunset] = constant * (np.sin(delta)*np.sin(phi)*np.cos(s)*(sunset1-sunrise1)
+    if isinstance(SunOrNoSun, xr.DataArray):
+        IDNoSunset = np.logical_and(abs(delta+phi)>(np.pi/2), SunOrNoSun)
+        vals1 = constant * (np.sin(delta)*np.sin(phi)*np.cos(s)*(sunset1-sunrise1)
             - np.sin(delta)*np.cos(phi)*np.sin(s)*np.cos(gamma)*(sunset1-sunrise1)
             + np.cos(delta)*np.cos(phi)*np.cos(s)*(np.sin(sunset1)-np.sin(sunrise1))
             + np.cos(delta)*np.sin(phi)*np.sin(s)*np.cos(gamma)*(np.sin(sunset1)-np.sin(sunrise1))
             - np.cos(delta)*np.sin(s)*np.sin(gamma)*(np.cos(sunset1)-np.cos(sunrise1)))
+        vals2 = constant * (np.sin(delta)*np.sin(phi)*np.cos(s)*(0)
+                - np.sin(delta)*np.cos(phi)*np.sin(s)*np.cos(gamma)*(0)
+                + np.cos(delta)*np.cos(phi)*np.cos(s)*(np.sin(0)-np.sin(0))
+                + np.cos(delta)*np.sin(phi)*np.sin(s)*np.cos(gamma)*(np.sin(0)-np.sin(0))
+                - np.cos(delta)*np.sin(s)*np.sin(gamma)*(np.cos(0)-np.cos(0)))
+        integral = xr.where(IDNoSunset, vals1, vals2)
+    else:
+        IDNoSunset = np.where(np.ravel(abs(delta+phi.flat[ID])>(np.pi/2)))
+        if np.any(IDNoSunset) == True:
+            integral.flat[IDNoSunset] = constant * (np.sin(delta)*np.sin(phi)*np.cos(s)*(sunset1-sunrise1)
+                - np.sin(delta)*np.cos(phi)*np.sin(s)*np.cos(gamma)*(sunset1-sunrise1)
+                + np.cos(delta)*np.cos(phi)*np.cos(s)*(np.sin(sunset1)-np.sin(sunrise1))
+                + np.cos(delta)*np.sin(phi)*np.sin(s)*np.cos(gamma)*(np.sin(sunset1)-np.sin(sunrise1))
+                - np.cos(delta)*np.sin(s)*np.sin(gamma)*(np.cos(sunset1)-np.cos(sunrise1)))
+        # No sunrise
+        elif np.any(IDNoSunset) == False:
+            integral.flat[IDNoSunset==False]=constant * (np.sin(delta)*np.sin(phi)*np.cos(s)*(0)
+                - np.sin(delta)*np.cos(phi)*np.sin(s)*np.cos(gamma)*(0)
+                + np.cos(delta)*np.cos(phi)*np.cos(s)*(np.sin(0)-np.sin(0))
+                + np.cos(delta)*np.sin(phi)*np.sin(s)*np.cos(gamma)*(np.sin(0)-np.sin(0))
+                - np.cos(delta)*np.sin(s)*np.sin(gamma)*(np.cos(0)-np.cos(0)))
 
-    # No sunrise
-    elif np.any(IDNoSunset) == False:
-        integral.flat[IDNoSunset==False]=constant * (np.sin(delta)*np.sin(phi)*np.cos(s)*(0)
-            - np.sin(delta)*np.cos(phi)*np.sin(s)*np.cos(gamma)*(0)
-            + np.cos(delta)*np.cos(phi)*np.cos(s)*(np.sin(0)-np.sin(0))
-            + np.cos(delta)*np.sin(phi)*np.sin(s)*np.cos(gamma)*(np.sin(0)-np.sin(0))
-            - np.cos(delta)*np.sin(s)*np.sin(gamma)*(np.cos(0)-np.cos(0)))
-
-    ID = np.where(np.ravel(SunOrNoSun==False))
-    integral.flat[ID] = constant * (np.sin(delta)*np.sin(phi)*np.cos(s)*(sunset-sunrise)
+    if isinstance(SunOrNoSun, xr.DataArray):
+        mask = SunOrNoSun==False
+        vals3 = constant * (np.sin(delta)*np.sin(phi)*np.cos(s)*(sunset-sunrise)
             - np.sin(delta)*np.cos(phi)*np.sin(s)*np.cos(gamma)*(sunset-sunrise)
             + np.cos(delta)*np.cos(phi)*np.cos(s)*(np.sin(sunset)-np.sin(sunrise))
             + np.cos(delta)*np.sin(phi)*np.sin(s)*np.cos(gamma)*(np.sin(sunset)-np.sin(sunrise))
             - np.cos(delta)*np.sin(s)*np.sin(gamma)*(np.cos(sunset)-np.cos(sunrise)))
+        integral = xr.where(mask, vals3, integral)
+    else:
+        ID = np.where(np.ravel(SunOrNoSun==False))
+        integral.flat[ID] = constant * (np.sin(delta)*np.sin(phi)*np.cos(s)*(sunset-sunrise)
+                - np.sin(delta)*np.cos(phi)*np.sin(s)*np.cos(gamma)*(sunset-sunrise)
+                + np.cos(delta)*np.cos(phi)*np.cos(s)*(np.sin(sunset)-np.sin(sunrise))
+                + np.cos(delta)*np.sin(phi)*np.sin(s)*np.cos(gamma)*(np.sin(sunset)-np.sin(sunrise))
+                - np.cos(delta)*np.sin(s)*np.sin(gamma)*(np.cos(sunset)-np.cos(sunrise)))
 
-    return(integral)
+    return integral
 
 def BoundsHorizontal(delta,phi):
     '''
@@ -840,8 +896,12 @@ def BoundsHorizontal(delta,phi):
     If there is no sunset or sunrise hours the values are either set to 0 (polar night) or pi (polar day).
     '''
     bound = np.arccos(-np.tan(delta)*np.tan(phi))
-    bound[abs(delta+phi) > np.pi/2] = np.pi
-    bound[abs(delta-phi) > np.pi/2] = 0
+    if isinstance(bound, xr.DataArray):
+        bound = xr.where(abs(delta+phi) > np.pi/2, np.pi, bound)
+        bound = xr.where(abs(delta-phi) > np.pi/2, 0, bound)
+    else:
+        bound[abs(delta+phi) > np.pi/2] = np.pi
+        bound[abs(delta-phi) > np.pi/2] = 0
 
     return(bound)
 
@@ -861,64 +921,114 @@ def SunHours(delta,slope,slopedir,lat):
     riseSlope, setSlope = BoundsSlope(a,b,c)
     bound = BoundsHorizontal(delta,lat)
 
-    Calculated = np.zeros(slope.shape, dtype = bool)
-    RiseFinal = np.zeros(slope.shape)
-    SetFinal = np.zeros(slope.shape)
+    if isinstance(slope, xr.DataArray):
+        Calculated = xr.zeros_like(slope, dtype = bool)
+        RiseFinal = xr.zeros_like(slope)
+        SetFinal = xr.zeros_like(slope)
+    else:
+        Calculated = np.zeros(slope.shape, dtype = bool)
+        RiseFinal = np.zeros(slope.shape)
+        SetFinal = np.zeros(slope.shape)
 
     # First check sunrise is not nan
     # This means that their is either no sunrise (whole day night) or no sunset (whole day light)
     # For whole day light, use the horizontal sunrise and whole day night a zero..
     Angle4 = AngleSlope(a,b,c,-bound)
-    RiseFinal[np.logical_and(np.isnan(riseSlope),Angle4 >= 0.0)] = -bound[np.logical_and(np.isnan(riseSlope),Angle4 >= 0.0)]
-    Calculated[np.isnan(riseSlope)] = True
+
+    if isinstance(slope, xr.DataArray):
+        RiseFinal = xr.where(np.logical_and(np.isnan(riseSlope),Angle4 >= 0.0),
+                            -bound, RiseFinal)
+        Calculated = xr.where(np.isnan(riseSlope), True, Calculated)
+    else:
+        RiseFinal[np.logical_and(np.isnan(riseSlope),Angle4 >= 0.0)] = -bound[np.logical_and(np.isnan(riseSlope),Angle4 >= 0.0)]
+        Calculated[np.isnan(riseSlope)] = True
 
     # Step 1 > 4
     Angle1 = AngleSlope(a,b,c,riseSlope)
     Angle2 = AngleSlope(a,b,c,-bound)
 
-    ID = np.ravel_multi_index(np.where(np.logical_and(np.logical_and(Angle2 < Angle1+0.001 ,Angle1 < 0.001),Calculated == False) == True),a.shape)
-    RiseFinal.flat[ID] = riseSlope.flat[ID]
-    Calculated.flat[ID] = True
+    if isinstance(slope, xr.DataArray):
+        mask = np.logical_and(np.logical_and(Angle2 < Angle1+0.001 ,Angle1 < 0.001),Calculated == False)
+        RiseFinal = xr.where(mask, riseSlope, RiseFinal)
+        Calculated = xr.where(mask, True, Calculated)
+    else:
+        ID = np.ravel_multi_index(np.where(np.logical_and(np.logical_and(Angle2 < Angle1+0.001 ,Angle1 < 0.001),Calculated == False) == True),a.shape)
+        RiseFinal.flat[ID] = riseSlope.flat[ID]
+        Calculated.flat[ID] = True
+
     # step 5 > 7
     Angle3 = AngleSlope(a,b,c,-np.pi - riseSlope)
 
-    ID = np.ravel_multi_index(np.where(np.logical_and(np.logical_and(-bound<(-np.pi-riseSlope),Angle3 <= 0.001),Calculated == False) == True),a.shape)
-    RiseFinal.flat[ID] = -np.pi -riseSlope.flat[ID]
-    Calculated.flat[ID] = True
+    if isinstance(slope, xr.DataArray):
+        mask = np.logical_and(np.logical_and(-bound<(-np.pi-riseSlope),Angle3 <= 0.001),Calculated == False)
+        RiseFinal = xr.where(mask, -np.pi -riseSlope, RiseFinal)
+        Calculated = xr.where(mask, True, Calculated)
+    else:
+        ID = np.ravel_multi_index(np.where(np.logical_and(np.logical_and(-bound<(-np.pi-riseSlope),Angle3 <= 0.001),Calculated == False) == True),a.shape)
+        RiseFinal.flat[ID] = -np.pi -riseSlope.flat[ID]
+        Calculated.flat[ID] = True
 
     # For all other values we use the horizontal sunset if it is positive, otherwise keep a zero
-    RiseFinal[Calculated == False] = -bound[Calculated == False]
+    if isinstance(slope, xr.DataArray):
+        RiseFinal = xr.where(Calculated == False, -bound, RiseFinal)
+    else:
+        RiseFinal[Calculated == False] = -bound[Calculated == False]
 
     # Then check sunset is not nan or < 0
-    Calculated = np.zeros(slope.shape, dtype = bool)
+    if isinstance(slope, xr.DataArray):
+        Calculated = xr.zeros_like(slope, dtype = bool)
+    else:
+        Calculated = np.zeros(slope.shape, dtype = bool)
 
     Angle4 = AngleSlope(a,b,c,bound)
-    SetFinal[np.logical_and(np.isnan(setSlope),Angle4 >= 0.0)] = bound[np.logical_and(np.isnan(setSlope),Angle4 >= 0.0)]
-    Calculated[np.isnan(setSlope)] = True
+
+    if isinstance(slope, xr.DataArray):
+        mask = np.logical_and(np.isnan(setSlope),Angle4 >= 0.0)
+        SetFinal = xr.where(mask, bound, SetFinal)
+        Calculated = xr.where(np.isnan(setSlope), True, Calculated)
+    else:
+        SetFinal[np.logical_and(np.isnan(setSlope),Angle4 >= 0.0)] = bound[np.logical_and(np.isnan(setSlope),Angle4 >= 0.0)]
+        Calculated[np.isnan(setSlope)] = True
 
     # Step 1 > 4
     Angle1 = AngleSlope(a,b,c,setSlope)
     Angle2 = AngleSlope(a,b,c,bound)
 
-    ID = np.ravel_multi_index(np.where(np.logical_and(np.logical_and(Angle2 < Angle1+0.001,Angle1 < 0.001),Calculated == False) == True),a.shape)
-    SetFinal.flat[ID] = setSlope.flat[ID]
-    Calculated.flat[ID] = True
+    if isinstance(slope, xr.DataArray):
+        mask = np.logical_and(np.logical_and(Angle2 < Angle1+0.001,Angle1 < 0.001),Calculated == False)
+        SetFinal = xr.where(mask, setSlope, SetFinal)
+        Calculated = xr.where(mask, True, Calculated)
+    else:
+        ID = np.ravel_multi_index(np.where(np.logical_and(np.logical_and(Angle2 < Angle1+0.001,Angle1 < 0.001),Calculated == False) == True),a.shape)
+        SetFinal.flat[ID] = setSlope.flat[ID]
+        Calculated.flat[ID] = True
+    
     # step 5 > 7
     Angle3 = AngleSlope(a,b,c,np.pi - setSlope)
 
-    ID = np.ravel_multi_index(np.where(np.logical_and(np.logical_and(bound>(np.pi-setSlope),Angle3 <= 0.001),Calculated == False) == True),a.shape)
-    SetFinal.flat[ID] = np.pi - setSlope.flat[ID]
-    Calculated.flat[ID] = True
+    if isinstance(slope, xr.DataArray):
+        mask = np.logical_and(np.logical_and(bound>(np.pi-setSlope),Angle3 <= 0.001),Calculated == False)
+        SetFinal = xr.where(mask, np.pi - setSlope, SetFinal)
+        Calculated = xr.where(mask, True, Calculated)
+    else:
+        ID = np.ravel_multi_index(np.where(np.logical_and(np.logical_and(bound>(np.pi-setSlope),Angle3 <= 0.001),Calculated == False) == True),a.shape)
+        SetFinal.flat[ID] = np.pi - setSlope.flat[ID]
+        Calculated.flat[ID] = True
 
-    # For all other values we use the horizontal sunset if it is positive, otherwise keep a zero
-    SetFinal[Calculated == False] = bound[Calculated == False]
+    if isinstance(slope, xr.DataArray):
+        SetFinal = xr.where(Calculated == False, bound, SetFinal)
+        SetFinal = xr.where(SetFinal <= RiseFinal, 0.0, SetFinal)
+        RiseFinal = xr.where(SetFinal <= RiseFinal, 0.0, RiseFinal)
+    else:
+        # For all other values we use the horizontal sunset if it is positive, otherwise keep a zero
+        SetFinal[Calculated == False] = bound[Calculated == False]
 
-    #    Angle4 = AngleSlope(a,b,c,bound)
-    #    SetFinal[np.logical_and(Calculated == False,Angle4 >= 0)] = bound[np.logical_and(Calculated == False,Angle4 >= 0)]
+        #    Angle4 = AngleSlope(a,b,c,bound)
+        #    SetFinal[np.logical_and(Calculated == False,Angle4 >= 0)] = bound[np.logical_and(Calculated == False,Angle4 >= 0)]
 
-    # If Sunrise is after Sunset there is no sunlight during the day
-    SetFinal[SetFinal <= RiseFinal] = 0.0
-    RiseFinal[SetFinal <= RiseFinal] = 0.0
+        # If Sunrise is after Sunset there is no sunlight during the day
+        SetFinal[SetFinal <= RiseFinal] = 0.0
+        RiseFinal[SetFinal <= RiseFinal] = 0.0
 
     return(RiseFinal,SetFinal)
 
@@ -937,12 +1047,24 @@ def BoundsSlope(a,b,c):
     this function calculates candidate values for sunrise and sunset hour angles.
     '''
     Div = (b**2+c**2)
-    Div[Div <= 0] = 0.00001
+
+    if isinstance(a, xr.DataArray):
+        Div = xr.where(Div <= 0, 0.00001, Div)
+    else:
+        Div[Div <= 0] = 0.00001
     sinB = (a*c + b*np.sqrt(b**2+c**2-a**2)) / Div
     sinA = (a*c - b*np.sqrt(b**2+c**2-a**2)) / Div
 
-    sinB[sinB < -1] = -1; sinB[sinB > 1] = 1    # Limits see appendix A.2.i
-    sinA[sinA < -1] = -1; sinA[sinA > 1] = 1    # Limits see appendix A.2.i
+    if isinstance(sinB, xr.DataArray):
+        sinB = xr.where(sinB < -1, -1, sinB)
+        sinB = xr.where(sinB > 1, 1, sinB)
+        sinA = xr.where(sinA < -1, -1, sinA)
+        sinA = xr.where(sinA > 1, 1, sinA)
+    else:
+        sinB[sinB < -1] = -1
+        sinB[sinB > 1] = 1    # Limits see appendix A.2.i
+        sinA[sinA < -1] = -1
+        sinA[sinA > 1] = 1    # Limits see appendix A.2.i
 
     sunrise = np.arcsin(sinA)
     sunset = np.arcsin(sinB)
@@ -960,3 +1082,53 @@ def Constants(delta,s,gamma,phi):
 
     return(a,b,c)    
     
+if __name__ == "__main__":
+
+    import pandas as pd
+    import pywapor.et_look_v2 as ETLook
+
+    ds_fh = "/Users/hmcoerver/pywapor_notebooks/level_1/et_look_input.nc"
+
+    ds = xr.open_dataset(ds_fh)
+
+    doy_epoch_start = [int(pd.Timestamp(x).strftime("%j")) for x in ds["epoch_starts"].values]
+    doy_epoch_end = [int(pd.Timestamp(x).strftime("%j")) for x in ds["epoch_ends"].values]
+    doy = [int((x+y)/2) for x, y in zip(doy_epoch_start, doy_epoch_end)]
+    ds["doy"] = xr.DataArray(doy, coords = ds["epoch_starts"].coords)
+    ds["sc"] = ETLook.solar_radiation.seasonal_correction(ds["doy"])
+    ds["decl"] = ETLook.solar_radiation.declination(ds["doy"])
+    ds["iesd"] = ETLook.solar_radiation.inverse_earth_sun_distance(ds["doy"])
+
+    ds["lat_rad"] = ETLook.solar_radiation.latitude_rad(ds["lat_deg"])
+    ds["slope_rad"] = ETLook.solar_radiation.slope_rad(ds["slope"])
+    ds["aspect_rad"] = ETLook.solar_radiation.aspect_rad(ds["aspect"])
+
+    #######
+
+    sc = ds["sc"].values[0]
+    decl = ds["decl"].values[0]
+    iesd = ds["iesd"].values[0]
+    lat_rad = ds["lat_rad"].values
+    doy = ds["doy"].values[0]
+    Slope_rad = ds["slope_rad"].values
+    Aspect_rad = ds["aspect_rad"].values
+
+    test1 = daily_solar_radiation_toa_new(sc, decl, iesd, 
+                                        lat_rad, doy, Slope_rad, 
+                                        Aspect_rad, sol = 1367)
+
+    #######
+
+    sc = ds["sc"]
+    decl = ds["decl"]
+    iesd = ds["iesd"]
+    lat = ds["lat_rad"]
+    doy = ds["doy"]
+    slope = ds["slope_rad"]
+    aspect = ds["aspect_rad"]
+
+    test2 = daily_solar_radiation_toa_new(sc, decl, iesd, 
+                                        lat, doy, slope, 
+                                        aspect, sol = 1367)
+
+    print(np.mean((test1 - test2.values[:,:,0])**2))

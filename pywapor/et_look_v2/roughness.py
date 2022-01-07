@@ -3,6 +3,7 @@
 
 """
 import numpy as np
+import xarray as xr
 
 def orographic_roughness(slope, dem_resolution=1000.0):
     r"""
@@ -111,12 +112,22 @@ def roughness_length(lai, z_oro, z_obst, z_obst_max, land_mask=1):
 
     # roughness length specific displacement height
     disp = z_obst * (1 - (1 - np.exp(-np.sqrt(12 * lai))) / (np.sqrt(12 * lai)))
-    disp[lai == 0] = 0
+    if isinstance(disp, xr.DataArray):
+        disp = xr.where(lai == 0, 0.0, disp)
+    else:
+        disp[lai == 0] = 0
 
     z0m = (1. / 7.) * z_obst_max + z_oro
-    z0m[land_mask == 0] = 0
+    if isinstance(disp, xr.DataArray):
+        z0m = xr.where(land_mask == 0, 0.0, z0m)
+    else:
+        z0m[land_mask == 0] = 0
+
     z0m = np.where(land_mask == 1, veg_roughness(z_obst, disp, z_obst_max, lai, z_oro), z0m)
-    z0m[land_mask == 2] = 0.0001
+    if isinstance(disp, xr.DataArray):
+        z0m = xr.where(land_mask == 2, 0.0001, z0m)
+    else:
+        z0m[land_mask == 2] = 0.0001
 
     return z0m
 
@@ -176,17 +187,19 @@ def obstacle_height(ndvi, z_obst_max, ndvi_obs_min=0.25,
 
     """
 
-    cond = [ndvi <= ndvi_obs_min, (ndvi > ndvi_obs_min) &
-                 (ndvi < ndvi_obs_max), ndvi >= ndvi_obs_max]
-
     def frac_func(n):
         return (obs_fr + (1-obs_fr)*(n-ndvi_obs_min)/
                 (ndvi_obs_max-ndvi_obs_min))
 
-    obs_height = z_obst_max.copy()
-    obs_height = np.where(ndvi <= ndvi_obs_min, obs_fr*z_obst_max,  obs_height)
-    obs_height = np.where(np.logical_and(ndvi > ndvi_obs_min, ndvi < ndvi_obs_max), frac_func(ndvi)*z_obst_max, obs_height)
-    obs_height = np.where(ndvi >= ndvi_obs_max, z_obst_max, obs_height)
+    if isinstance(ndvi, xr.DataArray):
+        obs_height = xr.where(ndvi <= ndvi_obs_min, obs_fr*z_obst_max,  z_obst_max)
+        obs_height = xr.where(np.logical_and(ndvi > ndvi_obs_min, ndvi < ndvi_obs_max), frac_func(ndvi)*z_obst_max, obs_height)
+        obs_height = xr.where(ndvi >= ndvi_obs_max, z_obst_max, obs_height)
+    else:
+        obs_height = z_obst_max.copy()
+        obs_height = np.where(ndvi <= ndvi_obs_min, obs_fr*z_obst_max,  obs_height)
+        obs_height = np.where(np.logical_and(ndvi > ndvi_obs_min, ndvi < ndvi_obs_max), frac_func(ndvi)*z_obst_max, obs_height)
+        obs_height = np.where(ndvi >= ndvi_obs_max, z_obst_max, obs_height)
 
     return obs_height
 
@@ -251,10 +264,17 @@ def displacement_height(lai, z_obst, land_mask=1, c1=1):
     def disp_func(l):
         return z_obst * (1-(1-np.exp(-np.sqrt(c1*l)))/np.sqrt(c1*l))
 
-    disp = np.zeros_like(land_mask)
-    disp = np.where(land_mask == 1, disp_func(lai), disp)
-    disp = np.where(land_mask == 2, 0, disp)
-    disp = np.where(land_mask == 3, (2./3.)*z_obst, disp)
-    disp[np.isnan(disp)] = 0
+    if isinstance(land_mask, xr.DataArray):
+        disp = xr.zeros_like(land_mask)
+        disp = xr.where(land_mask == 1, disp_func(lai), disp)
+        disp = xr.where(land_mask == 2, 0, disp)
+        disp = xr.where(land_mask == 3, (2./3.)*z_obst, disp)
+        disp = xr.where(np.isnan(disp), 0.0, disp)
+    else:
+        disp = np.zeros_like(land_mask)
+        disp = np.where(land_mask == 1, disp_func(lai), disp)
+        disp = np.where(land_mask == 2, 0, disp)
+        disp = np.where(land_mask == 3, (2./3.)*z_obst, disp)
+        disp[np.isnan(disp)] = 0
     
     return disp

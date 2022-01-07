@@ -87,7 +87,6 @@ def main(cmeta, dbs, epochs_info, temp_folder = None, example_ds = None,
     if not isinstance(temp_folder, type(None)):
         fh = dbs[0][0]
         path = os.path.normpath(fh)
-        parts = path.split(os.sep)
         if not os.path.exists(temp_folder):
             os.makedirs(temp_folder)
 
