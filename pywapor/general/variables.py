@@ -605,7 +605,7 @@ def get_var_definitions():
             "definition": ""
         },
         "se_root": {
-            "long_name": "Relative root zone soil moisture (based on lst)",
+            "long_name": "Relative root zone soil moisture",
             "units": "-",
             "definition": ""
         },
@@ -619,16 +619,16 @@ def get_var_definitions():
             "units": "radians",
             "definition": ""
         },
-        "sources": {
-            "long_name": "",
-            "units": "",
-            "definition": ""
-        },
-        "spatial_ref": {
-            "long_name": "",
-            "units": "",
-            "definition": ""
-        },
+        # "sources": {
+        #     "long_name": "",
+        #     "units": "",
+        #     "definition": ""
+        # },
+        # "spatial_ref": {
+        #     "long_name": "",
+        #     "units": "",
+        #     "definition": ""
+        # },
         "ssvp_24": {
             "long_name": "Daily slope of saturated vapour pressure curve",
             "units": "mbar K-1",
@@ -755,13 +755,13 @@ def get_var_definitions():
             "definition": ""
         },
         "u2m_24": {
-            "long_name": "",
-            "units": "",
+            "long_name": "Daily average eastward wind speed at 2 meter",
+            "units": "m s-1",
             "definition": ""
         },
         "u2m_i": {
-            "long_name": "",
-            "units": "",
+            "long_name": "Instantaneous eastward wind speed at 2 meter",
+            "units": "m s-1",
             "definition": ""
         },
         "u_24": {
@@ -815,12 +815,12 @@ def get_var_definitions():
             "definition": ""
         },
         "v2m_24": {
-            "long_name": "Daily average northward wind speed",
+            "long_name": "Daily average northward wind speed at 2 meter",
             "units": "m s-1",
             "definition": ""
         },
         "v2m_i": {
-            "long_name": "Instantaneous northward wind speed",
+            "long_name": "Instantaneous northward wind speed at 2 meter",
             "units": "m s-1",
             "definition": ""
         },

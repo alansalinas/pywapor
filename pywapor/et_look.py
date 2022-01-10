@@ -249,6 +249,7 @@ def main(input_data, et_look_version = "v2", export_vars = "default", export_to_
         raise ValueError
 
     ds = g.variables.fill_attrs(ds)
+    ds = ds.transpose("epoch", "lat", "lon") # set dimension order the same for all vars.
     
     fp, fn = os.path.split(input_data)
     fn = fn.replace("_input", "_output")

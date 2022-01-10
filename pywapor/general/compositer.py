@@ -141,8 +141,13 @@ def main(cmeta, dbs, epochs_info, temp_folder = None, example_ds = None,
 
         unit_string = dbs[0][0].split("_")[-3]
         source_string = dbs[0][0].split("_")[-4]
-        ds[cmeta['var_name']].attrs = {"unit": unit_string,
-                        "sources": [source_string]}
+
+        attributes = {
+                        # "unit": unit_string,
+                        "sources": [source_string],
+                    }
+
+        ds[cmeta['var_name']].attrs = attributes
         return ds
 
     ds = None
@@ -200,7 +205,8 @@ def main(cmeta, dbs, epochs_info, temp_folder = None, example_ds = None,
 
     for var in all_variables:
         ds[var].attrs = {"sources": dbs_names,
-                         "unit": get_units(dss)[var][0]}
+                        #  "unit": get_units(dss)[var][0]
+                         }
 
     if not isinstance(temp_folder, type(None)):
         fh = os.path.join(temp_folder, f"{cmeta['var_name']}_ts.nc")
@@ -244,12 +250,19 @@ def main(cmeta, dbs, epochs_info, temp_folder = None, example_ds = None,
             log.warning("No valid composite_type selected.")
         ds[f"{var}_composite"].attrs = ds[var].attrs
 
-    ds["epoch_starts"] = xr.DataArray(epoch_starts, coords = {"epoch": epochs})
-    ds["epoch_ends"] = xr.DataArray(epoch_ends, coords = {"epoch": epochs})
+    # ds["epoch_starts"] = xr.DataArray(epoch_starts, coords = {"epoch": epochs})
+    # ds["epoch_ends"] = xr.DataArray(epoch_ends, coords = {"epoch": epochs})
+
+    ds = ds.assign_coords(epoch_starts = ("epoch", epoch_starts))
+    ds = ds.assign_coords(epoch_ends = ("epoch", epoch_ends))
 
     checklist = {True: dbs_names + ["Interp."], False: dbs_names}[True] # TODO interp data should not be included when not used
     sources_styling = {str(k): v for k, v in styling.items() if v[3] in checklist}
     ds.attrs = {str(k): str(v) for k, v in {**cmeta, **sources_styling}.items()}
+
+    coords_to_keep = ["lon", "lat", "epoch", "epoch_starts", "epoch_ends", "epochs", "time"]
+    coords_to_drop = [x for x in list(ds.coords) if x not in coords_to_keep]
+    ds = ds.drop_vars(coords_to_drop)
 
     if lean_output:
         # Keep only the composites.

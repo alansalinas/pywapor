@@ -84,7 +84,7 @@ def main(project_folder, startdate, enddate, latlim, lonlim, level = "level_1",
                 'u2m_24', 'v2m_24', 'p_air_0_24', 'qv_24',
                 'lw_offset', 'lw_slope', 'r0_bare', 'r0_full', 'rn_offset', 
                 'rn_slope', 't_amp_year', 't_opt', 'vpd_slope', 'z_oro',
-                # 'land_mask', 'rs_min', 'z_obst_max',
+                # # 'land_mask', 'rs_min', 'z_obst_max', # these are generated from lulc
                 ]
 
     datasets = list()
@@ -153,6 +153,9 @@ def main(project_folder, startdate, enddate, latlim, lonlim, level = "level_1",
     ds.attrs["projection"] = example_info[2][1]
     ds.attrs["pixel_size"] = example_info[3]
     ds.attrs["example_file"] = example_info[0]
+
+    if "spatial_ref" in list(ds.coords):
+        ds = ds.drop_vars("spatial_ref")
 
     # Save pre_et_look-output (i.e. et_look-input).
     all_vars = [var for var in list(ds.variables) if "lon" in ds[var].coords 
@@ -319,7 +322,7 @@ if __name__ == "__main__":
         diagnostics = diagnostics, composite_length = composite_length, extra_sources = extra_sources,
         extra_source_locations = extra_source_locations, se_root_version = se_root_version)
 
-    # fh_in = r"/Users/hmcoerver/pywapor_notebooks/level_1/et_look_input_.nc"
+    # fh_in = r"/Users/hmcoerver/pywapor_notebooks/level_1/et_look_input___.nc"
 
     out = pywapor.et_look.main(fh_in, export_vars = "all")
 
