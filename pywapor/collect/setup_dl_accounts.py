@@ -1,15 +1,10 @@
-# -*- coding: utf-8 -*-
-"""
-Created on Wed Sep  9 08:28:08 2020
-
-@author: timhe
-"""
 import os
 import json
 from cryptography.fernet import Fernet
 import pywapor
 import getpass
 import sys
+from pywapor.general.logger import log
 
 def create_key():
 
@@ -67,14 +62,36 @@ def setup_account(account):
         json.dump(obj, outfile)        
 
     if account == "NASA":
+        log.info("--> Testing NASA un/pw.")
         succes = pywapor.general.tests.nasa_account()
         if succes:
-            print("NASA account: working")
+            log.info("--> NASA un/pw working.")
         else:
-            to_be_removed = obj.pop("NASA")
+            _ = obj.pop("NASA")
             with open(json_filehandle, 'w') as outfile:
                 json.dump(obj, outfile)
             sys.exit(f"Please fix your NASA account.")            
-   
+
+    if account == "VITO":
+        log.info("--> Testing VITO un/pw.")
+        succes = pywapor.general.tests.vito_account()
+        if succes:
+            log.info("--> VITO un/pw working.")
+        else:
+            _ = obj.pop("VITO")
+            with open(json_filehandle, 'w') as outfile:
+                json.dump(obj, outfile)
+            sys.exit(f"Please fix your VITO account.")  
+
+    if account == "WAPOR":
+        log.info("--> Testing WAPOR token.")
+        succes = pywapor.general.tests.wapor_account()
+        if succes:
+            log.info("--> WAPOR token working.")
+        else:
+            _ = obj.pop("WAPOR")
+            with open(json_filehandle, 'w') as outfile:
+                json.dump(obj, outfile)
+            sys.exit(f"Please fix your WAPOR token.")  
+
     return
-    

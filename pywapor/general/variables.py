@@ -84,13 +84,6 @@ def get_source_level_selections():
 
     return levels
 
-def get_password_reqs():
-    password_reqs = {"NASA": ["MOD13", "MYD13", "MCD43", 
-                                "MOD11", "MYD11", "MERRA2"],
-                    "VITO": ["PROBAV"],
-                    "WAPOR": ["WAPOR"],}
-    return password_reqs
-
 def fill_attrs(ds):
 
     defs = get_var_definitions()
