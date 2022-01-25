@@ -243,7 +243,7 @@ def main(input_data, et_look_version = "v2", export_vars = "default", export_to_
         ds = PF.ds_remove_except(ds, keep_vars)
     elif isinstance(export_vars, list):
         keep_vars = copy.copy(export_vars)
-        keep_vars = np.unique(keep_vars + ['epoch_ends', 'epoch_starts'])
+        keep_vars = np.unique(keep_vars + ['epoch_ends', 'epoch_starts']).tolist()
         ds = PF.ds_remove_except(ds, keep_vars)
     else:
         raise ValueError

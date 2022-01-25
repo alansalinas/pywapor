@@ -121,10 +121,12 @@ def collect_sources(param, sources, dl_args, extra_source_locations = None):
         elif source == "STATICS" and param == "z_oro":
             files.append(c.STATICS.collect(**dl_args, vars = ['z_oro']))
 
-        else:
-            sideload_files = c.sideloader.search_product_files(source, extra_source_locations[source])
+        elif (source, param) in extra_source_locations.keys():
+            sideload_files = c.sideloader.search_product_files(source, extra_source_locations[(source, param)])
             if len(sideload_files) > 0:
                 files.append(sideload_files)
+        else:
+            raise ValueError
 
         # Remove sources for which no files were downloaded.
         files = [x for x in files if len(x) > 0]

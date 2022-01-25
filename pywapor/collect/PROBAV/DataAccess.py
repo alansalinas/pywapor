@@ -35,7 +35,7 @@ import vito_download as vito
 # /Users/hmcoerver/Git/wapor-et-look/tests/test_data/RAW/PROBAV/PROBAV_S5_TOC_X21Y04_20190711_100M_V101.HDF5
 
 def download_data(download_dir, start_date, end_date, latitude_extent, longitude_extent, username,
-                  password, buffer_dates = True):
+                  password, buffer_dates = False):
 
     # setup
     max_retries = 5
@@ -56,9 +56,9 @@ def download_data(download_dir, start_date, end_date, latitude_extent, longitude
         end_date = end_date + timedelta(days=5)
     delta = end_date - start_date
 
-    waitbar = tqdm(total = (delta.days + 1)*10, position = 0, unit_scale = True)
+    waitbar = tqdm(total = (delta.days)*10, position = 0, unit_scale = True)
     # Loop over all dates
-    for i in range(delta.days + 1):
+    for i in range(delta.days):
         date = start_date + timedelta(days=i)
         waitbar.set_description_str(date.strftime("%Y.%m.%d:               "))
 

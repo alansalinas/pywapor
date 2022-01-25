@@ -23,7 +23,7 @@ from pywapor.general.logger import log
 #     return ndvi_files, albedo_files
 
 def NDVI(Dir, latlim, lonlim, Startdate, Enddate, 
-        buffer_dates = True):
+        buffer_dates = False):
     """
 
     """
@@ -39,7 +39,7 @@ def NDVI(Dir, latlim, lonlim, Startdate, Enddate,
     return ndvi_files
 
 def ALBEDO(Dir, latlim, lonlim, Startdate, Enddate, 
-        buffer_dates = True):
+        buffer_dates = False):
     """
 
     """

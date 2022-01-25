@@ -76,8 +76,8 @@ def main(folder, max_lst_uncertainty = 2.5, bb = None):
         ndvi = calc_ndvi(data)
 
         # Save the albedo and ndvi.
-        albedo_files.append(save_to_geotif(albedo, ["ALBEDO"], *save_args)[0])
-        ndvi_files.append(save_to_geotif(ndvi, ["NDVI"], *save_args)[0])
+        albedo_files.append(save_to_geotif(albedo, ["r0"], *save_args)[0])
+        ndvi_files.append(save_to_geotif(ndvi, ["ndvi"], *save_args)[0])
 
         ## LST ##
         # Define which bands are required.
@@ -99,7 +99,7 @@ def main(folder, max_lst_uncertainty = 2.5, bb = None):
         lst = calc_lst(data)
 
         # Save the lst.
-        lst_files.append(save_to_geotif(lst, ["LST"], *save_args)[0])
+        lst_files.append(save_to_geotif(lst, ["lst"], *save_args)[0])
 
         # Remove the untarred files and folder.
         shutil.rmtree(ls_folder)
@@ -377,8 +377,8 @@ def create_fn(var, mtl):
     """
     ls_number = ls_number_from_mtl(mtl)
     date_time = acquired_at(mtl)
-    unit = {"LST": "K", "NDVI": "-", "ALBEDO": "-"}
-    fn = f"{var}_LS{ls_number:01d}{var}_{unit[var]}_-_{date_time:%Y.%m.%d.%H.%M}.tif"
+    unit = {"lst": "K", "ndvi": "-", "r0": "-"}
+    fn = f"{var}_LS{ls_number:01d}_{unit[var]}_-_{date_time:%Y.%m.%d.%H.%M}.tif"
     return fn
 
 def calc_ndvi(data):
@@ -393,7 +393,7 @@ def calc_ndvi(data):
     Returns
     -------
     xarray.Dataset
-        Dataset that has a variable called "NDVI".
+        Dataset that has a variable called "ndvi".
     """
 
     red = data.band_data.sel(band = "red")
@@ -401,7 +401,7 @@ def calc_ndvi(data):
 
     ndvi = (nir - red) / (nir + red)
 
-    return xr.Dataset({"NDVI": ndvi})
+    return xr.Dataset({"ndvi": ndvi})
 
 def calc_albedo(data, ls_number = None, weights = None):
     """Calculate the albedo as a weighted average of the surface reflections.
@@ -422,7 +422,7 @@ def calc_albedo(data, ls_number = None, weights = None):
     Returns
     -------
     xarray.Dataset
-        Dataset that has a variable called "NDVI".
+        Dataset that has a variable called "ndvi".
     """
 
     if isinstance(ls_number, type(None)):
@@ -434,7 +434,7 @@ def calc_albedo(data, ls_number = None, weights = None):
     weights_xr = xr.DataArray(data = list(weights[ls_number].values()), 
                             coords = {"band": list(weights[ls_number].keys())})
 
-    albedo = data.weighted(weights_xr).mean("band").rename({"band_data": "ALBEDO"})
+    albedo = data.weighted(weights_xr).mean("band").rename({"band_data": "r0"})
 
     return albedo
 
@@ -450,9 +450,9 @@ def calc_lst(data):
     Returns
     -------
     xarray.Dataset
-        Dataset that has a variable called "LST".
+        Dataset that has a variable called "lst".
     """
-    return data.sel(band="therm").rename({"band_data": "LST"})
+    return data.sel(band="therm").rename({"band_data": "lst"})
 
 def save_to_geotif(ds, vars, folder, mtl, proj, geot, dtype = None):
     """Convert variables in a xarray.Dataset to GeoTIFF.

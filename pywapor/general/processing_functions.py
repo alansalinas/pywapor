@@ -429,9 +429,9 @@ def reproject_dataset_example(dataset, dataset_example, method=1):
     """
     # open dataset that must be transformed
     if isinstance(dataset, str):
-        g = gdal.Open(dataset_example)
+        g = gdal.Open(dataset)
     elif isinstance(dataset, gdal.Dataset):
-        g = dataset_example
+        g = dataset
     else:
         raise ValueError
     epsg_from = Get_epsg(g)

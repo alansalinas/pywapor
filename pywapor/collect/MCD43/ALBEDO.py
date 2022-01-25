@@ -2,6 +2,9 @@ import sys
 from pywapor.collect.MCD43.DataAccess import DownloadData
 import os
 import glob
+import numpy as np
+from datetime import datetime as dat
+from datetime import timedelta
 import pywapor
 from pywapor.general.logger import log
 
@@ -28,9 +31,17 @@ def main(Dir, latlim, lonlim, Startdate, Enddate, Waitbar = 1, hdf_library = Non
     log.info(f"--> Downloading MCD43.")
     DownloadData(Dir, Startdate, Enddate, latlim, lonlim, username, password, Waitbar, hdf_library, remove_hdf)
 
-    output_files = glob.glob(os.path.join(Dir, 'MODIS', 'MCD43', "*.tif"))
+    # output_files = glob.glob(os.path.join(Dir, 'MODIS', 'MCD43', "*.tif"))
 
-    return output_files
+    sdate = dat.strptime(Startdate, "%Y-%m-%d")
+    edate = dat.strptime(Enddate, "%Y-%m-%d")
+    all_files = glob.glob(os.path.join(Dir, 'MODIS', 'MCD43', "*.tif"))
+    start_dates = np.array([dat.strptime(os.path.split(x)[-1], "Albedo_MCD43A3_-_daily_%Y.%m.%d.tif") for x in all_files])
+    end_dates = np.array([x + timedelta(days = 1) for x in start_dates])
+    check = np.all([start_dates <= edate, end_dates >= sdate], axis = 0)
+    all_files = np.array(all_files)[check].tolist()
+
+    return all_files
 
 if __name__ == '__main__':
     main(sys.argv)

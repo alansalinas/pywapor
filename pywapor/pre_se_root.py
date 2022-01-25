@@ -12,13 +12,15 @@ from pywapor.general.logger import log, adjust_logger
 from datetime import datetime as dat
 from datetime import time as datt
 from pywapor.general.compositer import check_geots, preprocess_func
-from pywapor.enhancers.temperature import kelvin_to_celsius, lapse_rate
+from pywapor.enhancers.temperature import kelvin_to_celsius
 from pywapor.enhancers.apply_enhancers import apply_enhancer
 from pywapor.general.compositer import calculate_ds
 from pywapor.general import processing_functions as pf
 
-def main(project_folder, startdate, enddate, latlim, lonlim, level = "level_1",
-        extra_sources = None, extra_source_locations = None):
+def main(project_folder, startdate, enddate, latlim, lonlim, level = "level_1", 
+            extra_source_locations = None):
+
+#%%
 
     log_write = True
     log_level = "INFO"
@@ -58,8 +60,10 @@ def main(project_folder, startdate, enddate, latlim, lonlim, level = "level_1",
     log.info(f"# ndvi")
     raw_ndvi_files = collect_sources("ndvi", source_selection["ndvi"], dl_args, extra_source_locations)
 
+    example_fh, example_ds, example_geoinfo, resolution = pf.select_template(raw_ndvi_files)
+
     cmeta = {
-        "composite_type": False,
+        "composite_type": None, # 
         "temporal_interp": False,
         "temporal_interp_freq": 1,
         "spatial_interp": "nearest",
@@ -67,16 +71,50 @@ def main(project_folder, startdate, enddate, latlim, lonlim, level = "level_1",
         "var_unit": "-",
     }
     ds_ndvi = g.compositer.main(cmeta, raw_ndvi_files, None, temp_folder, None, lean_output = False)
+    ds_ndvi = ds_ndvi.drop_vars(["sources"]).chunk("auto")
 
-    # example_ds = ds_ndvi.isel(time = 0).drop_vars(["time", "sources"])
-    example_fh, example_ds, example_geoinfo, resolution = pf.select_template(raw_ndvi_files)
-
+#%%
     #### LST ####
     log.info("# lst")
     raw_lst_files = collect_sources("lst", source_selection["lst"], dl_args, extra_source_locations)
 
-    ds_lst = combine_lst(raw_lst_files)
+    # TODO `combine_lst` needs to go into collect, then this whole block can go away!
+    raw_modis_files = [x for x in raw_lst_files if isinstance(x, dict)]
+    raw_nonmodis_files = [x for x in raw_lst_files if isinstance(x, list)]
 
+    if len(raw_modis_files) > 0:
+        ds_lst = combine_lst(raw_lst_files) 
+
+        ds_lst2a = ds_lst.interp_like(example_ds, method = "linear", kwargs={"fill_value": "extrapolate"},)
+        fh = os.path.join(temp_folder, "lst_ts.nc")
+        ds_lst2a, _ = calculate_ds(ds_lst2a, fh, label = "--> Resampling datasets.")
+    else:
+        ds_lst2a = False
+
+    if len(raw_nonmodis_files) > 0:
+        cmeta = {
+            "composite_type": None, # 
+            "temporal_interp": False,
+            "temporal_interp_freq": 1,
+            "spatial_interp": "nearest",
+            "var_name": "lst",
+            "var_unit": "-",
+        }
+        ds_lst2b = g.compositer.main(cmeta, raw_nonmodis_files, None, temp_folder, example_ds, lean_output = False)
+        ds_lst2b = ds_lst2b.drop_vars(["sources"]).chunk("auto")
+    else:
+        ds_lst2b = False
+
+    if ds_lst2a and ds_lst2b:
+        ds_lst2 = xr.merge([ds_lst2a, ds_lst2b])
+    elif ds_lst2a:
+        ds_lst2 = ds_lst2a
+    elif ds_lst2b:
+        ds_lst2 = ds_lst2b
+    else:
+        raise ValueError
+
+#%%
     #### METEO ####
     log.info("> METEO").add()
 
@@ -92,10 +130,16 @@ def main(project_folder, startdate, enddate, latlim, lonlim, level = "level_1",
 
     for var in all_vars:
 
+        log.info(f"# {var}")
+
         meteo_source = source_selection[var][0]
+
+        if len(source_selection[var]) > 1:
+            log.warning(f"! --> Multiple sources not supported for '{var}', using '{meteo_source}' only.")
+
         meteo_freq = {"GEOS5": "3H", "MERRA2": "H"}[meteo_source]
 
-        sds, eds, prds = calc_periods(ds_lst.time.values, meteo_freq)
+        sds, eds, prds = calc_periods(ds_lst2.time.values, meteo_freq)
 
         dl_args["Startdate"] = sds
         dl_args["Enddate"] = eds
@@ -114,23 +158,38 @@ def main(project_folder, startdate, enddate, latlim, lonlim, level = "level_1",
                 ds, label = apply_enhancer(ds, var, enhancer, 
                                                 source = meteo_source)
                 ds, _ = calculate_ds(ds, label = label)
+        else:
+            ds, _ = calculate_ds(ds, fh = os.path.join(temp_folder, f"{var}_ts.nc"))
 
+        ds = ds.chunk("auto")
+
+        attributes = {
+                "sources": [meteo_source],
+            }
+        ds[var].attrs = attributes
+
+        # temporal
+        ds, x, y = g.compositer.temporal_interpolation(ds, ds_lst2.time.values, "nearest")
+        ds = ds.sel(time = ds_lst2.time.values)
+
+        # spatial
+        ds = ds.interp_like(example_ds, method = "linear", kwargs={"fill_value": "extrapolate"},)
+        
         dss.append(ds)
 
-    ds_meteo = xr.merge(dss, combine_attrs = "drop")
+    ds_meteo3 = xr.merge(dss, combine_attrs = "drop_conflicts")
 
     log.sub().info("< METEO")
 
-    # spatial interpolation
-    ds_lst2 = ds_lst.interp_like(example_ds, method = "linear", kwargs={"fill_value": "extrapolate"},)
-    ds_meteo2 = ds_meteo.interp_like(example_ds, method = "linear", kwargs={"fill_value": "extrapolate"},)
-    ds_ndvi2 = ds_ndvi.interp_like(example_ds, method = "linear", kwargs={"fill_value": "extrapolate"},)
-
-    # temporal interpolation
-    ds_meteo3 = ds_meteo2.interp(time = ds_lst2.time, method = "nearest", kwargs={"fill_value": "extrapolate"},) # TODO download more meteo data and switch to linear
-    ds_ndvi3 = ds_ndvi2.interp(time = ds_lst.time, method = "linear", kwargs={"fill_value": "extrapolate"},)
+    ds_ndvi3, x, y = g.compositer.temporal_interpolation(ds_ndvi, ds_lst2.time.values, "linear")
+    ds_ndvi3 = ds_ndvi3.sel(time = ds_lst2.time)
 
     ds_se_root = xr.merge([ds_lst2, ds_meteo3, ds_ndvi3])
+
+    if "spatial_ref" in list(ds_se_root.coords):
+        ds_se_root = ds_se_root.drop_vars("spatial_ref")
+    if "band" in list(ds_se_root.coords):
+        ds_se_root = ds_se_root.drop_vars("band")
 
     ds_se_root = g.variables.fill_attrs(ds_se_root)
 
@@ -140,7 +199,7 @@ def main(project_folder, startdate, enddate, latlim, lonlim, level = "level_1",
     ds_se_root.attrs["example_file"] = example_fh
 
     fh = os.path.join(level_folder, "se_root_input.nc")
-    ds, fh = calculate_ds(ds_se_root, fh, "--> Resampling datasets.")
+    ds, fh = calculate_ds(ds_se_root, fh, "--> Interpolating datasets.")
 
     log.sub().info("< PRE_SE_ROOT")
 
@@ -173,7 +232,14 @@ def calc_periods(times, freq):
 def combine_lst(lst_files):
     ds = None
 
+    sources = list()
+
     for lst_db in lst_files:
+
+        fn = os.path.split(list(lst_db.values())[0][0])[-1]
+        source = fn.split("_")[1]
+        sources.append(source)
+
         for date, files in lst_db.items():
 
             ds_time = xr.open_dataset(files[1]).squeeze("band").rename({"band_data": "time", "x": "lon", "y": "lat"})
@@ -203,39 +269,72 @@ def combine_lst(lst_files):
                     ds_temp = xr.Dataset({"angle": da_angle, "lst": da_lst})
                     ds = xr.concat([ds, ds_temp], dim = "time")
 
-    ds.attrs["time"] = "<UTC> time"
+    ds["lst"].attrs = {"sources": sources}
+    ds["angle"].attrs = {"sources": sources}
 
     return ds
 
-# if __name__ == "__main__":
+if __name__ == "__main__":
 
-    # project_folder = r"/Users/hmcoerver/pywapor_notebooks"
-    # latlim = [28.9, 29.7]
-    # lonlim = [30.2, 31.2]
-    # startdate = "2021-07-01"
-    # enddate = "2021-07-11"
-    # composite_length = "DEKAD"
-    # level = "level_1"
-    # extra_sources = None
+    project_folder = r"/Users/hmcoerver/pywapor_notebooks"
+    latlim = [28.9, 29.7]
+    lonlim = [30.2, 31.2]
+    startdate = "2021-07-01"
+    enddate = "2021-07-11"
+    composite_length = "DEKAD"
+    # level = "level_2"
     # extra_source_locations = None
 
-    # diagnostics = { # label          # lat      # lon
-    #                 "water":	    (29.44977,	30.58215),
-    #                 "desert":	    (29.12343,	30.51222),
-    #                 "agriculture":	(29.32301,	30.77599),
-    #                 "urban":	    (29.30962,	30.84109),
-    #                 }
-    # # diagnostics = None
+    level = {
+        # Main inputs
+        "ndvi":         ["LS7"],
+        "r0":           ["LS7"],
+        "lst":          ["LS7"],
+        "lulc":         ["WAPOR"],
+        "z":            ["SRTM"],
+        "p_24":         ["CHIRPS"],
+        "ra_24":        ["MERRA2"],
 
-    # level = {'METEO': ['MERRA2'],
-    #         'NDVI': ['MYD13'],
-    #         'ALBEDO': ['MCD43'],
-    #         'LST': ['MOD11', 'MYD11'],
-    #         'LULC': ['WAPOR'],
-    #         'DEM': ['SRTM'],
-    #         'PRECIPITATION': ['CHIRPS'],
-    #         'SOLAR_RADIATION': ['MERRA2'],
-    #         "name": "level_1"}
+        # Daily meteo 
+        't_air_24':     ["GEOS5"],
+        't_air_min_24': ["GEOS5"], 
+        't_air_max_24': ["GEOS5"],
+        'u2m_24':       ["GEOS5"],
+        'v2m_24':       ["GEOS5"],
+        'p_air_0_24':   ["GEOS5"],
+        'qv_24':        ["GEOS5"],
 
-    # main(project_folder, startdate, enddate, latlim, lonlim, level = level,
-    #     extra_sources = extra_sources, extra_source_locations = extra_source_locations)
+        # Instanteneous meteo
+        "t_air_i":      ["GEOS5"],
+        "u2m_i":        ["GEOS5"],
+        "v2m_i":        ["GEOS5"],
+        "qv_i":         ["GEOS5"],
+        "wv_i":         ["GEOS5"],
+        "p_air_i":      ["GEOS5"],
+        "p_air_0_i":    ["GEOS5"],
+
+        # Temporal constants
+        "lw_offset":    ["STATICS"],
+        "lw_slope":     ["STATICS"],
+        "r0_bare":      ["STATICS"],
+        "r0_full":      ["STATICS"],
+        "rn_offset":    ["STATICS"],
+        "rn_slope":     ["STATICS"],
+        "t_amp_year":   ["STATICS"],
+        "t_opt":        ["STATICS"],
+        "vpd_slope":    ["STATICS"],
+        "z_oro":        ["STATICS"],
+
+        # Level name
+        "level_name": "sideloading",
+    }
+
+    # Give product folder.
+    extra_source_locations = {
+        ("LS7", "ndvi"): r"/Users/hmcoerver/pywapor_notebooks/my_landsat_folder/NDVI",
+        ("LS7", "lst"): r"/Users/hmcoerver/pywapor_notebooks/my_landsat_folder/LST",
+        ("LS7", "r0"): r"/Users/hmcoerver/pywapor_notebooks/my_landsat_folder/ALBEDO",
+    }
+
+    main(project_folder, startdate, enddate, latlim, lonlim, level = level,
+        extra_source_locations = extra_source_locations)

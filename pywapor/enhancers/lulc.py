@@ -12,6 +12,9 @@ def lulc_to_x(ds, var, convertor, out_var = None):
             new_data = new_data.where(ds[var] != class_number, 
                                         convertor[class_number])
 
+    if "sources" in ds[var].attrs.keys():
+        new_data.attrs = {"sources": ds[var].attrs["sources"]}
+
     if not isinstance(out_var, type(None)):
         ds[out_var] = new_data
     else: 

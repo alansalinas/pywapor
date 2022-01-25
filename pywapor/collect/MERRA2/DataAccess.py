@@ -103,15 +103,15 @@ def DownloadData(Dir, Var, Startdate, Enddate, latlim, lonlim, TimeStep, Period,
         if TimeStep == "daily_MERRA2":
 
             if "mean" in data_type:
-                output_name = os.path.join(output_folder, "%s_MERRA_%s_daily_%d.%02d.%02d.tif" %(Var, unit, Date.year, Date.month, Date.day))
+                output_name = os.path.join(output_folder, "%s_MERRA2_%s_daily_%d.%02d.%02d.tif" %(Var, unit, Date.year, Date.month, Date.day))
             else:
                 output_name = output_folder
             if "min" in data_type:
-                output_name_min = os.path.join(output_folder, "%smin_MERRA_%s_daily_%d.%02d.%02d.tif"%(Var, unit, Date.year, Date.month, Date.day))
+                output_name_min = os.path.join(output_folder, "%smin_MERRA2_%s_daily_%d.%02d.%02d.tif"%(Var, unit, Date.year, Date.month, Date.day))
             else:
                 output_name_min = output_folder
             if "max" in data_type:
-                output_name_max = os.path.join(output_folder, "%smax_MERRA_%s_daily_%d.%02d.%02d.tif"%(Var, unit, Date.year, Date.month, Date.day))
+                output_name_max = os.path.join(output_folder, "%smax_MERRA2_%s_daily_%d.%02d.%02d.tif"%(Var, unit, Date.year, Date.month, Date.day))
             else:
                 output_name_max = output_folder
                 
@@ -124,6 +124,7 @@ def DownloadData(Dir, Var, Startdate, Enddate, latlim, lonlim, TimeStep, Period,
     
         if not (os.path.exists(output_name) and os.path.exists(output_name_min) and os.path.exists(output_name_max)):
 
+            # TODO this shouldnt be hardcoded, cause it will keep giving problems going forward.
             if Date < datetime.datetime(1992,1,1):
                 number = 1
             elif (Date >= datetime.datetime(1992,1,1) and Date < datetime.datetime(2001,1,1)):
@@ -132,7 +133,6 @@ def DownloadData(Dir, Var, Startdate, Enddate, latlim, lonlim, TimeStep, Period,
                 number = 3
             else:
                 number = 4
-                
             if Date.month == 9 and Date.year == 2020:
                 number2 = 1
             elif Date.month == 6 and Date.year == 2021:

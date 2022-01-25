@@ -1,7 +1,3 @@
-import datetime
-from attr import attr
-
-from dask.local import finish_task
 
 def get_source_level_selections():
 
@@ -98,7 +94,11 @@ def fill_attrs(ds):
 
             for k, v in attributes.items():
                 ds[var].attrs[k] = v
-    
+
+        # if "sources" in ds[var].attrs.keys():
+        #     if not isinstance(ds[var].attrs["sources"], list):
+        #         ds[var].assign_attrs(sources = [ds[var].attrs["sources"]])
+
     return ds
 
 def get_var_definitions():
@@ -186,10 +186,7 @@ def get_var_definitions():
         },
         "day_angle": {
             "long_name": "Day angle",
-            "units": [
-                "-",
-                "radians"
-            ],
+            "units": "radians",
             "definition": ""
         },
         "dd": {
@@ -708,8 +705,8 @@ def get_var_definitions():
             "definition": ""
         },
         "t_diff": {
-            "long_name": "",
-            "units": "",
+            "long_name": "Lapse-rate temperature adjustment",
+            "units": "C",
             "definition": ""
         },
         "t_max_bare": {

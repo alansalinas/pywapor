@@ -1,5 +1,5 @@
 import numpy as np
-from scipy.signal import convolve2d
+from scipy.signal import convolve2d, oaconvolve, fftconvolve
 import numpy as np
 import xarray as xr
 from pywapor.general.logger import log
@@ -24,7 +24,12 @@ def kelvin_to_celsius(ds, var, out_var = None):
     """
 
     new_data = ds[var] - 273.15
-    new_data.attrs = {"unit": "°C"}
+
+    if "sources" in ds[var].attrs.keys():
+        new_data.attrs = {"units": "C",
+                            "sources": ds[var].attrs["sources"]}
+    else:
+        new_data.attrs = {"unit": "C"}
 
     if not isinstance(out_var, type(None)):
         ds[out_var] = new_data
@@ -53,7 +58,11 @@ def celsius_to_kelvin(ds, var, out_var = None):
     """
 
     new_data = ds[var] + 273.15
-    new_data.attrs = {"unit": "K"}
+    if "sources" in ds[var].attrs.keys():
+        new_data.attrs = {"units": "K",
+                            "sources": ds[var].attrs["sources"]}
+    else:
+        new_data.attrs = {"unit": "K"}
 
     if not isinstance(out_var, type(None)):
         ds[out_var] = new_data
@@ -94,7 +103,8 @@ def lapse_rate(ds, var, out_var = None, lapse_var = "z",
     if "t_diff" not in list(ds.keys()):
 
         log.info(f"--> Calculating local means (r = {radius:.2f}°) of `{lapse_var}`.")
-        
+        log.add()
+
         pixel_size = (np.median(np.diff(ds.lon)), 
                         np.median(np.diff(ds.lat)))
         dem = ds[lapse_var].values
@@ -106,7 +116,14 @@ def lapse_rate(ds, var, out_var = None, lapse_var = "z",
                                                 "lat": ds.lat, 
                                                 "lon": ds.lon})
 
+        ds["t_diff"].attrs = {"sources": ["temperature.lapse_rate()"]}
+
+        log.sub()
+
     new_data = ds[var] + ds["t_diff"]
+
+    if "sources" in ds[var].attrs.keys():
+        new_data.attrs = {"sources": ds[var].attrs["sources"]}
 
     if not isinstance(out_var, type(None)):
         ds[out_var] = new_data
@@ -143,7 +160,10 @@ def create_circle(pixel_size_x, pixel_size_y, radius, boolean = False):
 
     length = int(np.ceil(radius / min_pixel_size)) + 1
 
-    Y, X = np.ogrid[:length, :length]  * np.array([pixel_size_x, pixel_size_y])
+    # Y, X = np.ogrid[:length, :length]  * np.array([pixel_size_x, pixel_size_y])
+
+    Y = np.rot90((np.arange(0, length, 1) * pixel_size_x)[np.newaxis,...], -1)
+    X = (np.arange(0, length, 1) * pixel_size_y)[np.newaxis,...]
 
     center = (Y[-1, -1], X[-1,-1])
 
@@ -157,7 +177,7 @@ def create_circle(pixel_size_x, pixel_size_y, radius, boolean = False):
     
     return circle
 
-def local_mean(array, pixel_size, radius):
+def local_mean(array, pixel_size, radius, method = 3):
     """Calculate local means.
 
     Parameters
@@ -179,16 +199,66 @@ def local_mean(array, pixel_size, radius):
     pixel_size_x, pixel_size_y = pixel_size
     circle_weights = create_circle(pixel_size_x, pixel_size_y, 
                                     radius, boolean=True)
-    
-    # if isinstance(name, type(None)):
-    #     log.info("--> Calculating local means (step 1 of 2).")
-    # else:
-    #     log.info(f"--> Calculating local means of `{name}` (step 1/2).")
-    divisor = convolve2d(np.ones_like(array), circle_weights, mode = "same")
-    
-    # if isinstance(name, type(None)):
-    #     log.info("--> Calculating local means (step 2 of 2).")
-    # else:
-    #     log.info(f"--> Calculating local means of `{name}` (step 2/2).") 
-    array_coarse = convolve2d(array, circle_weights, mode = "same") / divisor
+
+    if method == 1: # *very* slow, i.e. takes more than 100 times longer than 2 and 3.
+        divisor = convolve2d(np.ones_like(array), circle_weights, mode = "same")
+        array_coarse = convolve2d(array, circle_weights, mode = "same") / divisor
+
+    if method == 2:
+        divisor = oaconvolve(np.ones_like(array), circle_weights, mode = "same")
+        array_coarse = oaconvolve(array, circle_weights, mode = "same") / divisor
+
+    if method == 3: # this one seems to be the fastest, but almost the same as method2.
+        divisor = fftconvolve(np.ones_like(array), circle_weights, mode = "same")
+        array_coarse = fftconvolve(array, circle_weights, mode = "same") / divisor
+
+
     return array_coarse
+
+if __name__ == "__main__":
+
+    import numpy as np
+    import cProfile
+    import time
+
+    # fast case
+    # array = np.random.rand(800, 800)
+    # pixel_size = (0.01, 0.01)
+    # radius = 0.25    
+
+    # real case
+    array = np.random.rand(1009, 807)
+    pixel_size = (9.92063500e-04, -9.92063500e-04)
+    radius = 0.25
+
+    print("\n method2")
+    start = time.time()
+    result2 = local_mean(array, pixel_size, radius, method = 2)
+    end = time.time()
+    dt = end - start
+    print(dt)
+
+    print("\n method3")
+    start = time.time()
+    result3 = local_mean(array, pixel_size, radius, method = 3)
+    end = time.time()
+    dt = end - start
+    print(dt)
+
+    # print("\n method1")
+    # start = time.time()
+    # result1 = local_mean(array, pixel_size, radius, method = 1)
+    # end = time.time()
+    # dt = end - start
+    # print(dt)
+
+    # import matplotlib.pyplot as plt
+
+    # plt.figure(1)
+    # plt.imshow(result1 - result2)
+
+    # plt.figure(2)
+    # plt.imshow(result1 - result3)
+
+
+

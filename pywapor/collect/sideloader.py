@@ -73,10 +73,10 @@ def check_filename(fn):
     if len(parts) != 5:
         raise ValueError("Too many underscores in filename.")
 
-    valids = ["ALBEDO", "NDVI", "LST"]
+    # valids = ["ALBEDO", "NDVI", "LST"]
 
-    if parts[0] not in valids:
-        raise ValueError(f"Invalid variable name ({parts[0]}). Valid values are {valids}.")
+    # if parts[0] not in valids:
+    #     raise ValueError(f"Invalid variable name ({parts[0]}). Valid values are {valids}.")
     
     date_parts = parts[4].split(".")
 

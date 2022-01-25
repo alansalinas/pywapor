@@ -11,7 +11,7 @@ from pywapor.general.logger import log
 from pywapor.general.compositer import calculate_ds
 import copy
 
-def main(input_data, se_root_version = "v2", export_vars = "default", export_to_tif = True):
+def main(input_data, se_root_version = "v2", export_vars = "default", export_to_tif = False):
 
     log.info("> SE_ROOT").add()
 
@@ -142,7 +142,7 @@ def main(input_data, se_root_version = "v2", export_vars = "default", export_to_
     if export_to_tif:
         files = PF.export_ds_to_tif(ds, keep_vars, None)
         ds.close()
-        os.remove(fh)
+        # os.remove(fh)
         return files
     else:
         return ds
@@ -212,21 +212,68 @@ if __name__ == "__main__":
     project_folder = r"/Users/hmcoerver/pywapor_notebooks"
     latlim = [28.9, 29.7]
     lonlim = [30.2, 31.2]
-    startdate = "2021-07-01"
-    enddate = "2021-07-11"
-    composite_length = "DEKAD"
-    level = "level_1"
+
+    startdate = "2021-07-06"
+    enddate = "2021-07-07"
+    composite_length = 1
+    level = "level_2"
     extra_sources = None
     extra_source_locations = None
 
+    my_custom_level = {
+        # Main inputs
+        "ndvi":         ["PROBAV", "MOD13", "MYD13"],
+        "r0":           ["PROBAV", "MCD43"],
+        "lst":          ["MOD11", "MYD11"],
+        "lulc":         ["GLOBCOVER"],
+        "z":            ["SRTM"],
+        "p_24":         ["CHIRPS"],
+        "ra_24":        ["MERRA2"],
+
+        # Daily meteo 
+        't_air_24':     ["MERRA2", "GEOS5"],
+        't_air_min_24': ["MERRA2"], 
+        't_air_max_24': ["MERRA2"],
+        'u2m_24':       ["GEOS5"],
+        'v2m_24':       ["GEOS5"],
+        'p_air_0_24':   ["MERRA2"],
+        'qv_24':        ["MERRA2", "GEOS5"],
+
+        # Instanteneous meteo
+        "t_air_i":      ["MERRA2"],
+        "u2m_i":        ["MERRA2"],
+        "v2m_i":        ["MERRA2"],
+        "qv_i":         ["MERRA2"],
+        "wv_i":         ["MERRA2"],
+        "p_air_i":      ["MERRA2"],
+        "p_air_0_i":    ["MERRA2"],
+
+        # Temporal constants
+        "lw_offset":    ["STATICS"],
+        "lw_slope":     ["STATICS"],
+        "r0_bare":      ["STATICS"],
+        "r0_full":      ["STATICS"],
+        "rn_offset":    ["STATICS"],
+        "rn_slope":     ["STATICS"],
+        "t_amp_year":   ["STATICS"],
+        "t_opt":        ["STATICS"],
+        "vpd_slope":    ["STATICS"],
+        "z_oro":        ["STATICS"],
+
+        # Level name
+        "name": "test",
+    }
+
     diagnostics = None
 
-    ds, fh = pywapor.pre_se_root.main(project_folder, startdate, enddate, latlim, lonlim, level = level,
-        extra_sources = extra_sources, extra_source_locations = extra_source_locations)
+    ds, fh = pywapor.pre_se_root.main(project_folder, startdate, enddate, latlim, 
+                                        lonlim, level = my_custom_level,
+                                        extra_sources = extra_sources, 
+                                        extra_source_locations = extra_source_locations)
 
     se_root_version = "v2"
 
-    raw_files = main(ds, se_root_version = se_root_version, export_vars = "all", export_to_tif = False)
+    ds_out = main(ds, se_root_version = se_root_version, export_vars = "all", export_to_tif = False)
 
 
     

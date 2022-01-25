@@ -1,10 +1,10 @@
+#%%
 import os
 import numpy as np
 import xarray as xr
 from datetime import datetime as dat
 import pandas as pd
 from dask.diagnostics import ProgressBar
-from pywapor.collect.downloader import collect_sources
 import pywapor.post_et_look as post_et_look
 import pywapor.general.processing_functions as PF
 from pywapor.general.logger import log
@@ -12,6 +12,7 @@ from pywapor.enhancers.temperature import kelvin_to_celsius
 import pywapor.enhancers.lulc as lulc
 from functools import partial
 from pywapor.enhancers.apply_enhancers import apply_enhancer
+from datetime import timedelta
 
 def remove_var(ds, var):
     return ds.drop_vars([var])
@@ -84,6 +85,8 @@ def main(cmeta, dbs, epochs_info, temp_folder = None, example_ds = None,
                                         ],
     }
 
+    ## STEP 0: PREPARATIONS.
+
     if not isinstance(temp_folder, type(None)):
         fh = dbs[0][0]
         path = os.path.normpath(fh)
@@ -96,21 +99,25 @@ def main(cmeta, dbs, epochs_info, temp_folder = None, example_ds = None,
             graph_folder = diags.pop("folder")
         else:
             graph_folder = None
-        labels = [None, None]
+        labels = [None, None, None]
         log.info("--> Calculating diagnostics.")
     else:
         diags = None
         labels = ["--> Resampling datasets.",
-                    "--> Calculating composites."]
+                  "--> Interpolating {x:,} of {y:,} missing pixels.",
+                  "--> Calculating composites."]
 
     composite_type = cmeta["composite_type"]
     temporal_interp = cmeta["temporal_interp"]
-    if isinstance(cmeta["temporal_interp_freq"], int):
-        periods = cmeta["temporal_interp_freq"]
-        freq = None
-    else:
-        periods = None
-        freq = cmeta["temporal_interp_freq"]
+    # max_gap = cmeta["temporal_max_gap"]
+    # if isinstance(max_gap, int):
+    #     max_gap = timedelta(days = max_gap)
+    # if isinstance(cmeta["temporal_interp_freq"], int):
+    #     periods = cmeta["temporal_interp_freq"]
+    #     freq = None
+    # else:
+    #     periods = None
+    #     freq = cmeta["temporal_interp_freq"]
     spatial_interp = cmeta["spatial_interp"]
 
     styling = dict()
@@ -123,7 +130,7 @@ def main(cmeta, dbs, epochs_info, temp_folder = None, example_ds = None,
     styling[0] = (".", "k", 0.7, "Interp.")
     sources = {v[3]: k for k, v in styling.items()}
 
-    # Check if data is static
+    # # Check if data is static
     if np.all([isinstance(composite_type, type(False)), 
                 isinstance(temporal_interp, type(False)),
                 len(dbs) == 1,
@@ -133,7 +140,7 @@ def main(cmeta, dbs, epochs_info, temp_folder = None, example_ds = None,
         ds = ds.swap_dims({"x": f"lon", "y": f"lat"})
         ds = ds.interp_like(example_ds, method = "linear", kwargs={"fill_value": "extrapolate"},)
         ds, fh_intermediate = calculate_ds(ds, None, labels[0], 
-                                        cast = {"sources": np.uint8})
+                                        encoding = {"sources": {"dtype": "uint8"}})
         # ds = ds.rename({"band": "epoch"}).assign_coords({"epoch": [-9999]})
         ds = ds.isel(band = 0)
         ds = ds.drop_vars(["band"])
@@ -150,6 +157,7 @@ def main(cmeta, dbs, epochs_info, temp_folder = None, example_ds = None,
         ds[cmeta['var_name']].attrs = attributes
         return ds
 
+    ## STEP 1: COMBINE DATA AND APPLY ENHANCERS.
     ds = None
     dss = list()
     dbs_names = list()
@@ -157,7 +165,7 @@ def main(cmeta, dbs, epochs_info, temp_folder = None, example_ds = None,
     # Open tif-files and apply spatial interpolation
     for db in dbs:
         check_geots(db)
-        sub_ds = xr.open_mfdataset(db, concat_dim = "time", engine="rasterio", combine = "nested",
+        sub_ds = xr.open_mfdataset(sorted(db), concat_dim = "time", engine="rasterio", combine = "nested",
                                         preprocess = preprocess_func)
         sub_ds = sub_ds.rename({"band_data": cmeta["var_name"]})
 
@@ -213,45 +221,51 @@ def main(cmeta, dbs, epochs_info, temp_folder = None, example_ds = None,
     else:
         fh = None
 
-    ds, fh_intermediate = calculate_ds(ds, fh, labels[0], 
-                                        cast = {"sources": np.uint8})
-    ds = ds.chunk("auto")
+    if temporal_interp:
+        chunks = {"lat": "auto", "lon": "auto"}
+    else:
+        chunks = "auto"
 
+    ds, _ = calculate_ds(ds, fh, labels[0], chunks = chunks, 
+                            encoding = {"sources": {"dtype": "uint8"}})
+
+    ## STEP 2: TEMPORAL INTERPOLATION.
     if isinstance(epochs_info, type(None)):
         return ds
     else:
         epochs, epoch_starts, epoch_ends = epochs_info
 
+    da = xr.DataArray(epochs, coords={"time":epoch_starts})
+    ds["epochs"] = da.reindex_like(ds["time"], method = "ffill", tolerance = epoch_ends[-1] - epoch_starts[-1])
+
     if temporal_interp:
-        t_new = calc_interpolation_times(epochs_info, freq = freq, periods = periods)
-        ds_resampled = xr.merge([ds, xr.Dataset({"time": t_new})])
-        ds_resampled["sources"] = ds_resampled.sources.fillna(0.0)
-        if ds.time.size > 1:
-            ds_resampled = ds_resampled.interpolate_na(dim = "time", method = temporal_interp, 
-                                        max_gap = None) # TODO max_gap can be a datetime.timedelta object.
-        else:
-            ds_resampled = ds_resampled.ffill(dim="time")
-            ds_resampled = ds_resampled.bfill(dim="time")
-        ds = ds_resampled
+        t_new = req_t(ds["epochs"], epochs_info, composite_type)
+        ds, x, y = temporal_interpolation(ds, t_new, temporal_interp)
+        if isinstance(labels[1], str):
+            labels[1] = labels[1].format(x = x[all_variables[0]].values, y = y[all_variables[0]].values)
+        if x[all_variables[0]].values > 0:
+            ds, _ = calculate_ds(ds, fh, label = labels[1], chunks = "auto")
+        else: 
+            ds = ds.chunk("auto")
 
     da = xr.DataArray(epochs, coords={"time":epoch_starts})
     ds["epochs"] = da.reindex_like(ds["time"], method = "ffill", tolerance = epoch_ends[-1] - epoch_starts[-1])
 
+    ## STEP 3: COMPOSITE
     for var in all_variables:
         if composite_type == "max":
-            ds[f"{var}_composite"] = ds[var].groupby(ds["epochs"]).max().rename({"epochs": "epoch"})
+            ds[f"{var}_composite"] = ds[var].groupby(ds["epochs"]).max(skipna = True).rename({"epochs": "epoch"})
         elif composite_type == "mean":
-            ds[f"{var}_composite"] = ds[var].groupby(ds["epochs"]).mean().rename({"epochs": "epoch"})
+            ds[f"{var}_composite"] = ds[var].groupby(ds["epochs"]).mean(skipna = True).rename({"epochs": "epoch"})
         elif composite_type == "min":
-            ds[f"{var}_composite"] = ds[var].groupby(ds["epochs"]).min().rename({"epochs": "epoch"})
+            ds[f"{var}_composite"] = ds[var].groupby(ds["epochs"]).min(skipna = True).rename({"epochs": "epoch"})
         elif isinstance(composite_type, float):
-            ds[f"{var}_composite"] = ds[var].groupby(ds["epochs"]).quantile(composite_type).rename({"epochs": "epoch"})
+            ds[f"{var}_composite"] = ds[var].groupby(ds["epochs"]).quantile(composite_type, skipna = True).rename({"epochs": "epoch"})
         else:
             log.warning("No valid composite_type selected.")
         ds[f"{var}_composite"].attrs = ds[var].attrs
 
-    # ds["epoch_starts"] = xr.DataArray(epoch_starts, coords = {"epoch": epochs})
-    # ds["epoch_ends"] = xr.DataArray(epoch_ends, coords = {"epoch": epochs})
+    ds = ds.reindex({"epoch": epochs_info[0]})
 
     ds = ds.assign_coords(epoch_starts = ("epoch", epoch_starts))
     ds = ds.assign_coords(epoch_ends = ("epoch", epoch_ends))
@@ -273,7 +287,7 @@ def main(cmeta, dbs, epochs_info, temp_folder = None, example_ds = None,
     else:
         fh = None
 
-    ds, fh_composites = calculate_ds(ds, fh, label = labels[1])
+    ds, _ = calculate_ds(ds, fh, label = labels[2], chunks = "auto")
 
     if isinstance(diags, dict):
         for var in all_variables:
@@ -284,24 +298,51 @@ def main(cmeta, dbs, epochs_info, temp_folder = None, example_ds = None,
 
     return ds
 
-def calculate_ds(ds, fh = None, label = None, cast = None):
+def temporal_interpolation(ds, t_new, temporal_interp):
+    ds_resampled = xr.merge([ds, xr.Dataset({"time": t_new})])
+    variables = list(ds_resampled.variables)
+    if "sources" in variables:
+        ds_resampled["sources"] = ds_resampled.sources.fillna(0.0)
+        variables.remove("sources")
+    y = ds_resampled.isnull()
+    x = (ds_resampled.ffill("time").notnull() * ds_resampled.bfill("time").notnull() * y).sum()
+    if ds.time.size > 1:
+        for var in variables:
+            if "lon" in ds[var].coords and "lat" in ds[var].coords:
+                if x[var].values > 0:
+                    ds_resampled[var] = ds_resampled[var].interpolate_na(dim = "time", method = temporal_interp)
+    elif ds.time.size == 1:
+        ds_resampled = ds_resampled.ffill(dim="time").bfill(dim="time")
+    return ds_resampled, x, y.sum()
+
+def calculate_ds(ds, fh = None, label = None, encoding = None, chunks = None):
     if isinstance(fh, str):
         while os.path.isfile(fh): # TODO make overwrite instead, was giving weird results so did this for now.
             fh = fh.replace(".nc", "_.nc")
+        if not isinstance(label, type(None)):
+            log.info(label)
+        folder = os.path.split(fh)[0]
+        if not os.path.exists(folder):
+            os.makedirs(folder)
         with ProgressBar(minimum = 30):
-            if not isinstance(label, type(None)):
-                log.info(label)
-            if isinstance(cast, dict):
-                for k, v in cast.items():
-                    ds[k] = ds[k].astype(v)
-            ds.to_netcdf(fh)
-        new_ds = xr.open_dataset(fh)
+            ds.to_netcdf(fh, encoding = encoding)
+        new_ds = xr.open_dataset(fh, chunks = chunks)
     else:
+        if not isinstance(label, type(None)):
+            log.info(label)
         with ProgressBar(minimum=30):
-            if not isinstance(label, type(None)):
-                log.info(label)
             new_ds = ds.compute()
     return new_ds, fh
+
+def req_t(ds_epochs, epochs_info, composite_type):
+    missing_epochs = [x for x in np.unique(epochs_info[0]) if x not in ds_epochs]
+    if composite_type == "mean":
+        t_new = epochs_info[1][missing_epochs] + (epochs_info[2][missing_epochs] - epochs_info[1][missing_epochs])/2
+    else:
+        t1 = epochs_info[1][missing_epochs]
+        t2 = epochs_info[2][missing_epochs] - pd.Timedelta(seconds=1)
+        t_new = np.concatenate((t1, t2))
+    return t_new
 
 def check_geots(files):
     ref = PF.get_geoinfo(files[0])
@@ -309,21 +350,21 @@ def check_geots(files):
         checker = PF.get_geoinfo(fh)
         assert ref == checker, f"ERROR: {files[0]} does not have same geotransform/projection as {fh}."
 
-def calc_interpolation_times(epochs_info, freq = "2D", periods = None):
-    new_t = np.array([], dtype = np.datetime64)
-    for epoch_start, epoch_end in zip(epochs_info[1], epochs_info[2]):
-        if isinstance(periods, type(None)):
-            part_freq = freq
-        else:
-            delta = epoch_end - epoch_start
-            if isinstance(delta, np.timedelta64):
-                part_freq = f"{int(delta/periods)}N"
-            else:
-                part_freq = f"{int(delta.value/periods)}N"
-        new_part_t = pd.date_range(epoch_start, epoch_end, freq = part_freq)
-        new_t = np.append(new_t, new_part_t)
-    new_t = np.sort(np.unique(new_t))
-    return new_t
+# def calc_interpolation_times(epochs_info, freq = "2D", periods = None):
+#     new_t = np.array([], dtype = np.datetime64)
+#     for epoch_start, epoch_end in zip(epochs_info[1], epochs_info[2]):
+#         if isinstance(periods, type(None)):
+#             part_freq = freq
+#         else:
+#             delta = epoch_end - epoch_start
+#             if isinstance(delta, np.timedelta64):
+#                 part_freq = f"{int(delta/periods)}N"
+#             else:
+#                 part_freq = f"{int(delta.value/periods)}N"
+#         new_part_t = pd.date_range(epoch_start, epoch_end, freq = part_freq)
+#         new_t = np.append(new_t, new_part_t)
+#     new_t = np.sort(np.unique(new_t))
+#     return new_t
 
 def get_units(dss):
     units = dict()
@@ -381,53 +422,93 @@ def check_units(units, strictness = "low"):
             results[k] = check
     return results
 
+#%%
+
 if __name__ == "__main__":
 
     import pywapor
     import pywapor.general.pre_defaults as defaults
+    import glob
 
     project_folder = r"/Users/hmcoerver/pywapor_notebooks"
     latlim = [28.9, 29.7]
     lonlim = [30.2, 31.2]
     startdate = "2021-07-01"
     enddate = "2021-07-11"
-
     epochs_info = pywapor.pre_et_look.create_dates(startdate, enddate, "DEKAD")
-
-    var = "ndvi"
-
+    var = "lulc"
     cmeta = defaults.composite_defaults()[var]
 
-    sources = ["MOD13", "MYD13"]
-
-    dl_args = {
-                "Dir": os.path.join(project_folder, "RAW"), 
-                "latlim": latlim, 
-                "lonlim": lonlim, 
-                "Startdate": startdate, 
-                "Enddate": enddate,
-                }
-
-    dbs = collect_sources(var, sources, dl_args)
+    dbs = [[r"/Users/hmcoerver/pywapor_notebooks/RAW/WAPOR/LULC_WAPOR_-_365-daily_2020.01.01.tif"]]
 
     temp_folder = os.path.join(project_folder, "temporary")
-    example_ds = None
+    example_ds = xr.open_dataset(r"/Users/hmcoerver/pywapor_notebooks/example_ds.nc")
     lean_output = True 
     diagnostics = None
 
-    # ds = main(cmeta, dbs, epochs_info, temp_folder = temp_folder, example_ds = example_ds,
-    #     lean_output = lean_output, diagnostics = diagnostics)
+#%% STEP1: COMBINE
 
-    # diagnostics = { # label          # lat      # lon
-    #                 "water":	    (29.44977,	30.58215),
-    #                 "desert":	    (29.12343,	30.51222),
-    #                 "agriculture":	(29.32301,	30.77599),
-    #                 "urban":	    (29.30962,	30.84109),
-    #                 }
+    # ds = None
+    # dss = list()
+    # dbs_names = list()
 
-    # temp_folder = None
-    # lean_output = False
+    # # Open tif-files and apply spatial interpolation
+    # for db in dbs:
+    #     check_geots(db)
+    #     sub_ds = xr.open_mfdataset(db, concat_dim = "time", engine="rasterio", combine = "nested",
+    #                                     preprocess = preprocess_func)
+    #     sub_ds = sub_ds.rename({"band_data": cmeta["var_name"]})
 
-    # ds_diags = main(cmeta, dbs, epochs_info, temp_folder = temp_folder, example_ds = example_ds,
-    #     lean_output = lean_output, diagnostics = diagnostics)
+    #     variable = cmeta["var_name"]
+    #     source = sub_ds[variable].source
 
+    #     if isinstance(example_ds, type(None)):
+    #         example_ds = sub_ds.isel(time = 0).drop_vars(["time"])
+    #     else:
+    #         sub_ds = sub_ds.interp_like(example_ds, method = "linear", kwargs={"fill_value": "extrapolate"},)
+
+    #     dss.append(sub_ds)
+
+    # for i, sub_ds in enumerate(dss):
+    #     if i == 0:
+    #         ds = sub_ds
+    #     else:
+    #         ds = ds.combine_first(sub_ds)
+
+    # with ProgressBar():
+    #     ds.to_netcdf(r"/Users/hmcoerver/pywapor_notebooks/step1.nc")
+
+#%%
+    # STEP 2: TIME INTERPOLATION
+
+    # import xarray as xr
+    # from dask.diagnostics import ProgressBar
+    # import time
+
+    # fh = r"/Users/hmcoerver/pywapor_notebooks/step1.nc"
+    # ds = xr.open_dataset(fh, chunks = {"lat": "auto", "lon": "auto"})
+    
+    # new_t = req_t()
+
+    # t1 = time.time_ns() 
+    # test2 = ds.interpolate_na(dim="time", method="linear")
+    # with ProgressBar():
+    #     test2 = test2.compute()
+    # t2 = time.time_ns()
+    # print(i, (t2-t1) * 10**-9)
+    
+#%%
+
+    # data = np.random.rand(1,3,3)
+    # data[0,...] = np.nan
+    # # data[2,2,2] = np.nan
+    # # data[-1,...] = np.nan
+
+    # ds = xr.Dataset({"ndvi": (["time", "lat","lon"], data)}, coords = {"time": np.arange(data.shape[0])})
+
+    # x = (ds.ffill("time").notnull() * ds.bfill("time").notnull() * ds.isnull()).sum()
+
+    # ds_interpolated = ds.interpolate_na(dim="time", method="nearest", fill_value = "extrapolate")
+
+    # ds.ffill("time").bfill("time")
+# %%

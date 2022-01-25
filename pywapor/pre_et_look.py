@@ -23,9 +23,10 @@ from functools import partial
 import copy
 
 def main(project_folder, startdate, enddate, latlim, lonlim, level = "level_1", 
-        diagnostics = None, composite_length = "DEKAD", extra_sources = None,
+        diagnostics = None, composite_length = "DEKAD",
         extra_source_locations = None, se_root_version = "v2"):
 
+#%%
     # Create project folder.
     if not os.path.exists(project_folder):
         os.makedirs(project_folder)
@@ -75,12 +76,14 @@ def main(project_folder, startdate, enddate, latlim, lonlim, level = "level_1",
     # first item in the list.
     all_vars = [
                 "ndvi",
+                "p_24",
                 "se_root",
-                "r0", "p_24",
+                "r0", 
                 "z",
                 "lulc",
                 "ra_24",
-                't_air_24', 't_air_min_24', 't_air_max_24', 
+                't_air_24', 
+                't_air_min_24', 't_air_max_24', 
                 'u2m_24', 'v2m_24', 'p_air_0_24', 'qv_24',
                 'lw_offset', 'lw_slope', 'r0_bare', 'r0_full', 'rn_offset', 
                 'rn_slope', 't_amp_year', 't_opt', 'vpd_slope', 'z_oro',
@@ -89,6 +92,7 @@ def main(project_folder, startdate, enddate, latlim, lonlim, level = "level_1",
 
     datasets = list()
 
+#%%
     # Loop over the variables, resampling, enhancing and compositing each one.
     for var in all_vars:
 
@@ -97,9 +101,10 @@ def main(project_folder, startdate, enddate, latlim, lonlim, level = "level_1",
         # Run pre_se_root and se_root.
         if var == "se_root":
             ds_in = pywapor.pre_se_root.main(project_folder, startdate, enddate, latlim, 
-                                            lonlim, level = level, extra_sources = extra_sources,
+                                            lonlim, level = level,
                                             extra_source_locations = extra_source_locations)[0]
-            raw_files = [pywapor.se_root.main(ds_in, se_root_version = se_root_version)["se_root"]]
+            raw_files = [pywapor.se_root.main(ds_in, se_root_version = se_root_version, 
+                                                export_to_tif = True, export_vars = "default")["se_root"]]
         # Download RAW-data.
         else:
             raw_files = collect_sources(var, source_selection[var], 
@@ -108,6 +113,7 @@ def main(project_folder, startdate, enddate, latlim, lonlim, level = "level_1",
         # Define resampling parameters.
         if 'example_info' not in vars():
             example_info = pf.select_template(raw_files)
+            # example_info[1].to_netcdf(r"/Users/hmcoerver/pywapor_notebooks/example_ds.nc")
 
         # Create composites.
         ds = unraw_all(var, raw_files, epochs_info, temp_folder, 
@@ -162,7 +168,7 @@ def main(project_folder, startdate, enddate, latlim, lonlim, level = "level_1",
                                                 and "lat" in ds[var].coords]
     out_fh = os.path.join(level_folder, "et_look_input.nc")
     ds, out_fh = calculate_ds(ds, out_fh, label = "--> Saving results.", 
-                                cast = {k: "float32" for k in all_vars}
+                                encoding = {k: {"dtype": "float32"} for k in all_vars}
                                 )
 
     # Remove temporary files.
@@ -264,8 +270,11 @@ if __name__ == "__main__":
     lonlim = [30.2, 31.2]
     startdate = "2021-07-01"
     enddate = "2021-07-11"
+    # startdate = "2021-07-06"
+    # enddate = "2021-07-07"
     composite_length = "DEKAD"
-    level = "level_1"
+    # composite_length = 1
+    # level = "level_1"
     extra_sources = None
     extra_source_locations = None
     se_root_version = "v2"
@@ -278,53 +287,64 @@ if __name__ == "__main__":
                     }
     # diagnostics = None
 
-    # level = {
-    #         "ndvi": ["MOD13", "MYD13"],
-    #         "r0": ["MCD43"],
-    #         "lst": ["MOD11", "MYD11"],
-    #         "lulc": ["WAPOR"],
-    #         "z": ["SRTM"],
-    #         "p_24": ["CHIRPS"],
-    #         "ra_24": ["MERRA2"],
-    #         't_air_24': ["MERRA2"],
-    #         't_air_min_24': ["MERRA2"], 
-    #         't_air_max_24': ["MERRA2"],
-    #         'u2m_24': ["MERRA2"],
-    #         'v2m_24': ["MERRA2"],
-    #         'p_air_0_24': ["MERRA2"],
-    #         'qv_24': ["MERRA2"],
-    #         "t_air_i": ["MERRA2"],
-    #         "u2m_i": ["MERRA2"],
-    #         "v2m_i": ["MERRA2"],
-    #         "qv_i": ["MERRA2"],
-    #         "wv_i": ["MERRA2"],
-    #         "p_air_i": ["MERRA2"],
-    #         "p_air_0_i": ["MERRA2"],
-    #         "name": "test"
-    #     }
+    level = {
+        # Main inputs
+        "ndvi":         ["LS7"],
+        "r0":           ["LS7"],
+        "lst":          ["LS7"],
+        "lulc":         ["WAPOR"],
+        "z":            ["SRTM"],
+        "p_24":         ["CHIRPS"],
+        "ra_24":        ["MERRA2"],
 
-    # # Define new products.
-    # extra_sources =  {"ndvi":      ["LS7NDVI", "LS8NDVI"],
-    #                     "lst":     ["LS7LST", "LS8LST"],
-    #                     "r0":     ["LS7ALBEDO", "LS8ALBEDO"]}
+        # Daily meteo 
+        't_air_24':     ["GEOS5"],
+        't_air_min_24': ["GEOS5"], 
+        't_air_max_24': ["GEOS5"],
+        'u2m_24':       ["GEOS5"],
+        'v2m_24':       ["GEOS5"],
+        'p_air_0_24':   ["GEOS5"],
+        'qv_24':        ["GEOS5"],
 
-    # # Give product folder.
-    # extra_source_locations = {
-    #     "LS7NDVI": r"/Users/hmcoerver/pywapor_notebooks/my_landsat_folder/NDVI",
-    #     "LS8NDVI": r"/Users/hmcoerver/pywapor_notebooks/my_landsat_folder/NDVI",
-    #     "LS7LST": r"/Users/hmcoerver/pywapor_notebooks/my_landsat_folder/LST",
-    #     "LS8LST": r"/Users/hmcoerver/pywapor_notebooks/my_landsat_folder/LST",
-    #     "LS7ALBEDO": r"/Users/hmcoerver/pywapor_notebooks/my_landsat_folder/ALBEDO",
-    #     "LS8ALBEDO": r"/Users/hmcoerver/pywapor_notebooks/my_landsat_folder/ALBEDO",
-    # }
+        # Instanteneous meteo
+        "t_air_i":      ["GEOS5"],
+        "u2m_i":        ["GEOS5"],
+        "v2m_i":        ["GEOS5"],
+        "qv_i":         ["GEOS5"],
+        "wv_i":         ["GEOS5"],
+        "p_air_i":      ["GEOS5"],
+        "p_air_0_i":    ["GEOS5"],
+
+        # Temporal constants
+        "lw_offset":    ["STATICS"],
+        "lw_slope":     ["STATICS"],
+        "r0_bare":      ["STATICS"],
+        "r0_full":      ["STATICS"],
+        "rn_offset":    ["STATICS"],
+        "rn_slope":     ["STATICS"],
+        "t_amp_year":   ["STATICS"],
+        "t_opt":        ["STATICS"],
+        "vpd_slope":    ["STATICS"],
+        "z_oro":        ["STATICS"],
+
+        # Level name
+        "level_name": "sideloading",
+    }
+
+    # Give product folder.
+    extra_source_locations = {
+        ("LS7", "ndvi"): r"/Users/hmcoerver/pywapor_notebooks/my_landsat_folder/NDVI",
+        ("LS7", "lst"): r"/Users/hmcoerver/pywapor_notebooks/my_landsat_folder/LST",
+        ("LS7", "r0"): r"/Users/hmcoerver/pywapor_notebooks/my_landsat_folder/ALBEDO",
+    }
 
     ds_in, fh_in = main(project_folder, startdate, enddate, latlim, lonlim, level = level, 
-        diagnostics = diagnostics, composite_length = composite_length, extra_sources = extra_sources,
+        diagnostics = diagnostics, composite_length = composite_length,
         extra_source_locations = extra_source_locations, se_root_version = se_root_version)
 
     # fh_in = r"/Users/hmcoerver/pywapor_notebooks/level_1/et_look_input___.nc"
 
-    out = pywapor.et_look.main(fh_in, export_vars = "all")
+    # out = pywapor.et_look.main(fh_in, export_vars = "all")
 
     # param = "t_air_24"
     # sources = ["GEOS5"]

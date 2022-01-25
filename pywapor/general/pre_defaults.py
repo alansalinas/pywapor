@@ -6,7 +6,8 @@ def composite_defaults():
         'ndvi': {
                     "composite_type": "mean",
                     "temporal_interp": "linear",
-                    "temporal_interp_freq": "2D",
+                    # "temporal_interp_freq": "2D",
+                    # "temporal_max_gap": 15,
                     "spatial_interp": "nearest",
                     "var_name": "ndvi",
                     "var_unit": "-",
@@ -14,7 +15,8 @@ def composite_defaults():
         'r0': {
                     "composite_type": "mean",
                     "temporal_interp": "linear",
-                    "temporal_interp_freq": "2D",
+                    # "temporal_interp_freq": "2D",
+                    # "temporal_max_gap": 15,
                     "spatial_interp": "nearest",
                     "var_name": "r0",
                     "var_unit": "-",
@@ -22,7 +24,8 @@ def composite_defaults():
         'lulc': {
                     "composite_type": 'mean',
                     "temporal_interp": 'nearest',
-                    "temporal_interp_freq": 1,
+                    # "temporal_interp_freq": 1,
+                    # "temporal_max_gap": None,
                     "spatial_interp": "linear",
                     "var_name": "lulc",
                     "var_unit": "-",
@@ -31,22 +34,25 @@ def composite_defaults():
                     "composite_type": False,
                     "temporal_interp": False,
                     "spatial_interp": "linear",
-                    "temporal_interp_freq": 1,
+                    # "temporal_max_gap": None,
+                    # "temporal_interp_freq": 1,
                     "var_name": "z",
                     "var_unit": "m",
                 },
         'p_24': {
                     "composite_type": "mean",
                     "temporal_interp": "linear",
-                    "temporal_interp_freq": "2D",
+                    # "temporal_interp_freq": "2D",
+                    # "temporal_max_gap": 15,
                     "spatial_interp": "nearest",
                     "var_name": "p_24",
                     "var_unit": "mm/day",
                 },
         'se_root': {
-                    "composite_type": 0.85,
+                    "composite_type": "max",
                     "temporal_interp": False,
-                    "temporal_interp_freq": "2D",
+                    # "temporal_interp_freq": "2D",
+                    # "temporal_max_gap": 15,
                     "spatial_interp": "nearest",
                     "var_name": "se_root",
                     "var_unit": "-",
@@ -54,7 +60,8 @@ def composite_defaults():
         'ra_24': {
                     "composite_type": "mean",
                     "temporal_interp": "linear",
-                    "temporal_interp_freq": "2D",
+                    # "temporal_interp_freq": "2D",
+                    # "temporal_max_gap": 15,
                     "spatial_interp": "linear",
                     "var_name": "ra_24",
                     "var_unit": "-",
@@ -64,7 +71,8 @@ def composite_defaults():
     meteo = {
             "composite_type": "mean",
             "temporal_interp": "linear",
-            "temporal_interp_freq": "2D",
+            # "temporal_interp_freq": "2D",
+            # "temporal_max_gap": 15,
             "spatial_interp": "linear",
             }
 
@@ -77,7 +85,7 @@ def composite_defaults():
     static = {
             "composite_type": False,
             "temporal_interp": False,
-            "temporal_interp_freq": 1,
+            # "temporal_interp_freq": 1,
             "spatial_interp": "linear",    
     }
 

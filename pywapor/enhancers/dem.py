@@ -20,6 +20,8 @@ def to_slope(ds, var, out_var = None):
                                                 "lat": ds.lat, 
                                                 "lon": ds.lon})
     
+    new_data.attrs = {"sources": ["dem.to_slope()"]}
+
     if not isinstance(out_var, type(None)):
         ds[out_var] = new_data
     else: 
@@ -46,6 +48,8 @@ def to_aspect(ds, var, out_var = None):
                                                 "lat": ds.lat, 
                                                 "lon": ds.lon})
     
+    new_data.attrs = {"sources": ["dem.to_aspect()"]}
+
     if not isinstance(out_var, type(None)):
         ds[out_var] = new_data
     else: 
@@ -62,6 +66,8 @@ def to_lat(ds, var, out_var = None):
                                                 "lat": ds.lat, 
                                                 "lon": ds.lon})
     
+    new_data.attrs = {"sources": ["dem.to_lat()"]}
+
     if not isinstance(out_var, type(None)):
         ds[out_var] = new_data
     else: 
@@ -78,6 +84,8 @@ def to_lon(ds, var, out_var = None):
                                                 "lat": ds.lat, 
                                                 "lon": ds.lon})
     
+    new_data.attrs = {"sources": ["dem.to_lon()"]}
+
     if not isinstance(out_var, type(None)):
         ds[out_var] = new_data
     else: 
