@@ -23,8 +23,9 @@ from functools import partial
 import copy
 
 def main(project_folder, startdate, enddate, latlim, lonlim, level = "level_1", 
-        diagnostics = None, composite_length = "DEKAD",
-        extra_source_locations = None, se_root_version = "v2"):
+        diagnostics = None, composite_length = "DEKAD", extra_composite_enhancements = {},
+        extra_source_enhancements = {}, extra_source_locations = None, 
+        se_root_version = "v2", process_vars = "all"):
 
 #%%
     # Create project folder.
@@ -74,21 +75,24 @@ def main(project_folder, startdate, enddate, latlim, lonlim, level = "level_1",
 
     # List of variables to process. Resampling resolution is taken from 
     # first item in the list.
-    all_vars = [
-                "ndvi",
-                "p_24",
-                "se_root",
-                "r0", 
-                "z",
-                "lulc",
-                "ra_24",
-                't_air_24', 
-                't_air_min_24', 't_air_max_24', 
-                'u2m_24', 'v2m_24', 'p_air_0_24', 'qv_24',
-                'lw_offset', 'lw_slope', 'r0_bare', 'r0_full', 'rn_offset', 
-                'rn_slope', 't_amp_year', 't_opt', 'vpd_slope', 'z_oro',
-                # # 'land_mask', 'rs_min', 'z_obst_max', # these are generated from lulc
-                ]
+    if process_vars == "all":
+        all_vars = [
+                    "ndvi",
+                    "p_24",
+                    "se_root",
+                    "r0", 
+                    "z",
+                    "lulc",
+                    "ra_24",
+                    't_air_24', 
+                    't_air_min_24', 't_air_max_24', 
+                    'u2m_24', 'v2m_24', 'p_air_0_24', 'qv_24',
+                    'lw_offset', 'lw_slope', 'r0_bare', 'r0_full', 'rn_offset', 
+                    'rn_slope', 't_amp_year', 't_opt', 'vpd_slope', 'z_oro',
+                    # # 'land_mask', 'rs_min', 'z_obst_max', # these are generated from lulc
+                    ]
+    else:
+        all_vars = process_vars
 
     datasets = list()
 
@@ -117,7 +121,8 @@ def main(project_folder, startdate, enddate, latlim, lonlim, level = "level_1",
 
         # Create composites.
         ds = unraw_all(var, raw_files, epochs_info, temp_folder, 
-                        example_info[1], diagnostics)
+                        example_info[1], diagnostics = diagnostics, 
+                        extra_source_enhancements = extra_source_enhancements)
 
         # Store variable composites in a list.
         datasets.append(ds)
@@ -132,15 +137,8 @@ def main(project_folder, startdate, enddate, latlim, lonlim, level = "level_1",
     ds = ds.rename_vars({x: x.replace("_composite", "") for x in list(ds.variables)})
 
     # Define composite enhancements.
-    composite_enhancements = {
-        "t_air_24":     [lapse_rate],
-        "t_air_min_24": [lapse_rate],
-        "t_air_max_24": [lapse_rate],
-        "z":            [partial(dem.to_slope, out_var = "slope"), 
-                        partial(dem.to_aspect, out_var = "aspect"),
-                        partial(dem.to_lat, out_var = "lat_deg"),
-                        partial(dem.to_lon, out_var = "lon_deg"),]
-    }
+    composite_enhancements = defaults.composite_enhancements_defaults()
+    composite_enhancements = {**composite_enhancements, **extra_composite_enhancements}
 
     # Apply composite enhancements.
     for variable, enhancers in composite_enhancements.items():
@@ -212,14 +210,16 @@ def get_folders(project_folder, level_name = None):
     return level_folder, temp_folder, raw_folder
 
 def unraw_all(var, raw_files, epochs_info, temp_folder, 
-                example_ds, diagnostics = None):
+                example_ds, diagnostics = None, extra_source_enhancements = {}):
 
     cmeta = defaults.composite_defaults()[var]
 
-    ds = g.compositer.main(cmeta, raw_files, epochs_info, temp_folder, example_ds)
+    ds = g.compositer.main(cmeta, raw_files, epochs_info, temp_folder, example_ds,
+                            extra_source_enhancements = extra_source_enhancements)
     if isinstance(diagnostics, dict):
         _ = g.compositer.main(cmeta, raw_files, epochs_info, None, example_ds, 
-                                    lean_output = False, diagnostics = diagnostics)
+                                    lean_output = False, diagnostics = diagnostics, 
+                                    extra_source_enhancements = extra_source_enhancements)
 
     return ds
 

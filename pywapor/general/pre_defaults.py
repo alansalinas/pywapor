@@ -1,3 +1,56 @@
+from pywapor.enhancers.temperature import lapse_rate
+from functools import partial
+import pywapor.enhancers.dem as dem
+from pywapor.enhancers.temperature import kelvin_to_celsius
+import pywapor.enhancers.lulc as lulc
+from functools import partial
+
+def composite_enhancements_defaults():
+    composite_enhancements = {
+        "t_air_24":     [lapse_rate],
+        "t_air_min_24": [lapse_rate],
+        "t_air_max_24": [lapse_rate],
+        "z":            [partial(dem.to_slope, out_var = "slope"), 
+                        partial(dem.to_aspect, out_var = "aspect"),
+                        partial(dem.to_lat, out_var = "lat_deg"),
+                        partial(dem.to_lon, out_var = "lon_deg"),]
+    }
+    return composite_enhancements
+
+def source_enhancements_defaults():
+
+    def remove_var(ds, var):
+        return ds.drop_vars([var])
+
+    source_enhancements = {
+        ("MERRA2",  "t_air_24"):        [kelvin_to_celsius],
+        ("MERRA2",  "t_air_min_24"):    [kelvin_to_celsius],
+        ("MERRA2",  "t_air_max_24"):    [kelvin_to_celsius],
+        ("GEOS5",   "t_air_24"):        [kelvin_to_celsius],
+        ("GEOS5",   "t_air_min_24"):    [kelvin_to_celsius],
+        ("GEOS5",   "t_air_max_24"):    [kelvin_to_celsius],
+        ("GLOBCOVER", "lulc"):          [partial(lulc.lulc_to_x, out_var = "land_mask", 
+                                                    convertor = lulc.globcover_to_land_mask()),
+                                        partial(lulc.lulc_to_x, out_var = "rs_min", 
+                                                    convertor = lulc.globcover_to_rs_min()),
+                                        partial(lulc.lulc_to_x, out_var = "lue_max", 
+                                                    convertor = lulc.globcover_to_lue_max()),
+                                        partial(lulc.lulc_to_x, out_var = "z_obst_max", 
+                                                    convertor = lulc.globcover_to_z_obst_max()),
+                                        remove_var,
+                                        ],
+        ("WAPOR", "lulc"):              [partial(lulc.lulc_to_x, out_var = "land_mask", 
+                                                    convertor = lulc.wapor_to_land_mask()),
+                                        partial(lulc.lulc_to_x, out_var = "rs_min", 
+                                                    convertor = lulc.wapor_to_rs_min()),
+                                        partial(lulc.lulc_to_x, out_var = "lue_max", 
+                                                    convertor = lulc.wapor_to_lue_max()),
+                                        partial(lulc.lulc_to_x, out_var = "z_obst_max", 
+                                                    convertor = lulc.wapor_to_z_obst_max()),
+                                        remove_var,
+                                        ],
+    }
+    return source_enhancements
 
 def composite_defaults():
 
@@ -6,8 +59,6 @@ def composite_defaults():
         'ndvi': {
                     "composite_type": "mean",
                     "temporal_interp": "linear",
-                    # "temporal_interp_freq": "2D",
-                    # "temporal_max_gap": 15,
                     "spatial_interp": "nearest",
                     "var_name": "ndvi",
                     "var_unit": "-",
@@ -15,8 +66,6 @@ def composite_defaults():
         'r0': {
                     "composite_type": "mean",
                     "temporal_interp": "linear",
-                    # "temporal_interp_freq": "2D",
-                    # "temporal_max_gap": 15,
                     "spatial_interp": "nearest",
                     "var_name": "r0",
                     "var_unit": "-",
@@ -24,8 +73,6 @@ def composite_defaults():
         'lulc': {
                     "composite_type": 'mean',
                     "temporal_interp": 'nearest',
-                    # "temporal_interp_freq": 1,
-                    # "temporal_max_gap": None,
                     "spatial_interp": "linear",
                     "var_name": "lulc",
                     "var_unit": "-",
@@ -34,16 +81,12 @@ def composite_defaults():
                     "composite_type": False,
                     "temporal_interp": False,
                     "spatial_interp": "linear",
-                    # "temporal_max_gap": None,
-                    # "temporal_interp_freq": 1,
                     "var_name": "z",
                     "var_unit": "m",
                 },
         'p_24': {
                     "composite_type": "mean",
                     "temporal_interp": "linear",
-                    # "temporal_interp_freq": "2D",
-                    # "temporal_max_gap": 15,
                     "spatial_interp": "nearest",
                     "var_name": "p_24",
                     "var_unit": "mm/day",
@@ -51,8 +94,6 @@ def composite_defaults():
         'se_root': {
                     "composite_type": "max",
                     "temporal_interp": False,
-                    # "temporal_interp_freq": "2D",
-                    # "temporal_max_gap": 15,
                     "spatial_interp": "nearest",
                     "var_name": "se_root",
                     "var_unit": "-",
@@ -60,8 +101,6 @@ def composite_defaults():
         'ra_24': {
                     "composite_type": "mean",
                     "temporal_interp": "linear",
-                    # "temporal_interp_freq": "2D",
-                    # "temporal_max_gap": 15,
                     "spatial_interp": "linear",
                     "var_name": "ra_24",
                     "var_unit": "-",
@@ -71,8 +110,6 @@ def composite_defaults():
     meteo = {
             "composite_type": "mean",
             "temporal_interp": "linear",
-            # "temporal_interp_freq": "2D",
-            # "temporal_max_gap": 15,
             "spatial_interp": "linear",
             }
 
@@ -85,7 +122,6 @@ def composite_defaults():
     static = {
             "composite_type": False,
             "temporal_interp": False,
-            # "temporal_interp_freq": 1,
             "spatial_interp": "linear",    
     }
 

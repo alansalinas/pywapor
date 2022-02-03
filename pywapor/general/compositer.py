@@ -7,15 +7,9 @@ import pandas as pd
 from dask.diagnostics import ProgressBar
 import pywapor.post_et_look as post_et_look
 import pywapor.general.processing_functions as PF
+import pywapor.general.pre_defaults as defaults
 from pywapor.general.logger import log
-from pywapor.enhancers.temperature import kelvin_to_celsius
-import pywapor.enhancers.lulc as lulc
-from functools import partial
 from pywapor.enhancers.apply_enhancers import apply_enhancer
-from datetime import timedelta
-
-def remove_var(ds, var):
-    return ds.drop_vars([var])
 
 def preprocess_func(ds):
 
@@ -49,41 +43,15 @@ def preprocess_func(ds):
     return ds
 
 def main(cmeta, dbs, epochs_info, temp_folder = None, example_ds = None,
-        lean_output = True, diagnostics = None):
+        lean_output = True, diagnostics = None, extra_source_enhancements = {}):
     """
     composite_type = "max", "mean", "min"
     temporal_interp = False, "linear", "nearest", "zero", "slinear", "quadratic", "cubic"
     spatial_interp = "nearest", "linear"
     """
 
-    source_enhancements = {
-        ("MERRA2",  "t_air_24"):        [kelvin_to_celsius],
-        ("MERRA2",  "t_air_min_24"):    [kelvin_to_celsius],
-        ("MERRA2",  "t_air_max_24"):    [kelvin_to_celsius],
-        ("GEOS5",   "t_air_24"):        [kelvin_to_celsius],
-        ("GEOS5",   "t_air_min_24"):    [kelvin_to_celsius],
-        ("GEOS5",   "t_air_max_24"):    [kelvin_to_celsius],
-        ("GLOBCOVER", "lulc"):          [partial(lulc.lulc_to_x, out_var = "land_mask", 
-                                                    convertor = lulc.globcover_to_land_mask()),
-                                        partial(lulc.lulc_to_x, out_var = "rs_min", 
-                                                    convertor = lulc.globcover_to_rs_min()),
-                                        partial(lulc.lulc_to_x, out_var = "lue_max", 
-                                                    convertor = lulc.globcover_to_lue_max()),
-                                        partial(lulc.lulc_to_x, out_var = "z_obst_max", 
-                                                    convertor = lulc.globcover_to_z_obst_max()),
-                                        remove_var,
-                                        ],
-        ("WAPOR", "lulc"):              [partial(lulc.lulc_to_x, out_var = "land_mask", 
-                                                    convertor = lulc.wapor_to_land_mask()),
-                                        partial(lulc.lulc_to_x, out_var = "rs_min", 
-                                                    convertor = lulc.wapor_to_rs_min()),
-                                        partial(lulc.lulc_to_x, out_var = "lue_max", 
-                                                    convertor = lulc.wapor_to_lue_max()),
-                                        partial(lulc.lulc_to_x, out_var = "z_obst_max", 
-                                                    convertor = lulc.wapor_to_z_obst_max()),
-                                        remove_var,
-                                        ],
-    }
+    source_enhancements = defaults.source_enhancements_defaults()
+    source_enhancements = {**source_enhancements, **extra_source_enhancements}
 
     ## STEP 0: PREPARATIONS.
 
@@ -109,15 +77,6 @@ def main(cmeta, dbs, epochs_info, temp_folder = None, example_ds = None,
 
     composite_type = cmeta["composite_type"]
     temporal_interp = cmeta["temporal_interp"]
-    # max_gap = cmeta["temporal_max_gap"]
-    # if isinstance(max_gap, int):
-    #     max_gap = timedelta(days = max_gap)
-    # if isinstance(cmeta["temporal_interp_freq"], int):
-    #     periods = cmeta["temporal_interp_freq"]
-    #     freq = None
-    # else:
-    #     periods = None
-    #     freq = cmeta["temporal_interp_freq"]
     spatial_interp = cmeta["spatial_interp"]
 
     styling = dict()
