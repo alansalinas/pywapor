@@ -1,4 +1,8 @@
 import pywapor.collect as c
+import tqdm
+import requests
+import os
+
 
 def collect_sources(param, sources, dl_args, extra_source_locations = None):
     files = list()
@@ -133,10 +137,25 @@ def collect_sources(param, sources, dl_args, extra_source_locations = None):
 
     return files
 
-if __name__ == "__main__":
+def url_to_file(url, out_file):
 
-    import os
-    import pywapor
+    file_object = requests.get(url)
+    file_object.raise_for_status()
+
+    total_size = int(file_object.headers.get('content-length', 0))
+
+    waitbar = tqdm.tqdm(total = total_size, unit='Bytes', unit_scale=True, position = 0)
+
+    folder = os.path.split(out_file)[0]
+    if not os.path.exists(folder):
+        os.makedirs(folder)
+
+    with open(out_file, 'wb') as z:
+        for data in file_object.iter_content(chunk_size=1024):
+            size = z.write(data)
+            waitbar.update(size)
+
+if __name__ == "__main__":
 
     project_folder = r"/Users/hmcoerver/pywapor_notebooks"
     latlim = [28.9, 29.7]

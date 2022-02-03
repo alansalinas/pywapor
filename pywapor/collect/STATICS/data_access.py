@@ -55,7 +55,7 @@ def get_cog(url, out_file, bb, srs = "EPSG:4326"):
 def collect(Dir, latlim, lonlim, vars = ['land_mask', 'lw_offset',
             'lw_slope', 'r0_bare', 'r0_full', 'rn_offset', 'rn_slope',
             'rs_min', 't_amp_year', 't_opt', 'vpd_slope', 'z_obst_max',
-            'z_oro'], base_url = r"/Volumes/Data/L1_STATICS_cogs/", **kwargs):
+            'z_oro'], base_url = r"https://storage.googleapis.com/fao-cog-data", **kwargs):
 
     bb = [lonlim[0], latlim[1], lonlim[1], latlim[0]]
 
@@ -94,6 +94,6 @@ if __name__ == "__main__":
     latlim = [28.9, 29.7]
     lonlim = [30.2, 31.2]
 
-    raw_folder = r"/Users/hmcoerver/pywapor_notebooks/RAW"
+    raw_folder = r"/Users/hmcoerver/On My Mac/cog_test"
 
     out = collect(raw_folder, latlim, lonlim)

@@ -14,6 +14,7 @@ from osgeo import gdal
 from datetime import datetime
 from pywapor.general.logger import log
 from pywapor.collect.Landsat import ls_bitmasks
+from pywapor.collect.downloader import url_to_file
 
 def main(folder, max_lst_uncertainty = 2.5, bb = None):
     """Processes Landsat 7 or 8 Collection-2 Level-2 tar-files into GeoTIFFs
@@ -766,11 +767,13 @@ def check_projs_geots(files, ref_proj_geot = None):
         assert geot == ref_proj_geot[1]
     return proj, geot
 
+def dl_landsat_test(folder):
+    out_file = os.path.join(folder, "LE07_L2SP_177040_20210707_20210802_02_T1.tar")
+    url = 'https://storage.googleapis.com/fao-cog-data/LE07_L2SP_177040_20210707_20210802_02_T1.tar'
+    url_to_file(url, out_file)
+    return out_file
+
 if __name__ == "__main__":
 
-    latlim = [28.9, 29.7]
-    lonlim = [30.2, 31.2]
+    ...
 
-    folder = r"/Users/hmcoerver/pywapor_notebooks/my_landsat_folder" 
-
-    ndvi_files, albedo_files, lst_files = main(folder, bb = (latlim, lonlim))
