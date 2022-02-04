@@ -1,11 +1,11 @@
 # pyWAPOR
-![downloads](https://img.shields.io/pypi/dw/pywapor) [![version](https://img.shields.io/pypi/v/pywapor)](https://pypi.org/project/pywapor/) [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/bertcoerver/pywapor_notebooks/blob/main/pywapor_101.ipynb)
+![downloads](https://img.shields.io/pypi/dw/pywapor) [![version](https://img.shields.io/pypi/v/pywapor)](https://pypi.org/project/pywapor/) ![python](https://img.shields.io/badge/python-3.7%20|%203.8-blue) [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/bertcoerver/pywapor_notebooks/blob/main/1_introduction.ipynb)
 
 This repository contains a Python implementation of the algorithm used to generate the [WaPOR](http://www.fao.org/in-action/remote-sensing-for-water-productivity/en/) [datasets](https://wapor.apps.fao.org/home/WAPOR_2/1). It can be used to calculate evaporation, transpiration and biomass production maps.
 
 ## Installation
 
-Its recommended to install in a clean [conda environment](https://docs.conda.io/projects/conda/en/latest/user-guide/concepts/environments.html) and use [conda](https://docs.conda.io/projects/conda/en/latest/user-guide/install/) to install GDAL before installing pywapor.
+Its recommended to install in a clean [conda environment](https://docs.conda.io/projects/conda/en/latest/user-guide/concepts/environments.html) and use [conda](https://docs.conda.io/projects/conda/en/latest/user-guide/install/) to install GDAL before installing pywapor. Only Python 3.7 and 3.8 are supported.
 
 ```bash
 conda create -n my_pywapor_env python=3.8 pip gdal
@@ -50,15 +50,15 @@ Check out one of the Colab Notebooks below to learn more!
 ### Notebooks
 |  | Name | Duration* |
 | ------ | ------ | ------ |
-| 1. | [Introduction](https://colab.research.google.com/github/bertcoerver/pywapor_notebooks/blob/main/1_introduction.ipynb) | 10 + 30 |
+| 1. | [Introduction](https://colab.research.google.com/github/bertcoerver/pywapor_notebooks/blob/main/1_introduction.ipynb) | 10 + 100 |
 | 2. | [Composites](https://colab.research.google.com/github/bertcoerver/pywapor_notebooks/blob/main/2_composites.ipynb) | 10 + 10 |
-| 3. | [Levels](https://colab.research.google.com/github/bertcoerver/pywapor_notebooks/blob/main/3_levels.ipynb) | 10 + 120 |
+| 3. | [Levels](https://colab.research.google.com/github/bertcoerver/pywapor_notebooks/blob/main/3_levels.ipynb) | 10 + 20 |
 | 4. | [Sideloading](https://colab.research.google.com/github/bertcoerver/pywapor_notebooks/blob/main/4_sideloading.ipynb) | 10 + 5 |
 | 5. | [Enhancers](https://colab.research.google.com/github/bertcoerver/pywapor_notebooks/blob/main/5_enhancers.ipynb) | 10 + 5 |
-| 6. | [pyWaPOR vs. WaPOR](https://colab.research.google.com/github/bertcoerver/pywapor_notebooks/blob/main/6_wapor_vs_pywapor.ipynb) | 10 + 30 |
+| 6. | [pyWaPOR vs. WaPOR](https://colab.research.google.com/github/bertcoerver/pywapor_notebooks/blob/main/6_wapor_vs_pywapor.ipynb) | 10 + 10 |
 | 7. | Soil Saturation | > Coming Soon < |
 
-\* Estimation of the time required in minutes, as in "active" + "download time". 
+\* Estimation of the time required in minutes, as in "active" + "download time", assuming the notebooks have access to previously downloaded data. 
 
 ## Documentation
 ### WaPOR v2
@@ -85,7 +85,7 @@ For questions, requests or issues with this repository, please contact Bert Coer
 * Side-load your own data, i.e. easily incorporate you own datasets.
 * Added functions to process Landsat Level-2 to “ndvi”, “lst” and “r0”.
 * Data is now stored and processed as netCDF (using xarray and dask).
-* et_look() and se_root() now calculate in chunks, instead of using a for-loop.
+* Calculations in et_look() and se_root() are now done in chunks, instead of using a for-loop.
 * Some previously constant parameters now have spatial variability.
 * Improved logging.
 * Download functions now show progress and download-speed.
