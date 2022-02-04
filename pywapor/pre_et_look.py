@@ -9,17 +9,14 @@ import pywapor
 import xarray as xr
 import pandas as pd
 import numpy as np
-import pywapor.enhancers.dem as dem
 import pywapor.general as g
 import pywapor.general.processing_functions as pf
 import pywapor.general.pre_defaults as defaults
 from datetime import datetime as dat
-from pywapor.enhancers.temperature import lapse_rate
 from pywapor.collect.downloader import collect_sources
 from pywapor.general.logger import log, adjust_logger
 from pywapor.enhancers.apply_enhancers import apply_enhancer
 from pywapor.general.compositer import calculate_ds
-from functools import partial
 import copy
 
 def main(project_folder, startdate, enddate, latlim, lonlim, level = "level_1", 
@@ -27,7 +24,6 @@ def main(project_folder, startdate, enddate, latlim, lonlim, level = "level_1",
         extra_source_enhancements = {}, extra_source_locations = None, 
         se_root_version = "v2", process_vars = "all"):
 
-#%%
     # Create project folder.
     if not os.path.exists(project_folder):
         os.makedirs(project_folder)
@@ -96,7 +92,6 @@ def main(project_folder, startdate, enddate, latlim, lonlim, level = "level_1",
 
     datasets = list()
 
-#%%
     # Loop over the variables, resampling, enhancing and compositing each one.
     for var in all_vars:
 
