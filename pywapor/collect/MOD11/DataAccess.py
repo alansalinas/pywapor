@@ -1,10 +1,3 @@
-# -*- coding: utf-8 -*-
-"""
-Authors: Tim Hessels
-Module: Collect/MOD11
-"""
-
-# import general python modules
 import os
 import numpy as np
 import pandas as pd

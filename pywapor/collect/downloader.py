@@ -31,7 +31,7 @@ def collect_sources(param, sources, dl_args, extra_source_locations = None):
             files.append([c.SRTM.DEM(**dl_args)])
 
         elif source == "GLOBCOVER" and param == "lulc":
-            files.append([c.GLOBCOVER.LULC(**dl_args)])
+            files.append([c.Globcover.LULC(**dl_args)])
         elif source == "WAPOR" and param == "lulc":
             files.append(c.WAPOR.LULC(**dl_args))
 

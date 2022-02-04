@@ -1,5 +1,4 @@
-
-from pywapor.collect.GLOBCOVER.DataAccess import DownloadData
+from pywapor.collect.Globcover.DataAccess import DownloadData
 import sys
 import os
 from pywapor.general.logger import log

@@ -8,7 +8,7 @@ Examples:
 from pyWAPOR.Collect import Globcover
 Globcover.Landuse(Dir='C:/TempDEM4/', latlim=[29, 32], lonlim=[-113, -109])
 """
-from pywapor.collect.GLOBCOVER.Landuse import main as LULC
+from pywapor.collect.Globcover.Landuse import main as LULC
 
 __all__ = ['LULC']
 

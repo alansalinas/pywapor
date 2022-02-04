@@ -1,5 +1,4 @@
-
-
+import pywapor.general.processing_functions as PF
 import os
 import urllib
 from osgeo import gdal
@@ -7,8 +6,6 @@ import shutil
 import numpy as np
 
 def DownloadData(output_folder, latlim, lonlim):
-    
-    import pywapor.general.processing_functions as PF
     
     # Check the latitude and longitude and otherwise set lat or lon on greatest extent
     if latlim[0] < -90 or latlim[1] > 90:

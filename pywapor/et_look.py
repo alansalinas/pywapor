@@ -1,32 +1,13 @@
-#%%
 import os
-from osgeo import gdal
 import numpy as np
-import warnings
 import pywapor.et_look_dev as ETLook_dev
 import pywapor.et_look_v2 as ETLook_v2
 import pywapor.general as g
-import pywapor.general.outputs as out
-import pywapor.general.variables as vars
 import pywapor.general.processing_functions as PF
 import xarray as xr
 import pandas as pd
 from pywapor.general.compositer import calculate_ds
 import copy
-
-# def open_array(key, value, date, folders):
-#     fp = create_fp(key, value, date, folders)
-#     if os.path.exists(fp):
-#         # array = create_array(fp)
-#         ds = gdal.Open(fp)
-#         band = ds.GetRasterBand(1)
-#         ndv = band.GetNoDataValue()
-#         array = band.ReadAsArray()
-#         array[array == ndv] = np.nan
-#         return array
-#     else:
-#         # print("'{0}' not found.".format(key))
-#         return None
 
 def main(input_data, et_look_version = "v2", export_vars = "default", export_to_tif = False):
 

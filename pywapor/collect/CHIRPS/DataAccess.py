@@ -134,37 +134,20 @@ def RetrieveData(Date, args, waitbar):
 
         # download the global rainfall file
 
-        # unzip the file if necessary
-        # Files after 2021-6-1 are not zipped for some reason (Bert, 29-9-2021)
-        if Date >= datetime.datetime(2021, 6, 1):
-            filename = filename.replace(".gz", "")
-            total_size = ftp.size(filename)
-            if not isinstance(waitbar, type(None)):
-                waitbar_i = int(waitbar.desc.split(" ")[1])
-                waitbar_desc = str(waitbar.desc)
-                waitbar.set_description_str(waitbar_desc.replace(f": {waitbar_i} /", f": {waitbar_i+1} /"))
-                waitbar.reset(total = total_size)            
-            with open(outfilename, "wb") as lf:
-                def callback(data):
-                    lf.write(data)
-                    if not isinstance(waitbar, type(None)):
-                        waitbar.update(len(data))
-                ftp.retrbinary("RETR " + filename, callback, 8192)
-        else:
-            local_filename = os.path.join(output_folder, filename)
-            total_size = ftp.size(filename)
-            if not isinstance(waitbar, type(None)):
-                waitbar_i = int(waitbar.desc.split(" ")[1])
-                waitbar_desc = str(waitbar.desc)
-                waitbar.set_description_str(waitbar_desc.replace(f": {waitbar_i} /", f": {waitbar_i+1} /"))
-                waitbar.reset(total = total_size)
-            with open(local_filename, "wb") as lf:
-                def callback(data):
-                    lf.write(data)
-                    if not isinstance(waitbar, type(None)):
-                        waitbar.update(len(data))
-                ftp.retrbinary("RETR " + filename, callback, 8192) 
-            PF.Extract_Data_gz(local_filename, outfilename)
+        local_filename = os.path.join(output_folder, filename)
+        total_size = ftp.size(filename)
+        if not isinstance(waitbar, type(None)):
+            waitbar_i = int(waitbar.desc.split(" ")[1])
+            waitbar_desc = str(waitbar.desc)
+            waitbar.set_description_str(waitbar_desc.replace(f": {waitbar_i} /", f": {waitbar_i+1} /"))
+            waitbar.reset(total = total_size)
+        with open(local_filename, "wb") as lf:
+            def callback(data):
+                lf.write(data)
+                if not isinstance(waitbar, type(None)):
+                    waitbar.update(len(data))
+            ftp.retrbinary("RETR " + filename, callback, 8192) 
+        PF.Extract_Data_gz(local_filename, outfilename)
 
         # open tiff file
         dest = gdal.Open(outfilename)
