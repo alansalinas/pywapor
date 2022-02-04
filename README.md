@@ -38,10 +38,10 @@ latlim = [28.9, 29.7]
 lonlim = [30.2, 31.2]
 project_folder = r"/my_first_ETLook_run/"
 
-# Download input data.
+# Download and prepare input data.
 ds_in, fh_in = pywapor.pre_et_look.main(project_folder, startdate, enddate, latlim, lonlim)
 
-# Run the model for one dekad starting on 'startdate'.
+# Run the model.
 ds_out = pywapor.et_look.main(ds_in)
 ```
 
