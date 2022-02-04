@@ -2,17 +2,19 @@ from setuptools import setup, find_packages
 
 setup(
     name = 'pywapor',
-    version = '2.3.4',
+    version = '2.4.0',
     url = 'https://bitbucket.org/cioapps/wapor-et-look/src/master/',
     author = "FAO",
     author_email = "bert.coerver@fao.org",
     license = "Apache",
     packages = find_packages(include = ['pywapor', 'pywapor.*']),
     include_package_data=True,
+    python_requires='>=3.7, <3.9',
     install_requires = [
-        'gdal<=3.1.4',
-        'aiohttp==3.7.4.post0',
+        'gdal',
+        'xarray>=0.20',
         'numpy',
+        'aiohttp',
         'pandas',
         'requests',
         'matplotlib',
@@ -26,7 +28,7 @@ setup(
         'bs4',
         'paramiko',
         'rasterio',
-        'xarray>=0.20.0',
+        'bottleneck>=1.3.1',
         'geojson',
         'vito_download',
         'nest_asyncio',
@@ -34,5 +36,6 @@ setup(
         'dask',
         'rioxarray',
         'python_log_indenter',
+        'cryptography',
     ]
 )
