@@ -5,6 +5,7 @@
 
 """
 import numpy as np
+import xarray as xr
 
 def extraterrestrial_irradiance_normal(I0, ied):
     r"""
@@ -175,7 +176,11 @@ def relative_optical_airmass(p_air_i, p_air_0_i, h0ref):
     h0ref_rad = h0ref * np.pi/180.
 
     m = (p_air_i/p_air_0_i)/(np.sin(h0ref_rad) + 0.50572 * (h0ref + 6.07995)**-1.6364)
-    m[h0ref_rad <= 0] = 64
+    
+    if isinstance(m, xr.DataArray):
+        m = xr.where(h0ref_rad <= 0, 64, m)
+    else:
+        m[h0ref_rad <= 0] = 64
 
     return m
 
@@ -326,7 +331,11 @@ def rayleigh_optical_thickness(m):
     """
 
     rotm = 1 / (10.4 + 0.718 * m)
-    rotm = np.where(m <= 20, 1/(6.6296 + 1.7513*m - 0.1202*m**2 + 0.0065*m**3 - 0.00013*m**4), rotm)
+
+    if isinstance(rotm, xr.DataArray):
+        rotm = xr.where(m <= 20, 1/(6.6296 + 1.7513*m - 0.1202*m**2 + 0.0065*m**3 - 0.00013*m**4), rotm)
+    else:
+        rotm = np.where(m <= 20, 1/(6.6296 + 1.7513*m - 0.1202*m**2 + 0.0065*m**3 - 0.00013*m**4), rotm)
 
     return rotm
 
@@ -371,7 +380,11 @@ def beam_irradiance_normal_clear(G0, Tl2, m, rotm, h0):
 
     """
     B0c = G0 * np.exp(-0.8662 * Tl2 * m * rotm)
-    B0c[h0 < 0] = 0
+
+    if isinstance(B0c, xr.DataArray):
+        B0c = xr.where(h0 < 0, 0, B0c)
+    else:
+        B0c[h0 < 0] = 0
 
     return B0c
 
@@ -403,7 +416,11 @@ def beam_irradiance_horizontal_clear(B0c, h0):
 
     """
     Bhc = B0c * np.sin(h0 * np.pi / 180)
-    Bhc[h0 < 0] = 0
+
+    if isinstance(Bhc, xr.DataArray):
+        Bhc = xr.where(h0 < 0, 0, Bhc)
+    else:
+        Bhc[h0 < 0] = 0
 
     return Bhc
 
@@ -532,7 +549,7 @@ def diffuse_irradiance_horizontal_clear(G0, Tl2, h0):
 
     Dhc = G0 * TnTl2 * FdH0
 
-    Dhc[Dhc < 0] = 0
+    Dhc = np.clip(Dhc, 0, np.inf)
     
     return Dhc
 

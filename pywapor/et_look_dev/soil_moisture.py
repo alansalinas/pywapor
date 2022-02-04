@@ -5,6 +5,7 @@
 from pywapor.et_look_dev import constants as c
 from pywapor.et_look_dev import unstable
 import numpy as np
+import xarray as xr
 
 
 def wet_bulb_temperature_inst(t_air_i, t_dew_i, p_air_i):
@@ -817,7 +818,10 @@ def aerodynamical_resistance_full(u_i, L_full, z0m_full=0.1, disp_full=0.667, z_
     res_stable = (np.log(z_obs/z0m_full) - -5 * z_obs / L_full  +  -5 * z0m_full / L_full ) / (c.k * u_i) 
     res_unstable =((np.log(z1) - psi_m(-z2) + psi_m(-z3)) * (np.log(z4) - psi_h(-z2) + psi_h(-z5))) / (c.k ** 2 * u_i)
     
-    res = np.where(L_full>0,  np.nan, res_unstable)    
+    if isinstance(res_unstable, xr.DataArray):
+        res = xr.where(L_full>0,  np.nan, res_unstable)
+    else:
+        res = np.where(L_full>0,  np.nan, res_unstable)    
     res = res.clip(5, 400)
     
     return res
@@ -872,7 +876,10 @@ def aerodynamical_resistance_bare(u_i, L_bare, z0m_bare=0.001, disp_bare=0.0, z_
     res_stable = (np.log(z_obs/z0m_bare) - -5 * z_obs / L_bare  +  -5 * z0m_bare / L_bare ) / (c.k * u_i) 
     res_unstable = ((np.log(z1) - psi_m(-z2)) * (np.log(z1) - psi_h(-z2))) / (c.k ** 2 * u_i)
     
-    res = np.where(L_bare>0,  np.nan, res_unstable)
+    if isinstance(res_unstable, xr.DataArray):
+        res = xr.where(L_bare>0,  np.nan, res_unstable)
+    else:
+        res = np.where(L_bare>0,  np.nan, res_unstable)
     res = res.clip(5, 400)
     
     return res
@@ -913,10 +920,14 @@ def wind_speed_soil_inst(u_i, L_bare, z_obs=10):
     z0_soil = 0.01
     z0_free = 0.1
 
+    # TODO check why res_stable is unused
     res_stable = (np.log(z_obs/z0_free) - -5 * z_obs / L_bare  +  -5 * z0_free / L_bare ) / (c.k * u_i) 
     res_unstable = u_i * ((np.log(z0_free / z0_soil)) / (np.log(z_obs / z0_soil) - psi_m(-z0_free / L_bare)))
     
-    res = np.where(L_bare>0, np.nan, res_unstable)
+    if isinstance(res_unstable, xr.DataArray):
+        res = xr.where(L_bare>0, np.nan, res_unstable)
+    else:
+        res = np.where(L_bare>0, np.nan, res_unstable)
     res = res.clip(5, 400)
     
     return(res)

@@ -3,6 +3,7 @@ import sys
 from pywapor.collect.CHIRPS.DataAccess import DownloadData
 import glob
 import os
+from pywapor.general.logger import log
 
 def main(Dir, latlim, lonlim, Startdate, Enddate, Waitbar = 1):
 	"""
@@ -16,8 +17,8 @@ def main(Dir, latlim, lonlim, Startdate, Enddate, Waitbar = 1):
 	lonlim -- [xmin, xmax] (values must be between -180 and 180)
 	Waitbar -- 1 (Default) will print a waitbar
 	"""
-	print('\nDownloading daily CHIRPS rainfall data for the period %s till %s' %(Startdate, Enddate))
 
+	log.info(f"--> Downloading CHIRPS.")
 	# Download data
 	DownloadData(Dir, Startdate, Enddate, latlim, lonlim, Waitbar)
 

@@ -4,8 +4,8 @@ Authors: Tim Hessels
 Module: WAPOR/Functions
 """
 
-from pywapor.general import landcover_converter, outputs, variables, tests, waitbar_console, processing_functions, compositer, lapse_rate
+from pywapor.general import outputs, variables, tests, processing_functions, compositer, pre_defaults
 
-__all__ = ['landcover_converter', 'outputs', 'variables', 'tests', 'waitbar_console', 'processing_functions', 'compositer', 'lapse_rate']
+__all__ = ['outputs', 'variables', 'tests', 'processing_functions', 'compositer', 'pre_defaults']
 
 __version__ = '0.1'

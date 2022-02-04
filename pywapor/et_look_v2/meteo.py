@@ -8,6 +8,7 @@
 """
 from pywapor.et_look_v2 import constants as c
 import numpy as np
+import xarray as xr
 
 def air_temperature_celcius(t_air_k):
     r"""
@@ -681,7 +682,10 @@ def vapour_pressure_deficit(svp, vp):
 
     """
     vpd = svp - vp
-    vpd[vpd < 0] = 0
+    if isinstance(vpd, xr.DataArray):
+        vpd = xr.where(vpd < 0, 0.0, vpd)
+    else:
+        vpd[vpd < 0] = 0
 
     return vpd
 

@@ -4,6 +4,7 @@
 
 """
 import numpy as np
+import xarray as xr
 
 def vegetation_cover(ndvi, nd_min=0.125, nd_max=0.8, vc_pow=0.7):
     r"""
@@ -68,14 +69,18 @@ def vegetation_cover(ndvi, nd_min=0.125, nd_max=0.8, vc_pow=0.7):
 
     else:
 
-        # Create empty array
-        res = np.ones(ndvi.shape) * np.nan
+        if isinstance(ndvi, np.ndarray):
+            # Create empty array
+            res = np.ones(ndvi.shape) * np.nan
 
-        # fill in array
-        res[ndvi <= nd_min] = 0
-        res[np.logical_and(ndvi > nd_min, ndvi < nd_max)] = 1 - (
-                    (nd_max - ndvi[np.logical_and(ndvi > nd_min, ndvi < nd_max)]) / (nd_max - nd_min)) ** vc_pow
-        res[ndvi >= nd_max] = 1
+            # fill in array
+            res[ndvi <= nd_min] = 0
+            res[np.logical_and(ndvi > nd_min, ndvi < nd_max)] = 1 - (
+                        (nd_max - ndvi[np.logical_and(ndvi > nd_min, ndvi < nd_max)]) / (nd_max - nd_min)) ** vc_pow
+            res[ndvi >= nd_max] = 1
+        else:
+            res = 1 - ((nd_max - ndvi) / (nd_max - nd_min)) ** vc_pow
+            res = np.clip(res, 0, 1)
 
     return res
 
@@ -142,6 +147,12 @@ def leaf_area_index(vc, vc_min=0.0, vc_max=vegetation_cover(0.795), lai_pow=-0.4
         if vc >= vc_max:
             res = np.log(-(vc_max - 1)) / lai_pow
 
+    elif isinstance(vc, xr.DataArray):
+        res = np.ones(vc.shape) * np.nan
+        res = xr.where(vc <= vc_min, 0, res)
+        res = xr.where((vc > vc_min) & (vc < vc_max), 
+                        np.log(-(vc - 1)) / lai_pow, res)
+        res = xr.where(vc >= vc_max, np.log(-(vc_max - 1)) / lai_pow, res)
     else:
         # Create empty array
         res = np.ones(vc.shape) * np.nan
@@ -216,7 +227,10 @@ def fpar(vc, ndvi):
 
     """
     fpar = 0.925 * vc
-    fpar[ndvi < 0.1] = 0.0
+    if isinstance(fpar, xr.DataArray):
+        fpar = xr.where(ndvi < 0.1, 0.0, fpar)
+    else:
+        fpar[ndvi < 0.1] = 0.0
     
     return fpar
 

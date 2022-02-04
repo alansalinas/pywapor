@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 import sys
-from pywapor.collect.MERRA.DataAccess import DownloadData
+from pywapor.collect.MERRA2.DataAccess import DownloadData
 
 
 def main(Dir, Vars, Startdate, Enddate, latlim, lonlim, username, password, Waitbar = 1, data_type = ["mean"]):

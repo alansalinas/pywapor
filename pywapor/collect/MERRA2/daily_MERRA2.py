@@ -1,10 +1,11 @@
 # -*- coding: utf-8 -*-
 import sys
-from pywapor.collect.MERRA.DataAccess import DownloadData
-from pywapor.collect.MERRA.DataAccess import VariablesInfo
+from pywapor.collect.MERRA2.DataAccess import DownloadData
+from pywapor.collect.MERRA2.DataAccess import VariablesInfo
 import pywapor
+from pywapor.general.logger import log
 
-def main(Dir, latlim, lonlim, Startdate, Enddate, Vars, Waitbar = 1, data_type = ["mean"]):
+def main(Dir, latlim, lonlim, Startdate, Enddate, Vars, data_type = ["mean"]):
     """
     This function downloads MERRA daily data for a given variable, time
     interval, and spatial extent.
@@ -18,17 +19,17 @@ def main(Dir, latlim, lonlim, Startdate, Enddate, Vars, Waitbar = 1, data_type =
     lonlim -- [xmin, xmax]
     Waitbar -- 1 (Default) Will print a waitbar
     """
-    all_files = dict()
+    all_files = list()
 
     username, password = pywapor.collect.get_pw_un.get("NASA")
 
+    
     for Var in Vars:
 
-        if Waitbar == 1:
-            print('\nDownloading daily MERRA %s data for the period %s till %s' %(Var, Startdate, Enddate))
-
         # Download data
-        all_files = {**all_files, **DownloadData(Dir, Var, Startdate, Enddate, latlim, lonlim, "daily_MERRA2", '', username, password, Waitbar = 1, data_type = data_type)}
+        log.info(f"--> Downloading MERRA2 (daily), {Var}.")
+        new_files = DownloadData(Dir, Var, Startdate, Enddate, latlim, lonlim, "daily_MERRA2", '', username, password, Waitbar = 1, data_type = data_type)
+        all_files = all_files+new_files
 
         TimeStep = "daily_MERRA2"
         VarInfo = VariablesInfo(TimeStep)

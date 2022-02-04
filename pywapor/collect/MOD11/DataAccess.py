@@ -1,10 +1,3 @@
-# -*- coding: utf-8 -*-
-"""
-Authors: Tim Hessels
-Module: Collect/MOD11
-"""
-
-# import general python modules
 import os
 import numpy as np
 import pandas as pd
@@ -15,11 +8,8 @@ import re
 import glob
 import requests
 import sys
-if sys.version_info[0] == 3:
-    import urllib.parse
-if sys.version_info[0] == 2:
-    import urlparse
-    import urllib2
+import urllib.parse
+import tqdm
 
 def DownloadData(Dir, Startdate, Enddate, latlim, lonlim, username, password, Waitbar, hdf_library, remove_hdf):
     """
@@ -46,13 +36,6 @@ def DownloadData(Dir, Startdate, Enddate, latlim, lonlim, username, password, Wa
     # Make an array of the days of which the LST is taken
     Dates = pd.date_range(Startdate, Enddate, freq = 'D')
 
-    # Create Waitbar
-    if Waitbar == 1:
-        import pywapor.general.waitbar_console as WaitbarConsole
-        total_amount = len(Dates)
-        amount = 0
-        WaitbarConsole.printWaitBar(amount, total_amount, prefix = 'Progress:', suffix = 'Complete', length = 50)
-
     # Check the latitude and longitude and otherwise set lat or lon on greatest extent
     if latlim[0] < -90 or latlim[1] > 90:
         print('Latitude above 90N or below 90S is not possible. Value set to maximum')
@@ -71,16 +54,26 @@ def DownloadData(Dir, Startdate, Enddate, latlim, lonlim, username, password, Wa
 
     # Define which MODIS tiles are required
     TilesVertical, TilesHorizontal = Get_tiles_from_txt(latlim, lonlim) 
-    
+
+    if Waitbar:
+        total_tiles_vert = len(range(int(TilesVertical[0]), int(TilesVertical[1])+1))
+        total_tiles_hort = len(range(int(TilesHorizontal[0]), int(TilesHorizontal[1])+1))
+        total_tiles = int(total_tiles_vert * total_tiles_hort * len(Dates))
+
+        waitbar = tqdm.tqdm(desc= f"Tile: 0 / {total_tiles}",
+                            position = 0,
+                            # total=total_size,
+                            unit='Bytes',
+                            unit_scale=True,)
+    else:
+        waitbar = None
+
     # Pass variables to parallel function and run
     args = [output_folder, TilesVertical, TilesHorizontal,lonlim, latlim, username, password, hdf_library]
     all_dl_files = dict()
     for Date in Dates:
-        dl_files = RetrieveData(Date, args)
+        dl_files = RetrieveData(Date, args, waitbar)
         all_dl_files[Date.date()] = dl_files
-        if Waitbar == 1:
-            amount += 1
-            WaitbarConsole.printWaitBar(amount, total_amount, prefix = 'Progress:', suffix = 'Complete', length = 50)
 
     # Remove all .hdf files
     if remove_hdf == 1:
@@ -95,7 +88,7 @@ def DownloadData(Dir, Startdate, Enddate, latlim, lonlim, username, password, Wa
 
     return all_dl_files
 
-def RetrieveData(Date, args):
+def RetrieveData(Date, args, waitbar):
     """
     This function retrieves MOD11 LST data for a given date from the
     https://e4ftl01.cr.usgs.gov/ server.
@@ -118,7 +111,7 @@ def RetrieveData(Date, args):
 
     if not (os.path.exists(LSTfileName) and os.path.exists(TimefileName) and os.path.exists(OnsangfileName)):
 
-        Collect_data(TilesHorizontal, TilesVertical, Date, username, password, output_folder, hdf_library)
+        Collect_data(TilesHorizontal, TilesVertical, Date, username, password, output_folder, hdf_library, waitbar)
     
         # Define the output name of the collect data function
         name_collect = os.path.join(output_folder, 'Merged.tif')
@@ -152,13 +145,18 @@ def RetrieveData(Date, args):
         os.remove(name_reprojected_time) 
         os.remove(name_collect_obsang)
         os.remove(name_reprojected_obsang)             
+    else:
+        if not isinstance(waitbar, type(None)):
+            waitbar_i = int(waitbar.desc.split(" ")[1])
+            waitbar_desc = str(waitbar.desc)
+            waitbar.set_description_str(waitbar_desc.replace(f": {waitbar_i} /", f": {waitbar_i+1} /"))
 
     return (LSTfileName, TimefileName, OnsangfileName)
 
-def Collect_data(TilesHorizontal, TilesVertical, Date, username, password, output_folder, hdf_library):
+def Collect_data(TilesHorizontal, TilesVertical, Date, username, password, output_folder, hdf_library, waitbar):
     '''
-    This function downloads all the needed MODIS tiles from https://e4ftl01.cr.usgs.gov/MOLT/MOD11A1.006/ as a hdf file.
-    See documenation here: https://lpdaac.usgs.gov/products/mod11a1v006/
+    This function downloads all the needed MODIS tiles from https://e4ftl01.cr.usgs.gov/MOLT/MOD11A1.061/ as a hdf file.
+    See documenation here: https://lpdaac.usgs.gov/products/mod11a1v061/
     
     Keywords arguments:
     TilesHorizontal -- [TileMin,TileMax] max and min horizontal tile number
@@ -184,7 +182,7 @@ def Collect_data(TilesHorizontal, TilesVertical, Date, username, password, outpu
             countX=Horizontal - TilesHorizontal[0] + 1
 
             # Create the URL to the LST MODIS data
-            url = 'https://e4ftl01.cr.usgs.gov/MOLT/MOD11A1.006/' + Date.strftime('%Y') + '.' + Date.strftime('%m') + '.' + Date.strftime('%d') + '/'
+            url = 'https://e4ftl01.cr.usgs.gov/MOLT/MOD11A1.061/' + Date.strftime('%Y') + '.' + Date.strftime('%m') + '.' + Date.strftime('%d') + '/'
 
 		    # Reset the begin parameters for downloading
             downloaded = 0
@@ -236,21 +234,29 @@ def Collect_data(TilesHorizontal, TilesVertical, Date, username, password, outpu
                                 nameDownload = full_url
                                 file_name = os.path.join(output_folder,nameDownload.split('/')[-1])
                                 if os.path.isfile(file_name):
-                                    print("file ", file_name, " already exists")
                                     downloaded = 1
+                                    if not isinstance(waitbar, type(None)):
+                                        waitbar_i = int(waitbar.desc.split(" ")[1])
+                                        waitbar_desc = str(waitbar.desc)
+                                        waitbar.set_description_str(waitbar_desc.replace(f": {waitbar_i} /", f": {waitbar_i+1} /"))
                                 else:
                                     x = requests.get(nameDownload, allow_redirects = False)
-                                    try:
-                                        y = requests.get(x.headers['location'], auth = (username, password))
-                                    except:
-                                        # from requests.packages.urllib3.exceptions import InsecureRequestWarning
-                                        # requests.packages.urllib3.disable_warnings(InsecureRequestWarning)
-
-                                        y = requests.get(x.headers['location'], auth = (username, password), verify = False)
-                                        
-                                    z = open(file_name, 'wb')
-                                    z.write(y.content)
-                                    z.close()
+                                    
+                                    resp = requests.get(x.headers['location'], auth = (username, password), stream=True)
+                                    total_size = int(resp.headers.get('content-length', 0))
+                                    
+                                    if not isinstance(waitbar, type(None)):
+                                        waitbar.reset(total = total_size)
+                                        waitbar_i = int(waitbar.desc.split(" ")[1])
+                                        waitbar_desc = str(waitbar.desc)
+                                        waitbar.set_description_str(waitbar_desc.replace(f": {waitbar_i} /", f": {waitbar_i+1} /"))
+                                    with open(file_name, 'wb') as z:
+                                        # z.write(resp.content)
+                                        for data in resp.iter_content(chunk_size=1024):
+                                            size = z.write(data)
+                                            if not isinstance(waitbar, type(None)):
+                                                waitbar.update(size)
+                                                
                                     statinfo = os.stat(file_name)
                                     # Say that download was succesfull
                                     if int(statinfo.st_size) > 10000:

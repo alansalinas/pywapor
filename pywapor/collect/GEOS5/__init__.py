@@ -1,10 +1,5 @@
 # -*- coding: utf-8 -*-
 """
-Authors: Tim Hessels
-Contact: timhessels@hotmail.com
-Repository: WAPOR
-Module: WAPOR/Collect/GEOS
-
 Description:
 This module downloads daily or instantanious GEOS data from
 https://opendap.nccs.nasa.gov/dods/GEOS-5/fp/0.25_deg/assim server. The GEOS data is available since 2007-12-01 till the present.

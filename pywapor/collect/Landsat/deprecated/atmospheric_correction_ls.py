@@ -1,9 +1,3 @@
-# -*- coding: utf-8 -*-
-"""
-Created on Fri Oct 30 09:43:42 2020
-
-@author: timhe
-"""
 
 #%%
 import re

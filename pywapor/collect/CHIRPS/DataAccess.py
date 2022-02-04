@@ -11,6 +11,7 @@ import numpy as np
 import pandas as pd
 from ftplib import FTP
 import datetime
+import tqdm
 
 def DownloadData(Dir, Startdate, Enddate, latlim, lonlim, Waitbar):
     """
@@ -44,12 +45,14 @@ def DownloadData(Dir, Startdate, Enddate, latlim, lonlim, Waitbar):
     # Create days
     Dates = pd.date_range(Startdate, Enddate, freq='D')
 
-    # Create Waitbar
-    if Waitbar == 1:
-        import pywapor.general.waitbar_console as WaitbarConsole
-        total_amount = len(Dates)
-        amount = 0
-        WaitbarConsole.printWaitBar(amount, total_amount, prefix = 'Progress:', suffix = 'Complete', length = 50)
+    if Waitbar:
+        waitbar = tqdm.tqdm(desc= f"Tile: 0 / {int(len(Dates))}",
+                            position = 0,
+                            # total=total_size,
+                            unit='Bytes',
+                            unit_scale=True,)
+    else:
+        waitbar = None
 
     # Check space variables
     if latlim[0] < -50 or latlim[1] > 50:
@@ -72,11 +75,8 @@ def DownloadData(Dir, Startdate, Enddate, latlim, lonlim, Waitbar):
     # Pass variables to parallel function and run
     args = [output_folder, xID, yID, lonlim, latlim]
     for Date in Dates:
-        RetrieveData(Date, args)
-        
-        if Waitbar == 1:
-            amount += 1
-            WaitbarConsole.printWaitBar(amount, total_amount, prefix = 'Progress:', suffix = 'Complete', length = 50)
+        RetrieveData(Date, args, waitbar)
+
     results = True
     
     # remove raw files
@@ -93,7 +93,7 @@ def DownloadData(Dir, Startdate, Enddate, latlim, lonlim, Waitbar):
         
     return results
 
-def RetrieveData(Date, args):
+def RetrieveData(Date, args, waitbar):
     """
     This function retrieves CHIRPS data for a given date from the
     ftp://chg-ftpout.geog.ucsb.edu server.
@@ -134,17 +134,20 @@ def RetrieveData(Date, args):
 
         # download the global rainfall file
 
-        # unzip the file if necessary
-        # Files after 2021-6-1 are not zipped for some reason (Bert, 29-9-2021)
-        if Date >= datetime.datetime(2021, 6, 1):
-            filename = filename.replace(".gz", "")
-            with open(outfilename, "wb") as lf:
-                ftp.retrbinary("RETR " + filename, lf.write, 8192)
-        else:
-            local_filename = os.path.join(output_folder, filename)
-            with open(local_filename, "wb") as lf:
-                ftp.retrbinary("RETR " + filename, lf.write, 8192) 
-            PF.Extract_Data_gz(local_filename, outfilename)
+        local_filename = os.path.join(output_folder, filename)
+        total_size = ftp.size(filename)
+        if not isinstance(waitbar, type(None)):
+            waitbar_i = int(waitbar.desc.split(" ")[1])
+            waitbar_desc = str(waitbar.desc)
+            waitbar.set_description_str(waitbar_desc.replace(f": {waitbar_i} /", f": {waitbar_i+1} /"))
+            waitbar.reset(total = total_size)
+        with open(local_filename, "wb") as lf:
+            def callback(data):
+                lf.write(data)
+                if not isinstance(waitbar, type(None)):
+                    waitbar.update(len(data))
+            ftp.retrbinary("RETR " + filename, callback, 8192) 
+        PF.Extract_Data_gz(local_filename, outfilename)
 
         # open tiff file
         dest = gdal.Open(outfilename)
@@ -158,5 +161,22 @@ def RetrieveData(Date, args):
         geo = [lonlim[0], 0.05, 0, latlim[1], 0, -0.05]
         
         PF.Save_as_tiff(name=DirFileEnd, data=data, geo=geo, projection="WGS84")
-    
+    else:
+        if not isinstance(waitbar, type(None)):
+            waitbar_i = int(waitbar.desc.split(" ")[1])
+            waitbar_desc = str(waitbar.desc)
+            waitbar.set_description_str(waitbar_desc.replace(f": {waitbar_i} /", f": {waitbar_i+1} /"))
+
     return True
+
+if __name__ == "__main__":
+
+    import pywapor
+
+    Dir =r"/Volumes/Data/FAO/temp_test"
+    Startdate = "2021-06-01"
+    Enddate = "2021-07-01"
+    latlim = [28.9, 29.7]
+    lonlim = [30.2, 31.2]
+
+    DownloadData(Dir, Startdate, Enddate, latlim, lonlim, Waitbar = 1)

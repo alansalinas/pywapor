@@ -1,5 +1,6 @@
 import numpy as np
 from pywapor.et_look_v2 import constants as c
+import xarray as xr
 
 def interception_wm2(int_mm, lh_24):
     r"""
@@ -505,7 +506,10 @@ def bare_soil_heat_flux(doy, dd, stc, t_amp_year, lat):
     array([ 45.82350561])
     """
 
-    phase = np.where(lat > 0, -np.pi/4.0, -np.pi/4.0+np.pi)
+    if isinstance(lat, xr.DataArray):
+        phase = xr.where(lat > 0, -np.pi/4.0, -np.pi/4.0+np.pi)
+    else:
+        phase = np.where(lat > 0, -np.pi/4.0, -np.pi/4.0+np.pi)
 
     out = (np.sqrt(2.0)*t_amp_year*stc*np.sin(2*np.pi/c.year_sec*doy*c.day_sec+phase))/dd
 
@@ -585,9 +589,15 @@ def soil_heat_flux(g0_bs, sf_soil, land_mask, rn_24_soil, trans_24, ra_24, l_net
 
         return g0_24
 
-    g0 = np.zeros_like(land_mask)
-    g0 = np.where(land_mask == 1, land_city_func(g0_bs, sf_soil), g0)
-    g0 = np.where(land_mask == 2, water_func(ra_24, trans_24, l_net, rn_slope, rn_offset, rn_24_soil), g0)
-    g0 = np.where(land_mask == 3, land_city_func(g0_bs, sf_soil), g0)
+    if isinstance(land_mask, xr.DataArray):
+        g0 = xr.zeros_like(land_mask)
+        g0 = xr.where(land_mask == 1, land_city_func(g0_bs, sf_soil), g0)
+        g0 = xr.where(land_mask == 2, water_func(ra_24, trans_24, l_net, rn_slope, rn_offset, rn_24_soil), g0)
+        g0 = xr.where(land_mask == 3, land_city_func(g0_bs, sf_soil), g0)
+    else:
+        g0 = np.zeros_like(land_mask)
+        g0 = np.where(land_mask == 1, land_city_func(g0_bs, sf_soil), g0)
+        g0 = np.where(land_mask == 2, water_func(ra_24, trans_24, l_net, rn_slope, rn_offset, rn_24_soil), g0)
+        g0 = np.where(land_mask == 3, land_city_func(g0_bs, sf_soil), g0)
 
     return g0

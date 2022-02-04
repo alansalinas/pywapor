@@ -1,8 +1,3 @@
-# -*- coding: utf-8 -*-
-"""
-Authors: Tim Hessels
-Module: Collect/MOD13
-"""
 
 # import general python modules
 import os

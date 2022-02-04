@@ -6,6 +6,7 @@ Module: Collect/MYD11
 import pywapor
 import sys
 from pywapor.collect.MYD11.DataAccess import DownloadData
+from pywapor.general.logger import log
 
 def main(Dir, latlim, lonlim, Startdate, Enddate, Waitbar = 1, hdf_library = None, remove_hdf = 1):
     """
@@ -27,8 +28,7 @@ def main(Dir, latlim, lonlim, Startdate, Enddate, Waitbar = 1, hdf_library = Non
     """
     username, password = pywapor.collect.get_pw_un.get("NASA")
 
-    print('\nDownload daily MYD11 Land Surface Temperature data for period %s till %s' %(Startdate, Enddate))
-    
+    log.info(f"--> Downloading MYD11.")
     files = DownloadData(Dir, Startdate, Enddate, latlim, lonlim, username, password, Waitbar, hdf_library, remove_hdf)
 
     return files

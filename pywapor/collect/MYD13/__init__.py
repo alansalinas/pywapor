@@ -1,7 +1,5 @@
 # -*- coding: utf-8 -*-
 """
-Authors: Tim Hessels
-Module: Collect/MYD13
 
 Description:
 This module downloads MYD13 NDVI data from
@@ -15,7 +13,7 @@ MYD13.NDVI(Dir='C:/Temp3/', Startdate='2003-12-01', Enddate='2003-12-20',
            latlim=[41, 45], lonlim=[-8, -5])
 """
 
-from .NDVI import main as NDVI
+from pywapor.collect.MYD13.NDVI import main as NDVI
 
 __all__ = ['NDVI']
 

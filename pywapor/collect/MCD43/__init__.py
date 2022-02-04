@@ -1,8 +1,5 @@
 # -*- coding: utf-8 -*-
 """
-Authors: Tim Hessels
-Module: Collect/MCD43
-
 Description:
 This module downloads MCD43 ALBEDO data from
 https://e4ftl01.cr.usgs.gov/. Use the MCD43.ALBEDO function to
@@ -15,7 +12,7 @@ MCD43.ALBEDO(Dir='C:/Temp3/', Startdate='2003-12-01', Enddate='2003-12-20',
            latlim=[41, 45], lonlim=[-8, -5])
 """
 
-from .ALBEDO import main as ALBEDO
+from pywapor.collect.MCD43.ALBEDO import main as ALBEDO
 
 __all__ = ['ALBEDO']
 

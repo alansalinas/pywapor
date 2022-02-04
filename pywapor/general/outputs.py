@@ -9,7 +9,7 @@ outputs = {
 "ra_24_toa": False,           # Daily Solar Radiation At The Top Of Atmosphere [Wm-2]
 "ws": False,                  # Sunset Hour Angle [Rad]
 "diffusion_index": False,     # Diffusion Index 
-"ra_24": False,              # Daily Solar Radiation For A Flat Surface [Wm-2]
+"ra_24": False,               # Daily Solar Radiation For A Flat Surface [Wm-2]
 "ra_24_toa_flat": False,      #
 "stress_rad": False,          # Stress Factor For Radiation [-]
 "p_air_24": False,            # Daily Air Pressure [mbar]
@@ -21,9 +21,9 @@ outputs = {
 "r_canopy_0": False,          # Atmospheric Canopy Resistance [sm-1]
 "t_air_k_24": False,          # Daily Air Temperature [Kelvin]
 "l_net": False,               # Daily Net Longwave Radiation [wm-2]
-"int_mm": True,              # Interception [mm day-1]
+"int_mm": True,               # Interception [mm day-1]
 "lh_24": False,               # Daily Latent Heat For Evaporation [j kg-1]
-"int_wm2": False,            # Interception [Wm-2]
+"int_wm2": False,             # Interception [Wm-2]
 "rn_24": False,               # Net Radiation [Wm-2]      
 "rn_24_canopy": False,        # Net Radiation For The Canopy [Wm-2]          
 "t_air_k_i": False,           # Instantaneous Air Tempearture [K]

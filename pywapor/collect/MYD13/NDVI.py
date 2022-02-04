@@ -1,9 +1,12 @@
 import sys
 from pywapor.collect.MYD13.DataAccess import DownloadData
-from datetime import date
+from datetime import date, timedelta
+import numpy as np
+from datetime import datetime as dat
 import glob
 import os
-import pywapor 
+import pywapor
+from pywapor.general.logger import log
 
 def main(Dir, latlim, lonlim, Startdate, Enddate, Waitbar = 1, 
         hdf_library = None, remove_hdf = 1, buffer_dates = False):
@@ -32,12 +35,20 @@ def main(Dir, latlim, lonlim, Startdate, Enddate, Waitbar = 1,
 
     username, password = pywapor.collect.get_pw_un.get("NASA")
 
-    print('\nDownload 16-daily MYD13 NDVI data for period %s till %s' %(Startdate, Enddate))
+    log.info(f"--> Downloading MYD13.")
     DownloadData(Dir, Startdate, Enddate, latlim, lonlim, username, 
                 password, Waitbar, hdf_library, remove_hdf, buffer_dates = buffer_dates)
 
-    return glob.glob(os.path.join(Dir, "MODIS", "MYD13", "*.tif"))
+    sdate = dat.strptime(Startdate, "%Y-%m-%d")
+    edate = dat.strptime(Enddate, "%Y-%m-%d")
+    all_files = glob.glob(os.path.join(Dir, "MODIS", "MYD13", "*.tif"))
+    start_dates = np.array([dat.strptime(os.path.split(x)[-1], "NDVI_MYD13Q1_-_16-daily_%Y.%m.%d.tif") for x in all_files])
+    end_dates = np.array([x + timedelta(days = 16) for x in start_dates])
+    check = np.all([start_dates <= edate, end_dates >= sdate], axis = 0)
+    all_files = np.array(all_files)[check].tolist()
+
+    return all_files
 
 
-if __name__ == '__main__':
-    main(sys.argv)
+# if __name__ == '__main__':
+#     main(sys.argv)

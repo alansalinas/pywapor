@@ -4,6 +4,7 @@
 
 """
 import numpy as np
+import xarray as xr
 
 def vegetation_cover(ndvi, nd_min=0.125, nd_max=0.8, vc_pow=0.7):
     r"""
@@ -148,6 +149,12 @@ def leaf_area_index(vc, vc_min=0.0, vc_max=vegetation_cover(0.795), lai_pow=-0.4
         if vc >= vc_max:
             res = np.log(-(vc_max - 1)) / lai_pow
 
+    elif isinstance(vc, xr.DataArray):
+        res = np.ones(vc.shape) * np.nan
+        res = xr.where(vc <= vc_min, 0, res)
+        res = xr.where((vc > vc_min) & (vc < vc_max), 
+                        np.log(-(vc - 1)) / lai_pow, res)
+        res = xr.where(vc >= vc_max, np.log(-(vc_max - 1)) / lai_pow, res)
     else:
         # Create empty array
         res = np.ones(vc.shape) * np.nan

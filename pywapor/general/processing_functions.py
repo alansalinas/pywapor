@@ -8,6 +8,149 @@ import gzip
 import zipfile
 import numpy as np
 from scipy.interpolate import NearestNDInterpolator, LinearNDInterpolator
+from pywapor.general.logger import log
+import xarray as xr
+import pandas as pd
+
+def ds_remove_except(ds, keep_vars):
+    keep_vars_coords = list()
+    for var in keep_vars:
+        if var in list(ds.variables):
+            keep_vars_coords += [k for k, v in ds[var].coords.items() if v.size > 0]
+    keep_vars_coords = keep_vars + np.unique(keep_vars_coords).tolist()
+    drop_vars = [x for x in list(ds.variables) if x not in keep_vars_coords]
+    ds = ds.drop_vars(drop_vars)
+    return ds
+
+def export_ds_to_tif(ds, vars, base_folder):
+
+    all_files = dict()
+
+    if isinstance(base_folder, type(None)):
+        base_folder = os.path.split(ds.encoding["source"])[0]
+    
+    for var in vars:
+
+        if var not in list(ds.variables):
+            continue
+
+        if "lat" not in list(ds[var].coords) or "lon" not in list(ds[var].coords):
+            continue
+
+        all_files[var] = list()
+
+        folder = os.path.join(base_folder, f"{var}_output")
+        
+        if not os.path.exists(folder):
+            os.makedirs(folder)
+
+        if "source" in ds[var].attrs.keys():
+            source = ds[var].source
+        else:
+            source = "-"
+
+        if "unit" in ds[var].attrs.keys():
+            unit = ds[var].unit
+        else:
+            unit = "-"
+
+        if "time" in list(ds[var].coords):
+            iterator = ds.time
+            instantaneous = True
+        elif "epoch" in list(ds[var].coords):
+            iterator = ds.epoch
+            instantaneous = False
+        else:
+            log.warning(f"! --> not exporting {var}")
+
+        for t in iterator:
+
+            if instantaneous:
+                tlength = "inst"
+                date_str = pd.Timestamp(t.values).strftime("%Y.%m.%d.%H.%M")
+                array = ds[var].sel(time = t).values
+            else:
+                tdelta = ds.epoch_ends.sel(epoch = t) - ds.epoch_starts.sel(epoch = t)
+                tlength = tdelta.values.astype('timedelta64[D]').astype(int)
+                date_str = pd.Timestamp(ds.epoch_starts.sel(epoch = t).values).strftime("%Y.%m.%d")
+                array = ds[var].sel(epoch = t).values
+
+            fn = f"{var.replace('_','-')}_{source}_{unit}_{tlength}_{date_str}.tif"
+            fh = os.path.join(folder, fn)
+
+            Save_as_tiff(fh, array, ds.geotransform, ds.projection)
+
+            all_files[var].append(fh)
+
+    return all_files
+
+def select_template(fhs):
+    # Flatten a list-of-lists into a  single list.
+    fhs = [val for sublist in fhs for val in sublist]
+
+    # Determine amount of pixels in each file.
+    sizes = [gdal.Open(fh).RasterXSize * gdal.Open(fh).RasterYSize for fh in fhs]
+
+    # Find index of file with most pixels.
+    idx = np.argmax(sizes)
+
+    # Create resample info.
+    example_fh = fhs[idx]
+    example_ds = xr.open_dataset(example_fh).isel(band = 0).drop_vars(["band", "spatial_ref"]).rename({"x": "lon", "y": "lat"})
+    example_geoinfo = get_geoinfo(example_fh)
+
+    # Calculate pixel size in meters.
+    resolution = get_resolution(example_fh)
+    log.info(f"--> Resampling resolution is ~{resolution:.0f} meter.")
+
+    return example_fh, example_ds, example_geoinfo, resolution
+
+def get_resolution(example_filepath):
+    ds = gdal.Open(example_filepath)
+    geo_ex = ds.GetGeoTransform()
+    xsize = ds.RasterXSize
+    ysize = ds.RasterYSize
+    dlat, dlon = calc_dlat_dlon(geo_ex, xsize, ysize)
+    dem_resolution = (np.nanmean(dlon) + np.nanmean(dlat))/2
+    return dem_resolution
+
+def reproject_clip(source_fp, dest_fp = None, bb = None,
+                    compress = True, dstSRS = "epsg:4326"):
+    """Function that calls gdal.Warp().
+
+    Parameters
+    ----------
+    source_fp : [type]
+        [description]
+    dest_fp : [type], optional
+        [description], by default None
+    bb : tuple, optional
+        First item is latlim, second item is lonlim, by default None
+    compress : bool, optional
+        [description], by default True
+    dstSRS : str, optional
+        [description], by default "epsg:4326"
+    """
+    options_dict = {"dstSRS": dstSRS}
+    
+    if not isinstance(bb, type(None)):
+        options_dict["outputBounds"] = (bb[1][0], bb[0][0], 
+                                        bb[1][1], bb[0][1])
+
+    if compress:
+        options_dict["creationOptions"] = ["COMPRESS=DEFLATE", "ZLEVEL=8"]
+
+    if isinstance(dest_fp, type(None)):
+        log.debug(f"Overwriting input file ({source_fp}).")
+        dest_fp = source_fp
+
+    options = gdal.WarpOptions(**options_dict)
+
+    out = gdal.Warp(dest_fp, source_fp, options = options)
+    out.FlushCache()
+    out = None
+
+    return dest_fp
 
 def apply_mask(a, indices, axis):
     """
@@ -285,13 +428,12 @@ def reproject_dataset_example(dataset, dataset_example, method=1):
         1 = Nearest Neighbour, 2 = Bilinear, 3 = lanzcos, 4 = average
     """
     # open dataset that must be transformed
-    try:
-        if os.path.splitext(dataset)[-1] == '.tif':
-            g = gdal.Open(dataset)
-        else:
-            g = dataset
-    except:
-            g = dataset
+    if isinstance(dataset, str):
+        g = gdal.Open(dataset)
+    elif isinstance(dataset, gdal.Dataset):
+        g = dataset
+    else:
+        raise ValueError
     epsg_from = Get_epsg(g)
 
     #exceptions
@@ -299,12 +441,13 @@ def reproject_dataset_example(dataset, dataset_example, method=1):
         epsg_from = 5070
 
     # open dataset that is used for transforming the dataset
-    try:
+    if isinstance(dataset_example, str):
         gland = gdal.Open(dataset_example)
-        epsg_to = Get_epsg(gland)
-    except:
+    elif isinstance(dataset_example, gdal.Dataset):
         gland = dataset_example
-        epsg_to = Get_epsg(gland)
+    else:
+        raise ValueError
+    epsg_to = Get_epsg(gland)
 
     # Set the EPSG codes
     osng = osr.SpatialReference()
@@ -516,7 +659,7 @@ def gap_filling(dataset, NoDataValue, method = 1):
 
     return (EndProduct)  
     
-def calc_dlat_dlon(geo_out, size_X, size_Y):
+def calc_dlat_dlon(geo_out, size_X, size_Y, lat_lon = None):
     """
     This functions calculated the distance between each pixel in meter.
 
@@ -536,10 +679,12 @@ def calc_dlat_dlon(geo_out, size_X, size_Y):
     dlon: array
         Array containing the horizontal distance between each pixel in meters
     """
-
-    # Create the lat/lon rasters
-    lon = np.arange(size_X + 1)*geo_out[1]+geo_out[0] - 0.5 * geo_out[1]
-    lat = np.arange(size_Y + 1)*geo_out[5]+geo_out[3] - 0.5 * geo_out[5]
+    if isinstance(lat_lon, type(None)):
+        # Create the lat/lon rasters
+        lon = np.arange(size_X + 1)*geo_out[1]+geo_out[0] - 0.5 * geo_out[1]
+        lat = np.arange(size_Y + 1)*geo_out[5]+geo_out[3] - 0.5 * geo_out[5]
+    else:
+        lat, lon = lat_lon
 
     dlat_2d = np.array([lat,]*int(np.size(lon,0))).transpose()
     dlon_2d =  np.array([lon,]*int(np.size(lat,0)))

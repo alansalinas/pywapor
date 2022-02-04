@@ -1,21 +1,12 @@
-# -*- coding: utf-8 -*-
-"""
-WaterSat
-author: Tim Martijn Hessels
-Created on Tue Feb 19 08:47:49 2019
-"""
-
 import os
 import numpy as np
 import pandas as pd
 import urllib
+import datetime
 
 def DownloadData(Dir, Var, Startdate, Enddate, latlim, lonlim, TimeStep, Period, Waitbar):
 
-    if TimeStep == "daily" and Var == "t2m":
-        all_files = {Var: list(), "t2m-min": list(), "t2m-max": list()}
-    else:
-        all_files = {Var: list()}
+    all_files = list()
 
     # Add extra buffer to ensure good spatial interpolation
     buffer_pixels = 0
@@ -28,18 +19,20 @@ def DownloadData(Dir, Var, Startdate, Enddate, latlim, lonlim, TimeStep, Period,
     # Check the latitude and longitude and otherwise set lat or lon on greatest extent
     if latlim[0] < -90 or latlim[1] > 90:
         print('Latitude above 90N or below 90S is not possible. Value set to maximum')
-        latlim[0] = np.max(latlim[0], -90)
-        latlim[1] = np.min(latlim[1], 90)
-    if lonlim[0] < -180 or lonlim[1] > 180:
+        latlim[0] = np.max([latlim[0], -90])
+        latlim[1] = np.min([latlim[1], 90])
+    if lonlim[0] < -180 or lonlim[1] > 179.68750000000:
         print('Longitude must be between 180E and 180W. Now value is set to maximum')
-        lonlim[0] = np.max(lonlim[0], -180)
-        lonlim[1] = np.min(lonlim[1], 180)
+        lonlim[0] = np.max([lonlim[0], -180.])
+        lonlim[1] = np.min([lonlim[1], 179.68750000000])
 
     # Get information of the parameter
     VarInfo = VariablesInfo(TimeStep)
     Parameter = VarInfo.names[Var]
     unit  = VarInfo.units[Var]
     types  = VarInfo.types[Var]
+
+    p_ts = VariablesInfo.period_times
 
     # Create output folder
     output_folder = os.path.join(Dir, "GEOS5", Parameter, TimeStep)
@@ -58,26 +51,27 @@ def DownloadData(Dir, Var, Startdate, Enddate, latlim, lonlim, TimeStep, Period,
 
     Dates = pd.date_range(Startdate, Enddate, freq = "D")
 
-    # Create Waitbar
-    # if Waitbar == 1:
-    #     import pywapor.general.waitbar_console as WaitbarConsole
-    #     total_amount = len(Dates)
-    #     amount = 0
-    #     WaitbarConsole.printWaitBar(amount, total_amount, prefix = 'Progress:', suffix = 'Complete', length = 50)
-
     for Date in Dates:
 
         # Define the IDz
         if TimeStep == "three_hourly":
             IDz_start = IDz_end = int(((Date - pd.Timestamp("2017-12-01")).days) * 8) + (Period - 1)
             Hour = int((Period - 1) * 3)
-            output_name = os.path.join(output_folder, "%s_GEOS_%s_3-hourly_%d.%02d.%02d_H%02d.M00.tif"%(Var, unit, Date.year, Date.month, Date.day, Hour))
+
+            date = datetime.datetime.combine(Date, p_ts[Period])
+            fn = f"{Var}_GEOS5_{unit}_inst_{date:%Y.%m.%d.%H.%M}.tif"
+            output_name = os.path.join(output_folder, fn)
+
+            values = (IDx[1] - IDx[0]) * (IDy[1] - IDy[0])
 
         if TimeStep == "daily":
             IDz_start = int(((Date - pd.Timestamp("2017-12-01")).days) * 8)
             IDz_end = IDz_start + 7
-            output_name = os.path.join(output_folder, "%s_GEOS_%s_daily_%d.%02d.%02d.tif"%(Var, unit, Date.year, Date.month, Date.day))
-
+            output_name = os.path.join(output_folder, "%s_GEOS5_%s_daily_%d.%02d.%02d.tif"%(Var, unit, Date.year, Date.month, Date.day))
+            
+            values = (IDx[1] - IDx[0]) * (IDy[1] - IDy[0]) * (IDz_end - IDz_start)
+        
+        tot_size = values * 13.5
 
         if not os.path.exists(output_name):
 
@@ -89,6 +83,17 @@ def DownloadData(Dir, Var, Startdate, Enddate, latlim, lonlim, TimeStep, Period,
             downloaded = 0
             N = 0
 
+            waitbar_i = int(Waitbar.desc.split(" ")[1])
+            waitbar_desc = str(Waitbar.desc)
+            Waitbar.set_description_str(waitbar_desc.replace(f": {waitbar_i} /", f": {waitbar_i+1} /")) 
+
+            def progress(block_num, block_size, _, waitbar = Waitbar):
+                
+                if block_num == 0:
+                    waitbar.reset(total = tot_size)
+
+                waitbar.update(block_size)
+
             # if not downloaded try to download file
             while downloaded == 0:
                 # try:
@@ -97,7 +102,7 @@ def DownloadData(Dir, Var, Startdate, Enddate, latlim, lonlim, TimeStep, Period,
                 pathtext = os.path.join(output_folder,'temp%s.txt' %str(IDz_start))
 
                 # Download the data
-                urllib.request.urlretrieve(url_GEOS, filename=pathtext)
+                _ = urllib.request.urlretrieve(url_GEOS, filename=pathtext, reporthook = progress)
 
                 # Reshape data
                 datashape = [int(IDy[1] - IDy[0] + 1), int(IDx[1] - IDx[0] + 1)]
@@ -136,7 +141,7 @@ def DownloadData(Dir, Var, Startdate, Enddate, latlim, lonlim, TimeStep, Period,
 
                 # Save as tiff file
                 PF.Save_as_tiff(output_name, data_end, geo_out, proj)
-                all_files[Var].append(output_name)
+                all_files.append(output_name)
                 
                 if TimeStep == "daily" and Var == "t2m":
                     # Add the VarFactor
@@ -154,38 +159,33 @@ def DownloadData(Dir, Var, Startdate, Enddate, latlim, lonlim, TimeStep, Period,
                     data_end_max = np.flipud(data_end_max)
 
                     # Save as tiff file
-                    output_name = os.path.join(output_folder, "%s_GEOS_%s_daily-max_%d.%02d.%02d.tif"%(Var, unit, Date.year, Date.month, Date.day))
+                    output_name = os.path.join(output_folder, "%s-max_GEOS5_%s_daily_%d.%02d.%02d.tif"%(Var, unit, Date.year, Date.month, Date.day))
                     PF.Save_as_tiff(output_name, data_end_max, geo_out, proj)
-                    all_files["t2m-max"].append(output_name)
-                    output_name = os.path.join(output_folder, "%s_GEOS_%s_daily-min_%d.%02d.%02d.tif"%(Var, unit, Date.year, Date.month, Date.day))
+                    all_files.append(output_name)
+                    output_name = os.path.join(output_folder, "%s-min_GEOS5_%s_daily_%d.%02d.%02d.tif"%(Var, unit, Date.year, Date.month, Date.day))
                     PF.Save_as_tiff(output_name, data_end_min, geo_out, proj)
-                    all_files["t2m-min"].append(output_name)
+                    all_files.append(output_name)
 
-                # If download was not succesfull
-                # except:
-
-                #     # Try another time
-                #     N = N + 1
-
-                #     # Stop trying after 10 times
-                #     if N == 10:
-                #         print('Data from ' + Date.strftime('%Y-%m-%d') + ' is not available')
-                #         downloaded = 1
         else:
-            if os.path.isfile(output_name):
-                all_files[Var].append(output_name)
-            if TimeStep == "daily" and Var == "t2m":
-                output_name = os.path.join(output_folder, "%s_GEOS_%s_daily-max_%d.%02d.%02d.tif"%(Var, unit, Date.year, Date.month, Date.day))
-                if os.path.isfile(output_name):
-                    all_files["t2m-max"].append(output_name)
-                output_name = os.path.join(output_folder, "%s_GEOS_%s_daily-min_%d.%02d.%02d.tif"%(Var, unit, Date.year, Date.month, Date.day))
-                if os.path.isfile(output_name):
-                    all_files["t2m-min"].append(output_name)
 
-        if Waitbar:
-            Waitbar.update(1)
-            # amount += 1
-            # WaitbarConsole.printWaitBar(amount, total_amount, prefix = 'Progress:', suffix = 'Complete', length = 50)
+            waitbar_i = int(Waitbar.desc.split(" ")[1])
+            waitbar_desc = str(Waitbar.desc)
+            Waitbar.set_description_str(waitbar_desc.replace(f": {waitbar_i} /", f": {waitbar_i+1} /")) 
+
+            if os.path.isfile(output_name):
+                all_files.append(output_name)
+            if TimeStep == "daily" and Var == "t2m":
+                output_name = os.path.join(output_folder, "%s-max_GEOS5_%s_daily_%d.%02d.%02d.tif"%(Var, unit, Date.year, Date.month, Date.day))
+                if os.path.isfile(output_name):
+                    all_files.append(output_name)
+                output_name = os.path.join(output_folder, "%s-min_GEOS5_%s_daily_%d.%02d.%02d.tif"%(Var, unit, Date.year, Date.month, Date.day))
+                if os.path.isfile(output_name):
+                    all_files.append(output_name)
+
+        if not isinstance(Waitbar, type(None)):
+            if not isinstance(Waitbar.total, type(None)):
+                Waitbar.update(n= Waitbar.total - Waitbar.n)
+                Waitbar.refresh()
 
     return all_files
 
@@ -224,6 +224,15 @@ class VariablesInfo:
              'tqv': 'state',
              'ps': 'state',
              'slp': 'state'}
+
+    period_times = {1: datetime.time(1, 30),
+                    2: datetime.time(4, 30),
+                    3: datetime.time(7, 30),
+                    4: datetime.time(10, 30),
+                    5: datetime.time(13, 30),
+                    6: datetime.time(16, 30),
+                    7: datetime.time(19, 30),
+                    8: datetime.time(22, 30)}
 
     def __init__(self, step):
         if step == 'three_hourly':

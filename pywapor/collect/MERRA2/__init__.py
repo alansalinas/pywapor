@@ -1,9 +1,5 @@
 # -*- coding: utf-8 -*-
 """
-Authors: Tim Hessels
-Contact: timhessels@hotmail.com
-Repository: pywapor
-Module: pywapor/Collect/MERRA
 
 Description:
 This module downloads daily or instantanious MERRA data from
