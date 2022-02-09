@@ -1,0 +1,277 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>pywapor.pre_et_look &mdash; pyWaPOR  documentation</title>
+      <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="../_static/css/theme.css" type="text/css" />
+  <!--[if lt IE 9]>
+    <script src="../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script data-url_root="../" id="documentation_options" src="../_static/documentation_options.js"></script>
+        <script src="../_static/jquery.js"></script>
+        <script src="../_static/underscore.js"></script>
+        <script src="../_static/doctools.js"></script>
+        <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+    <script src="../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="pywapor.et_look" href="et_look.html" />
+    <link rel="prev" title="pyWaPOR API" href="../_pywapor_api.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search"  style="background: #004747" >
+            <a href="../index.html" class="icon icon-home"> pyWaPOR
+            <img src="../_static/logo.png" class="logo" alt="Logo"/>
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../data_sources.html">Data</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../_user_guide.html">User Guide</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="../_pywapor_api.html">pyWaPOR API</a><ul class="current">
+<li class="toctree-l2 current"><a class="current reference internal" href="#">pywapor.pre_et_look</a></li>
+<li class="toctree-l2"><a class="reference internal" href="et_look.html">pywapor.et_look</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pre_se_root.html">pywapor.pre_se_root</a></li>
+<li class="toctree-l2"><a class="reference internal" href="se_root.html">pywapor.se_root</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../_etlook.html">ETLook</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../bibliography.html">Bibliography</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu"  style="background: #004747" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">pyWaPOR</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../index.html" class="icon icon-home"></a> &raquo;</li>
+          <li><a href="../_pywapor_api.html">pyWaPOR API</a> &raquo;</li>
+      <li>pywapor.pre_et_look</li>
+      <li class="wy-breadcrumbs-aside">
+              <!-- User defined Bitbucket URL -->
+              <a href="https://bitbucket.org/cioapps/wapor-et-look/src/master/" class="fa fa-bitbucket"> Edit on Bitbucket</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  
+<style>
+/* CSS overrides for sphinx_rtd_theme */
+
+/* 24px margin */
+.nbinput.nblast.container,
+.nboutput.nblast.container {
+    margin-bottom: 19px;  /* padding has already 5px */
+}
+
+/* ... except between code cells! */
+.nblast.container + .nbinput.container {
+    margin-top: -19px;
+}
+
+.admonition > p:before {
+    margin-right: 4px;  /* make room for the exclamation icon */
+}
+
+/* Fix math alignment, see https://github.com/rtfd/sphinx_rtd_theme/pull/686 */
+.math {
+    text-align: unset;
+}
+</style>
+<section id="module-pywapor.pre_et_look">
+<span id="pywapor-pre-et-look"></span><h1>pywapor.pre_et_look<a class="headerlink" href="#module-pywapor.pre_et_look" title="Permalink to this headline"></a></h1>
+<p>Generates input data for <cite>pywapor.et_look</cite>.</p>
+<dl class="py function">
+<dt class="sig sig-object py" id="pywapor.pre_et_look.main">
+<span class="sig-name descname"><span class="pre">main</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">project_folder</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">startdate</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">enddate</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">latlim</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">list</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">lonlim</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">list</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">level</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'level_1'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">composite_length</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'DEKAD'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">extra_composite_enhancements</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">{}</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">extra_source_enhancements</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">{}</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">extra_source_locations</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">{}</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">diagnostics</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">{}</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">se_root_version</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'v2'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">process_vars</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'all'</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pywapor.pre_et_look.main" title="Permalink to this definition"></a></dt>
+<dd><p>Generates an input file for <cite>pywapor.et_look</cite> based on, among others, a
+bounding-box and time period.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>project_folder</strong> (<em>str</em>) – Path to folder in which (intermediate) data will be stored.</p></li>
+<li><p><strong>startdate</strong> (<em>str</em>) – Start of the period for which to generate the input data, formatted as
+“YYYY-MM-DD”.</p></li>
+<li><p><strong>enddate</strong> (<em>str</em>) – End of the period for which to generate the input data, formatted as
+“YYYY-MM-DD”.</p></li>
+<li><p><strong>latlim</strong> (<em>List</em><em>[</em><em>float</em><em>, </em><em>float</em><em>]</em>) – Latitude limits of the bounding-box, first value should be smaller than
+second value.</p></li>
+<li><p><strong>lonlim</strong> (<em>List</em><em>[</em><em>float</em><em>, </em><em>float</em><em>]</em>) – Longitude limits of the bounding-box, first value should be smaller than
+second value.</p></li>
+<li><p><strong>level</strong> (<em>&quot;level_1&quot;</em><em> | </em><em>&quot;level_2&quot;</em><em> | </em><em>dict</em><em>, </em><em>optional</em>) – Controls which sources are collected for the various variables,
+by default “level_1”.</p></li>
+<li><p><strong>composite_length</strong> (<em>&quot;DEKAD&quot;</em><em> | </em><em>int</em><em>, </em><em>optional</em>) – Length of the composites in days in case an integer is given, by default “DEKAD”.</p></li>
+<li><p><strong>extra_composite_enhancements</strong> (<em>dict</em><em>, </em><em>optional</em>) – Functions to be applied to specified variables after the composites have been calculated, by default {}.</p></li>
+<li><p><strong>extra_source_enhancements</strong> (<em>dict</em><em>, </em><em>optional</em>) – Functions to be applied to specified variables before the composites have been calculated, by default {}.</p></li>
+<li><p><strong>extra_source_locations</strong> (<em>dict</em><em>, </em><em>optional</em>) – Paths in which to look for sideloaded data, by default {}.</p></li>
+<li><p><strong>diagnostics</strong> (<em>dict</em><em>, </em><em>optional</em>) – Points for which to generate plots, by default {}.</p></li>
+<li><p><strong>se_root_version</strong> (<em>&quot;v2&quot;</em><em> | </em><em>&quot;dev&quot;</em><em>, </em><em>optional</em>) – Which version of pywapor.se_root to use to generate the se_root variable, by default “v2”.</p></li>
+<li><p><strong>process_vars</strong> (<em>&quot;all&quot;</em><em> | </em><em>list</em><em>, </em><em>optional</em>) – Which variables to process, by default “all”.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p><ul class="simple">
+<li><p><em>xr.Dataset</em> – Dataset with all the required data for pywapor.et_look.</p></li>
+<li><p><em>str</em> – Path to the netCDF file containing the generated dataset.</p></li>
+</ul>
+</p>
+</dd>
+</dl>
+<p class="rubric">Examples</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">project_folder</span> <span class="o">=</span> <span class="sa">r</span><span class="s2">&quot;path/to/my_project_folder/&quot;</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">startdate</span> <span class="o">=</span> <span class="s2">&quot;2021-07-01&quot;</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">enddate</span> <span class="o">=</span> <span class="s2">&quot;2021-07-11&quot;</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">latlim</span> <span class="o">=</span> <span class="p">[</span><span class="mf">28.9</span><span class="p">,</span> <span class="mf">29.7</span><span class="p">]</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">lonlim</span> <span class="o">=</span> <span class="p">[</span><span class="mf">30.2</span><span class="p">,</span> <span class="mf">31.2</span><span class="p">]</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">composite_length</span> <span class="o">=</span> <span class="mi">8</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">my_custom_level</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;ndvi&quot;</span><span class="p">:</span> <span class="p">[</span><span class="s2">&quot;LS7&quot;</span><span class="p">],</span>
+<span class="gp">... </span>                   <span class="s2">&quot;t_air_24&quot;</span><span class="p">:</span> <span class="p">[</span><span class="s2">&quot;GEOS5&quot;</span><span class="p">],</span>
+<span class="gp">... </span>                   <span class="s2">&quot;level_name&quot;</span><span class="p">:</span> <span class="s2">&quot;my_custom_name&quot;</span><span class="p">}</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">extra_sources</span> <span class="o">=</span> <span class="p">{(</span><span class="s2">&quot;LS7&quot;</span><span class="p">,</span> <span class="s2">&quot;ndvi&quot;</span><span class="p">):</span> <span class="s2">&quot;path/to/my/landsat/folder&quot;</span><span class="p">}</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">source_enhancers</span> <span class="o">=</span> <span class="p">{(</span><span class="s2">&quot;LS7&quot;</span><span class="p">,</span> <span class="s2">&quot;ndvi&quot;</span><span class="p">):</span> <span class="p">[</span><span class="n">pywapor</span><span class="o">.</span><span class="n">general</span><span class="o">.</span><span class="n">enhancers</span><span class="o">.</span><span class="n">gap_fill</span><span class="o">.</span><span class="n">gap_fill</span><span class="p">]}</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">composite_enhancers</span> <span class="o">=</span> <span class="p">{(</span><span class="s2">&quot;t_air_24&quot;</span><span class="p">):</span> <span class="p">[]}</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">ds</span><span class="p">,</span> <span class="n">fh</span> <span class="o">=</span> <span class="n">pywapor</span><span class="o">.</span><span class="n">pre_et_look</span><span class="o">.</span><span class="n">main</span><span class="p">(</span><span class="n">project_folder</span><span class="p">,</span> <span class="n">startdate</span><span class="p">,</span> <span class="n">enddate</span><span class="p">,</span>
+<span class="gp">... </span>                            <span class="n">latlim</span><span class="p">,</span> <span class="n">lonlim</span><span class="p">,</span> <span class="n">level</span> <span class="o">=</span> <span class="n">my_custom_level</span><span class="p">,</span>
+<span class="gp">... </span>                            <span class="n">extra_source_locations</span> <span class="o">=</span> <span class="n">extra_sources</span><span class="p">,</span>
+<span class="gp">... </span>                            <span class="n">composite_length</span> <span class="o">=</span> <span class="n">composite_length</span><span class="p">,</span>
+<span class="gp">... </span>                            <span class="n">extra_source_enhancements</span> <span class="o">=</span> <span class="n">source_enhancers</span><span class="p">,</span>
+<span class="gp">... </span>                            <span class="n">extra_composite_enhancements</span> <span class="o">=</span> <span class="n">composite_enhancers</span><span class="p">,</span>
+<span class="gp">... </span>                            <span class="n">process_vars</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;ndvi&quot;</span><span class="p">])</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="nb">print</span><span class="p">(</span><span class="n">fh</span><span class="p">)</span>
+<span class="go">path/to/my_project_folder/my_custom_name/et_look_input.nc</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="pywapor.pre_et_look.get_folders">
+<span class="sig-name descname"><span class="pre">get_folders</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">project_folder</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">level_name</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pywapor.pre_et_look.get_folders" title="Permalink to this definition"></a></dt>
+<dd><p>Define some folders based on a root-folder.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>project_folder</strong> (<em>str</em>) – Path to root-folder.</p></li>
+<li><p><strong>level_name</strong> (<em>str</em><em>, </em><em>optional</em>) – Name of the source selection level, by default None.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p><ul class="simple">
+<li><p><em>str</em> – Path to level-folder.</p></li>
+<li><p><em>str</em> – Path to temporary-data-folder.</p></li>
+<li><p><em>str</em> – Path to raw-folder.</p></li>
+</ul>
+</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="pywapor.pre_et_look.unraw_all">
+<span class="sig-name descname"><span class="pre">unraw_all</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">var</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">raw_files</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">epochs_info</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">temp_folder</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">example_ds</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">diagnostics</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">{}</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">extra_source_enhancements</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">{}</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pywapor.pre_et_look.unraw_all" title="Permalink to this definition"></a></dt>
+<dd><p>Converts raw downloaded files into composites.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>var</strong> (<em>str</em>) – Name of the variable to process.</p></li>
+<li><p><strong>raw_files</strong> (<em>list</em>) – List of lists containing the paths to the geoTIFF files for which to compute the
+composites. All paths in one sublist refer to one source.</p></li>
+<li><p><strong>epochs_info</strong> (<em>tuple</em>) – Contains three lists with the index-number, starttime and endtime of each
+epoch.</p></li>
+<li><p><strong>temp_folder</strong> (<em>str</em>) – Path to folder in which to store temporary data.</p></li>
+<li><p><strong>example_ds</strong> (<em>xr.Dataset</em>) – Dataset used to interpolate data (spatially).</p></li>
+<li><p><strong>diagnostics</strong> (<em>dict</em><em>, </em><em>optional</em>) – Points for which to generate plots, by default {}.</p></li>
+<li><p><strong>extra_source_enhancements</strong> (<em>dict</em><em>, </em><em>optional</em>) – Functions to be applied to specified variables before the composites have been calculated, by default {}.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>Dataset with the composite data for the respective variable.</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>xr.Dataset</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="pywapor.pre_et_look.create_dates">
+<span class="sig-name descname"><span class="pre">create_dates</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">sdate</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">edate</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">period_length</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pywapor.pre_et_look.create_dates" title="Permalink to this definition"></a></dt>
+<dd><p>Generates the variable <cite>epoch_info</cite> used by <cite>pywapor.unraw_all</cite>.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>sdate</strong> (<em>str</em><em> or </em><em>datetime.datetime</em>) – Date from which to start.</p></li>
+<li><p><strong>edate</strong> (<em>str</em><em> or </em><em>datetime.datetime</em>) – Enddate.</p></li>
+<li><p><strong>period_length</strong> (<em>int</em><em> or </em><em>str</em>) – Amount of days between the returned dates, can also be “DEKAD” in which
+case it will split each month in roughly 10-day segments.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p><ul class="simple">
+<li><p><em>np.ndarray</em> – Index number of the epoch.</p></li>
+<li><p><em>np.ndarray</em> – Start-datetimes of the epochs.</p></li>
+<li><p><em>np.ndarray</em> – End-datetimes of the epochs.</p></li>
+</ul>
+</p>
+</dd>
+</dl>
+</dd></dl>
+
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="../_pywapor_api.html" class="btn btn-neutral float-left" title="pyWaPOR API" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="et_look.html" class="btn btn-neutral float-right" title="pywapor.et_look" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2022, FAO.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

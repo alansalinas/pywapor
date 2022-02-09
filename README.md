@@ -1,9 +1,10 @@
-# pyWAPOR
-![downloads](https://img.shields.io/pypi/dw/pywapor) [![version](https://img.shields.io/pypi/v/pywapor)](https://pypi.org/project/pywapor/) ![python](https://img.shields.io/badge/python-3.7%20|%203.8-blue) [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/bertcoerver/pywapor_notebooks/blob/main/1_introduction.ipynb)
+### pyWaPOR
+
+![downloads](https://img.shields.io/pypi/dw/pywapor) [![version](https://img.shields.io/pypi/v/pywapor)](https://pypi.org/project/pywapor/) ![python](https://img.shields.io/badge/python-3.7%20|%203.8-blue) [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/bertcoerver/pywapor_notebooks/blob/main/1_introduction.ipynb)  
 
 This repository contains a Python implementation of the algorithm used to generate the [WaPOR](http://www.fao.org/in-action/remote-sensing-for-water-productivity/en/) [datasets](https://wapor.apps.fao.org/home/WAPOR_2/1). It can be used to calculate evaporation, transpiration and biomass production maps.
 
-## Installation
+#### Installation
 
 Its recommended to install in a clean [conda environment](https://docs.conda.io/projects/conda/en/latest/user-guide/concepts/environments.html) and use [conda](https://docs.conda.io/projects/conda/en/latest/user-guide/install/) to install GDAL before installing pywapor. Only Python 3.7 and 3.8 are supported.
 
@@ -24,7 +25,7 @@ Then use the package manager [pip](https://pip.pypa.io/en/stable/) to install py
 pip install pywapor
 ```
 
-## Usage
+#### Usage
 
 To run the model for one dekad (from 2021-07-01 to 2021-07-11 in this case) for the Fayoum irrigation scheme in Egypt (but feel free to change the [boundingbox](http://bboxfinder.com) defined by `latlim` and `lonlim`) using mainly MODIS data, run the following code. 
 
@@ -45,64 +46,126 @@ ds_in, fh_in = pywapor.pre_et_look.main(project_folder, startdate, enddate, latl
 ds_out = pywapor.et_look.main(ds_in)
 ```
 
-Check out one of the Colab Notebooks below to learn more!
+Check out the documentation and the notebooks below to learn more!
 
-### Notebooks
-|  | Name | Duration* |
-| ------ | ------ | ------ |
-| 1. | [Introduction](https://colab.research.google.com/github/bertcoerver/pywapor_notebooks/blob/main/1_introduction.ipynb) | 10 + 100 |
-| 2. | [Composites](https://colab.research.google.com/github/bertcoerver/pywapor_notebooks/blob/main/2_composites.ipynb) | 10 + 10 |
-| 3. | [Levels](https://colab.research.google.com/github/bertcoerver/pywapor_notebooks/blob/main/3_levels.ipynb) | 10 + 20 |
-| 4. | [Sideloading](https://colab.research.google.com/github/bertcoerver/pywapor_notebooks/blob/main/4_sideloading.ipynb) | 10 + 5 |
-| 5. | [Enhancers](https://colab.research.google.com/github/bertcoerver/pywapor_notebooks/blob/main/5_enhancers.ipynb) | 10 + 5 |
-| 6. | [pyWaPOR vs. WaPOR](https://colab.research.google.com/github/bertcoerver/pywapor_notebooks/blob/main/6_wapor_vs_pywapor.ipynb) | 10 + 10 |
-| 7. | Soil Saturation | > Coming Soon < |
+#### Documentation
+Go [here](https://legacy.aquastat.review.fao.org/aquastat/py-wapor/installation.html) for the full pyWaPOR documentation.
+<p><details>
+<summary><b>Notebooks</b></summary>
 
-\* Estimation of the time required in minutes, as in "active" + "download time", assuming the notebooks have access to previously downloaded data. 
+<table class = "docutils align-default">
+   <thead>
+      <tr class="row-odd" style="text-align:center">
+         <th class="head"></th>
+         <th class="head">Name</th>
+         <th class="head">Duration<sup>1</sup></th>
+         <th class="head" width = "150">Colab</th>
+      </tr>
+   </thead>
+   <tbody>
+      <tr class="row-odd">
+         <td>1.</td>
+         <td>Introduction</td>
+         <td>10 + 100</td>
+         <td style="text-align:center"><a href="https://colab.research.google.com/github/bertcoerver/pywapor_notebooks/blob/main/1_introduction.ipynb"><img src="https://colab.research.google.com/assets/colab-badge.svg" alt="colab"/></a></td>
+      </tr>
+      <tr class="row-even">
+         <td>2.</td>
+         <td>Composites</td>
+         <td>10 + 10</td>
+         <td style="text-align:center"><a href="https://colab.research.google.com/github/bertcoerver/pywapor_notebooks/blob/main/2_composites.ipynb"><img src="https://colab.research.google.com/assets/colab-badge.svg" alt="colab"/></a></td>
+      </tr>
+      <tr class="row-odd">
+         <td>3.</td>
+         <td>Levels</td>
+         <td>10 + 20</td>
+         <td style="text-align:center"><a href="https://colab.research.google.com/github/bertcoerver/pywapor_notebooks/blob/main/3_levels.ipynb"><img src="https://colab.research.google.com/assets/colab-badge.svg" alt="colab"/></a></td>
+      </tr>
+      <tr class="row-even">
+         <td>4.</td>
+         <td>Sideloading</td>
+         <td>10 + 5</td>
+         <td style="text-align:center"><a href="https://colab.research.google.com/github/bertcoerver/pywapor_notebooks/blob/main/4_sideloading.ipynb"><img src="https://colab.research.google.com/assets/colab-badge.svg" alt="colab"/></a></td>
+      </tr>
+      <tr class="row-odd">
+         <td>5.</td>
+         <td>Enhancers</td>
+         <td>10 + 5</td>
+         <td style="text-align:center"><a href="https://colab.research.google.com/github/bertcoerver/pywapor_notebooks/blob/main/5_enhancers.ipynb"><img src="https://colab.research.google.com/assets/colab-badge.svg" alt="colab"/></a></td>
+      </tr>
+      <tr class="row-even">
+         <td>6.</td>
+         <td>pyWaPOR vs. WaPOR</td>
+         <td>10 + 10</td>
+         <td style="text-align:center"><a href="https://colab.research.google.com/github/bertcoerver/pywapor_notebooks/blob/main/6_wapor_vs_pywapor.ipynb"><img src="https://colab.research.google.com/assets/colab-badge.svg" alt="colab"/></a></td>
+      </tr>
+   </tbody>
+</table>
 
-## Documentation
-### WaPOR v2
-➡ [WaPOR-ETLook Data Manual](https://bitbucket.org/cioapps/wapor-et-look/downloads/FRAME_ET_v2_data_manual_finaldraft_v2.2.pdf)
+<sup>1</sup> Estimation of the time required in minutes, as in "active" + "download time", assuming the notebooks have access to previously downloaded data.
 
-➡ [WaPOR-Biomass Data Manual](https://bitbucket.org/cioapps/wapor-et-look/downloads/FRAME_NPP_v2_data_manual_finaldraft_v2.2.pdf)
+</details></p>
 
-### WaPOR v1
-➡ [WaPOR-ETLook Data Manual](https://bitbucket.org/cioapps/wapor-et-look/raw/9ec88e56769f49722c2d1165bb34547f5842b811/Docs/WaPOR_ET_data_manual_finaldraft-v1.2-for-distribution.pdf)
+<p><details>
+<summary><b>WaPOR v2</b></summary>
 
-## Acknowledgments
+<ul>
+<li><a href="https://bitbucket.org/cioapps/wapor-et-look/downloads/FRAME_ET_v2_data_manual_finaldraft_v2.2.pdf">WaPOR-ETLook Data Manual (v2)</a></li>
+
+<li><a href="https://bitbucket.org/cioapps/wapor-et-look/downloads/FRAME_NPP_v2_data_manual_finaldraft_v2.2.pdf">WaPOR-Biomass Data Manual (v2)</a></li>
+</ul>
+</details></p>
+
+<p><details>
+<summary><b>WaPOR v1</b></summary>
+
+<ul>
+<li><a href="https://bitbucket.org/cioapps/wapor-et-look/raw/9ec88e56769f49722c2d1165bb34547f5842b811/Docs/WaPOR_ET_data_manual_finaldraft-v1.2-for-distribution.pdf">WaPOR-ETLook Data Manual (v1)</a></li>
+</ul>
+</details></p>
+
+#### Acknowledgments
 The methodology for WaPOR was developed by the FRAME1 consortium, consisting of eLEAF, VITO, ITC, University of Twente and Waterwatch foundation, commissioned by and in partnership with the Land and Water Division of FAO. 
 
 This repository contains, among others, contributions from Bert Coerver (FAO), Tim Hessels (WaterSat) and, in the framework of the ESA-funded ET4FAO project, from Radoslaw Guzinski (DHI-GRAS), Hector Nieto (Complutig) and Laust Faerch (DHI-GRAS).
 
-## Contact
+#### Contact
 For questions, requests or issues with this repository, please contact Bert Coerver at [bert.coerver@fao.org](mailto:bert.coerver@fao.org) or the WaPOR team at [wapor@fao.org](mailto:wapor@fao.org).
 
-## Release Notes
+#### Release Notes
 
-#### 2.4.0 (2022-02-03)
+<p><details open>
+<summary><b>2.4.0 (2022-02-03)</b></summary>
+<br>
+<ul>
+    <li> Easily apply your own functions to data, i.e. use your own custom filters, gap-fillers etc.</li>
+    <li> Side-load your own data, i.e. easily incorporate you own datasets.</li>
+    <li> Added functions to process Landsat Level-2 to “ndvi”, “lst” and “r0”.</li>
+    <li> Data is now stored and processed as netCDF (using xarray and dask).</li>
+    <li> Calculations in et_look() and se_root() are now done in chunks, instead of using a for-loop.</li>
+    <li> Some previously constant parameters now have spatial variability.</li>
+    <li> Improved logging.</li>
+    <li> Download functions now show progress and download-speed.</li>
+    <li> MODIS datasets switched from v6.0 (decommissioned soon) to v6.1.</li>
+    <li> The lapse-rate correction to temperature data is now more accurate and faster.</li>
+    <li> VITO and WAPOR passwords are now checked when entered.</li>
+    <li> Other bug-fixes and performance improvements.</li>
+</ul>
+</details></p>
 
-* Easily apply your own functions to data, i.e. use your own custom filters, gap-fillers etc.
-* Side-load your own data, i.e. easily incorporate you own datasets.
-* Added functions to process Landsat Level-2 to “ndvi”, “lst” and “r0”.
-* Data is now stored and processed as netCDF (using xarray and dask).
-* Calculations in et_look() and se_root() are now done in chunks, instead of using a for-loop.
-* Some previously constant parameters now have spatial variability.
-* Improved logging.
-* Download functions now show progress and download-speed.
-* MODIS datasets switched from v6.0 (decommissioned soon) to v6.1.
-* The lapse-rate correction to temperature data is now more accurate and faster.
-* VITO and WAPOR passwords are now checked when entered.
-* Other bug-fixes and performance improvements.
+<p><details>
+<summary><b>2.3.0 (2021-11-19)</b></summary>
+<br>
+<ul> 
+    <li>Automatically create input composites before running ETLook.</li>
+    <li>Choose composite lengths in number of days or dekads.</li>
+    <li>Option to choose which products to use per variable.</li>
+    <li>Calculate soil saturation separate from ETLook.</li>
+    <li>PROBA-V support for NDVI and Albedo inputs.</li>
+    <li>Define diagnostics pixels, for which extra outputs are created (e.g. charts, maps etc.).</li>
+    <li>Bug-fixes and performance improvements.</li>
+</ul>
+</details></p>
 
-#### 2.3.0 (2021-11-19)
-
-* Automatically create input composites before running ETLook.
-* Choose composite lengths in number of days or dekads.
-* Option to choose which products to use per variable.
-* Calculate soil saturation separate from ETLook.
-* PROBA-V support for NDVI and Albedo inputs.
-* Define diagnostics pixels, for which extra outputs are created (e.g. charts, maps etc.).
-* Bug-fixes and performance improvements.
-
-## License
+#### License
 [APACHE](https://bitbucket.org/cioapps/wapor-et-look/src/dev/LICENSE)

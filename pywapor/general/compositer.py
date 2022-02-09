@@ -309,22 +309,6 @@ def check_geots(files):
         checker = PF.get_geoinfo(fh)
         assert ref == checker, f"ERROR: {files[0]} does not have same geotransform/projection as {fh}."
 
-# def calc_interpolation_times(epochs_info, freq = "2D", periods = None):
-#     new_t = np.array([], dtype = np.datetime64)
-#     for epoch_start, epoch_end in zip(epochs_info[1], epochs_info[2]):
-#         if isinstance(periods, type(None)):
-#             part_freq = freq
-#         else:
-#             delta = epoch_end - epoch_start
-#             if isinstance(delta, np.timedelta64):
-#                 part_freq = f"{int(delta/periods)}N"
-#             else:
-#                 part_freq = f"{int(delta.value/periods)}N"
-#         new_part_t = pd.date_range(epoch_start, epoch_end, freq = part_freq)
-#         new_t = np.append(new_t, new_part_t)
-#     new_t = np.sort(np.unique(new_t))
-#     return new_t
-
 def get_units(dss):
     units = dict()
     for sub_ds in dss:

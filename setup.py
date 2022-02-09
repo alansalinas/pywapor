@@ -37,5 +37,10 @@ setup(
         'rioxarray',
         'python_log_indenter',
         'cryptography',
-    ]
+    ],
+    classifiers=[
+        "Operating System :: OS Independent",
+        "Programming Language :: Python :: 3.7",
+        "Programming Language :: Python :: 3.8",
+    ],
 )

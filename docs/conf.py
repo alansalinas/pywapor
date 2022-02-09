@@ -18,7 +18,7 @@ sys.path.insert(0, os.path.abspath('..'))
 # -- Project information -----------------------------------------------------
 
 project = 'pyWaPOR'
-copyright = '2021, FAO'
+copyright = '2022, FAO'
 author = 'FAO'
 
 
@@ -55,20 +55,24 @@ exclude_patterns = ['_build', 'Thumbs.db', '.DS_Store']
 nbsphinx_execute = 'never' # dont execute ipynb's
 
 add_module_names = False # dont add entire path to function names.
-
-# html_theme_options = {
-# 'navigation_depth': 4,
-# 'includehidden': True,
-# 'titles_only': False,
-# }
-
-
+autodoc_member_order = 'bysource'
 # -- Options for HTML output -------------------------------------------------
 
 # The theme to use for HTML and HTML Help pages.  See the documentation for
 # a list of builtin themes.
 #
 html_theme = 'sphinx_rtd_theme'
+html_logo = "logo.png"
+html_theme_options = {
+    'prev_next_buttons_location': 'bottom',
+    'style_nav_header_background': '#004747',
+    'style_external_links': False,
+}
+
+
+html_context = {
+    'display_bitbucket': True, 
+}
 
 # Add any paths that contain custom static files (such as style sheets) here,
 # relative to this directory. They are copied after the builtin static files,

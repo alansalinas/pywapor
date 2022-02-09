@@ -1,4 +1,7 @@
-import tqdm
+# -*- coding: utf-8 -*-
+"""
+Generates input data for `pywapor.se_root`.
+"""
 import warnings
 import os
 import copy
@@ -19,6 +22,39 @@ from pywapor.general import processing_functions as pf
 
 def main(project_folder, startdate, enddate, latlim, lonlim, level = "level_1", 
             extra_source_locations = None):
+    """Generates an input file for `pywapor.se_root` based on, among others, a
+    bounding-box and time period.
+
+    Parameters
+    ----------
+    project_folder : str
+        Path to folder in which (intermediate) data will be stored.
+    startdate : str
+        Start of the period for which to generate the input data, formatted as
+        "YYYY-MM-DD".
+    enddate : str
+        End of the period for which to generate the input data, formatted as
+        "YYYY-MM-DD".
+    latlim : List[float, float]
+        Latitude limits of the bounding-box, first value should be smaller than
+        second value.
+    lonlim : List[float, float]
+        Longitude limits of the bounding-box, first value should be smaller than
+        second value.
+    level : "level_1" | "level_2" | dict, optional
+        Controls which sources are collected for the various variables, 
+        by default "level_1".
+    extra_source_locations : dict, optional
+        Paths in which to look for sideloaded data, by default {}.
+
+    Returns
+    -------
+    xr.Dataset
+        Dataset with all the required data for pywapor.se_root.
+    str
+        Path to the netCDF file containing the generated dataset.
+
+    """
 
 #%%
 

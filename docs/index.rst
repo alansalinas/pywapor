@@ -1,27 +1,12 @@
-#######
-pyWaPOR
-#######
+:bitbucket_url: https://bitbucket.org/cioapps/wapor-et-look/src/master/
 
-Hello and welcome here!
-
-This is the documentation for pywapor!
-
-#################
-Table of Contents
-#################
+.. mdinclude:: ../README.md
 
 .. toctree::
+   :hidden:
 
-   installation
    data_sources
    _user_guide
-   _functions
+   _pywapor_api
+   _etlook
    bibliography
-
-##################
-Indices and tables
-##################
-
-* :ref:`genindex`
-* :ref:`modindex`
-* :ref:`search`

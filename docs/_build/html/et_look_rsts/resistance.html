@@ -4,7 +4,7 @@
   <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>resistance &mdash; pyWaPOR  documentation</title>
+  <title>Resistance &mdash; pyWaPOR  documentation</title>
       <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
       <link rel="stylesheet" href="../_static/css/theme.css" type="text/css" />
   <!--[if lt IE 9]>
@@ -16,21 +16,22 @@
         <script src="../_static/underscore.js"></script>
         <script src="../_static/doctools.js"></script>
         <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
-        <script defer="defer" src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
         <script>window.MathJax = {"tex": {"inlineMath": [["$", "$"], ["\\(", "\\)"]], "processEscapes": true}, "options": {"ignoreHtmlClass": "tex2jax_ignore|mathjax_ignore|document", "processHtmlClass": "tex2jax_process|mathjax_process|math|output_area"}}</script>
+        <script defer="defer" src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
     <script src="../_static/js/theme.js"></script>
     <link rel="index" title="Index" href="../genindex.html" />
     <link rel="search" title="Search" href="../search.html" />
-    <link rel="next" title="roughness" href="roughness.html" />
-    <link rel="prev" title="radiation" href="radiation.html" /> 
+    <link rel="next" title="Roughness" href="roughness.html" />
+    <link rel="prev" title="Radiation" href="radiation.html" /> 
 </head>
 
 <body class="wy-body-for-nav"> 
   <div class="wy-grid-for-nav">
     <nav data-toggle="wy-nav-shift" class="wy-nav-side">
       <div class="wy-side-scroll">
-        <div class="wy-side-nav-search" >
+        <div class="wy-side-nav-search"  style="background: #004747" >
             <a href="../index.html" class="icon icon-home"> pyWaPOR
+            <img src="../_static/logo.png" class="logo" alt="Logo"/>
           </a>
 <div role="search">
   <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
@@ -41,22 +42,22 @@
 </div>
         </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
               <ul class="current">
-<li class="toctree-l1"><a class="reference internal" href="../installation.html">Installation</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../data_sources.html">Data</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../_user_guide.html">User Guide</a></li>
-<li class="toctree-l1 current"><a class="reference internal" href="../_functions.html">Functions</a><ul class="current">
-<li class="toctree-l2"><a class="reference internal" href="clear_sky_radiation.html">clear_sky_radiation</a></li>
-<li class="toctree-l2"><a class="reference internal" href="soil_moisture.html">soil_moisture</a></li>
-<li class="toctree-l2"><a class="reference internal" href="evapotranspiration.html">evapotranspiration</a></li>
-<li class="toctree-l2"><a class="reference internal" href="leaf.html">leaf</a></li>
-<li class="toctree-l2"><a class="reference internal" href="meteo.html">meteo</a></li>
-<li class="toctree-l2"><a class="reference internal" href="neutral.html">neutral</a></li>
-<li class="toctree-l2"><a class="reference internal" href="radiation.html">radiation</a></li>
-<li class="toctree-l2 current"><a class="current reference internal" href="#">resistance</a></li>
-<li class="toctree-l2"><a class="reference internal" href="roughness.html">roughness</a></li>
-<li class="toctree-l2"><a class="reference internal" href="solar_radiation.html">solar_radiation</a></li>
-<li class="toctree-l2"><a class="reference internal" href="stress.html">stress</a></li>
-<li class="toctree-l2"><a class="reference internal" href="unstable.html">unstable</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../_pywapor_api.html">pyWaPOR API</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="../_etlook.html">ETLook</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="clear_sky_radiation.html">Clear Sky Radiation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="soil_moisture.html">Soil Moisture</a></li>
+<li class="toctree-l2"><a class="reference internal" href="evapotranspiration.html">Evapotranspiration</a></li>
+<li class="toctree-l2"><a class="reference internal" href="leaf.html">Leaf</a></li>
+<li class="toctree-l2"><a class="reference internal" href="meteo.html">Meteo</a></li>
+<li class="toctree-l2"><a class="reference internal" href="neutral.html">Neutral</a></li>
+<li class="toctree-l2"><a class="reference internal" href="radiation.html">Radiation</a></li>
+<li class="toctree-l2 current"><a class="current reference internal" href="#">Resistance</a></li>
+<li class="toctree-l2"><a class="reference internal" href="roughness.html">Roughness</a></li>
+<li class="toctree-l2"><a class="reference internal" href="solar_radiation.html">Solar Radiation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="stress.html">Stress</a></li>
+<li class="toctree-l2"><a class="reference internal" href="unstable.html">Unstable</a></li>
 </ul>
 </li>
 <li class="toctree-l1"><a class="reference internal" href="../bibliography.html">Bibliography</a></li>
@@ -66,7 +67,7 @@
       </div>
     </nav>
 
-    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu"  style="background: #004747" >
           <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
           <a href="../index.html">pyWaPOR</a>
       </nav>
@@ -76,10 +77,11 @@
           <div role="navigation" aria-label="Page navigation">
   <ul class="wy-breadcrumbs">
       <li><a href="../index.html" class="icon icon-home"></a> &raquo;</li>
-          <li><a href="../_functions.html">Functions</a> &raquo;</li>
-      <li>resistance</li>
+          <li><a href="../_etlook.html">ETLook</a> &raquo;</li>
+      <li>Resistance</li>
       <li class="wy-breadcrumbs-aside">
-            <a href="../_sources/et_look_rsts/resistance.rst.txt" rel="nofollow"> View page source</a>
+              <!-- User defined Bitbucket URL -->
+              <a href="https://bitbucket.org/cioapps/wapor-et-look/src/master/" class="fa fa-bitbucket"> Edit on Bitbucket</a>
       </li>
   </ul>
   <hr/>
@@ -112,7 +114,7 @@
 }
 </style>
 <section id="module-pywapor.et_look_v2.resistance">
-<span id="resistance"></span><h1>resistance<a class="headerlink" href="#module-pywapor.et_look_v2.resistance" title="Permalink to this headline"></a></h1>
+<span id="resistance"></span><h1>Resistance<a class="headerlink" href="#module-pywapor.et_look_v2.resistance" title="Permalink to this headline"></a></h1>
 <dl class="py function">
 <dt class="sig sig-object py" id="pywapor.et_look_v2.resistance.atmospheric_canopy_resistance">
 <span class="sig-name descname"><span class="pre">atmospheric_canopy_resistance</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">lai_eff</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">stress_rad</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">stress_vpd</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">stress_temp</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">rs_min</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">70</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">rcan_max</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1000000.0</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pywapor.et_look_v2.resistance.atmospheric_canopy_resistance" title="Permalink to this definition"></a></dt>
@@ -243,14 +245,14 @@
            </div>
           </div>
           <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
-        <a href="radiation.html" class="btn btn-neutral float-left" title="radiation" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
-        <a href="roughness.html" class="btn btn-neutral float-right" title="roughness" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+        <a href="radiation.html" class="btn btn-neutral float-left" title="Radiation" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="roughness.html" class="btn btn-neutral float-right" title="Roughness" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
     </div>
 
   <hr/>
 
   <div role="contentinfo">
-    <p>&#169; Copyright 2021, FAO.</p>
+    <p>&#169; Copyright 2022, FAO.</p>
   </div>
 
   Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
