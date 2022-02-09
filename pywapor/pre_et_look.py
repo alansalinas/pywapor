@@ -68,7 +68,11 @@ def main(project_folder: str,
     se_root_version : "v2" | "dev", optional
         Which version of pywapor.se_root to use to generate the se_root variable, by default "v2".
     process_vars : "all" | list, optional
-        Which variables to process, by default "all".
+        Which variables to process, by default "all", which is equivalent to providing a list with
+        `ndvi`, `p_24`, `se_root`, `r0`, `z`, `lulc`, `ra_24`, `t_air_24`, 
+        `t_air_min_24`, `t_air_max_24`, `u2m_24`, `v2m_24`, `p_air_0_24`, `qv_24`,
+        `lw_offset`, `lw_slope`, `r0_bare`, `r0_full`, `rn_offset`, 
+        `rn_slope`, `t_amp_year`, `t_opt`, `vpd_slope` and `z_oro`.
 
     Returns
     -------
@@ -97,7 +101,7 @@ def main(project_folder: str,
     ...                             composite_length = composite_length,
     ...                             extra_source_enhancements = source_enhancers,
     ...                             extra_composite_enhancements = composite_enhancers,
-    ...                             process_vars = ["ndvi"])
+    ...                             process_vars = ["ndvi", "t_air_24"])
     >>> print(fh)
     path/to/my_project_folder/my_custom_name/et_look_input.nc
     """
