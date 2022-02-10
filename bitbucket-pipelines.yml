@@ -9,7 +9,7 @@ definitions:
           # - export NAME="fao-wapor-et-look"
           - gcloud auth activate-service-account --key-file /tmp/key-file.json
           - gcloud config set project $PROJECT_ID
-          - gsutil cp -r docs/_build/html/** gs://fao-aquastat-port-site-review/aquastat/py-wapor
+          - gsutil cp -r docs/_build/html/** gs://$BUCKET_NAME/aquastat/py-wapor
 
           # - gcloud builds submit --tag gcr.io/$PROJECT_ID/$NAME:$BITBUCKET_BUILD_NUMBER
           # - sed -i "s/\$VERSION/$BITBUCKET_BUILD_NUMBER/g" ./cloudrun-iac.yaml
