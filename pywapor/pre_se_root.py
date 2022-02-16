@@ -8,7 +8,6 @@ import copy
 import xarray as xr
 import numpy as np
 import pandas as pd
-import pywapor.collect as c
 import pywapor.general as g
 from pywapor.collect.downloader import collect_sources
 from pywapor.general.logger import log, adjust_logger
@@ -242,7 +241,27 @@ def main(project_folder, startdate, enddate, latlim, lonlim, level = "level_1",
     return ds, fh
 
 def calc_periods(times, freq):
+    """Calculates which GEOS5 or MERRA2 periods for a given time need to be collected,
+    e.g. checks which GEOS5 or MERRA2 datapoint in time is closest to the given
+    `times`. Used by `pywapor.Collect.MERRA2` and `pywapor.Collect.GEOS5`.
 
+    Parameters
+    ----------
+    times : np.ndarray
+        Array with values that can be ingested by pd.Timestamp.
+    freq : {"3H" | "H"}
+        The frequency of the data for which the periods are calculated.
+
+    Returns
+    -------
+    list
+        List of start datetimes.
+    list
+        List of end datetimes.
+    list
+        List of periods corresponding to the gives `times`.
+    """
+    # TODO move this to collect tools?
     sds = list()
     eds = list()
     prds = list()

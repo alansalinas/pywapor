@@ -3,11 +3,23 @@ import pywapor.general.processing_functions as pf
 import xarray as xr
 
 def to_slope(ds, var, out_var = None):
+    """Calculate the gradient of `var` (which would usually be `z` or elevation).
 
+    Parameters
+    ----------
+    ds : xr.Dataset
+        Dataset containing var.
+    var : str
+        Variable name.
+    out_var : str, optional
+        New variable name in case `var` should not be overwritten, by default None.
+
+    Returns
+    -------
+    xr.Dataset
+        Enhanced dataset.
+    """
     dlat, dlon = pf.calc_dlat_dlon(None, None, None, (ds.lat.values, ds.lon.values))            
-
-    # pixel_spacing = (np.nanmean(dlon) + np.nanmean(dlat)) / 2
-    # rad2deg = 180.0 / np.pi  # Factor to transform from rad to degree
 
     dem = ds[var].values
 
@@ -30,11 +42,23 @@ def to_slope(ds, var, out_var = None):
     return ds
 
 def to_aspect(ds, var, out_var = None):
+    """Calculate the aspect of `var` (which would usually be `z` or elevation).
 
+    Parameters
+    ----------
+    ds : xr.Dataset
+        Dataset containing var.
+    var : str
+        Variable name.
+    out_var : str, optional
+        New variable name in case `var` should not be overwritten, by default None.
+
+    Returns
+    -------
+    xr.Dataset
+        Enhanced dataset.
+    """
     dlat, dlon = pf.calc_dlat_dlon(None, None, None, (ds.lat.values, ds.lon.values))            
-
-    # pixel_spacing = (np.nanmean(dlon) + np.nanmean(dlat)) / 2
-    # rad2deg = 180.0 / np.pi  # Factor to transform from rad to degree
 
     dem = ds[var].values
 
@@ -58,7 +82,22 @@ def to_aspect(ds, var, out_var = None):
     return ds
 
 def to_lat(ds, var, out_var = None):
+    """Calculate the latitude in degrees of every pixel.
 
+    Parameters
+    ----------
+    ds : xr.Dataset
+        Dataset containing var.
+    var : str
+        Variable name.
+    out_var : str, optional
+        New variable name in case `var` should not be overwritten, by default None.
+
+    Returns
+    -------
+    xr.Dataset
+        Enhanced dataset.
+    """
     lat_deg = np.rot90(np.tile(ds.lat, ds.lon.size).reshape((ds.lon.size,ds.lat.size)), 3)
 
     new_data = xr.DataArray(lat_deg, 
@@ -76,7 +115,22 @@ def to_lat(ds, var, out_var = None):
     return ds
 
 def to_lon(ds, var, out_var = None):
+    """Calculate the longitude in degrees of every pixel.
 
+    Parameters
+    ----------
+    ds : xr.Dataset
+        Dataset containing var.
+    var : str
+        Variable name.
+    out_var : str, optional
+        New variable name in case `var` should not be overwritten, by default None.
+
+    Returns
+    -------
+    xr.Dataset
+        Enhanced dataset.
+    """
     lon_deg = np.tile(ds.lon, ds.lat.size).reshape((ds.lat.size,ds.lon.size))
 
     new_data = xr.DataArray(lon_deg, 

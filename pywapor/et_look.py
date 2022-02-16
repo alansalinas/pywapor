@@ -234,7 +234,13 @@ def main(input_data, et_look_version = "v2", export_vars = "default", export_to_
         ds["lue"] = ETLook.biomass.lue(ds["lue_max"], ds["stress_temp"], ds["stress_moist"], eps_a)
         ds["fpar"] = ETLook.leaf.fpar(ds["vc"], ds["ndvi"])
         ds["apar"] = ETLook.leaf.apar(ds["ra_24"], ds["fpar"])       
-        ds["biomass_prod"] = ETLook.biomass.biomass(ds["apar"], ds["lue"])     
+        ds["biomass_prod"] = ETLook.biomass.biomass(ds["apar"], ds["lue"])  
+    elif et_look_version == "v2":
+        eps_a = ETLook_dev.stress.epsilon_autotrophic_respiration()     
+        ds["lue"] = ETLook_dev.biomass.lue(ds["lue_max"], ds["stress_temp"], ds["stress_moist"], eps_a)
+        ds["fpar"] = ETLook_dev.leaf.fpar(ds["vc"], ds["ndvi"])
+        ds["apar"] = ETLook_dev.leaf.apar(ds["ra_24"], ds["fpar"])       
+        ds["biomass_prod"] = ETLook_dev.biomass.biomass(ds["apar"], ds["lue"])         
 
     if export_vars == "all":
         ...
@@ -283,4 +289,5 @@ if __name__ == "__main__":
 
     input_data = r"/Users/hmcoerver/pywapor_notebooks/level_1/et_look_input.nc"
 
-    ds = main(input_data, et_look_version=et_look_version)
+    # ds = main(input_data, et_look_version=et_look_version)
+

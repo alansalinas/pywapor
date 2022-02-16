@@ -43,25 +43,52 @@ def preprocess_func(ds):
     return ds
 
 def main(cmeta, dbs, epochs_info, temp_folder = None, example_ds = None,
-        lean_output = True, diagnostics = None, extra_source_enhancements = {}):
-    """
-    composite_type = "max", "mean", "min"
-    temporal_interp = False, "linear", "nearest", "zero", "slinear", "quadratic", "cubic"
-    spatial_interp = "nearest", "linear"
+        lean_output = True, diagnostics = {}, extra_source_enhancements = {}):
+    """Create temporal composites from spatio-temporal data.
+
+    Parameters
+    ----------
+    cmeta : dict
+        Gives configuration option for the composite creation. Should contain at least 
+        `composite_type`, `temporal_interp`, `spatial_interp` and `var_name` as keys.
+    dbs : list
+        list of lists, where each sublists contains the paths to geotiff files stemming
+        from a single source.
+    epochs_info : tuple
+        Contains three lists with the index-number, starttime and endtime of each
+        epoch.
+    temp_folder : str, optional
+        Path to folder in which temporary files are stores, providing `None` will
+        force the function to do all calculations in memory, by default None.
+    example_ds : xr.Dataset
+        Dataset used to interpolate data (spatially), by default None.
+    lean_output : bool, optional
+        Whether or not to remove intermediate variables from final output, 
+        used for debugging, by default True.
+    diagnostics : dict, optional
+        Dictionary with (`lat`, `lon`) tuples as values and (short) point descriptions/names
+        as values. Several graphs are created for data at these points-of-interest, by default {}.
+    extra_source_enhancements : dict, optional
+        Dictionary with extra functions to apply to the data before the composites are created, 
+        by default {}
+
+    Returns
+    -------
+    xr.Dataset
+        Dataset with the calculated composites.
     """
 
     source_enhancements = defaults.source_enhancements_defaults()
     source_enhancements = {**source_enhancements, **extra_source_enhancements}
 
     ## STEP 0: PREPARATIONS.
-
     if not isinstance(temp_folder, type(None)):
         fh = dbs[0][0]
         path = os.path.normpath(fh)
         if not os.path.exists(temp_folder):
             os.makedirs(temp_folder)
 
-    if isinstance(diagnostics, dict):
+    if diagnostics:
         diags = {k:v for k,v in diagnostics.items()}
         if "folder" in diags.keys():
             graph_folder = diags.pop("folder")
@@ -171,9 +198,7 @@ def main(cmeta, dbs, epochs_info, temp_folder = None, example_ds = None,
     all_variables.remove('sources')
 
     for var in all_variables:
-        ds[var].attrs = {"sources": dbs_names,
-                        #  "unit": get_units(dss)[var][0]
-                         }
+        ds[var].attrs = {"sources": dbs_names}
 
     if not isinstance(temp_folder, type(None)):
         fh = os.path.join(temp_folder, f"{cmeta['var_name']}_ts.nc")
@@ -258,6 +283,29 @@ def main(cmeta, dbs, epochs_info, temp_folder = None, example_ds = None,
     return ds
 
 def temporal_interpolation(ds, t_new, temporal_interp):
+    """Fill missing and required values using temporal interpolation. In case the
+    `ds` contains only a single point in time, any values at `t_new` are extrapolated
+    from that single point.
+
+    Parameters
+    ----------
+    ds : xr.Dataset
+        Dataset with (missing) data.
+    t_new : np.ndarray
+        List of extra points in time to add (and interpolate) to `ds`.
+    temporal_interp : {"nearest" | "linear"}
+        Type of temporal interpolation to apply.
+
+    Returns
+    -------
+    xr.Dataset
+        Dataset with the resampled and interpolated data.
+    xr.Dataset
+        Dataset with data on how many points can be interpolated (per variable).
+    xr.Dataset
+        Dataset with data on how many pixels are missing in total (per variable).
+
+    """
     ds_resampled = xr.merge([ds, xr.Dataset({"time": t_new})])
     variables = list(ds_resampled.variables)
     if "sources" in variables:
@@ -274,7 +322,34 @@ def temporal_interpolation(ds, t_new, temporal_interp):
         ds_resampled = ds_resampled.ffill(dim="time").bfill(dim="time")
     return ds_resampled, x, y.sum()
 
-def calculate_ds(ds, fh = None, label = None, encoding = None, chunks = None):
+def calculate_ds(ds, fh = None, label = None, encoding = {}, chunks = None):
+    """Operations in xarray are often done lazily and this function forces
+    calculation and optionally saves the (intermediate) results to disk.
+
+    Parameters
+    ----------
+    ds : xr.Dataset
+        Dataset to do operation on.
+    fh : str, optional
+        Path to `.nc` file in which to save the calculated dataset. `fh` is never overwritten,
+        but instead a "_" appended to the filename if the file already exists.
+        When `None`, dataset is calculated but not written to disk, by default None.
+    label : str, optional
+        Label to log, by default None.
+    encoding : dict, optional
+        Extra encoding to apply when saving to disk, "zlib" is always applied unless
+        explicitly set to False with this variable, by default {}.
+    chunks : {str | dict}, optional
+        Value to chunk the returned data, by default None.
+
+    Returns
+    -------
+    xr.Dataset
+        Returned and calculated dataset.
+    str
+        Path to saved `.nc` file.
+
+    """
     if isinstance(fh, str):
         while os.path.isfile(fh): # TODO make overwrite instead, was giving weird results so did this for now.
             fh = fh.replace(".nc", "_.nc")
@@ -284,7 +359,12 @@ def calculate_ds(ds, fh = None, label = None, encoding = None, chunks = None):
         if not os.path.exists(folder):
             os.makedirs(folder)
         with ProgressBar(minimum = 30):
-            ds.to_netcdf(fh, encoding = encoding)
+            varis = list(ds.variables)
+            default = {"zlib": True}
+            full_encoding = {v: default for v in varis if v not in list(ds.coords)}
+            for var in encoding.keys():
+                full_encoding[var] = {**encoding[var], **full_encoding[var]}
+            ds.to_netcdf(fh, encoding = full_encoding)
         new_ds = xr.open_dataset(fh, chunks = chunks)
     else:
         if not isinstance(label, type(None)):
@@ -294,6 +374,28 @@ def calculate_ds(ds, fh = None, label = None, encoding = None, chunks = None):
     return new_ds, fh
 
 def req_t(ds_epochs, epochs_info, composite_type):
+    """Determines which epochs don't have any valid data and calculates at which time
+    the dataset should be interpolated to be able to create the epochs composite.
+
+    Parameters
+    ----------
+    ds_epochs : xr.DataArray
+        Array with the epoch numbers for which data does currently exist.
+    epochs_info : tuple
+        Contains three lists with the index-number, starttime and endtime of each
+        epoch.
+    composite_type : str
+        The type of composite determines how many point will need to be interpolated, e.g.
+        to have a `mean`-composite, one point in the middle of the epoch will suffice, while
+        for a `max` composite two points in time (at the very start and end of the epoch) need
+        to be calculated. 
+
+    Returns
+    -------
+    np.ndarray
+        Array of `pd.Timestamps` at which the dataset needs to be interpolated to be able
+        to create all the required composites.
+    """
     missing_epochs = [x for x in np.unique(epochs_info[0]) if x not in ds_epochs]
     if composite_type == "mean":
         t_new = epochs_info[1][missing_epochs] + (epochs_info[2][missing_epochs] - epochs_info[1][missing_epochs])/2
@@ -304,12 +406,34 @@ def req_t(ds_epochs, epochs_info, composite_type):
     return t_new
 
 def check_geots(files):
+    """Check if all `files` have the same geotransform and projection.
+
+    Parameters
+    ----------
+    files : list
+        List of paths to geotiff files that are required to have identical 
+        geotransforms and projections.
+    """
+    # TODO: move to PF?
     ref = PF.get_geoinfo(files[0])
     for fh in files[1:]:
         checker = PF.get_geoinfo(fh)
         assert ref == checker, f"ERROR: {files[0]} does not have same geotransform/projection as {fh}."
 
 def get_units(dss):
+    """Get an overview of the units of different variables inside xr.Datasets.
+
+    Parameters
+    ----------
+    dss : list
+        List with xr.Datasets. Each variable in each dataset is checked for a 
+        `"unit"` attribute.
+
+    Returns
+    -------
+    dict
+        Dictionary with the units per variable.
+    """
     units = dict()
     for sub_ds in dss:
         variables = list(sub_ds.keys())
@@ -325,13 +449,13 @@ def get_units(dss):
     return units
 
 def check_units(units, strictness = "low"):
-    """[summary]
+    """Test whether each variable (as key in `units`) has identical units.
 
     Parameters
     ----------
-    dss : [type]
-        [description]
-    strictness : str, optional
+    units : dict
+        Dictionary with the units per variable, can be generated with `compositer.get_units`.
+    strictness : {"low" | "medium" | "high}, optional
         low - Units need to be the same, but 'unknown' units are assumed to be correct.
         med - Units need to be the same and 'unknown' units are assumed to be different.
         high - All units must be known and identical.
@@ -454,4 +578,62 @@ if __name__ == "__main__":
     # ds_interpolated = ds.interpolate_na(dim="time", method="nearest", fill_value = "extrapolate")
 
     # ds.ffill("time").bfill("time")
+# %%
+    import xarray as xr
+    import os
+    import numpy as np
+    import glob
+
+    # in_file = r"/Users/hmcoerver/pywapor_notebooks/temporary/lst_ts.nc"
+
+    test_files = glob.glob(r"/Users/hmcoerver/pywapor_notebooks/temporary/*.nc")
+    more_test_files = glob.glob(r"/Users/hmcoerver/pywapor_notebooks/level_1/*.nc")
+
+    for in_file in test_files + more_test_files:
+        print(os.path.split(in_file)[-1])
+        ds = xr.open_dataset(in_file)
+
+        default = {
+                    # "zlib": True,
+                    # "complevel": 1,
+                    "scale_factor": 0.001,
+                    "dtype": "int32",
+                    "_FillValue": -9999
+                }
+        
+        varis = list(ds.variables)
+        encoding = {v: default for v in varis if v not in list(ds.coords)}
+
+        out_file = r"/Users/hmcoerver/pywapor_notebooks/test.nc"
+        if os.path.isfile(out_file):
+            os.remove(out_file)
+
+        ds.to_netcdf(out_file, encoding = encoding)
+
+        print(f"size is --== {os.path.getsize(out_file)/os.path.getsize(in_file)*100:.1f}% ==-- of original")
+
+        ds_compressed = xr.open_dataset(out_file)
+        
+        # print("lat_dif", ds_compressed.lat.values[:3] - ds.lat.values[:3])
+            
+        for var in encoding.keys():
+
+            # print(f"{var}_dif", ds_compressed[var].values[0, :3, 0] - ds[var].values[0, :3, 0])
+
+            if "time" in list(ds[var].coords):
+                error = np.sqrt(((ds[var].isel(time=0) - ds_compressed[var].isel(time=0))**2).mean())
+            elif "epoch" in list(ds[var].coords):
+                error = np.sqrt(((ds[var].isel(epoch=0) - ds_compressed[var].isel(epoch=0))**2).mean())
+            
+            if var == "sources":
+                ...
+            else:
+                print(error.values)
+
+        ds = ds.close()
+        ds_compressed = ds_compressed.close()
+
+        print("")
+
+    
 # %%

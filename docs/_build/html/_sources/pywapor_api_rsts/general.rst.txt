@@ -1,0 +1,12 @@
+:bitbucket_url: https://bitbucket.org/cioapps/wapor-et-look/src/master/
+
+pywapor.general
+===================
+
+.. toctree::
+
+   general/compositer
+   general/logger
+   general/pre_defaults
+   general/processing_functions
+   general/variables

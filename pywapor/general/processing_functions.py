@@ -1,5 +1,8 @@
 # -*- coding: utf-8 -*-
-"""
+"""Module with a range of general purpose GIS tools, mainly (but not only) consisting of
+GDAL routines. 
+
+Some functions in this module will be deprecated in future versions.
 """
 import os
 from osgeo import osr
@@ -13,6 +16,21 @@ import xarray as xr
 import pandas as pd
 
 def ds_remove_except(ds, keep_vars):
+    """Remove all variables from a dataset except the variables specified with
+    `keep_vars`. Variables that are coordinates are never removed.
+
+    Parameters
+    ----------
+    ds : xr.Dataset
+        Dataset from which to remove variables.
+    keep_vars : list
+        List of variables to keep.
+
+    Returns
+    -------
+    xr.Dataset
+        Dataset from which variables have been removed.
+    """
     keep_vars_coords = list()
     for var in keep_vars:
         if var in list(ds.variables):
@@ -23,6 +41,23 @@ def ds_remove_except(ds, keep_vars):
     return ds
 
 def export_ds_to_tif(ds, vars, base_folder):
+    """Export selected `vars` from a xr.Dataset (`ds`) into `base_folder` as geotiffs.
+
+    Parameters
+    ----------
+    ds : xr.Dataset
+        Dataset to export.
+    vars : list
+        Variables in `ds` to export.
+    base_folder : str
+        Path to folder in which to store geotiffs.
+
+    Returns
+    -------
+    dict
+        Keys are variable names, values are lists with paths to the generated
+        geotiffs.
+    """
 
     all_files = dict()
 
@@ -85,6 +120,27 @@ def export_ds_to_tif(ds, vars, base_folder):
     return all_files
 
 def select_template(fhs):
+    """Given a list of lists with paths to geotiffs, determines which one of 
+    all the geotiffs has the highest resolution. Note that this is not based on 
+    pixel size, so passing geotiffs with very different domains can give unexpected
+    results.
+
+    Parameters
+    ----------
+    fhs : list
+        List of lists with paths to geotiffs.
+
+    Returns
+    -------
+    str
+        First file with the highest resolution.
+    xr.Dataset
+        Dataset with the required `lat` and `lon` values.
+    tuple
+        The geotransform of the selected geotiff.
+    resolution
+        Pixel size in units of the geotiffs projection.
+    """
     # Flatten a list-of-lists into a  single list.
     fhs = [val for sublist in fhs for val in sublist]
 
@@ -106,6 +162,18 @@ def select_template(fhs):
     return example_fh, example_ds, example_geoinfo, resolution
 
 def get_resolution(example_filepath):
+    """Get the average resolution of the given geotiff.
+
+    Parameters
+    ----------
+    example_filepath : str
+        Path to geotiff.
+
+    Returns
+    -------
+    float
+        Pixel size in units of the geotiffs projection.
+    """
     ds = gdal.Open(example_filepath)
     geo_ex = ds.GetGeoTransform()
     xsize = ds.RasterXSize
@@ -116,20 +184,22 @@ def get_resolution(example_filepath):
 
 def reproject_clip(source_fp, dest_fp = None, bb = None,
                     compress = True, dstSRS = "epsg:4326"):
-    """Function that calls gdal.Warp().
+    """Function that calls gdal.Warp(), can be used to clip and reproject 
+    a geotiff in one go.
 
     Parameters
     ----------
-    source_fp : [type]
-        [description]
+    source_fp : str
+        Path to file to be warped.
     dest_fp : [type], optional
-        [description], by default None
+        Warped output file, overwrites input when `None` given, by default None.
     bb : tuple, optional
-        First item is latlim, second item is lonlim, by default None
+        Clip the geotiff the a bounding-box.
+        First item is latlim, second item is lonlim, by default None.
     compress : bool, optional
-        [description], by default True
+        Compress the data using DEFLATE, by default True.
     dstSRS : str, optional
-        [description], by default "epsg:4326"
+        Reproject the output to `dstSRS`, by default "epsg:4326".
     """
     options_dict = {"dstSRS": dstSRS}
     
@@ -153,21 +223,66 @@ def reproject_clip(source_fp, dest_fp = None, bb = None,
     return dest_fp
 
 def apply_mask(a, indices, axis):
+    """Select indices in `a` along an axis.
+
+    Parameters
+    ----------
+    a : np.ndarray
+        Array with one dimension more than `indices`.
+    indices : np.ndarray
+        Array used to index `a`, should have one dimension fewer than `a`.
+    axis : int
+        Axis along which to select values from `a`.
+
+    Returns
+    -------
+    np.ndarray
+        Array with same shape as `indices`.
     """
-    https://stackoverflow.com/questions/15469302/numpy-3d-to-2d-transformation-based-on-2d-mask-array
-    # replace with np.take(....)?
-    """
+    # https://stackoverflow.com/questions/15469302/numpy-3d-to-2d-transformation-based-on-2d-mask-array
+    # TODO replace with np.take(....)?
+
     magic_index = [np.arange(i) for i in indices.shape]
     magic_index = np.ix_(*magic_index)
     magic_index = magic_index[:axis] + (indices,) + magic_index[axis:]
     return a[magic_index]
 
 def reproj_file(file, template, method):
+    """Reprojects and resamples a file and return the output as an np.ndarray.
+
+    Parameters
+    ----------
+    file : {str | gdal.Dataset}
+        File to reproject.
+    template : {str | gdal.Dataset}
+        File to use a reprojection template.
+    method : int
+        Interpolation method, see 'pywapor.processing_functions.reproject_dataset_example'
+        for more info.
+
+    Returns
+    -------
+    np.ndarray
+        The resamples data.
+    """
     ds = reproject_dataset_example(file, template, method = method)
     array = open_as_array(ds)
     return array
 
 def combine_dicts(dicts):
+    """Combines dictionaries by appending values for identical keys in a list.
+
+    Parameters
+    ----------
+    dicts : list
+        A list of dictionaries.
+
+    Returns
+    -------
+    dict
+        Dictionary with all the values and keys from the dictionaries passed inside 
+        the list `dicts`.
+    """
     new_dict = dict()
     for d in dicts:
         for key, value in d.items():
@@ -178,6 +293,19 @@ def combine_dicts(dicts):
     return new_dict
 
 def get_geoinfo(template_file):
+    """Extract relevant geo information from a geotiff file.
+
+    Parameters
+    ----------
+    template_file : str
+        Path to geotiff file.
+
+    Returns
+    -------
+    tuple
+        Tuple with the geotransform, projection, amount of pixels in x-direction and
+        amount of pixels in y-direction.
+    """
     if isinstance(template_file, str):
         ds = gdal.Open(template_file)
     elif isinstance(template_file, gdal.Dataset):
@@ -189,15 +317,16 @@ def get_geoinfo(template_file):
     return (geo_ex, proj_ex, size_x_ex, size_y_ex)
 
 def Extract_Data_gz(zip_filename, outfilename):
-    """
-    This function extract the zip files
+    """Extract a zip-file and removes the zip-file afterwards.
 
-    Keyword Arguments:
-    zip_filename -- name, name of the file that must be unzipped
-    outfilename -- Dir, directory where the unzipped data must be
-                           stored
+    Parameters
+    ----------
+    zip_filename : str
+        Path to zip-file.
+    outfilename : str
+        Path to output.
     """
-
+    # TODO maybe move to CHIRPS?
     with gzip.GzipFile(zip_filename, 'rb') as zf:
         file_content = zf.read()
         save_file_content = open(outfilename, 'wb')
@@ -207,16 +336,18 @@ def Extract_Data_gz(zip_filename, outfilename):
     os.remove(zip_filename)
     
 def Save_as_MEM(data='', geo='', projection=''):
-    """
-    This function save the array as a memory file
+    """Create a gdal.Dataset in memory from a np.ndarray.
 
-    Keyword arguments:
-    data -- [array], dataset of the geotiff
-    geo -- [minimum lon, pixelsize, rotation, maximum lat, rotation,
-            pixelsize], (geospatial dataset)
-    projection -- interger, the EPSG code
+    Parameters
+    ----------
+    data : np.ndarray
+        Data to put inside the gdal.Dataset.
+    geo : list
+        Geotransform
+    projection : osr.SpatialReference
+        Projection to be used in the gdal.Dataset, by default "WGS84".
     """
-    # save as a geotiff
+    # TODO fix default values '' etc.
     driver = gdal.GetDriverByName("MEM")
     dst_ds = driver.Create('', int(data.shape[1]), int(data.shape[0]), 1,
                            gdal.GDT_Float32)
@@ -225,6 +356,7 @@ def Save_as_MEM(data='', geo='', projection=''):
         srse.SetWellKnownGeogCS("WGS84")
 
     else:
+        # TODO Remove try/excepts
         try:
             if not srse.SetWellKnownGeogCS(projection) == 6:
                 srse.SetWellKnownGeogCS(projection)
@@ -245,16 +377,20 @@ def Save_as_MEM(data='', geo='', projection=''):
     return(dst_ds)   
     
 def Save_as_tiff(name='', data='', geo='', projection=''):
-    """
-    This function save the array as a geotiff
+    """Create a geotiff from a np.ndarray.
 
-    Keyword arguments:
-    name -- string, directory name
-    data -- [array], dataset of the geotiff
-    geo --  [minimum lon, pixelsize, rotation, maximum lat, rotation,
-            pixelsize], (geospatial dataset)
-    projection -- integer, the EPSG code
+    Parameters
+    ----------
+    nme : str
+        Path to output file.
+    data : np.ndarray
+        Data to put inside the geotiff.
+    geo : list
+        Geotransform
+    projection : osr.SpatialReference
+        Projection to be used in the geotiff, by default "WGS84".
     """
+    # TODO fix default values '' etc.
     # Change no data values
     data[np.isnan(data)] = -9999
 
@@ -271,6 +407,7 @@ def Save_as_tiff(name='', data='', geo='', projection=''):
 
     # Set the projection, which can be an EPSG code or a well known GeogCS
     else:
+        # TODO get rid of all these try/excepts
         try:
             if not srse.SetWellKnownGeogCS(projection) == 6:
                 srse.SetWellKnownGeogCS(projection)
@@ -295,16 +432,7 @@ def Save_as_tiff(name='', data='', geo='', projection=''):
     return()
     
 def reproject_MODIS(input_name, epsg_to):
-    '''
-    Reproject the merged data file by using gdalwarp. The input projection must be the MODIS projection.
-    The output projection can be defined by the user.
-
-    Keywords arguments:
-    input_name -- 'C:/file/to/path/file.tif'
-        string that defines the input tiff file
-    epsg_to -- integer
-        The EPSG code of the output dataset
-    '''
+    # TODO move this to pywapor.collect.MODIS
     
     # Define the output name
     name_out = ''.join(input_name.split(".")[:-1]) + '_reprojected.tif'
@@ -331,14 +459,26 @@ def reproject_MODIS(input_name, epsg_to):
     return(name_out)
     
 def clip_data(input_file, latlim, lonlim):
-    """
-    Clip the data to the defined extend of the user (latlim, lonlim)
+    """Clip the extents of a geotiff.
 
-    Keyword Arguments:
-    input_file -- output data, output of the clipped dataset
-    latlim -- [ymin, ymax]
-    lonlim -- [xmin, xmax]
+    Parameters
+    ----------
+    input_file : {str | gdal.Dataset}
+        Dataset to be clipped
+    latlim : list
+        List with lower and upper latitude boundaries.
+    lonlim : list
+        List with lower and upper longitude boundaries.
+
+    Returns
+    -------
+    np.ndarray
+        The clipped data.
+    tuple
+        The new geotransform.
     """
+    # TODO merge with reproject_clip
+    # TODO remove try/except.
     try:
         if input_file.split('.')[-1] == 'tif':
             dest_in = gdal.Open(input_file)
@@ -373,21 +513,43 @@ def clip_data(input_file, latlim, lonlim):
     
     
 def Extract_Data(input_file, output_folder):
-    """
-    This function extract the zip files
+    """Extract a zipfile.
 
-    Keyword Arguments:
-    output_file -- name, name of the file that must be unzipped
-    output_folder -- Dir, directory where the unzipped data must be
-                           stored
+    Parameters
+    ----------
+    input_file : str
+        Path to zip-file.
+    output_folder : str
+        Path to output folder.
     """
-    # extract the data
+    # TODO merge with pywapor.general.processing_functions.Extract_Data_gz
+    # extract the data, used in SRTM and Globcover
     z = zipfile.ZipFile(input_file, 'r')
     z.extractall(output_folder)
     z.close()    
 
 def reproj_ds(source_file, example_file, ndv = -9999, override_dtype = True):
-    
+    """Reproject and resample (nearest neighbour) a geotiff to match with
+    `example_file`.
+
+    Parameters
+    ----------
+    source_file : str
+        Path to source file.
+    example_file : str
+        Path to example file.
+    ndv : int, optional
+        No-data-value to be used in the reprojected dataset, by default -9999
+    override_dtype : bool, optional
+        Use the same dtype as `example_file` (True) or as `source_file` (False), 
+        by default True.
+
+    Returns
+    -------
+    gdal.Dataset
+        The reprojected dataset.
+    """
+    # TODO merge with reproject_dataset_example
     source_ds = gdal.Open(source_file)
 
     example_ds = gdal.Open(example_file)
@@ -415,18 +577,37 @@ def reproj_ds(source_file, example_file, ndv = -9999, override_dtype = True):
     return dest_ds
 
 def reproject_dataset_example(dataset, dataset_example, method=1):
-    """
-    A sample function to reproject and resample a GDAL dataset from within
-    Python. The user can define the wanted projection and shape by defining an example dataset.
+    """Reproject and resample a dataset to match with `dataset_example`.
 
-    Keywords arguments:
-    dataset -- 'C:/file/to/path/file.tif' or a gdal file (gdal.Open(filename))
-        string that defines the input tiff file or gdal file
-    dataset_example -- 'C:/file/to/path/file.tif' or a gdal file (gdal.Open(filename))
-        string that defines the input tiff file or gdal file
-    method -- 1,2,3,4 default = 1
-        1 = Nearest Neighbour, 2 = Bilinear, 3 = lanzcos, 4 = average
+    Parameters
+    ----------
+    dataset : {str | gdal.Dataset}
+        The dataset to be reprojected.
+    dataset_example : {str | gdal.Dataset}
+        The dataset to be used as a reprojection example.
+    method : int, optional
+        Select which method to use for resampling, with:
+        1 = gdal.GRA_NearestNeighbour,
+        2 = gdal.GRA_Bilinear,
+        3 = gdal.GRA_Lanczos,
+        4 = gdal.GRA_Average,
+        5 = gdal.GRA_Cubic,
+        6 = gdal.GRA_CubicSpline,
+        7 = gdal.GRA_Mode,
+        8 = gdal.GRA_Max,
+        9 = gdal.GRA_Min,
+        10 = gdal.GRA_Med,
+        11 = gdal.GRA_Q1,
+        12 = gdal.GRA_Q3,
+        13 = gdal.GRA_Sum, by default 1.
+
+    Returns
+    -------
+    gdal.Dataset
+        The reprojected dataset.
+
     """
+    # TODO merge with reproj_ds
     # open dataset that must be transformed
     if isinstance(dataset, str):
         g = gdal.Open(dataset)
@@ -503,15 +684,7 @@ def reproject_dataset_example(dataset, dataset_example, method=1):
     return(dest)
 
 def Get_epsg(g):
-    """
-    This function reads the projection of a GEOGCS file or tiff file
-
-    Keyword arguments:
-    g -- string
-        Filename to the file that must be read
-    extension -- tiff or GEOGCS
-        Define the extension of the dataset (default is tiff)
-    """
+    # TODO deprecate
     try:
         # Get info of the dataset that is used for transforming
         g_proj = g.GetProjection()
@@ -522,37 +695,19 @@ def Get_epsg(g):
 
     return(epsg_to)
 
-def Show_tif(image_file, Limits = None, Color = None):
-    """
-    This function plot a tiff array in the console
-
-    Keyword arguments:
-    image_file -- string
-        Filename to the file that must be shown
-    Limits -- [min, max] (Default = min and max image)
-        User can define the limits of the colorbar
-    Color -- string (Default = "viridis")
-        User can define the wanted colormap, all options are listed here:
-        https://matplotlib.org/examples/color/colormaps_reference.html
-    """    
-    dest = gdal.Open(image_file)
-    Array = dest.GetRasterBand(1).ReadAsArray()
-    Array[Array==-9999] = np.nan
-    if Limits == None:
-        Limits = [np.nanmin(Array), np.nanmax(Array)]
-    
-    if Color == None:
-        Color = "viridis"
-    
-    import matplotlib.pyplot as plt
-    
-    plt.imshow(Array, cmap = Color, vmin=Limits[0], vmax=Limits[1])
-    plt.colorbar()
-    plt.show()
-    
-    return()
-
 def open_as_array(input):
+    """Open dataset as array, replacing no-data-values with np.nan.
+
+    Parameters
+    ----------
+    input : {str | gdal.Dataset}
+        The dataset to open.
+
+    Returns
+    -------
+    np.ndarray
+        The data contained inside `input`.
+    """
     if isinstance(input, str):
         ds = gdal.Open(input)
     elif isinstance(input, gdal.Dataset):
@@ -563,15 +718,7 @@ def open_as_array(input):
     return array  
 
 def Open_tiff_array(filename='', band=''):
-    """
-    Opening a tiff array.
-
-    Keyword Arguments:
-    filename -- 'C:/file/to/path/file.tif' or a gdal file (gdal.Open(filename))
-        string that defines the input tiff file or gdal file
-    band -- integer
-        Defines the band of the tiff that must be opened.
-    """
+    # TODO deprecate
     f = gdal.Open(filename)
     if f is None:
         print('%s does not exists' %filename)
@@ -582,14 +729,7 @@ def Open_tiff_array(filename='', band=''):
     return(Data)
 
 def Open_array_info(filename=''):
-    """
-    Opening a tiff info, for example size of array, projection and transform matrix.
-
-    Keyword Arguments:
-    filename -- 'C:/file/to/path/file.tif' or a gdal file (gdal.Open(filename))
-        string that defines the input tiff file or gdal file
-
-    """
+    # TODO deprecate
     try:
         if filename.split('.')[-1] == 'tif':
             f = gdal.Open(r"%s" %filename)
@@ -609,13 +749,7 @@ def Open_array_info(filename=''):
     return(geo_out, proj, size_X, size_Y)
 
 def gap_filling(dataset, NoDataValue, method = 1):
-    """
-    This function fills the no data gaps in a numpy array
-
-    Keyword arguments:
-    dataset -- 'C:/'  path to the source data (dataset that must be filled)
-    NoDataValue -- Value that must be filled
-    """
+    # TODO deprecate
     try:
         if dataset.split('.')[-1] == 'tif':
             # Open the numpy array
@@ -661,23 +795,23 @@ def gap_filling(dataset, NoDataValue, method = 1):
     
 def calc_dlat_dlon(geo_out, size_X, size_Y, lat_lon = None):
     """
-    This functions calculated the distance between each pixel in meter.
+    Calculated the dimensions of each pixel in meter.
 
     Parameters
     ----------
-    geo_out: array
-        geo transform function of the array
+    geo_out: list
+        Geotransform function of the array.
     size_X: int
-        size of the X axis
+        Number of pixels in x-direction.
     size_Y: int
-        size of the Y axis
+        Number of pixels in y-direction.
 
     Returns
     -------
-    dlat: array
-        Array containing the vertical distance between each pixel in meters
+    np.ndarray
+        Size of every pixel in the y-direction in meters.
     dlon: array
-        Array containing the horizontal distance between each pixel in meters
+        Size of every pixel in the x-direction in meters.
     """
     if isinstance(lat_lon, type(None)):
         # Create the lat/lon rasters
@@ -710,5 +844,4 @@ def calc_dlat_dlon(geo_out, size_X, size_Y, lat_lon = None):
     clon = 2 * np.arctan2(np.sqrt(b), np.sqrt(1-b))
     dlon = R_earth * clon
 
-    return(dlat, dlon)  
-    
+    return(dlat, dlon)

@@ -21,7 +21,7 @@ def main(Dir, latlim, lonlim, Startdate, Enddate, Vars, data_type = ["mean"]):
     """
     all_files = list()
 
-    username, password = pywapor.collect.get_pw_un.get("NASA")
+    username, password = pywapor.collect.accounts.get("NASA")
 
     
     for Var in Vars:

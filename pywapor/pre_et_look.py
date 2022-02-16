@@ -83,6 +83,7 @@ def main(project_folder: str,
 
     Examples
     --------
+    >>> import pywapor
     >>> project_folder = r"path/to/my_project_folder/"
     >>> startdate = "2021-07-01"
     >>> enddate = "2021-07-11"
@@ -394,58 +395,58 @@ if __name__ == "__main__":
                     }
     # diagnostics = None
 
-    level = {
-        # Main inputs
-        "ndvi":         ["LS7"],
-        "r0":           ["LS7"],
-        "lst":          ["LS7"],
-        "lulc":         ["WAPOR"],
-        "z":            ["SRTM"],
-        "p_24":         ["CHIRPS"],
-        "ra_24":        ["MERRA2"],
+    # level = {
+    #     # Main inputs
+    #     "ndvi":         ["LS7"],
+    #     "r0":           ["LS7"],
+    #     "lst":          ["LS7"],
+    #     "lulc":         ["WAPOR"],
+    #     "z":            ["SRTM"],
+    #     "p_24":         ["CHIRPS"],
+    #     "ra_24":        ["MERRA2"],
 
-        # Daily meteo 
-        't_air_24':     ["GEOS5"],
-        't_air_min_24': ["GEOS5"], 
-        't_air_max_24': ["GEOS5"],
-        'u2m_24':       ["GEOS5"],
-        'v2m_24':       ["GEOS5"],
-        'p_air_0_24':   ["GEOS5"],
-        'qv_24':        ["GEOS5"],
+    #     # Daily meteo 
+    #     't_air_24':     ["GEOS5"],
+    #     't_air_min_24': ["GEOS5"], 
+    #     't_air_max_24': ["GEOS5"],
+    #     'u2m_24':       ["GEOS5"],
+    #     'v2m_24':       ["GEOS5"],
+    #     'p_air_0_24':   ["GEOS5"],
+    #     'qv_24':        ["GEOS5"],
 
-        # Instanteneous meteo
-        "t_air_i":      ["GEOS5"],
-        "u2m_i":        ["GEOS5"],
-        "v2m_i":        ["GEOS5"],
-        "qv_i":         ["GEOS5"],
-        "wv_i":         ["GEOS5"],
-        "p_air_i":      ["GEOS5"],
-        "p_air_0_i":    ["GEOS5"],
+    #     # Instanteneous meteo
+    #     "t_air_i":      ["GEOS5"],
+    #     "u2m_i":        ["GEOS5"],
+    #     "v2m_i":        ["GEOS5"],
+    #     "qv_i":         ["GEOS5"],
+    #     "wv_i":         ["GEOS5"],
+    #     "p_air_i":      ["GEOS5"],
+    #     "p_air_0_i":    ["GEOS5"],
 
-        # Temporal constants
-        "lw_offset":    ["STATICS"],
-        "lw_slope":     ["STATICS"],
-        "r0_bare":      ["STATICS"],
-        "r0_full":      ["STATICS"],
-        "rn_offset":    ["STATICS"],
-        "rn_slope":     ["STATICS"],
-        "t_amp_year":   ["STATICS"],
-        "t_opt":        ["STATICS"],
-        "vpd_slope":    ["STATICS"],
-        "z_oro":        ["STATICS"],
+    #     # Temporal constants
+    #     "lw_offset":    ["STATICS"],
+    #     "lw_slope":     ["STATICS"],
+    #     "r0_bare":      ["STATICS"],
+    #     "r0_full":      ["STATICS"],
+    #     "rn_offset":    ["STATICS"],
+    #     "rn_slope":     ["STATICS"],
+    #     "t_amp_year":   ["STATICS"],
+    #     "t_opt":        ["STATICS"],
+    #     "vpd_slope":    ["STATICS"],
+    #     "z_oro":        ["STATICS"],
 
-        # Level name
-        "level_name": "sideloading",
-    }
+    #     # Level name
+    #     "level_name": "sideloading",
+    # }
 
     # Give product folder.
-    extra_source_locations = {
-        ("LS7", "ndvi"): r"/Users/hmcoerver/pywapor_notebooks/my_landsat_folder/NDVI",
-        ("LS7", "lst"): r"/Users/hmcoerver/pywapor_notebooks/my_landsat_folder/LST",
-        ("LS7", "r0"): r"/Users/hmcoerver/pywapor_notebooks/my_landsat_folder/ALBEDO",
-    }
+    # extra_source_locations = {
+    #     ("LS7", "ndvi"): r"/Users/hmcoerver/pywapor_notebooks/my_landsat_folder/NDVI",
+    #     ("LS7", "lst"): r"/Users/hmcoerver/pywapor_notebooks/my_landsat_folder/LST",
+    #     ("LS7", "r0"): r"/Users/hmcoerver/pywapor_notebooks/my_landsat_folder/ALBEDO",
+    # }
 
-    ds_in, fh_in = main(project_folder, startdate, enddate, latlim, lonlim, level = level, 
+    ds_in, fh_in = main(project_folder, startdate, enddate, latlim, lonlim, 
         diagnostics = diagnostics, composite_length = composite_length,
         extra_source_locations = extra_source_locations, se_root_version = se_root_version)
 

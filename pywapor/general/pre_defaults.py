@@ -1,3 +1,6 @@
+"""Module containing functions that generate some default settings for `pywapor.pre_et_look`
+and `pywapor.pre_se_root`.
+"""
 from pywapor.enhancers.temperature import lapse_rate
 from functools import partial
 import pywapor.enhancers.dem as dem
@@ -6,6 +9,14 @@ import pywapor.enhancers.lulc as lulc
 from functools import partial
 
 def composite_enhancements_defaults():
+    """Returns a dictionary with the default functions to apply to the calculated
+    composites.
+
+    Returns
+    -------
+    dict
+        Keys are variable names, values are lists of functions.
+    """
     composite_enhancements = {
         "t_air_24":     [lapse_rate],
         "t_air_min_24": [lapse_rate],
@@ -18,6 +29,14 @@ def composite_enhancements_defaults():
     return composite_enhancements
 
 def source_enhancements_defaults():
+    """Returns a dictionary with the default functions to apply to source
+    data.
+
+    Returns
+    -------
+    dict
+        Keys are tuples like `("source", "variable")`, values are lists of functions.
+    """
 
     def remove_var(ds, var):
         return ds.drop_vars([var])
@@ -53,6 +72,14 @@ def source_enhancements_defaults():
     return source_enhancements
 
 def composite_defaults():
+    """Returns the default composite settings for each variable.
+
+    Returns
+    -------
+    dict
+        Dictionary in which keys are variable names and values are dictionaries
+        with `cmeta` settings.
+    """
 
     cdefaults = {
 

@@ -3,8 +3,41 @@ import tqdm
 import requests
 import os
 
-
 def collect_sources(param, sources, dl_args, extra_source_locations = None):
+    """Download an ETLook variable from selected sources.
+
+    Parameters
+    ----------
+    param : str
+        The variable to download.
+    sources : list
+        The sources from which to download `param`.
+    dl_args : dict
+        Should have `Dir`, `latlim`, `lonlim`, `startdate` and `enddate` as
+        keys. Defining the output folder, and the spatial and temporal domain
+        to be downloaded.
+    extra_source_locations : dict, optional
+        Describes paths to folders where non-default sources can be found, by default None.
+
+    Returns
+    -------
+    list
+        List of lists with each list containing the geotiff files downloaded per source.
+
+    Examples
+    --------
+    >>> dl_args = {
+    ...            "Dir": r"/my/folder/RAW",
+    ...            "latlim": [28.9, 29.7],
+    ...            "lonlim": [30.2, 31.2],
+    ...            "Startdate": "2021-07-01",
+    ...            "Enddate": "2021-07-03",
+    ...        }
+    >>> raw_ndvi_files = collect_sources("ndvi", ['MYD13', 'MOD13'], dl_args)
+    >>> print(raw_ndvi_files)
+    [['/my/folder/RAW/MODIS/MYD13/NDVI_MYD13Q1_-_16-daily_2021.06.18.tif'], 
+    ['/my/folder/RAW/MODIS/MOD13/NDVI_MOD13Q1_-_16-daily_2021.06.26.tif']]
+    """
     files = list()
     for source in sources:
 
@@ -138,6 +171,15 @@ def collect_sources(param, sources, dl_args, extra_source_locations = None):
     return files
 
 def url_to_file(url, out_file):
+    """Download a file from a url.
+
+    Parameters
+    ----------
+    url : str
+        The url to download.
+    out_file : str
+        Path to where the data should be saved.
+    """
 
     file_object = requests.get(url)
     file_object.raise_for_status()
@@ -171,8 +213,8 @@ if __name__ == "__main__":
             "Enddate": enddate,
             }
 
-    raw_r0_files = collect_sources("r0", ['MCD43'], dl_args, None)
-    raw_lst_files = collect_sources("lst", ['MOD11', 'MYD11'], dl_args, None)
+    # raw_r0_files = collect_sources("r0", ['MCD43'], dl_args, None)
+    # raw_lst_files = collect_sources("lst", ['MOD11', 'MYD11'], dl_args, None)
     raw_ndvi_files = collect_sources("ndvi", ['MYD13', 'MOD13'], dl_args, None)
 
     # ds_lst = pywapor.pre_se_root.combine_lst(raw_lst_files)

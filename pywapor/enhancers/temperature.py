@@ -1,3 +1,5 @@
+"""Functions to make adjustments to temperature maps.
+"""
 import numpy as np
 from scipy.signal import convolve2d, oaconvolve, fftconvolve
 import numpy as np
@@ -9,10 +11,10 @@ def kelvin_to_celsius(ds, var, out_var = None):
 
     Parameters
     ----------
-    ds : xarray.Dataset
-        Dataset with the data.
+    ds : xr.Dataset
+        Dataset containing `var`.
     var : str
-        Name of the variable inside ds to apply this function to.
+        Variable name.
     out_var : str, optional
         Instead of overwriting `var`, store the new data in `out_var`, 
         by default None.
@@ -43,10 +45,10 @@ def celsius_to_kelvin(ds, var, out_var = None):
 
     Parameters
     ----------
-    ds : xarray.Dataset
-        Dataset with the data.
+    ds : xr.Dataset
+        Dataset containing `var`.
     var : str
-        Name of the variable inside ds to apply this function to.
+        Variable name.
     out_var : str, optional
         Instead of overwriting `var`, store the new data in `out_var`, 
         by default None.
@@ -81,7 +83,7 @@ def lapse_rate(ds, var, out_var = None, lapse_var = "z",
     ds : xarray.Dataset
         Dataset with the data.
     var : str
-        Name of the variable inside ds to apply this function to, i.e. y.
+        Name of the variable inside `ds` to apply this function to (y).
     out_var : str, optional
         Instead of overwriting `var`, store the new data in `out_var`, 
         by default None.

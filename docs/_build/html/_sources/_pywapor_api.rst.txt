@@ -10,3 +10,6 @@ pyWaPOR API
    pywapor_api_rsts/et_look
    pywapor_api_rsts/pre_se_root
    pywapor_api_rsts/se_root
+   pywapor_api_rsts/enhancers
+   pywapor_api_rsts/collect
+   pywapor_api_rsts/general

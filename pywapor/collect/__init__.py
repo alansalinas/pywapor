@@ -22,8 +22,8 @@ help(Collect)
 dir(Collect)
 """
 
-from pywapor.collect import CHIRPS, MOD11, MYD11, MCD43, MOD13, MYD13, MERRA2, Globcover, GEOS5, SRTM, WAPOR, PROBAV, STATICS, get_pw_un, setup_dl_accounts, Landsat, sideloader, downloader
+from pywapor.collect import CHIRPS, MOD11, MYD11, MCD43, MOD13, MYD13, MERRA2, Globcover, GEOS5, SRTM, WAPOR, PROBAV, STATICS, accounts, Landsat, sideloader, downloader
 
-__all__ = ['CHIRPS', 'MOD11', 'MYD11', 'MCD43', 'MOD13', 'MYD13', 'MERRA2', 'SRTM', 'Globcover', 'GEOS5', 'WAPOR' , 'PROBAV', 'STATICS', 'get_pw_un', 'setup_dl_accounts', 'Landsat', 'sideloader', 'downloader']
+__all__ = ['CHIRPS', 'MOD11', 'MYD11', 'MCD43', 'MOD13', 'MYD13', 'MERRA2', 'SRTM', 'Globcover', 'GEOS5', 'WAPOR' , 'PROBAV', 'STATICS', 'accounts', 'Landsat', 'sideloader', 'downloader']
 
 __version__ = '0.1'

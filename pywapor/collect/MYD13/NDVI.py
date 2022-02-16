@@ -33,7 +33,7 @@ def main(Dir, latlim, lonlim, Startdate, Enddate, Waitbar = 1,
     if isinstance(Enddate, date):
         Enddate = Enddate.strftime("%Y-%m-%d")
 
-    username, password = pywapor.collect.get_pw_un.get("NASA")
+    username, password = pywapor.collect.accounts.get("NASA")
 
     log.info(f"--> Downloading MYD13.")
     DownloadData(Dir, Startdate, Enddate, latlim, lonlim, username, 

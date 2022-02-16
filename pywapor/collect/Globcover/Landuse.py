@@ -1,6 +1,5 @@
 from pywapor.collect.Globcover.DataAccess import DownloadData
 import sys
-import os
 from pywapor.general.logger import log
 
 def main(Dir, latlim, lonlim, Waitbar = 1, **kwargs):

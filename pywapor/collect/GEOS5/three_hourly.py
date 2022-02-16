@@ -1,10 +1,8 @@
 # -*- coding: utf-8 -*-
-import sys
 from pywapor.collect.GEOS5.DataAccess import DownloadData
 import pandas as pd
 import tqdm
 from pywapor.general.logger import log
-import datetime
 import numpy as np
 
 def main(Dir, latlim, lonlim, Startdate, Enddate, Vars, Periods = [1,2,3,4,5,6,7,8], Waitbar = True):

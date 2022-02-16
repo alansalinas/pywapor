@@ -1,3 +1,6 @@
+"""Importing `log` from this module starts a logging handler, which can be logged to 
+with `log.info("log this info")` etc.
+"""
 from python_log_indenter import IndentedLoggerAdapter
 import logging
 import os
@@ -12,9 +15,20 @@ log = IndentedLoggerAdapter(log_settings)
 logging_redirect_tqdm(loggers = log_settings.handlers)
 
 def adjust_logger(log_write, folder, log_level):
+    """Function to adjust the default logging settings that get initiated by
+    importing this module.
+
+    Parameters
+    ----------
+    log_write : bool
+        Stop or start writing to log.
+    folder : str
+        Path to folder in which to store `"log.txt"`.
+    log_level : str
+        Set the log level.
+    """
     if log_write and not any([isinstance(x, logging.FileHandler) for x in log_settings.handlers]):
         handler = logging.FileHandler(filename = os.path.join(folder, "log.txt"))
-        # formatter = logging.Formatter(fmt='%(levelname)s %(asctime)s: %(message)s', datefmt = '%Y/%m/%d %H:%M:%S')
         formatter = logging.Formatter(fmt='%(levelname)s %(asctime)s: %(message)s')
         handler.setFormatter(formatter)
         log_settings.addHandler(handler)

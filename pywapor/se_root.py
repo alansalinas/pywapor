@@ -173,21 +173,6 @@ def main(input_data, se_root_version = "v2", export_vars = "default", export_to_
     else:
         return ds
 
-def create_fp(key, value, date, folders):
-    if value["time"] == "daily":
-        date = date.strftime("_%Y%m%d")
-    elif value["time"] == "static":
-        date = ""
-    elif value["time"] == "yearly":
-        date = date.strftime("_%Y")
-    else:
-        print("ERROR: invalid value")
-
-    fn = "{0}{1}.tif".format(key, date)
-    fp = os.path.join(folders[value["time"]], fn)
-
-    return fp
-
 def lst_zone_mean(ds):
     # TODO This function needs to be replaced by something like pywapor.enhancers.temperature.local_mean
 

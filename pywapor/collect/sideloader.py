@@ -3,13 +3,13 @@ import os
 from pywapor.general.logger import log
 
 def search_product_files(product_name, path):
-    """Search for GeoTIFF files with a specific `product_name` in a folder
+    """Search for geotiff files with a specific `product_name` in a folder
     defined by `path`.
 
     Parameters
     ----------
     product_name : str
-        Should be inside a GeoTIFF file's name after one underscore.
+        Should be inside a geotiffs file's name after one underscore.
     path : str
         Path to folder to search.
 
@@ -46,11 +46,6 @@ def check_filename(fn):
     bool
         True when the filename is correct.
 
-    Raises
-    ------
-    ValueError
-        The filename is incorrect.
-
     Examples
     --------
     >>> check_filenames("NDVI_MOD13_-_16-daily_2021.06.10")
@@ -73,11 +68,6 @@ def check_filename(fn):
     if len(parts) != 5:
         raise ValueError("Too many underscores in filename.")
 
-    # valids = ["ALBEDO", "NDVI", "LST"]
-
-    # if parts[0] not in valids:
-    #     raise ValueError(f"Invalid variable name ({parts[0]}). Valid values are {valids}.")
-    
     date_parts = parts[4].split(".")
 
     if len(date_parts) == 3:
