@@ -1,5 +1,14 @@
-
+"""This module defines the default products to use for each variable per level
+and defines the variables and their units.
+"""
 def get_source_level_selections():
+    """Gives a definition of which products are used for each variable per level.
+
+    Returns
+    -------
+    dict
+        Dictionary with the products to use per variable per level.
+    """
 
     source_selection_level2 = {
         "ndvi": ["PROBAV"],
@@ -81,6 +90,18 @@ def get_source_level_selections():
     return levels
 
 def fill_attrs(ds):
+    """Fills in the attributes of a xr.Dataset.
+
+    Parameters
+    ----------
+    ds : xr.Dataset
+        The dataset in which to add metadata attributes.
+
+    Returns
+    -------
+    xr.Dataset
+        The dataset with extra metadata.
+    """
 
     defs = get_var_definitions()
 
@@ -102,6 +123,15 @@ def fill_attrs(ds):
     return ds
 
 def get_var_definitions():
+    """Gives he defintion and unit of all the variables used in `et_look` and
+    `se_root`.
+
+    Returns
+    -------
+    dict
+        Keys are variable names as used in `et_look` and `se_root`, values are
+        dictionaries with keys `long_name`, `units` and `definition`.
+    """
 
     defs = {
         "B0c": {

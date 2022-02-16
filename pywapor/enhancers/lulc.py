@@ -1,9 +1,27 @@
-"""lue_max, landmask, z_obst_max, rs_min
+"""Functions that convert different landuse classifications into the ETLook variables
+`land_mask`, `lue_max`, `rs_min` and `z_obst_max`.
 """
-
 import numpy as np
 
 def lulc_to_x(ds, var, convertor, out_var = None):
+    """Convert values in a classified map to other values based on a dictionary.
+
+    Parameters
+    ----------
+    ds : xr.Dataset
+        Dataset containing `var`.
+    var : str
+        Variable name.
+    convertor : dict
+        Dictionary with keys corresponding to values in `var` and values the replacements.
+    out_var : str, optional
+        New variable name in case `var` should not be overwritten, by default None.
+
+    Returns
+    -------
+    xr.Dataset
+        Dataset with the replaced values.
+    """
 
     new_data = ds[var] * np.nan
 
@@ -23,6 +41,14 @@ def lulc_to_x(ds, var, convertor, out_var = None):
     return ds
 
 def wapor_to_land_mask():
+    """Generate a converter dictionary to be used by `lulc.lulc_to_x` to convert
+    from WaPOR-lulc to the ETlook `land_mask`.
+
+    Returns
+    -------
+    dict
+        Describes the conversions to be made.
+    """
 
     convertor = {
                     20: 1,
@@ -42,6 +68,14 @@ def wapor_to_land_mask():
     return convertor
 
 def wapor_to_lue_max():
+    """Generate a converter dictionary to be used by `lulc.lulc_to_x` to convert
+    from WaPOR-lulc to the ETlook `lue_max`.
+
+    Returns
+    -------
+    dict
+        Describes the conversions to be made.
+    """
     
     convertor = {
                     33: 2.66, 
@@ -55,6 +89,14 @@ def wapor_to_lue_max():
     return convertor
 
 def wapor_to_rs_min():
+    """Generate a converter dictionary to be used by `lulc.lulc_to_x` to convert
+    from WaPOR-lulc to the ETlook `rs_min`.
+
+    Returns
+    -------
+    dict
+        Describes the conversions to be made.
+    """
 
     convertor = {
                 20 : 175,
@@ -74,6 +116,14 @@ def wapor_to_rs_min():
     return convertor
 
 def wapor_to_z_obst_max():
+    """Generate a converter dictionary to be used by `lulc.lulc_to_x` to convert
+    from WaPOR-lulc to the ETlook `z_obst_max`.
+
+    Returns
+    -------
+    dict
+        Describes the conversions to be made.
+    """
 
     convertor = {
                     20 : 1.0,
@@ -93,6 +143,14 @@ def wapor_to_z_obst_max():
     return convertor
 
 def globcover_to_land_mask():
+    """Generate a converter dictionary to be used by `lulc.lulc_to_x` to convert
+    from GLOBCOVER-lulc to the ETlook `land_mask`.
+
+    Returns
+    -------
+    dict
+        Describes the conversions to be made.
+    """
 
     convertor = {
                     11: 1,    
@@ -123,7 +181,15 @@ def globcover_to_land_mask():
     return convertor
 
 def globcover_to_lue_max():
-    
+    """Generate a converter dictionary to be used by `lulc.lulc_to_x` to convert
+    from GLOBCOVER-lulc to the ETlook `lue_max`.
+
+    Returns
+    -------
+    dict
+        Describes the conversions to be made.
+    """
+
     convertor = {
                 11: 3.04,    
                 14:	3.04,    
@@ -153,6 +219,14 @@ def globcover_to_lue_max():
     return convertor
 
 def globcover_to_rs_min():
+    """Generate a converter dictionary to be used by `lulc.lulc_to_x` to convert
+    from GLOBCOVER-lulc to the ETlook `rs_min`.
+
+    Returns
+    -------
+    dict
+        Describes the conversions to be made.
+    """
 
     convertor = {
                 11: 200,    
@@ -183,6 +257,14 @@ def globcover_to_rs_min():
     return convertor
 
 def globcover_to_z_obst_max():
+    """Generate a converter dictionary to be used by `lulc.lulc_to_x` to convert
+    from GLOBCOVER-lulc to the ETlook `z_obst_max`.
+
+    Returns
+    -------
+    dict
+        Describes the conversions to be made.
+    """
 
     convertor = {
             11: 4.0,    

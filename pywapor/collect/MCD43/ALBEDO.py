@@ -26,7 +26,7 @@ def main(Dir, latlim, lonlim, Startdate, Enddate, Waitbar = 1, hdf_library = Non
                     define directory to the data here
     remove_hdf -- 1 (Default), if 1 remove all the downloaded hdf files in the end    
     """
-    username, password = pywapor.collect.get_pw_un.get("NASA")
+    username, password = pywapor.collect.accounts.get("NASA")
 
     log.info(f"--> Downloading MCD43.")
     DownloadData(Dir, Startdate, Enddate, latlim, lonlim, username, password, Waitbar, hdf_library, remove_hdf)

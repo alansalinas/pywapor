@@ -3,14 +3,11 @@
 Authors: Tim Hessels
 Module: Collect/CHIRPS
 """
-
-# import general python modules
 import os
 from osgeo import gdal
 import numpy as np
 import pandas as pd
 from ftplib import FTP
-import datetime
 import tqdm
 
 def DownloadData(Dir, Startdate, Enddate, latlim, lonlim, Waitbar):

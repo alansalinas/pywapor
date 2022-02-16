@@ -1,10 +1,24 @@
-#%%
 from osgeo import gdal
 import numpy as np
 import xarray as xr
 
 def gap_fill(ds, var, out_var = None):
+    """Apply gdal.FillNoData to every time slice of `var` in `ds`.
 
+    Parameters
+    ----------
+    ds : xr.Dataset
+        Dataset containing var.
+    var : str
+        Variable name.
+    out_var : str, optional
+        New variable name in case `var` should not be overwritten, by default None.
+
+    Returns
+    -------
+    xr.Dataset
+        Gap filled dataset.
+    """
     # Create an empty xr.DataArray to store our results.
     new_data = xr.ones_like(ds[var]) * np.nan
 
@@ -48,5 +62,3 @@ def gap_fill(ds, var, out_var = None):
         ds[var] = new_data
 
     return ds
-
-# %%

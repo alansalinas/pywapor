@@ -27,7 +27,7 @@ def NDVI(Dir, latlim, lonlim, Startdate, Enddate,
     """
 
     """
-    username, password = pywapor.collect.get_pw_un.get("VITO")
+    username, password = pywapor.collect.accounts.get("VITO")
 
     log.info("--> Downloading PROBAV.")
     download_data(Dir/Path("PROBAV"), Startdate, Enddate, latlim,
@@ -43,7 +43,7 @@ def ALBEDO(Dir, latlim, lonlim, Startdate, Enddate,
     """
 
     """
-    username, password = pywapor.collect.get_pw_un.get("VITO")
+    username, password = pywapor.collect.accounts.get("VITO")
 
     log.info("--> Downloading PROBAV.")
     download_data(Dir/Path("PROBAV"), Startdate, Enddate, latlim,

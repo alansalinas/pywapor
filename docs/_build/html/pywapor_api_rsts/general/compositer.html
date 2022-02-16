@@ -1,0 +1,326 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>compositer &mdash; pyWaPOR  documentation</title>
+      <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="../../_static/css/theme.css" type="text/css" />
+  <!--[if lt IE 9]>
+    <script src="../../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script data-url_root="../../" id="documentation_options" src="../../_static/documentation_options.js"></script>
+        <script src="../../_static/jquery.js"></script>
+        <script src="../../_static/underscore.js"></script>
+        <script src="../../_static/doctools.js"></script>
+        <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+    <script src="../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" />
+    <link rel="next" title="logger" href="logger.html" />
+    <link rel="prev" title="pywapor.general" href="../general.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search"  style="background: #004747" >
+            <a href="../../index.html" class="icon icon-home"> pyWaPOR
+            <img src="../../_static/logo.png" class="logo" alt="Logo"/>
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../../data_sources.html">Data</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../_user_guide.html">User Guide</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="../../_pywapor_api.html">pyWaPOR API</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="../pre_et_look.html">pywapor.pre_et_look</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../et_look.html">pywapor.et_look</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../pre_se_root.html">pywapor.pre_se_root</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../se_root.html">pywapor.se_root</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../enhancers.html">pywapor.enhancers</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../collect.html">pywapor.collect</a></li>
+<li class="toctree-l2 current"><a class="reference internal" href="../general.html">pywapor.general</a><ul class="current">
+<li class="toctree-l3 current"><a class="current reference internal" href="#">compositer</a></li>
+<li class="toctree-l3"><a class="reference internal" href="logger.html">logger</a></li>
+<li class="toctree-l3"><a class="reference internal" href="pre_defaults.html">pre_defaults</a></li>
+<li class="toctree-l3"><a class="reference internal" href="processing_functions.html">processing_functions</a></li>
+<li class="toctree-l3"><a class="reference internal" href="variables.html">variables</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../../_etlook.html">ETLook</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../bibliography.html">Bibliography</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu"  style="background: #004747" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../index.html">pyWaPOR</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../index.html" class="icon icon-home"></a> &raquo;</li>
+          <li><a href="../../_pywapor_api.html">pyWaPOR API</a> &raquo;</li>
+          <li><a href="../general.html">pywapor.general</a> &raquo;</li>
+      <li>compositer</li>
+      <li class="wy-breadcrumbs-aside">
+              <!-- User defined Bitbucket URL -->
+              <a href="https://bitbucket.org/cioapps/wapor-et-look/src/master/" class="fa fa-bitbucket"> Edit on Bitbucket</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  
+<style>
+/* CSS overrides for sphinx_rtd_theme */
+
+/* 24px margin */
+.nbinput.nblast.container,
+.nboutput.nblast.container {
+    margin-bottom: 19px;  /* padding has already 5px */
+}
+
+/* ... except between code cells! */
+.nblast.container + .nbinput.container {
+    margin-top: -19px;
+}
+
+.admonition > p:before {
+    margin-right: 4px;  /* make room for the exclamation icon */
+}
+
+/* Fix math alignment, see https://github.com/rtfd/sphinx_rtd_theme/pull/686 */
+.math {
+    text-align: unset;
+}
+</style>
+<section id="module-pywapor.general.compositer">
+<span id="compositer"></span><h1>compositer<a class="headerlink" href="#module-pywapor.general.compositer" title="Permalink to this headline"></a></h1>
+<dl class="py function">
+<dt class="sig sig-object py" id="pywapor.general.compositer.main">
+<span class="sig-name descname"><span class="pre">main</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">cmeta</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dbs</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">epochs_info</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">temp_folder</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">example_ds</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">lean_output</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">diagnostics</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">{}</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">extra_source_enhancements</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">{}</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pywapor.general.compositer.main" title="Permalink to this definition"></a></dt>
+<dd><p>Create temporal composites from spatio-temporal data.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>cmeta</strong> (<em>dict</em>) – Gives configuration option for the composite creation. Should contain at least
+<cite>composite_type</cite>, <cite>temporal_interp</cite>, <cite>spatial_interp</cite> and <cite>var_name</cite> as keys.</p></li>
+<li><p><strong>dbs</strong> (<em>list</em>) – list of lists, where each sublists contains the paths to geotiff files stemming
+from a single source.</p></li>
+<li><p><strong>epochs_info</strong> (<em>tuple</em>) – Contains three lists with the index-number, starttime and endtime of each
+epoch.</p></li>
+<li><p><strong>temp_folder</strong> (<em>str</em><em>, </em><em>optional</em>) – Path to folder in which temporary files are stores, providing <cite>None</cite> will
+force the function to do all calculations in memory, by default None.</p></li>
+<li><p><strong>example_ds</strong> (<em>xr.Dataset</em>) – Dataset used to interpolate data (spatially), by default None.</p></li>
+<li><p><strong>lean_output</strong> (<em>bool</em><em>, </em><em>optional</em>) – Whether or not to remove intermediate variables from final output,
+used for debugging, by default True.</p></li>
+<li><p><strong>diagnostics</strong> (<em>dict</em><em>, </em><em>optional</em>) – Dictionary with (<cite>lat</cite>, <cite>lon</cite>) tuples as values and (short) point descriptions/names
+as values. Several graphs are created for data at these points-of-interest, by default {}.</p></li>
+<li><p><strong>extra_source_enhancements</strong> (<em>dict</em><em>, </em><em>optional</em>) – Dictionary with extra functions to apply to the data before the composites are created,
+by default {}</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>Dataset with the calculated composites.</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>xr.Dataset</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="pywapor.general.compositer.temporal_interpolation">
+<span class="sig-name descname"><span class="pre">temporal_interpolation</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">ds</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">t_new</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">temporal_interp</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pywapor.general.compositer.temporal_interpolation" title="Permalink to this definition"></a></dt>
+<dd><p>Fill missing and required values using temporal interpolation. In case the
+<cite>ds</cite> contains only a single point in time, any values at <cite>t_new</cite> are extrapolated
+from that single point.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>ds</strong> (<em>xr.Dataset</em>) – Dataset with (missing) data.</p></li>
+<li><p><strong>t_new</strong> (<em>np.ndarray</em>) – List of extra points in time to add (and interpolate) to <cite>ds</cite>.</p></li>
+<li><p><strong>temporal_interp</strong> (<em>{&quot;nearest&quot;</em><em> | </em><em>&quot;linear&quot;}</em>) – Type of temporal interpolation to apply.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p><ul class="simple">
+<li><p><em>xr.Dataset</em> – Dataset with the resampled and interpolated data.</p></li>
+<li><p><em>xr.Dataset</em> – Dataset with data on how many points can be interpolated (per variable).</p></li>
+<li><p><em>xr.Dataset</em> – Dataset with data on how many pixels are missing in total (per variable).</p></li>
+</ul>
+</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="pywapor.general.compositer.calculate_ds">
+<span class="sig-name descname"><span class="pre">calculate_ds</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">ds</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">fh</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">label</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">encoding</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">{}</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">chunks</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pywapor.general.compositer.calculate_ds" title="Permalink to this definition"></a></dt>
+<dd><p>Operations in xarray are often done lazily and this function forces
+calculation and optionally saves the (intermediate) results to disk.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>ds</strong> (<em>xr.Dataset</em>) – Dataset to do operation on.</p></li>
+<li><p><strong>fh</strong> (<em>str</em><em>, </em><em>optional</em>) – Path to <cite>.nc</cite> file in which to save the calculated dataset. <cite>fh</cite> is never overwritten,
+but instead a “_” appended to the filename if the file already exists.
+When <cite>None</cite>, dataset is calculated but not written to disk, by default None.</p></li>
+<li><p><strong>label</strong> (<em>str</em><em>, </em><em>optional</em>) – Label to log, by default None.</p></li>
+<li><p><strong>encoding</strong> (<em>dict</em><em>, </em><em>optional</em>) – Extra encoding to apply when saving to disk, “zlib” is always applied unless
+explicitly set to False with this variable, by default {}.</p></li>
+<li><p><strong>chunks</strong> (<em>{str</em><em> | </em><em>dict}</em><em>, </em><em>optional</em>) – Value to chunk the returned data, by default None.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p><ul class="simple">
+<li><p><em>xr.Dataset</em> – Returned and calculated dataset.</p></li>
+<li><p><em>str</em> – Path to saved <cite>.nc</cite> file.</p></li>
+</ul>
+</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="pywapor.general.compositer.req_t">
+<span class="sig-name descname"><span class="pre">req_t</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">ds_epochs</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">epochs_info</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">composite_type</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pywapor.general.compositer.req_t" title="Permalink to this definition"></a></dt>
+<dd><p>Determines which epochs don’t have any valid data and calculates at which time
+the dataset should be interpolated to be able to create the epochs composite.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>ds_epochs</strong> (<em>xr.DataArray</em>) – Array with the epoch numbers for which data does currently exist.</p></li>
+<li><p><strong>epochs_info</strong> (<em>tuple</em>) – Contains three lists with the index-number, starttime and endtime of each
+epoch.</p></li>
+<li><p><strong>composite_type</strong> (<em>str</em>) – The type of composite determines how many point will need to be interpolated, e.g.
+to have a <cite>mean</cite>-composite, one point in the middle of the epoch will suffice, while
+for a <cite>max</cite> composite two points in time (at the very start and end of the epoch) need
+to be calculated.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>Array of <cite>pd.Timestamps</cite> at which the dataset needs to be interpolated to be able
+to create all the required composites.</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>np.ndarray</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="pywapor.general.compositer.check_geots">
+<span class="sig-name descname"><span class="pre">check_geots</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">files</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pywapor.general.compositer.check_geots" title="Permalink to this definition"></a></dt>
+<dd><p>Check if all <cite>files</cite> have the same geotransform and projection.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>files</strong> (<em>list</em>) – List of paths to geotiff files that are required to have identical
+geotransforms and projections.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="pywapor.general.compositer.get_units">
+<span class="sig-name descname"><span class="pre">get_units</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">dss</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pywapor.general.compositer.get_units" title="Permalink to this definition"></a></dt>
+<dd><p>Get an overview of the units of different variables inside xr.Datasets.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>dss</strong> (<em>list</em>) – List with xr.Datasets. Each variable in each dataset is checked for a
+<cite>“unit”</cite> attribute.</p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>Dictionary with the units per variable.</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>dict</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="pywapor.general.compositer.check_units">
+<span class="sig-name descname"><span class="pre">check_units</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">units</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">strictness</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'low'</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pywapor.general.compositer.check_units" title="Permalink to this definition"></a></dt>
+<dd><p>Test whether each variable (as key in <cite>units</cite>) has identical units.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>units</strong> (<em>dict</em>) – Dictionary with the units per variable, can be generated with <cite>compositer.get_units</cite>.</p></li>
+<li><p><strong>strictness</strong> (<em>{&quot;low&quot;</em><em> | </em><em>&quot;medium&quot;</em><em> | </em><em>&quot;high}</em><em>, </em><em>optional</em>) – low - Units need to be the same, but ‘unknown’ units are assumed to be correct.
+med - Units need to be the same and ‘unknown’ units are assumed to be different.
+high - All units must be known and identical.</p></li>
+</ul>
+</dd>
+</dl>
+<p class="rubric">Examples</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">units</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;test1&quot;</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="s2">&quot;C&quot;</span><span class="p">,</span> <span class="s2">&quot;C&quot;</span><span class="p">,</span><span class="s2">&quot;unknown&quot;</span><span class="p">]),</span>
+<span class="go">         &quot;test2&quot;: np.array([&quot;C&quot;, &quot;C&quot;, &quot;K&quot;]),</span>
+<span class="go">         &quot;test3&quot;: np.array([&quot;C&quot;, &quot;C&quot;, &quot;C&quot;]),</span>
+<span class="go">         &quot;test4&quot;: np.array([&quot;unknown&quot;, &quot;unknown&quot;, &quot;unknown&quot;])}</span>
+</pre></div>
+</div>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">check_units</span><span class="p">(</span><span class="n">units</span><span class="p">)</span>
+<span class="go">{&#39;test1&#39;: True, &#39;test2&#39;: False, &#39;test3&#39;: True, &#39;test4&#39;: True}</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">check_units</span><span class="p">(</span><span class="n">units</span><span class="p">,</span> <span class="n">strictness</span> <span class="o">=</span> <span class="s2">&quot;med&quot;</span><span class="p">)</span>
+<span class="go">{&#39;test1&#39;: False, &#39;test2&#39;: False, &#39;test3&#39;: True, &#39;test4&#39;: True}</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">check_units</span><span class="p">(</span><span class="n">units</span><span class="p">,</span> <span class="n">strictness</span> <span class="o">=</span> <span class="s2">&quot;high&quot;</span><span class="p">)</span>
+<span class="go">{&#39;test1&#39;: False, &#39;test2&#39;: False, &#39;test3&#39;: True, &#39;test4&#39;: False}</span>
+</pre></div>
+</div>
+</dd></dl>
+
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="../general.html" class="btn btn-neutral float-left" title="pywapor.general" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="logger.html" class="btn btn-neutral float-right" title="logger" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2022, FAO.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

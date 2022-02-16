@@ -4,7 +4,7 @@
   <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>roughness &mdash; pyWaPOR  documentation</title>
+  <title>Roughness &mdash; pyWaPOR  documentation</title>
       <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
       <link rel="stylesheet" href="../_static/css/theme.css" type="text/css" />
   <!--[if lt IE 9]>
@@ -16,21 +16,22 @@
         <script src="../_static/underscore.js"></script>
         <script src="../_static/doctools.js"></script>
         <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
-        <script defer="defer" src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
         <script>window.MathJax = {"tex": {"inlineMath": [["$", "$"], ["\\(", "\\)"]], "processEscapes": true}, "options": {"ignoreHtmlClass": "tex2jax_ignore|mathjax_ignore|document", "processHtmlClass": "tex2jax_process|mathjax_process|math|output_area"}}</script>
+        <script defer="defer" src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
     <script src="../_static/js/theme.js"></script>
     <link rel="index" title="Index" href="../genindex.html" />
     <link rel="search" title="Search" href="../search.html" />
-    <link rel="next" title="solar_radiation" href="solar_radiation.html" />
-    <link rel="prev" title="resistance" href="resistance.html" /> 
+    <link rel="next" title="Solar Radiation" href="solar_radiation.html" />
+    <link rel="prev" title="Resistance" href="resistance.html" /> 
 </head>
 
 <body class="wy-body-for-nav"> 
   <div class="wy-grid-for-nav">
     <nav data-toggle="wy-nav-shift" class="wy-nav-side">
       <div class="wy-side-scroll">
-        <div class="wy-side-nav-search" >
+        <div class="wy-side-nav-search"  style="background: #004747" >
             <a href="../index.html" class="icon icon-home"> pyWaPOR
+            <img src="../_static/logo.png" class="logo" alt="Logo"/>
           </a>
 <div role="search">
   <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
@@ -41,22 +42,22 @@
 </div>
         </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
               <ul class="current">
-<li class="toctree-l1"><a class="reference internal" href="../installation.html">Installation</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../data_sources.html">Data</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../_user_guide.html">User Guide</a></li>
-<li class="toctree-l1 current"><a class="reference internal" href="../_functions.html">Functions</a><ul class="current">
-<li class="toctree-l2"><a class="reference internal" href="clear_sky_radiation.html">clear_sky_radiation</a></li>
-<li class="toctree-l2"><a class="reference internal" href="soil_moisture.html">soil_moisture</a></li>
-<li class="toctree-l2"><a class="reference internal" href="evapotranspiration.html">evapotranspiration</a></li>
-<li class="toctree-l2"><a class="reference internal" href="leaf.html">leaf</a></li>
-<li class="toctree-l2"><a class="reference internal" href="meteo.html">meteo</a></li>
-<li class="toctree-l2"><a class="reference internal" href="neutral.html">neutral</a></li>
-<li class="toctree-l2"><a class="reference internal" href="radiation.html">radiation</a></li>
-<li class="toctree-l2"><a class="reference internal" href="resistance.html">resistance</a></li>
-<li class="toctree-l2 current"><a class="current reference internal" href="#">roughness</a></li>
-<li class="toctree-l2"><a class="reference internal" href="solar_radiation.html">solar_radiation</a></li>
-<li class="toctree-l2"><a class="reference internal" href="stress.html">stress</a></li>
-<li class="toctree-l2"><a class="reference internal" href="unstable.html">unstable</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../_pywapor_api.html">pyWaPOR API</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="../_etlook.html">ETLook</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="clear_sky_radiation.html">Clear Sky Radiation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="soil_moisture.html">Soil Moisture</a></li>
+<li class="toctree-l2"><a class="reference internal" href="evapotranspiration.html">Evapotranspiration</a></li>
+<li class="toctree-l2"><a class="reference internal" href="leaf.html">Leaf</a></li>
+<li class="toctree-l2"><a class="reference internal" href="meteo.html">Meteo</a></li>
+<li class="toctree-l2"><a class="reference internal" href="neutral.html">Neutral</a></li>
+<li class="toctree-l2"><a class="reference internal" href="radiation.html">Radiation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="resistance.html">Resistance</a></li>
+<li class="toctree-l2 current"><a class="current reference internal" href="#">Roughness</a></li>
+<li class="toctree-l2"><a class="reference internal" href="solar_radiation.html">Solar Radiation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="stress.html">Stress</a></li>
+<li class="toctree-l2"><a class="reference internal" href="unstable.html">Unstable</a></li>
 </ul>
 </li>
 <li class="toctree-l1"><a class="reference internal" href="../bibliography.html">Bibliography</a></li>
@@ -66,7 +67,7 @@
       </div>
     </nav>
 
-    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu"  style="background: #004747" >
           <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
           <a href="../index.html">pyWaPOR</a>
       </nav>
@@ -76,10 +77,11 @@
           <div role="navigation" aria-label="Page navigation">
   <ul class="wy-breadcrumbs">
       <li><a href="../index.html" class="icon icon-home"></a> &raquo;</li>
-          <li><a href="../_functions.html">Functions</a> &raquo;</li>
-      <li>roughness</li>
+          <li><a href="../_etlook.html">ETLook</a> &raquo;</li>
+      <li>Roughness</li>
       <li class="wy-breadcrumbs-aside">
-            <a href="../_sources/et_look_rsts/roughness.rst.txt" rel="nofollow"> View page source</a>
+              <!-- User defined Bitbucket URL -->
+              <a href="https://bitbucket.org/cioapps/wapor-et-look/src/master/" class="fa fa-bitbucket"> Edit on Bitbucket</a>
       </li>
   </ul>
   <hr/>
@@ -112,115 +114,8 @@
 }
 </style>
 <section id="module-pywapor.et_look_v2.roughness">
-<span id="roughness"></span><h1>roughness<a class="headerlink" href="#module-pywapor.et_look_v2.roughness" title="Permalink to this headline"></a></h1>
+<span id="roughness"></span><h1>Roughness<a class="headerlink" href="#module-pywapor.et_look_v2.roughness" title="Permalink to this headline"></a></h1>
 <p>The roughness module contains all functions related to surface roughness.</p>
-<dl class="py function">
-<dt class="sig sig-object py" id="pywapor.et_look_v2.roughness.displacement_height">
-<span class="sig-name descname"><span class="pre">displacement_height</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">lai</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">z_obst</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">land_mask</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">c1</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pywapor.et_look_v2.roughness.displacement_height" title="Permalink to this definition"></a></dt>
-<dd><p>Computes the displacement height. The lai is used to limit the displacement
-height. It is defined differently for different types of landuse.</p>
-<p>Land use is classified as follows:</p>
-<ol class="arabic simple" start="0">
-<li><p>no data</p></li>
-<li><p>land</p></li>
-<li><p>water</p></li>
-<li><p>urban</p></li>
-</ol>
-<div class="math notranslate nohighlight">
-\[\begin{split}z_{disp}=\begin{cases}
-\begin{array}{cc}
-0 &amp; l=0\\
-z_{obst}\left(1-\frac{1-\exp\left(-\sqrt{c_{1} \cdot I_{lai}}\right)}
-{\sqrt{c_{1} \cdot I_{lai}}}\right) &amp; l=1\\
-0 &amp; l=2\\
-\frac{2}{3} \cdot z_{obst} &amp; l=3
-\end{array}\end{cases}\end{split}\]</div>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
-<dd class="field-odd"><ul class="simple">
-<li><p><strong>lai</strong> (<em>float</em>) – leaf area index,
-<span class="math notranslate nohighlight">\(I_{lai}\)</span>
-[-]</p></li>
-<li><p><strong>z_obst</strong> (<em>float</em>) – obstacle height,
-<span class="math notranslate nohighlight">\(z_{obst}\)</span>
-[m]</p></li>
-<li><p><strong>land_mask</strong> (<em>int</em>) – land use classification,
-<span class="math notranslate nohighlight">\(l\)</span>
-[-]</p></li>
-<li><p><strong>c1</strong> (<em>float</em>) – exponential growth rate displacement height function,
-<span class="math notranslate nohighlight">\(c_1\)</span>
-[-]</p></li>
-</ul>
-</dd>
-<dt class="field-even">Returns</dt>
-<dd class="field-even"><p><strong>disp</strong> – displacement height,
-<span class="math notranslate nohighlight">\({disp}\)</span>
-[m]</p>
-</dd>
-<dt class="field-odd">Return type</dt>
-<dd class="field-odd"><p>float</p>
-</dd>
-</dl>
-<p class="rubric">Examples</p>
-<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">import</span> <span class="nn">ETLook.roughness</span> <span class="k">as</span> <span class="nn">roughness</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">roughness</span><span class="o">.</span><span class="n">displacement_height</span><span class="p">(</span><span class="mf">0.4</span><span class="p">,</span> <span class="mf">2.0</span><span class="p">)</span>
-<span class="go">0.51779495</span>
-</pre></div>
-</div>
-</dd></dl>
-
-<dl class="py function">
-<dt class="sig sig-object py" id="pywapor.et_look_v2.roughness.obstacle_height">
-<span class="sig-name descname"><span class="pre">obstacle_height</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">ndvi</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">z_obst_max</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ndvi_obs_min</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.25</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ndvi_obs_max</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.75</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">obs_fr</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.25</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pywapor.et_look_v2.roughness.obstacle_height" title="Permalink to this definition"></a></dt>
-<dd><p>Computes the obstacle height. The ndvi is used to limit the obstacle
-height.</p>
-<div class="math notranslate nohighlight">
-\[\begin{split}z_{obst}        =       \begin{cases}
-\begin{array}{cc}
-f_{obs}z_{obst,max} &amp; I_{ndvi}\leq I_{ndvi,obs,min}\\
-z_{obst,max}\left(f_{obs}+\left(1-f_{obs}\right)\left
-(\frac{I_{ndvi}-I_{ndvi,obs,min}}
-{I_{ndvi,obs,max}-I_{ndvi,obs,min}}\right)\right) &amp;
-I_{ndvi}&gt;I_{ndvi,obs,min}\&amp;I_{ndvi}&lt;I_{ndvi,obs,max}\\
-z_{obst,max} &amp; I_{ndvi}\geq I_{ndvi,obs,max}
-\end{array}\end{cases}\end{split}\]</div>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
-<dd class="field-odd"><ul class="simple">
-<li><p><strong>ndvi</strong> (<em>float</em>) – normalized difference vegetation index,
-<span class="math notranslate nohighlight">\(I_{ndvi}\)</span>
-[-]</p></li>
-<li><p><strong>ndvi_obs_min</strong> (<em>float</em>) – normalized difference vegetation index &#64; min obstacle height,
-<span class="math notranslate nohighlight">\(I_{ndvi,obs,min}\)</span>
-[-]</p></li>
-<li><p><strong>ndvi_obs_max</strong> (<em>float</em>) – normalized difference vegetation index &#64; max obstacle height,
-<span class="math notranslate nohighlight">\(I_{ndvi,obs,max}\)</span>
-[-]</p></li>
-<li><p><strong>obs_fr</strong> (<em>float</em>) – ratio of minimum and maximum obstacle height,
-<span class="math notranslate nohighlight">\(f_{obs}\)</span>
-[-]</p></li>
-<li><p><strong>z_obst_max</strong> (<em>float</em>) – maximum obstacle height
-:math`z_{obst,max}`
-[m]</p></li>
-</ul>
-</dd>
-<dt class="field-even">Returns</dt>
-<dd class="field-even"><p><strong>z_obst</strong> – obstacle height,
-<span class="math notranslate nohighlight">\(z_{obst}\)</span>
-[m]</p>
-</dd>
-<dt class="field-odd">Return type</dt>
-<dd class="field-odd"><p>float</p>
-</dd>
-</dl>
-<p class="rubric">Examples</p>
-<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">import</span> <span class="nn">ETLook.roughness</span> <span class="k">as</span> <span class="nn">roughness</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">roughness</span><span class="o">.</span><span class="n">obstacle_height</span><span class="p">(</span><span class="mf">0.4</span><span class="p">,</span> <span class="mf">2.0</span><span class="p">)</span>
-<span class="go">0.95</span>
-</pre></div>
-</div>
-</dd></dl>
-
 <dl class="py function">
 <dt class="sig sig-object py" id="pywapor.et_look_v2.roughness.orographic_roughness">
 <span class="sig-name descname"><span class="pre">orographic_roughness</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">slope</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dem_resolution</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1000.0</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pywapor.et_look_v2.roughness.orographic_roughness" title="Permalink to this definition"></a></dt>
@@ -310,20 +205,127 @@ z_{0,m} &amp; l=1\\
 </div>
 </dd></dl>
 
+<dl class="py function">
+<dt class="sig sig-object py" id="pywapor.et_look_v2.roughness.obstacle_height">
+<span class="sig-name descname"><span class="pre">obstacle_height</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">ndvi</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">z_obst_max</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ndvi_obs_min</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.25</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ndvi_obs_max</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.75</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">obs_fr</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.25</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pywapor.et_look_v2.roughness.obstacle_height" title="Permalink to this definition"></a></dt>
+<dd><p>Computes the obstacle height. The ndvi is used to limit the obstacle
+height.</p>
+<div class="math notranslate nohighlight">
+\[\begin{split}z_{obst}        =       \begin{cases}
+\begin{array}{cc}
+f_{obs}z_{obst,max} &amp; I_{ndvi}\leq I_{ndvi,obs,min}\\
+z_{obst,max}\left(f_{obs}+\left(1-f_{obs}\right)\left
+(\frac{I_{ndvi}-I_{ndvi,obs,min}}
+{I_{ndvi,obs,max}-I_{ndvi,obs,min}}\right)\right) &amp;
+I_{ndvi}&gt;I_{ndvi,obs,min}\&amp;I_{ndvi}&lt;I_{ndvi,obs,max}\\
+z_{obst,max} &amp; I_{ndvi}\geq I_{ndvi,obs,max}
+\end{array}\end{cases}\end{split}\]</div>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>ndvi</strong> (<em>float</em>) – normalized difference vegetation index,
+<span class="math notranslate nohighlight">\(I_{ndvi}\)</span>
+[-]</p></li>
+<li><p><strong>ndvi_obs_min</strong> (<em>float</em>) – normalized difference vegetation index &#64; min obstacle height,
+<span class="math notranslate nohighlight">\(I_{ndvi,obs,min}\)</span>
+[-]</p></li>
+<li><p><strong>ndvi_obs_max</strong> (<em>float</em>) – normalized difference vegetation index &#64; max obstacle height,
+<span class="math notranslate nohighlight">\(I_{ndvi,obs,max}\)</span>
+[-]</p></li>
+<li><p><strong>obs_fr</strong> (<em>float</em>) – ratio of minimum and maximum obstacle height,
+<span class="math notranslate nohighlight">\(f_{obs}\)</span>
+[-]</p></li>
+<li><p><strong>z_obst_max</strong> (<em>float</em>) – maximum obstacle height
+:math`z_{obst,max}`
+[m]</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p><strong>z_obst</strong> – obstacle height,
+<span class="math notranslate nohighlight">\(z_{obst}\)</span>
+[m]</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>float</p>
+</dd>
+</dl>
+<p class="rubric">Examples</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">import</span> <span class="nn">ETLook.roughness</span> <span class="k">as</span> <span class="nn">roughness</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">roughness</span><span class="o">.</span><span class="n">obstacle_height</span><span class="p">(</span><span class="mf">0.4</span><span class="p">,</span> <span class="mf">2.0</span><span class="p">)</span>
+<span class="go">0.95</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="pywapor.et_look_v2.roughness.displacement_height">
+<span class="sig-name descname"><span class="pre">displacement_height</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">lai</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">z_obst</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">land_mask</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">c1</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pywapor.et_look_v2.roughness.displacement_height" title="Permalink to this definition"></a></dt>
+<dd><p>Computes the displacement height. The lai is used to limit the displacement
+height. It is defined differently for different types of landuse.</p>
+<p>Land use is classified as follows:</p>
+<ol class="arabic simple" start="0">
+<li><p>no data</p></li>
+<li><p>land</p></li>
+<li><p>water</p></li>
+<li><p>urban</p></li>
+</ol>
+<div class="math notranslate nohighlight">
+\[\begin{split}z_{disp}=\begin{cases}
+\begin{array}{cc}
+0 &amp; l=0\\
+z_{obst}\left(1-\frac{1-\exp\left(-\sqrt{c_{1} \cdot I_{lai}}\right)}
+{\sqrt{c_{1} \cdot I_{lai}}}\right) &amp; l=1\\
+0 &amp; l=2\\
+\frac{2}{3} \cdot z_{obst} &amp; l=3
+\end{array}\end{cases}\end{split}\]</div>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>lai</strong> (<em>float</em>) – leaf area index,
+<span class="math notranslate nohighlight">\(I_{lai}\)</span>
+[-]</p></li>
+<li><p><strong>z_obst</strong> (<em>float</em>) – obstacle height,
+<span class="math notranslate nohighlight">\(z_{obst}\)</span>
+[m]</p></li>
+<li><p><strong>land_mask</strong> (<em>int</em>) – land use classification,
+<span class="math notranslate nohighlight">\(l\)</span>
+[-]</p></li>
+<li><p><strong>c1</strong> (<em>float</em>) – exponential growth rate displacement height function,
+<span class="math notranslate nohighlight">\(c_1\)</span>
+[-]</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p><strong>disp</strong> – displacement height,
+<span class="math notranslate nohighlight">\({disp}\)</span>
+[m]</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>float</p>
+</dd>
+</dl>
+<p class="rubric">Examples</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">import</span> <span class="nn">ETLook.roughness</span> <span class="k">as</span> <span class="nn">roughness</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">roughness</span><span class="o">.</span><span class="n">displacement_height</span><span class="p">(</span><span class="mf">0.4</span><span class="p">,</span> <span class="mf">2.0</span><span class="p">)</span>
+<span class="go">0.51779495</span>
+</pre></div>
+</div>
+</dd></dl>
+
 </section>
 
 
            </div>
           </div>
           <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
-        <a href="resistance.html" class="btn btn-neutral float-left" title="resistance" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
-        <a href="solar_radiation.html" class="btn btn-neutral float-right" title="solar_radiation" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+        <a href="resistance.html" class="btn btn-neutral float-left" title="Resistance" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="solar_radiation.html" class="btn btn-neutral float-right" title="Solar Radiation" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
     </div>
 
   <hr/>
 
   <div role="contentinfo">
-    <p>&#169; Copyright 2021, FAO.</p>
+    <p>&#169; Copyright 2022, FAO.</p>
   </div>
 
   Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a

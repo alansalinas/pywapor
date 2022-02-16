@@ -3,6 +3,7 @@ import numpy as np
 import pandas as pd
 import urllib
 import datetime
+import pywapor.general.processing_functions as PF
 
 def DownloadData(Dir, Var, Startdate, Enddate, latlim, lonlim, TimeStep, Period, Waitbar):
 
@@ -12,9 +13,6 @@ def DownloadData(Dir, Var, Startdate, Enddate, latlim, lonlim, TimeStep, Period,
     buffer_pixels = 0
     lonlim = [lonlim[0] - 0.3125 * buffer_pixels, lonlim[1] + 0.3125 * buffer_pixels]
     latlim = [latlim[0] - 0.25 * buffer_pixels, latlim[1] + 0.25 * buffer_pixels]
-
-	# WAPOR modules
-    import pywapor.general.processing_functions as PF
 
     # Check the latitude and longitude and otherwise set lat or lon on greatest extent
     if latlim[0] < -90 or latlim[1] > 90:

@@ -1,11 +1,13 @@
-import tqdm
+# -*- coding: utf-8 -*-
+"""
+Generates input data for `pywapor.se_root`.
+"""
 import warnings
 import os
 import copy
 import xarray as xr
 import numpy as np
 import pandas as pd
-import pywapor.collect as c
 import pywapor.general as g
 from pywapor.collect.downloader import collect_sources
 from pywapor.general.logger import log, adjust_logger
@@ -19,6 +21,39 @@ from pywapor.general import processing_functions as pf
 
 def main(project_folder, startdate, enddate, latlim, lonlim, level = "level_1", 
             extra_source_locations = None):
+    """Generates an input file for `pywapor.se_root` based on, among others, a
+    bounding-box and time period.
+
+    Parameters
+    ----------
+    project_folder : str
+        Path to folder in which (intermediate) data will be stored.
+    startdate : str
+        Start of the period for which to generate the input data, formatted as
+        "YYYY-MM-DD".
+    enddate : str
+        End of the period for which to generate the input data, formatted as
+        "YYYY-MM-DD".
+    latlim : List[float, float]
+        Latitude limits of the bounding-box, first value should be smaller than
+        second value.
+    lonlim : List[float, float]
+        Longitude limits of the bounding-box, first value should be smaller than
+        second value.
+    level : "level_1" | "level_2" | dict, optional
+        Controls which sources are collected for the various variables, 
+        by default "level_1".
+    extra_source_locations : dict, optional
+        Paths in which to look for sideloaded data, by default {}.
+
+    Returns
+    -------
+    xr.Dataset
+        Dataset with all the required data for pywapor.se_root.
+    str
+        Path to the netCDF file containing the generated dataset.
+
+    """
 
 #%%
 
@@ -206,7 +241,27 @@ def main(project_folder, startdate, enddate, latlim, lonlim, level = "level_1",
     return ds, fh
 
 def calc_periods(times, freq):
+    """Calculates which GEOS5 or MERRA2 periods for a given time need to be collected,
+    e.g. checks which GEOS5 or MERRA2 datapoint in time is closest to the given
+    `times`. Used by `pywapor.Collect.MERRA2` and `pywapor.Collect.GEOS5`.
 
+    Parameters
+    ----------
+    times : np.ndarray
+        Array with values that can be ingested by pd.Timestamp.
+    freq : {"3H" | "H"}
+        The frequency of the data for which the periods are calculated.
+
+    Returns
+    -------
+    list
+        List of start datetimes.
+    list
+        List of end datetimes.
+    list
+        List of periods corresponding to the gives `times`.
+    """
+    # TODO move this to collect tools?
     sds = list()
     eds = list()
     prds = list()

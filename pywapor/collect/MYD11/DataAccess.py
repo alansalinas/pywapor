@@ -17,6 +17,8 @@ import requests
 import sys
 import urllib.parse
 import tqdm
+import pywapor.collect.MOD11 as MOD11
+import pywapor.general.processing_functions as PF
 
 def DownloadData(Dir, Startdate, Enddate, latlim, lonlim, username, password, Waitbar, hdf_library, remove_hdf):
     """
@@ -33,7 +35,6 @@ def DownloadData(Dir, Startdate, Enddate, latlim, lonlim, username, password, Wa
                     define directory to the data here
     remove_hdf -- 1 (Default), if 1 remove all the downloaded hdf files in the end    
     """
-    import pywapor.collect.MOD11 as MOD11
 
     # Check start and end date and otherwise set the date to max
     if not Startdate:
@@ -105,9 +106,6 @@ def RetrieveData(Date, args, waitbar):
     Date -- 'yyyy-mm-dd'
     args -- A list of parameters defined in the DownloadData function.
     """
-    
-    # WAPOR modules
-    import pywapor.general.processing_functions as PF
     
     # Argument
     [output_folder, TilesVertical, TilesHorizontal,lonlim, latlim, username, password, hdf_library] = args

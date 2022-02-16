@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 """
+Generates input data for `pywapor.et_look`.
 """
 import os
 import glob
@@ -19,10 +20,92 @@ from pywapor.enhancers.apply_enhancers import apply_enhancer
 from pywapor.general.compositer import calculate_ds
 import copy
 
-def main(project_folder, startdate, enddate, latlim, lonlim, level = "level_1", 
-        diagnostics = None, composite_length = "DEKAD", extra_composite_enhancements = {},
-        extra_source_enhancements = {}, extra_source_locations = None, 
-        se_root_version = "v2", process_vars = "all"):
+def main(project_folder: str, 
+        startdate: str, 
+        enddate: str, 
+        latlim: list,
+        lonlim: list, 
+        level = "level_1", 
+        composite_length = "DEKAD", 
+        extra_composite_enhancements = {},
+        extra_source_enhancements = {}, 
+        extra_source_locations = {}, 
+        diagnostics = {}, 
+        se_root_version = "v2", 
+        process_vars = "all"):
+    """Generates an input file for `pywapor.et_look` based on, among others, a
+    bounding-box and time period.
+
+    Parameters
+    ----------
+    project_folder : str
+        Path to folder in which (intermediate) data will be stored.
+    startdate : str
+        Start of the period for which to generate the input data, formatted as
+        "YYYY-MM-DD".
+    enddate : str
+        End of the period for which to generate the input data, formatted as
+        "YYYY-MM-DD".
+    latlim : List[float, float]
+        Latitude limits of the bounding-box, first value should be smaller than
+        second value.
+    lonlim : List[float, float]
+        Longitude limits of the bounding-box, first value should be smaller than
+        second value.
+    level : "level_1" | "level_2" | dict, optional
+        Controls which sources are collected for the various variables, 
+        by default "level_1".
+    composite_length : "DEKAD" | int, optional
+        Length of the composites in days in case an integer is given, by default "DEKAD".
+    extra_composite_enhancements : dict, optional
+        Functions to be applied to specified variables after the composites have been calculated, by default {}.
+    extra_source_enhancements : dict, optional
+        Functions to be applied to specified variables before the composites have been calculated, by default {}.
+    extra_source_locations : dict, optional
+        Paths in which to look for sideloaded data, by default {}.
+    diagnostics : dict, optional
+        Points for which to generate plots, by default {}.
+    se_root_version : "v2" | "dev", optional
+        Which version of pywapor.se_root to use to generate the se_root variable, by default "v2".
+    process_vars : "all" | list, optional
+        Which variables to process, by default "all", which is equivalent to providing a list with
+        `ndvi`, `p_24`, `se_root`, `r0`, `z`, `lulc`, `ra_24`, `t_air_24`, 
+        `t_air_min_24`, `t_air_max_24`, `u2m_24`, `v2m_24`, `p_air_0_24`, `qv_24`,
+        `lw_offset`, `lw_slope`, `r0_bare`, `r0_full`, `rn_offset`, 
+        `rn_slope`, `t_amp_year`, `t_opt`, `vpd_slope` and `z_oro`.
+
+    Returns
+    -------
+    xr.Dataset
+        Dataset with all the required data for pywapor.et_look.
+    str
+        Path to the netCDF file containing the generated dataset.
+
+    Examples
+    --------
+    >>> import pywapor
+    >>> project_folder = r"path/to/my_project_folder/"
+    >>> startdate = "2021-07-01"
+    >>> enddate = "2021-07-11"
+    >>> latlim = [28.9, 29.7]
+    >>> lonlim = [30.2, 31.2]
+    >>> composite_length = 8
+    >>> my_custom_level = {"ndvi": ["LS7"],
+    ...                    "t_air_24": ["GEOS5"],
+    ...                    "level_name": "my_custom_name"}
+    >>> extra_sources = {("LS7", "ndvi"): "path/to/my/landsat/folder"}
+    >>> source_enhancers = {("LS7", "ndvi"): [pywapor.general.enhancers.gap_fill.gap_fill]}
+    >>> composite_enhancers = {("t_air_24"): []}
+    >>> ds, fh = pywapor.pre_et_look.main(project_folder, startdate, enddate, 
+    ...                             latlim, lonlim, level = my_custom_level, 
+    ...                             extra_source_locations = extra_sources,
+    ...                             composite_length = composite_length,
+    ...                             extra_source_enhancements = source_enhancers,
+    ...                             extra_composite_enhancements = composite_enhancers,
+    ...                             process_vars = ["ndvi", "t_air_24"])
+    >>> print(fh)
+    path/to/my_project_folder/my_custom_name/et_look_input.nc
+    """
 
     # Create project folder.
     if not os.path.exists(project_folder):
@@ -57,7 +140,7 @@ def main(project_folder, startdate, enddate, latlim, lonlim, level = "level_1",
 
     # Define folders.
     level_folder, temp_folder, raw_folder = get_folders(project_folder, level_name)
-    if isinstance(diagnostics, dict):
+    if diagnostics:
         diagnostics["folder"] = os.path.join(level_folder, "graphs")
 
     # Define download arguments.
@@ -205,13 +288,39 @@ def get_folders(project_folder, level_name = None):
     return level_folder, temp_folder, raw_folder
 
 def unraw_all(var, raw_files, epochs_info, temp_folder, 
-                example_ds, diagnostics = None, extra_source_enhancements = {}):
+                example_ds, diagnostics = {}, extra_source_enhancements = {}):
+    """Converts raw downloaded files into composites.
+
+    Parameters
+    ----------
+    var : str
+        Name of the variable to process.
+    raw_files : list
+        List of lists containing the paths to the geoTIFF files for which to compute the
+        composites. All paths in one sublist refer to one source.
+    epochs_info : tuple
+        Contains three lists with the index-number, starttime and endtime of each
+        epoch.
+    temp_folder : str
+        Path to folder in which to store temporary data.
+    example_ds : xr.Dataset
+        Dataset used to interpolate data (spatially).
+    diagnostics : dict, optional
+        Points for which to generate plots, by default {}.
+    extra_source_enhancements : dict, optional
+        Functions to be applied to specified variables before the composites have been calculated, by default {}.
+
+    Returns
+    -------
+    xr.Dataset
+        Dataset with the composite data for the respective variable.
+    """
 
     cmeta = defaults.composite_defaults()[var]
 
     ds = g.compositer.main(cmeta, raw_files, epochs_info, temp_folder, example_ds,
                             extra_source_enhancements = extra_source_enhancements)
-    if isinstance(diagnostics, dict):
+    if diagnostics:
         _ = g.compositer.main(cmeta, raw_files, epochs_info, None, example_ds, 
                                     lean_output = False, diagnostics = diagnostics, 
                                     extra_source_enhancements = extra_source_enhancements)
@@ -219,7 +328,7 @@ def unraw_all(var, raw_files, epochs_info, temp_folder,
     return ds
 
 def create_dates(sdate, edate, period_length):
-    """Define composite lenghts
+    """Generates the variable `epoch_info` used by `pywapor.unraw_all`.
 
     Parameters
     ----------
@@ -234,7 +343,11 @@ def create_dates(sdate, edate, period_length):
     Returns
     -------
     np.ndarray
-        [description]
+        Index number of the epoch.
+    np.ndarray
+        Start-datetimes of the epochs.
+    np.ndarray
+        End-datetimes of the epochs.
     """
     if isinstance(sdate, str):
         sdate = dat.strptime(sdate, "%Y-%m-%d")
@@ -282,58 +395,58 @@ if __name__ == "__main__":
                     }
     # diagnostics = None
 
-    level = {
-        # Main inputs
-        "ndvi":         ["LS7"],
-        "r0":           ["LS7"],
-        "lst":          ["LS7"],
-        "lulc":         ["WAPOR"],
-        "z":            ["SRTM"],
-        "p_24":         ["CHIRPS"],
-        "ra_24":        ["MERRA2"],
+    # level = {
+    #     # Main inputs
+    #     "ndvi":         ["LS7"],
+    #     "r0":           ["LS7"],
+    #     "lst":          ["LS7"],
+    #     "lulc":         ["WAPOR"],
+    #     "z":            ["SRTM"],
+    #     "p_24":         ["CHIRPS"],
+    #     "ra_24":        ["MERRA2"],
 
-        # Daily meteo 
-        't_air_24':     ["GEOS5"],
-        't_air_min_24': ["GEOS5"], 
-        't_air_max_24': ["GEOS5"],
-        'u2m_24':       ["GEOS5"],
-        'v2m_24':       ["GEOS5"],
-        'p_air_0_24':   ["GEOS5"],
-        'qv_24':        ["GEOS5"],
+    #     # Daily meteo 
+    #     't_air_24':     ["GEOS5"],
+    #     't_air_min_24': ["GEOS5"], 
+    #     't_air_max_24': ["GEOS5"],
+    #     'u2m_24':       ["GEOS5"],
+    #     'v2m_24':       ["GEOS5"],
+    #     'p_air_0_24':   ["GEOS5"],
+    #     'qv_24':        ["GEOS5"],
 
-        # Instanteneous meteo
-        "t_air_i":      ["GEOS5"],
-        "u2m_i":        ["GEOS5"],
-        "v2m_i":        ["GEOS5"],
-        "qv_i":         ["GEOS5"],
-        "wv_i":         ["GEOS5"],
-        "p_air_i":      ["GEOS5"],
-        "p_air_0_i":    ["GEOS5"],
+    #     # Instanteneous meteo
+    #     "t_air_i":      ["GEOS5"],
+    #     "u2m_i":        ["GEOS5"],
+    #     "v2m_i":        ["GEOS5"],
+    #     "qv_i":         ["GEOS5"],
+    #     "wv_i":         ["GEOS5"],
+    #     "p_air_i":      ["GEOS5"],
+    #     "p_air_0_i":    ["GEOS5"],
 
-        # Temporal constants
-        "lw_offset":    ["STATICS"],
-        "lw_slope":     ["STATICS"],
-        "r0_bare":      ["STATICS"],
-        "r0_full":      ["STATICS"],
-        "rn_offset":    ["STATICS"],
-        "rn_slope":     ["STATICS"],
-        "t_amp_year":   ["STATICS"],
-        "t_opt":        ["STATICS"],
-        "vpd_slope":    ["STATICS"],
-        "z_oro":        ["STATICS"],
+    #     # Temporal constants
+    #     "lw_offset":    ["STATICS"],
+    #     "lw_slope":     ["STATICS"],
+    #     "r0_bare":      ["STATICS"],
+    #     "r0_full":      ["STATICS"],
+    #     "rn_offset":    ["STATICS"],
+    #     "rn_slope":     ["STATICS"],
+    #     "t_amp_year":   ["STATICS"],
+    #     "t_opt":        ["STATICS"],
+    #     "vpd_slope":    ["STATICS"],
+    #     "z_oro":        ["STATICS"],
 
-        # Level name
-        "level_name": "sideloading",
-    }
+    #     # Level name
+    #     "level_name": "sideloading",
+    # }
 
     # Give product folder.
-    extra_source_locations = {
-        ("LS7", "ndvi"): r"/Users/hmcoerver/pywapor_notebooks/my_landsat_folder/NDVI",
-        ("LS7", "lst"): r"/Users/hmcoerver/pywapor_notebooks/my_landsat_folder/LST",
-        ("LS7", "r0"): r"/Users/hmcoerver/pywapor_notebooks/my_landsat_folder/ALBEDO",
-    }
+    # extra_source_locations = {
+    #     ("LS7", "ndvi"): r"/Users/hmcoerver/pywapor_notebooks/my_landsat_folder/NDVI",
+    #     ("LS7", "lst"): r"/Users/hmcoerver/pywapor_notebooks/my_landsat_folder/LST",
+    #     ("LS7", "r0"): r"/Users/hmcoerver/pywapor_notebooks/my_landsat_folder/ALBEDO",
+    # }
 
-    ds_in, fh_in = main(project_folder, startdate, enddate, latlim, lonlim, level = level, 
+    ds_in, fh_in = main(project_folder, startdate, enddate, latlim, lonlim, 
         diagnostics = diagnostics, composite_length = composite_length,
         extra_source_locations = extra_source_locations, se_root_version = se_root_version)
 

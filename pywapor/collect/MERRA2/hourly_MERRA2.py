@@ -21,7 +21,7 @@ def main(Dir, latlim, lonlim, Startdate, Enddate, Vars, Periods = list(range(1, 
     Waitbar -- 1 (Default) Will print a waitbar
     """
 
-    username, password = pywapor.collect.get_pw_un.get("NASA")
+    username, password = pywapor.collect.accounts.get("NASA")
 
     all_files = list()
 
