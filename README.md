@@ -49,7 +49,7 @@ ds_out = pywapor.et_look.main(ds_in)
 Check out the documentation and the notebooks below to learn more!
 
 ### Documentation
-Go [here](https://legacy.aquastat.fao.org/aquastat/py-wapor/) for the full pyWaPOR documentation.
+Go [here](https://www.fao.org/aquastat/py-wapor/) for the full pyWaPOR documentation.
 
 #### Notebooks
 
