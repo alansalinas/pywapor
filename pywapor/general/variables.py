@@ -429,9 +429,34 @@ def get_var_definitions():
             "units": "K",
             "definition": ""
         },
-        "lue_max": {
+        "biomass_prod": {
             "long_name": "",
-            "units": "",
+            "units": "kgDM ha-1 day-1",
+            "definition": ""
+        },
+        "npp": {
+            "long_name": "Net primary production",
+            "units": "gC m-2 day-1",
+            "definition": ""
+        },
+        "apar": {
+            "long_name": "Absorbed photosynthetically active radiation",
+            "units": "MJ m-2 day-1",
+            "definition": ""
+        },    
+        "fpar": {
+            "long_name": "Fraction of photosynthetically active radiation",
+            "units": "-",
+            "definition": ""
+        },
+        "lue": {
+            "long_name": "Light use efficiency",
+            "units": "gDM MJ-1",
+            "definition": ""
+        },
+        "lue_max": {
+            "long_name": "Maximum light use efficiency",
+            "units": "gDM MJ-1",
             "definition": ""
         },
         "lw_offset": {

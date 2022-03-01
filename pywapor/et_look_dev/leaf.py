@@ -226,12 +226,13 @@ def fpar(vc, ndvi):
         [-]
 
     """
-    fpar = 0.925 * vc
+    # fpar = 0.925 * vc
+    fpar = 0.8624 * ndvi - 0.0814
     if isinstance(fpar, xr.DataArray):
         fpar = xr.where(ndvi < 0.1, 0.0, fpar)
     else:
         fpar[ndvi < 0.1] = 0.0
-    
+
     return fpar
 
 def apar(ra_24, fpar):    

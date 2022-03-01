@@ -37,7 +37,8 @@ def epsilon_autotrophic_respiration():
         [-]
     """    
     
-    eps_a = 1-0.23 # 23% of GPP
+    # eps_a = 1-0.23 # 23% of GPP
+    eps_a = 1-0.5
     
     return eps_a
 
