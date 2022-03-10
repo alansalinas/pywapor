@@ -3,7 +3,7 @@ from setuptools import setup, find_packages
 setup(
     name = 'pywapor',
     version = '2.4.0',
-    url = 'https://aquastat.fao.org/aquastat/py-wapor/',
+    url = 'https://www.fao.org/aquastat/py-wapor/',
     author = "FAO",
     author_email = "bert.coerver@fao.org",
     license = "Apache",
