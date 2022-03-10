@@ -121,6 +121,8 @@ def create_network(ds, fh, exclude = ["scalar", "temporal-input"]):
         "interaction": {
             "hover": True,
             "tooltipDelay": 10,
+            # "zoomSpeed": 3, doesnt work.
+            "navigationButtons": False,
         }
     }
 

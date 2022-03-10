@@ -68,7 +68,7 @@ html_theme_options = {
     'style_nav_header_background': '#004747',
     'style_external_links': False,
 }
-html_extra_path = ['et_look_v2_network.html']
+html_extra_path = ['et_look_v2_network.html', "network_style.css"]
 
 
 html_context = {
