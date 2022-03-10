@@ -1,6 +1,10 @@
 """This module defines the default products to use for each variable per level
 and defines the variables and their units.
 """
+import xarray as xr
+import numpy as np
+import copy
+
 def get_source_level_selections():
     """Gives a definition of which products are used for each variable per level.
 
@@ -116,10 +120,92 @@ def fill_attrs(ds):
             for k, v in attributes.items():
                 ds[var].attrs[k] = v
 
-        # if "sources" in ds[var].attrs.keys():
-        #     if not isinstance(ds[var].attrs["sources"], list):
-        #         ds[var].assign_attrs(sources = [ds[var].attrs["sources"]])
+    ds = fill_source_data_attr(ds)
 
+    return ds
+
+def initiate_ds(ds = None, dummy_data = False):
+    """Create a template input xr.Dataset for et_look.
+
+    Parameters
+    ----------
+    ds : _type_
+        _description_
+
+    Returns
+    -------
+    _type_
+        _description_
+    """
+
+    if isinstance(ds, type(None)):
+        ds = xr.Dataset()
+
+    defs = get_var_definitions()
+
+    for var, attributes in defs.items():
+
+        if not var in list(ds.variables):
+            if dummy_data:
+                ds[var] = 0.5
+            else:
+                ds[var] = None
+
+        _ = attributes.pop("definition")
+
+        ds[var].attrs = attributes
+
+    return ds
+
+def flatten(list_of_lists):
+    flat_list = list()
+    def _flatten(list_of_lists):
+        for item in list_of_lists:
+            if type(item) == list:
+                _flatten(item)
+            else:
+                flat_list.append(item)
+        return flat_list
+    _flatten(list_of_lists)
+    return flat_list
+
+def iterate(depends_on):
+    j = 0
+    depends_on_n = copy.deepcopy(depends_on)
+    depends_on_n1 = dict()
+    while depends_on_n != depends_on_n1:
+        j += 1
+        # print(f"{j}")
+        depends_on_n1 = copy.deepcopy(depends_on_n)
+        for var in depends_on_n.keys():
+            for i, dependant in enumerate(depends_on_n[var]):
+                if dependant in depends_on_n.keys():
+                    depends_on_n[var][i] = depends_on[dependant]
+        for var in depends_on_n.keys():
+            depends_on_n[var] = np.unique(flatten(depends_on_n[var])).tolist()
+        if j > 100:
+            break
+    return depends_on_n
+
+def fill_source_data_attr(ds):
+    """Determines the input data sources each variable depends on, based
+    on the "calculated_with" attribute in the `ds`.
+
+    Parameters
+    ----------
+    ds : xr.Dataset
+        Dataset for which to determine the source data.
+
+    Returns
+    -------
+    xr.Dataset
+        Dataset with new attribute information.
+    """
+    depends_on = {y: flatten([ds[y].calculated_with]) for y in ds.variables if "calculated_with" in ds[y].attrs.keys()}
+    depends_on_n = iterate(depends_on)
+    for var, dependants in depends_on_n.items():
+        if var in list(ds.variables):
+            ds[var].attrs["source_data"] = dependants
     return ds
 
 def get_var_definitions():
@@ -486,6 +572,11 @@ def get_var_definitions():
         },
         "p_air_0_24": {
             "long_name": "Daily air pressure at sea level",
+            "units": "kpa",
+            "definition": ""
+        },
+        "p_air_0_24_mbar": {
+            "long_name": "Daily air pressure at sea level",
             "units": "mbar",
             "definition": ""
         },
@@ -544,6 +635,10 @@ def get_var_definitions():
             "units": "s m-1",
             "definition": ""
         },
+        "r_canopy_unstressed": {
+            'long_name': 'Canopy resistance for zero moisture stress', 
+            'units': 's m-1', 
+            'definition': ''},
         "r_canopy_0": {
             "long_name": "Atmospheric canopy resistance",
             "units": "s m-1",
@@ -933,7 +1028,120 @@ def get_var_definitions():
             "long_name": "Orographic roughness",
             "units": "m",
             "definition": ""
-        }
+        },
+        'nd_min': {
+            'long_name': '', 
+            'units': '', 
+            'definition': ''},
+        'nd_max': {
+            'long_name': '', 
+            'units': '', 
+            'definition': ''},
+        'vc_pow': {
+            'long_name': '', 
+            'units': '', 
+            'definition': ''},
+        'vc_min': {
+            'long_name': '', 
+            'units': '', 
+            'definition': ''},
+        'vc_max': {
+            'long_name': '', 
+            'units': '', 
+            'definition': ''},
+        'lai_pow': {
+            'long_name': '', 
+            'units': '', 
+            'definition': ''},
+        'diffusion_slope': {
+            'long_name': '', 
+            'units': '', 
+            'definition': ''},
+        'diffusion_intercept': {
+            'long_name': '', 
+            'units': '', 
+            'definition': ''},
+        't_min': {
+            'long_name': '', 
+            'units': '', 
+            'definition': ''},
+        't_max': {
+            'long_name': '', 
+            'units': '', 
+            'definition': ''},
+        'vp_slope': {
+            'long_name': '', 
+            'units': '', 
+            'definition': ''},
+        'vp_offset': {
+            'long_name': '', 
+            'units': '', 
+            'definition': ''},
+        'int_max': {
+            'long_name': '', 
+            'units': '', 
+            'definition': ''},
+        'tenacity': {
+            'long_name': '', 
+            'units': '', 
+            'definition': ''},
+        'rcan_max': {
+            'long_name': '', 
+            'units': '', 
+            'definition': ''},
+        'ndvi_obs_min': {
+            'long_name': '', 
+            'units': '', 
+            'definition': ''},
+        'ndvi_obs_max': {
+            'long_name': '', 
+            'units': '', 
+            'definition': ''},
+        'obs_fr': {
+            'long_name': '', 
+            'units': '', 
+            'definition': ''},
+        'z_obs': {
+            'long_name': '', 
+            'units': '', 
+            'definition': ''},
+        'z_b': {
+            'long_name': '', 
+            'units': '', 
+            'definition': ''},
+        'c1': {
+            'long_name': '', 
+            'units': '', 
+            'definition': ''},
+        'iter_h': {
+            'long_name': '', 
+            'units': '', 
+            'definition': ''},
+        'r_soil_pow': {
+            'long_name': '', 
+            'units': '', 
+            'definition': ''},
+        'r_soil_min': {
+            'long_name': '', 
+            'units': '', 
+            'definition': ''},
+        'se_top': {
+            'long_name': '', 
+            'units': '', 
+            'definition': ''},
+        'porosity': {
+            'long_name': '', 
+            'units': '', 
+            'definition': ''},
+        'r0_grass': {
+            'long_name': '', 
+            'units': '', 
+            'definition': ''},
+        'eps_a': {
+            'long_name': '', 
+            'units': '', 
+            'definition': ''}
+
     }
 
     return defs

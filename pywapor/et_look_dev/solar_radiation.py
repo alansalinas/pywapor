@@ -329,6 +329,30 @@ def inst_solar_radiation_toa(csza, iesd):
     return csza * con.sol * iesd
 
 
+def transmissivity(ra, ra_flat):
+    """Computes the transmissivity.
+
+    Parameters
+    ----------
+    ra_24 : float
+        daily solar radiation for a flat surface, 
+        :math:`S^{\downarrow}`
+        [Wm-2]
+    ra_24_toa_flat : float
+        daily solar radiation at the top of atmosphere for a flat surface, 
+        :math:`S_{toa,f}`
+        [Wm-2]
+
+    Returns
+    -------
+    trans_24 : float
+        daily atmospheric transmissivity, 
+        :math:`\tau`
+        [-]
+    """
+    return ra / ra_flat
+
+
 def daily_solar_radiation_toa(sc, decl, iesd, lat, slope=0, aspect=0):
     r"""
     Computes the daily solar radiation at the top of the atmosphere.

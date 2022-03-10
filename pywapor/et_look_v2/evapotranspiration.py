@@ -154,7 +154,9 @@ def et_reference_mm(et_ref_24, lh_24):
         :math:`ET_{ref}`
         [mm d-1]
     """
-    return et_ref_24 * c.day_sec / lh_24
+    x = et_ref_24 * c.day_sec / lh_24
+    et_ref_24_mm = np.clip(x, 0, np.inf)
+    return et_ref_24_mm
 
 
 def et_actual_mm(e_24_mm, t_24_mm):

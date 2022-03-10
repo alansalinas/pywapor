@@ -239,6 +239,9 @@ def main(project_folder: str,
     if "spatial_ref" in list(ds.coords):
         ds = ds.drop_vars("spatial_ref")
 
+    # Add constants to ds
+    ds = ds.assign(defaults.constants_defaults())
+
     # Save pre_et_look-output (i.e. et_look-input).
     all_vars = [var for var in list(ds.variables) if "lon" in ds[var].coords 
                                                 and "lat" in ds[var].coords]

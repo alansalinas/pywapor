@@ -37,6 +37,8 @@ setup(
         'rioxarray',
         'python_log_indenter',
         'cryptography',
+        'json',
+        'pyvis',
     ],
     classifiers=[
         "Operating System :: OS Independent",

@@ -1280,6 +1280,24 @@ def wind_speed_blending_height_daily(u_24, z_obs=2, z_b=100):
     return wind_speed_blending_height(u_24, z_obs, z_b)
 
 
+def wind_speed(u, v):
+    """Calculate wind speed vector from two components.
+
+    Parameters
+    ----------
+    u : float
+        Eastward wind speed.
+    v : float
+        Northward wind speed.
+
+    Returns
+    -------
+    u_24
+        Wind speed.
+    """
+    return np.sqrt(v**2 + u**2)
+
+
 def air_pressure_kpa2mbar(p_air_kpa):
     """Like :func:`p_air`.
 
