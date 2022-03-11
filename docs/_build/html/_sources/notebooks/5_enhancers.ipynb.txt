@@ -27,7 +27,7 @@
    "metadata": {},
    "outputs": [],
    "source": [
-    "!pip install pywapor==2.4.0 --quiet"
+    "!pip install pywapor==2.4.1 --quiet"
    ]
   },
   {

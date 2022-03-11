@@ -97,7 +97,7 @@
 <h1>pyWaPOR<a class="headerlink" href="#pywapor" title="Permalink to this headline"></a></h1>
 <a class="reference external image-reference" href="https://img.shields.io/pypi/dw/pywapor"><img alt="downloads" src="https://img.shields.io/pypi/dw/pywapor" /></a>
 <a class="reference external image-reference" href="https://pypi.org/project/pywapor/"><img alt="version" src="https://img.shields.io/pypi/v/pywapor" /></a>
-<a class="reference external image-reference" href="https://img.shields.io/badge/python-3.7%20|%203.8-blue"><img alt="python" src="https://img.shields.io/badge/python-3.7%20|%203.8-blue" /></a>
+<a class="reference external image-reference" href="https://img.shields.io/pypi/pyversions/pywapor"><img alt="python" src="https://img.shields.io/pypi/pyversions/pywapor" /></a>
 <a class="reference external image-reference" href="https://colab.research.google.com/github/bertcoerver/pywapor_notebooks/blob/main/1_introduction.ipynb"><img alt="Open In Colab" src="https://colab.research.google.com/assets/colab-badge.svg" /></a>
 <p>This repository contains a Python implementation of the algorithm used to generate the <a class="reference external" href="http://www.fao.org/in-action/remote-sensing-for-water-productivity/en/">WaPOR</a> <a class="reference external" href="https://wapor.apps.fao.org/home/WAPOR_2/1">datasets</a>. It can be used to calculate evaporation, transpiration and biomass production maps.</p>
 <section id="installation">
@@ -139,7 +139,6 @@ conda activate my_pywapor_env
 </section>
 <section id="documentation">
 <h2>Documentation<a class="headerlink" href="#documentation" title="Permalink to this headline"></a></h2>
-<p>Go <a class="reference external" href="https://legacy.aquastat.review.fao.org/aquastat/py-wapor/installation.html">here</a> for the full pyWaPOR documentation.</p>
 <p><details>
 <summary><b>Notebooks</b></summary>
 
@@ -211,8 +210,8 @@ conda activate my_pywapor_env
 </details></p></section>
 <section id="acknowledgments">
 <h2>Acknowledgments<a class="headerlink" href="#acknowledgments" title="Permalink to this headline"></a></h2>
-<p>The methodology for WaPOR was developed by the FRAME1 consortium, consisting of eLEAF, VITO, ITC, University of Twente and Waterwatch foundation, commissioned by and in partnership with the Land and Water Division of FAO.</p>
-<p>This repository contains, among others, contributions from Bert Coerver (FAO), Tim Hessels (WaterSat) and, in the framework of the ESA-funded ET4FAO project, from Radoslaw Guzinski (DHI-GRAS), Hector Nieto (Complutig) and Laust Faerch (DHI-GRAS).</p>
+<p>The methodology for WaPOR was developed by the FRAME1 consortium, consisting of eLEAF (lead), VITO, ITC, University of Twente and Waterwatch foundation, commissioned by and in partnership with the Land and Water Division of FAO. The method for calculating evapotranspiration is based on the ETLook model developed by eLEAF in 2010. The method for calculating total biomass production is based on the C-Fix model.</p>
+<p>The code in the <code class="docutils literal notranslate"><span class="pre">pywapor.et_look_v2</span></code> module of this repository, containing all core physical functions used by ETLook, was written by Henk Pelgrum (eLEAF) and Rutger Kassies (eLEAF). The remaining modules have been developed by Bert Coerver (FAO), Tim Hessels (WaterSat), and, in the framework of the ESA-funded ET4FAO project, Radoslaw Guzinski (DHI-GRAS), Hector Nieto (Complutig) and Laust Faerch (DHI-GRAS).</p>
 </section>
 <section id="contact">
 <h2>Contact<a class="headerlink" href="#contact" title="Permalink to this headline"></a></h2>
@@ -221,6 +220,17 @@ conda activate my_pywapor_env
 <section id="release-notes">
 <h2>Release Notes<a class="headerlink" href="#release-notes" title="Permalink to this headline"></a></h2>
 <p><details open>
+<summary><b>2.4.1 (2022-03-11)</b></summary>
+<br>
+<ul>
+    <li> NetCDF files are now compressed when saved to disk.</li>
+    <li> Calculation of Total Biomass Production is now turned on by default.</li>
+    <li> It is no longer required to provide <b>all</b> input variables to et_look,
+    the model will calculate as many variables as possible with the given data. For example,
+    if you are only interested in acquiring interception rates, it would now suffice to only prepare ndvi and p (precipitation) data with pre_et_look.</li>
+    <li> et_look now automatically generates an interactive network graph visualising the executed computation steps.</li>
+</ul>
+</details></p><p><details>
 <summary><b>2.4.0 (2022-02-03)</b></summary>
 <br>
 <ul>

@@ -1,6 +1,6 @@
 ## pyWaPOR
 
-![downloads](https://img.shields.io/pypi/dw/pywapor) [![version](https://img.shields.io/pypi/v/pywapor)](https://pypi.org/project/pywapor/) ![python](https://img.shields.io/badge/python-3.7%20|%203.8-blue) [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/bertcoerver/pywapor_notebooks/blob/main/1_introduction.ipynb)  
+![downloads](https://img.shields.io/pypi/dw/pywapor) [![version](https://img.shields.io/pypi/v/pywapor)](https://pypi.org/project/pywapor/) ![python](https://img.shields.io/pypi/pyversions/pywapor) [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/bertcoerver/pywapor_notebooks/blob/main/1_introduction.ipynb)  
 
 This repository contains a Python implementation of the algorithm used to generate the [WaPOR](http://www.fao.org/in-action/remote-sensing-for-water-productivity/en/) [datasets](https://wapor.apps.fao.org/home/WAPOR_2/1). It can be used to calculate evaporation, transpiration and biomass production maps.
 
@@ -119,14 +119,25 @@ Go [here](https://www.fao.org/aquastat/py-wapor/) for the full pyWaPOR documenta
 </ul>
 
 ### Acknowledgments
-The methodology for WaPOR was developed by the FRAME1 consortium, consisting of eLEAF, VITO, ITC, University of Twente and Waterwatch foundation, commissioned by and in partnership with the Land and Water Division of FAO. 
+The methodology for WaPOR was developed by the FRAME1 consortium, consisting of eLEAF (lead), VITO, ITC, University of Twente and Waterwatch foundation, commissioned by and in partnership with the Land and Water Division of FAO. The method for calculating evapotranspiration is based on the ETLook model developed by eLEAF in 2010. The method for calculating total biomass production is based on the C-Fix model. 
 
-This repository contains, among others, contributions from Bert Coerver (FAO), Tim Hessels (WaterSat) and, in the framework of the ESA-funded ET4FAO project, from Radoslaw Guzinski (DHI-GRAS), Hector Nieto (Complutig) and Laust Faerch (DHI-GRAS).
+The code in the pywapor.et_look_v2 module of this repository, containing all core physical functions used by ETLook, was written by Henk Pelgrum (eLEAF) and Rutger Kassies (eLEAF). The remaining modules have been developed by Bert Coerver (FAO), Tim Hessels (WaterSat), and, in the framework of the ESA-funded ET4FAO project, Radoslaw Guzinski (DHI-GRAS), Hector Nieto (Complutig) and Laust Faerch (DHI-GRAS).
 
 ### Contact
 For questions, requests or issues with this repository, please contact Bert Coerver at [bert.coerver@fao.org](mailto:bert.coerver@fao.org) or the WaPOR team at [wapor@fao.org](mailto:wapor@fao.org).
 
 ### Release Notes
+
+#### 2.4.1 (2022-03-11)
+<br>
+<ul>
+    <li> NetCDF files are now compressed when saved to disk.</li>
+    <li> Calculation of Total Biomass Production is now turned on by default.</li>
+    <li> It is no longer required to provide <b>all</b> input variables to et_look,
+    the model will calculate as many variables as possible with the given data. For example,
+    if you are only interested in acquiring interception rates, it would now suffice to only prepare ndvi and p (precipitation) data with pre_et_look.</li>
+    <li> et_look now automatically generates an interactive network graph visualising the executed computation steps.</li>
+</ul>
 
 #### 2.4.0 (2022-02-03)
 <br>

@@ -55,6 +55,8 @@
 <li class="toctree-l3"><a class="reference internal" href="pre_defaults.html">pre_defaults</a></li>
 <li class="toctree-l3"><a class="reference internal" href="processing_functions.html">processing_functions</a></li>
 <li class="toctree-l3"><a class="reference internal" href="variables.html">variables</a></li>
+<li class="toctree-l3"><a class="reference internal" href="lazifier.html">lazifier</a></li>
+<li class="toctree-l3"><a class="reference internal" href="network.html">network</a></li>
 </ul>
 </li>
 </ul>
@@ -275,12 +277,10 @@ high - All units must be known and identical.</p></li>
 </dl>
 <p class="rubric">Examples</p>
 <div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">units</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;test1&quot;</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="s2">&quot;C&quot;</span><span class="p">,</span> <span class="s2">&quot;C&quot;</span><span class="p">,</span><span class="s2">&quot;unknown&quot;</span><span class="p">]),</span>
-<span class="go">         &quot;test2&quot;: np.array([&quot;C&quot;, &quot;C&quot;, &quot;K&quot;]),</span>
-<span class="go">         &quot;test3&quot;: np.array([&quot;C&quot;, &quot;C&quot;, &quot;C&quot;]),</span>
-<span class="go">         &quot;test4&quot;: np.array([&quot;unknown&quot;, &quot;unknown&quot;, &quot;unknown&quot;])}</span>
-</pre></div>
-</div>
-<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">check_units</span><span class="p">(</span><span class="n">units</span><span class="p">)</span>
+<span class="gp">... </span>         <span class="s2">&quot;test2&quot;</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="s2">&quot;C&quot;</span><span class="p">,</span> <span class="s2">&quot;C&quot;</span><span class="p">,</span> <span class="s2">&quot;K&quot;</span><span class="p">]),</span>
+<span class="gp">... </span>         <span class="s2">&quot;test3&quot;</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="s2">&quot;C&quot;</span><span class="p">,</span> <span class="s2">&quot;C&quot;</span><span class="p">,</span> <span class="s2">&quot;C&quot;</span><span class="p">]),</span>
+<span class="gp">... </span>         <span class="s2">&quot;test4&quot;</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="s2">&quot;unknown&quot;</span><span class="p">,</span> <span class="s2">&quot;unknown&quot;</span><span class="p">,</span> <span class="s2">&quot;unknown&quot;</span><span class="p">])}</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">check_units</span><span class="p">(</span><span class="n">units</span><span class="p">)</span>
 <span class="go">{&#39;test1&#39;: True, &#39;test2&#39;: False, &#39;test3&#39;: True, &#39;test4&#39;: True}</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">check_units</span><span class="p">(</span><span class="n">units</span><span class="p">,</span> <span class="n">strictness</span> <span class="o">=</span> <span class="s2">&quot;med&quot;</span><span class="p">)</span>
 <span class="go">{&#39;test1&#39;: False, &#39;test2&#39;: False, &#39;test3&#39;: True, &#39;test4&#39;: True}</span>

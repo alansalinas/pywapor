@@ -4,6 +4,14 @@
 ETLook
 *********
 
+The ETLook model was developed by eLEAF. This repository contains all core physical functions used by ETLook, and was written by Henk Pelgrum (eLEAF) and Rutger Kassies (eLEAF).
+
+.. raw:: html
+
+   <div height="100%", width="100%">
+   <iframe width="100%" height="500vh" src="et_look_v2_network.html" title="et_look_model" style="border:0px" scrolling="no"></iframe>
+   </div>
+
 .. toctree::
 
    et_look_rsts/clear_sky_radiation

@@ -463,10 +463,9 @@ def check_units(units, strictness = "low"):
     Examples
     --------
     >>> units = {"test1": np.array(["C", "C","unknown"]),
-             "test2": np.array(["C", "C", "K"]),
-             "test3": np.array(["C", "C", "C"]),
-             "test4": np.array(["unknown", "unknown", "unknown"])}
-
+    ...          "test2": np.array(["C", "C", "K"]),
+    ...          "test3": np.array(["C", "C", "C"]),
+    ...          "test4": np.array(["unknown", "unknown", "unknown"])}
     >>> check_units(units)
     {'test1': True, 'test2': False, 'test3': True, 'test4': True}
     >>> check_units(units, strictness = "med")

@@ -76,14 +76,31 @@ def wapor_to_lue_max():
     dict
         Describes the conversions to be made.
     """
-    
+
     convertor = {
-                    33: 2.66, 
-                    41:	3.04,
-                    42:	3.04,
-                    50:	1.57,
-                    60:	2.66,
-                    80:	0,
+                    20:	2.10,	# Shrubland
+                    30:	2.39,	# Grassland
+                    41:	2.7,	# Cropland, rainfed
+                    42:	2.7,	# Cropland, irrigated or under water management
+                    43:	2.7,	# Cropland, fallow
+                    50:	1.42,	# Built-up
+                    60:	1.42,	# Bare / sparse vegetation
+                    70:	0.0,	# Permament snow / ice
+                    80:	0.0,	# Water bodies
+                    81:	1.43,	# Temporary water bodies
+                    90:	2.1,	# Shrub or herbaceous cover, flooded
+                    111: 1.98,	# Tree cover: closed, evergreen needle-leaved
+                    112: 2.56,	# Tree cover: closed, evergreen broadleaved
+                    114: 1.99,	# Tree cover: closed, deciduous broadleaved
+                    115: 2.23,	# Tree cover: closed, mixed type
+                    116: 2.23,	# Tree cover: closed, unknown type
+                    121: 1.98,	# Tree cover: open, evergreen needle-leaved
+                    122: 2.56,	# Tree cover: open, evergreen broadleaved
+                    123: 1.57,	# Tree cover: open, deciduous needle-leaved
+                    124: 2.48,	# Tree cover: open, deciduous broadleaved
+                    125: 2.23,	# Tree cover: open, mixed type
+                    126: 2.23,	# Tree cover: open, unknown type
+                    200: 0.0,	# Sea water
     }
 
     return convertor

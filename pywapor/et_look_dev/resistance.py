@@ -107,6 +107,30 @@ def canopy_resistance(r_canopy_0, stress_moist, rcan_max=1000000.):
     return r_canopy
 
 
+def unstressed_canopy_resistance(r_canopy, stress_moist):
+    """Adjust the canopy resistance for a theoretical absence of 
+    moisture stress.
+
+    Parameters
+    ----------
+    r_canopy : float
+        canopy resistance
+        :math:`r_{canopy}`
+        [sm-1]
+    stress_moist : float
+        stress factor for root zone soil moisture
+        :math:`S_{m}`
+        [-]
+
+    Returns
+    -------
+    r_canopy_unstressed : float
+        adjusted canopy resistance
+        :math:`r_{canopy}`
+        [sm-1]
+    """
+    return r_canopy * stress_moist
+
 def soil_resistance(se_top, land_mask=1, r_soil_pow=-2.1, r_soil_min=800):
     r"""
     Computes soil resistance

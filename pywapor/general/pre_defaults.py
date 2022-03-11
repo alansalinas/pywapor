@@ -8,6 +8,42 @@ from pywapor.enhancers.temperature import kelvin_to_celsius
 import pywapor.enhancers.lulc as lulc
 from functools import partial
 
+def constants_defaults():
+
+    c = {
+        'nd_min': 0.125,
+        'nd_max': 0.8,
+        'vc_pow': 0.7,
+        'vc_min': 0,
+        'vc_max': 0.9677324224821418,
+        'lai_pow': -0.45,
+        'diffusion_slope': -1.33,
+        'diffusion_intercept': 1.15,
+        't_min': 0,
+        't_max': 50,
+        'vp_slope': 0.14,
+        'vp_offset': 0.34,
+        'int_max': 0.2,
+        'tenacity': 1.5,
+        'rcan_max': 1000000,
+        'ndvi_obs_min': 0.25,
+        'ndvi_obs_max': 0.75,
+        'obs_fr': 0.25,
+        'z_obs': 2,
+        'z_b': 100,
+        'c1': 1,
+        'iter_h': 3,
+        'r_soil_pow': -2.1,
+        'r_soil_min': 800,
+        'se_top': 0.5,
+        'porosity': 0.4,
+        'r0_grass': 0.23,
+        'eps_a': 0.5
+    }
+
+    return c
+
+
 def composite_enhancements_defaults():
     """Returns a dictionary with the default functions to apply to the calculated
     composites.
