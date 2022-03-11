@@ -10,3 +10,5 @@ pywapor.general
    general/pre_defaults
    general/processing_functions
    general/variables
+   general/lazifier
+   general/network

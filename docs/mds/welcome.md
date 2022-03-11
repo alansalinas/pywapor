@@ -1,6 +1,6 @@
 ### pyWaPOR
 
-![downloads](https://img.shields.io/pypi/dw/pywapor) [![version](https://img.shields.io/pypi/v/pywapor)](https://pypi.org/project/pywapor/) ![python](https://img.shields.io/badge/python-3.7%20|%203.8-blue) [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/bertcoerver/pywapor_notebooks/blob/main/1_introduction.ipynb)  
+![downloads](https://img.shields.io/pypi/dw/pywapor) [![version](https://img.shields.io/pypi/v/pywapor)](https://pypi.org/project/pywapor/) ![python](https://img.shields.io/pypi/pyversions/pywapor) [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/bertcoerver/pywapor_notebooks/blob/main/1_introduction.ipynb)
 
 This repository contains a Python implementation of the algorithm used to generate the [WaPOR](http://www.fao.org/in-action/remote-sensing-for-water-productivity/en/) [datasets](https://wapor.apps.fao.org/home/WAPOR_2/1). It can be used to calculate evaporation, transpiration and biomass production maps.
 
@@ -49,7 +49,6 @@ ds_out = pywapor.et_look.main(ds_in)
 Check out the documentation and the notebooks below to learn more!
 
 #### Documentation
-Go [here](https://legacy.aquastat.review.fao.org/aquastat/py-wapor/installation.html) for the full pyWaPOR documentation.
 <p><details>
 <summary><b>Notebooks</b></summary>
 
