@@ -40,6 +40,71 @@ def ds_remove_except(ds, keep_vars):
     ds = ds.drop_vars(drop_vars)
     return ds
 
+def domain_overlaps_domain(domain1, domain2, partially = True):
+    """Chechs if `domain1` is (partically) contained inside `domain2`.
+
+    Parameters
+    ----------
+    domain1 : list
+        Borders of first domain.
+    domain2 : _type_
+        Borders of second domain.
+    partially : bool, optional
+        Whether or not `domain1` needs the be entirely inside `domain2`, by default True.
+
+    Returns
+    -------
+    bool
+        Whether `domain1` is (partially) overlaping with `domain2`.
+    """
+    check1 = bool(domain2[0] <= domain1[0] <= domain2[1])
+    check2 = bool(domain2[0] <= domain1[1] <= domain2[1])
+    if partially:
+        return check1 or check2
+    else:
+        return check1 and check2
+
+def save_ds(ds, fp, decode_coords = None):
+    """Save a `xr.Dataset` as netcdf.
+
+    Parameters
+    ----------
+    ds : xr.Dataset
+        Dataset to save.
+    fp : str
+        Path to file to create.
+    decode_coords : str, optional
+        Controls which variables are set as coordinate variables when
+        reopening the dataset, by default None.
+
+    Returns
+    -------
+    xr.Dataset
+        The newly created dataset.
+    """
+    ds.to_netcdf(fp, engine = "netcdf4")
+    ds = ds.close()
+    return xr.open_dataset(fp, decode_coords=decode_coords)
+
+def reproject_ds(ds, fp, source_crs, target_crs):
+    # Remove unused coordinates.
+    ds_proj = ds.drop_vars([x for x in ds.coords if x not in ds.coords.dims])
+
+    # Remove existing grid_mapping data.
+    for var in list(ds_proj.variables):
+        if "grid_mapping" in ds_proj[var].attrs.keys():
+            del ds_proj[var].attrs["grid_mapping"]
+
+    # Assign crs.
+    ds_proj = ds_proj.rio.write_crs(source_crs)
+
+    # Reproject to new crs.
+    ds_proj = ds_proj.rio.reproject(target_crs)
+
+    # Save output.
+    ds = save_ds(ds_proj, fp, decode_coords = "all")
+    return ds
+
 def export_ds_to_tif(ds, vars, base_folder):
     """Export selected `vars` from a xr.Dataset (`ds`) into `base_folder` as geotiffs.
 
