@@ -8,7 +8,7 @@ from datetime import timedelta
 import pywapor
 from pywapor.general.logger import log
 
-def main(Dir, latlim, lonlim, Startdate, Enddate, Waitbar = 1, hdf_library = None, remove_hdf = 1):
+def main(Dir, latlim, lonlim, Startdate, Enddate, Waitbar = 1, hdf_library = None, remove_hdf = 1, buffer_dates = False):
     """
     This function downloads MCD43 albedo daily data for the specified time
     interval, and spatial extent.

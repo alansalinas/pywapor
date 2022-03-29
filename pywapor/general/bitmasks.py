@@ -4,6 +4,7 @@ into numpy boolean arrays.
 
 import matplotlib.pyplot as plt
 import numpy as np
+import xarray as xr
 
 def get_pixel_qa_bits(collection, ls_number, level):
     """Returns a dictionary to bridge between labels and bits in
@@ -309,6 +310,36 @@ def get_pixel_qa_bits(collection, ls_number, level):
 
     return all_flags[collection][ls_number][level]
 
+def MODIS_qa_translator(product_name):
+    flag_bits = dict()
+
+    modis_11 = {
+        "good_qa":  [(0b00000010, True), (0b00000001, True)],
+        "other_qa": [(0b00000010, True), (0b00000001, False)],
+        "cloud_qa": [(0b00000010, False), (0b00000001, True)],
+        "bad_qa":   [(0b00000010, False), (0b00000001, False)],
+
+        "good_qa2":  [(0b00001000, True),  (0b00000100, True)],
+        "other_qa2": [(0b00001000, True),  (0b00000100, False)],
+        "TBD":       [(0b00001000, False), (0b00000100, True)],
+        "TBD":       [(0b00001000, False), (0b00000100, False)],
+
+        "emis_001":     [(0b00100000, True),  (0b00010000, True)],
+        "emis_002":     [(0b00100000, True),  (0b00010000, False)],
+        "emis_004":     [(0b00100000, False), (0b00010000, True)],
+        "emis_gt_004":  [(0b00100000, False), (0b00010000, False)],
+
+        "lst_1K":    [(0b10000000, True),  (0b01000000, True)],
+        "lst_2K":    [(0b10000000, True),  (0b01000000, False)],
+        "lst_3K":    [(0b10000000, False), (0b01000000, True)],
+        "lst_gt_3K": [(0b10000000, False), (0b01000000, False)],
+    }
+
+    flag_bits['MOD11A1.061'] = modis_11
+    flag_bits['MYD11A1.061'] = modis_11
+
+    return flag_bits[product_name]
+
 def get_radsat_qa_bits(collection, ls_number, level):
     """Returns a dictionary to bridge between labels and bits in
     Landsat radsat_qa bands.
@@ -405,7 +436,7 @@ def get_mask(qa_array, flags, flag_bits):
 
     Parameters
     ----------
-    qa_array : np.ndarray
+    qa_array : np.ndarray or xr.DataArray
         The landsat bitmask
     flags : [type]
         Which classes to look for, e.g. ["cloud", "cloud_shadow"].
@@ -415,12 +446,15 @@ def get_mask(qa_array, flags, flag_bits):
 
     Returns
     -------
-    np.ndarray
+    np.ndarray or xr.DataArray
         Boolean array with True for pixels belonging to the classes 
         specified in 'flags'.
     """
 
-    final_mask = np.zeros_like(qa_array)
+    if isinstance(qa_array, xr.DataArray):
+        final_mask = xr.zeros_like(qa_array)
+    else:
+        final_mask = np.zeros_like(qa_array)
 
     for flag in flags:
         all_checks = list()
@@ -429,7 +463,12 @@ def get_mask(qa_array, flags, flag_bits):
                 all_checks.append(np.bitwise_and(~qa_array, byte) > 0 )
             else:
                 all_checks.append(np.bitwise_and(qa_array, byte) > 0 )
-        flag_mask = np.all(all_checks, axis = 0)
+        
+        if isinstance(qa_array, xr.DataArray):
+            flag_mask = xr.concat(all_checks, dim = "checker").all(dim = "checker")
+        else:
+            flag_mask = np.all(all_checks, axis = 0)
+        
         final_mask = final_mask | flag_mask
     
     return final_mask > 0

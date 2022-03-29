@@ -1,6 +1,6 @@
 import rasterio
 
-def get_crss():
+def get_crss(name = None):
     crss = {"MODIS": rasterio.crs.CRS.from_wkt("""
             PROJCRS["unnamed",
                 BASEGEOGCRS["Unknown datum based upon the custom spheroid",
@@ -33,4 +33,7 @@ def get_crss():
 
         "WGS84": rasterio.crs.CRS.from_epsg(4326),
     }
-    return crss
+    if not isinstance(name, type(None)):
+        return crss[name]
+    else:
+        return crss

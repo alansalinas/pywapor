@@ -8,7 +8,7 @@ import sys
 from pywapor.collect.MOD11.DataAccess import DownloadData
 from pywapor.general.logger import log
 
-def main(Dir, latlim, lonlim, Startdate, Enddate, Waitbar = 1, hdf_library = None, remove_hdf = 1):
+def main(Dir, latlim, lonlim, Startdate, Enddate, Waitbar = 1, hdf_library = None, remove_hdf = 1, buffer_dates = False):
     """
     This function downloads MOD11 daily data for the specified time
     interval, and spatial extent.

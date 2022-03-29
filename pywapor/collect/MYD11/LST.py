@@ -8,7 +8,7 @@ import sys
 from pywapor.collect.MYD11.DataAccess import DownloadData
 from pywapor.general.logger import log
 
-def main(Dir, latlim, lonlim, Startdate, Enddate, Waitbar = 1, hdf_library = None, remove_hdf = 1):
+def main(Dir, latlim, lonlim, Startdate, Enddate, Waitbar = 1, hdf_library = None, remove_hdf = 1, buffer_dates = False):
     """
     This function downloads MYD11 daily data for the specified time
     interval, and spatial extent.

@@ -13,7 +13,7 @@ import xarray as xr
 from osgeo import gdal
 from datetime import datetime
 from pywapor.general.logger import log
-from pywapor.collect.Landsat import ls_bitmasks
+from pywapor.general import bitmasks
 from pywapor.collect.downloader import url_to_file
 
 def main(folder, max_lst_uncertainty = 2.5, bb = None):
@@ -150,7 +150,7 @@ def open_mask(ls_folder, mtl, proj, geot):
     _, _ = check_projs_geots(fps.values(), ref_proj_geot = (proj, geot))
     
     # Open the bit numbers.
-    pixel_qa_bits = ls_bitmasks.get_pixel_qa_bits(2, ls_number, 2)
+    pixel_qa_bits = bitmasks.get_pixel_qa_bits(2, ls_number, 2)
     
     # Choose which labels to mask (see keys of 'pixel_qa_bits' for options).
     if ls_number == 8:
@@ -162,10 +162,10 @@ def open_mask(ls_folder, mtl, proj, geot):
     qa_array = qa_data.sel(band="pixel_qa").band_data.values.astype("uint16")
     
     # Create the first mask.
-    mask1 = ls_bitmasks.get_mask(qa_array, pixel_qa_flags, pixel_qa_bits)
+    mask1 = bitmasks.get_mask(qa_array, pixel_qa_flags, pixel_qa_bits)
 
     # Open the bit numbers
-    radsat_qa_bits = ls_bitmasks.get_radsat_qa_bits(2, ls_number, 2)
+    radsat_qa_bits = bitmasks.get_radsat_qa_bits(2, ls_number, 2)
     
     # Choose which labels to mask (all in this case).
     radsat_qa_flags = list(radsat_qa_bits.keys())
@@ -174,7 +174,7 @@ def open_mask(ls_folder, mtl, proj, geot):
     qa_array = qa_data.sel(band="radsat_qa").band_data.values.astype("uint16")
     
     # Create the second mask.
-    mask2 = ls_bitmasks.get_mask(qa_array, radsat_qa_flags, radsat_qa_bits)
+    mask2 = bitmasks.get_mask(qa_array, radsat_qa_flags, radsat_qa_bits)
     
     # Combine the masks.
     mask = np.invert(np.any([mask1, mask2], axis = 0))

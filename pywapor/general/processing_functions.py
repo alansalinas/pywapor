@@ -5,15 +5,35 @@ GDAL routines.
 Some functions in this module will be deprecated in future versions.
 """
 import os
+from dask.diagnostics import ProgressBar
 from osgeo import osr
 from osgeo import gdal
 import gzip
+import rasterio
 import zipfile
 import numpy as np
 from scipy.interpolate import NearestNDInterpolator, LinearNDInterpolator
 from pywapor.general.logger import log
 import xarray as xr
 import pandas as pd
+
+def create_selection(latlim, lonlim, timelim, coords, target_crs = None):
+
+    if not isinstance(target_crs, type(None)):
+        source_crs = rasterio.crs.CRS.from_epsg(4326)
+        lonlim, latlim = rasterio.warp.transform(source_crs,
+                                                target_crs,
+                                                lonlim, latlim)
+
+    # Create xr.Dataset selector.
+    selection = {
+                coords["t"]: [np.datetime64(timelim[0]), 
+                                np.datetime64(timelim[1])],
+                coords["y"]: latlim,
+                coords["x"]: lonlim,
+            }
+
+    return selection
 
 def ds_remove_except(ds, keep_vars):
     """Remove all variables from a dataset except the variables specified with
@@ -64,7 +84,7 @@ def domain_overlaps_domain(domain1, domain2, partially = True):
     else:
         return check1 and check2
 
-def save_ds(ds, fp, decode_coords = None):
+def save_ds(ds, fp, encoding = True, decode_coords = None, chunk = True):
     """Save a `xr.Dataset` as netcdf.
 
     Parameters
@@ -82,21 +102,41 @@ def save_ds(ds, fp, decode_coords = None):
     xr.Dataset
         The newly created dataset.
     """
-    ds.to_netcdf(fp, engine = "netcdf4")
-    ds = ds.close()
-    return xr.open_dataset(fp, decode_coords=decode_coords)
+    if chunk:
+        ds = ds.chunk("auto")
 
-def reproject_ds(ds, fp, source_crs, target_crs):
+    if isinstance(encoding, bool):
+        encoding = {x: {"zlib": True} for x in list(ds.variables) if x not in list(ds.coords)}
+
+    with ProgressBar():
+        ds.to_netcdf(fp, engine = "netcdf4", encoding = encoding)
+
+    ds = ds.close()
+    ds = open_ds(fp, decode_coords)
+    return ds
+
+def open_ds(fp, decode_coords):
+    ds = xr.open_dataset(fp, decode_coords=decode_coords)
+    if ("spatial_ref" in list(ds.variables)) and ("spatial_ref" not in list(ds.coords)):
+        ds = ds.set_coords(("spatial_ref"))
+    return ds
+
+def reproject_ds(ds, fp, target_crs, source_crs = None):
     # Remove unused coordinates.
-    ds_proj = ds.drop_vars([x for x in ds.coords if x not in ds.coords.dims])
+    ds_proj = ds.drop_vars([x for x in ds.coords if len(ds[x].dims) > 1])
 
     # Remove existing grid_mapping data.
-    for var in list(ds_proj.variables):
-        if "grid_mapping" in ds_proj[var].attrs.keys():
-            del ds_proj[var].attrs["grid_mapping"]
+    # for var in list(ds_proj.variables):
+    #     if "grid_mapping" in ds_proj[var].attrs.keys():
+    #         del ds_proj[var].attrs["grid_mapping"]
 
     # Assign crs.
-    ds_proj = ds_proj.rio.write_crs(source_crs)
+    if not isinstance(source_crs, type(None)):
+        if isinstance(ds_proj.rio.crs, type(None)):
+            log.info("--> Setting crs.")
+        else:
+            log.warn("--> Overwriting crs.")
+        ds_proj = ds_proj.rio.write_crs(source_crs)
 
     # Reproject to new crs.
     ds_proj = ds_proj.rio.reproject(target_crs)
