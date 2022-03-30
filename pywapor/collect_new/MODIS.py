@@ -1,29 +1,9 @@
-"""
-    t1 = datetime.datetime.now()
-    dl_args = {
-        "Dir": r"/Users/hmcoerver/Downloads/dl_test_old", 
-        "latlim": latlim,
-        "lonlim": lonlim,
-        "Startdate": timelim[0],
-        "Enddate": timelim[1],
-        "buffer_dates": False
-    }
-
-    ndvi_files = pywapor.collect.downloader.collect_sources("ndvi", ["MOD13","MYD13"], dl_args, extra_source_locations = None)
-    r0_files = pywapor.collect.downloader.collect_sources("r0", ["MCD43"], dl_args, extra_source_locations = None)
-    lst_files = pywapor.collect.downloader.collect_sources("lst", ["MOD11","MYD11"], dl_args, extra_source_locations = None)
-    t2 = datetime.datetime.now()
-    print("old", t2 - t1)
-"""
 import datetime
-import rasterio
 import os
 import json
 import pywapor
 import rasterio.crs
 import rasterio.warp
-import rioxarray.merge
-import xarray as xr
 import numpy as np
 from functools import partial
 import pywapor.collect.accounts as accounts
@@ -32,80 +12,14 @@ from pywapor.general.logger import log
 from shapely.geometry import shape
 from pywapor.collect_new.projections import get_crss
 import pywapor.collect_new.opendap as opendap
-from pywapor.general.processing_functions import save_ds, create_selection
 from pywapor.general import bitmasks
 
-def download(folder, product_name, latlim, lonlim, timelim, variables = None,
-                post_processors = None):
+def fn_func(product_name, tile):
+    fn = f"{product_name}_h{tile[0]:02d}v{tile[1]:02d}.nc"
+    return fn
 
-    coords = {"x": "XDim", "y": "YDim", "t": "time"}
-
-    # Get username and password
-    un_pw = accounts.get("NASA")
-
-    # Determine which MODIS tiles are required.
-    tiles = tiles_intersect(latlim, lonlim)
-
-    # Define which variables to download.
-    if isinstance(variables, type(None)):
-        variables = default_vars(product_name)
-
-    # Define which post processors to apply.
-    if isinstance(post_processors, type(None)):
-        post_processors = default_post_processors(product_name)
-
-    # Create selection object.
-    selection = create_selection(latlim, lonlim, timelim, coords,
-                                target_crs = get_crss("MODIS"))
-
-    dss = list()
-
-    for htile, vtile in tiles:
-
-        # Define output name.
-        fn = f"{product_name}_h{htile:02d}v{vtile:02d}.nc"
-        fp = os.path.join(folder, fn)
-
-        log.info(f"--> Downloading {fn}.")
-
-        if os.path.isfile(fp):
-            # Open existing dataset.
-            ds_data = xr.open_dataset(fp, decode_coords = "all")
-        else:
-            # Define MODIS tile URL.
-            base_url = get_url(product_name, htile, vtile)
-
-            # Start OPeNDAP session.
-            idxs, session = opendap.start_session(base_url, selection, un_pw)
-            
-            # Make data request URL.
-            url_data = opendap.create_url(base_url, idxs, variables)
-            
-            # Download data.
-            ds_data = opendap.download_url(url_data, fp, session, coords)
-
-        # Rename (spatial) variables.
-        ds_data = opendap.process_ds(ds_data, coords, variables)
-
-        dss.append(ds_data)
-
-    # Merge all the tiles.
-    ds = rioxarray.merge.merge_datasets(dss)
-
-    # Reproject to WGS84.
-    ds = ds.rio.reproject(rasterio.crs.CRS.from_epsg(4326))
-
-    # Apply product specific functions.
-    for func in post_processors:
-        ds = func(ds)
-
-    fp = os.path.join(folder, f"{product_name}.nc")
-    ds = save_ds(ds, fp, decode_coords = "all")
-
-    return ds
-
-def get_url(product, htile, vtile):
-    url = f"https://opendap.cr.usgs.gov/opendap/hyrax/{product}/h{htile:02d}v{vtile:02d}.ncml.nc4?"
+def url_func(product_name, tile):
+    url = f"https://opendap.cr.usgs.gov/opendap/hyrax/{product_name}/h{tile[0]:02d}v{tile[1]:02d}.ncml.nc4?"
     return url
 
 def tiles_intersect(latlim, lonlim):
@@ -201,18 +115,35 @@ def default_post_processors(product_name):
     post_processors = {
         "MOD13Q1.061": [mask_qa],
         "MYD13Q1.061": [mask_qa],
-        "MOD11A1.061": [mask_bitwise_qa],#, expand_time_dim],
-        "MYD11A1.061": [mask_bitwise_qa],#, expand_time_dim],
+        "MOD11A1.061": [mask_bitwise_qa, expand_time_dim],
+        "MYD11A1.061": [mask_bitwise_qa, expand_time_dim],
         "MCD43A3.061": [shortwave_ro, 
                         partial(mask_qa, to_mask = "r0", masker = ("r0_qa", 1.))],
     }
     return post_processors[product_name]
 
+def download(folder, latlim, lonlim, timelim, product_name,
+                variables = None, post_processors = None):
+    tiles = tiles_intersect(latlim, lonlim)
+    coords = {"x": "XDim", "y": "YDim", "t": "time"}
+    variables = default_vars(product_name)
+    post_processors = default_post_processors(product_name)
+    data_source_crs = get_crss("MODIS")
+    parallel = False
+    spatial_tiles = True
+    un_pw = accounts.get("NASA")
+    request_dims = True
+    ds = opendap.download(folder, product_name, latlim, lonlim, timelim, coords, 
+                variables, post_processors, fn_func, url_func, un_pw = un_pw, 
+                tiles = tiles, data_source_crs = data_source_crs, parallel = parallel, 
+                spatial_tiles = spatial_tiles, request_dims = request_dims)
+    return ds
+
 if __name__ == "__main__":
 
     folder = r"/Users/hmcoerver/Downloads/dl_test_new"
 
-    wanted = [
+    products = [
         'MCD43A3.061',
         'MOD11A1.061',
         'MYD11A1.061',
@@ -226,9 +157,6 @@ if __name__ == "__main__":
     # lonlim = [30.2, 31.2]
     timelim = [datetime.date(2021, 7, 1), datetime.date(2021, 8, 1)]
 
-    t1 = datetime.datetime.now()
-    for product_name in wanted:
-        print(product_name)
-        download(folder, product_name, latlim, lonlim, timelim)
-    t2 = datetime.datetime.now()
-    print("new", t2 - t1)
+    # MODIS.
+    for product_name in products:
+        ds = download(folder, latlim, lonlim, timelim, product_name)
