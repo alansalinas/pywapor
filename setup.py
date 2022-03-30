@@ -38,6 +38,7 @@ setup(
         'python_log_indenter',
         'cryptography',
         'pyvis',
+        'cachetools',
     ],
     classifiers=[
         "Operating System :: OS Independent",
