@@ -120,6 +120,7 @@ def start_session(base_url, selection, un_pw = [None, None]):
     return session
 
 def process_ds(ds, coords, variables, crs = None):
+    ds = ds[list(variables.keys())]
     if isinstance(crs, type(None)):
         crs = ds.rio.crs
     ds = ds.rename({v:k for k,v in coords.items() if k in ["x", "y"]})
@@ -127,4 +128,34 @@ def process_ds(ds, coords, variables, crs = None):
     if (ds.rio.grid_mapping not in list(ds.coords)) and ("spatial_ref" in [x[1] for x in variables.values()]):
         ds = ds.rio.write_grid_mapping("spatial_ref")
     ds = ds.rio.write_crs(crs)
+    ds.attrs = {}
+    return ds
+
+def download_xarray(url, fp, latlim, lonlim, timelim, coords, variables, post_processors, data_source_crs = None):
+
+    warnings.filterwarnings("ignore", category=xr.SerializationWarning)
+    online_ds = xr.open_dataset(url, decode_coords="all")
+    # warnings.filterwarnings("default", category=xr.SerializationWarning)
+
+    # Define selection.
+    selection = create_selection(latlim, lonlim, timelim, coords, target_crs = data_source_crs)
+
+    # Make the selection on the remote.
+    online_ds = online_ds.sel({k: slice(*v) for k, v in selection.items()})
+
+    # Rename variables and assign crs.
+    online_ds = process_ds(online_ds, coords, variables, crs = data_source_crs)
+
+    # Download the data.
+    ds = save_ds(online_ds, fp.replace(".nc", "_temp.nc"), decode_coords="all")
+
+    # Apply product specific functions.
+    for func in post_processors:
+        ds = func(ds)
+
+    # Save final output
+    ds = save_ds(ds, fp, decode_coords="all")
+
+    os.remove(fp.replace(".nc", "_temp.nc"))
+
     return ds
