@@ -21,12 +21,16 @@ def default_vars(product_name):
                     "PS": [("time", "lat", "lon"), "p_air_i"],
                     "SLP": [("time", "lat", "lon"), "p_air_0_i"],
                         },
+        "M2T1NXRAD.5.12.4": {
+                    "SWGNT": [("time", "lat", "lon"), "ra_i"],
+                        }
     }
     return vars[product_name]
 
 def default_post_processors(product_name):
     post_processors = {
         "M2I1NXASM.5.12.4": [],
+        "M2T1NXRAD.5.12.4": [],
     }
     return post_processors[product_name]
 
@@ -94,7 +98,8 @@ if __name__ == "__main__":
     timelim = [datetime.date(2021, 7, 1), datetime.date(2021, 8, 15)]
 
     # MERRA2.
-    product_name = "M2I1NXASM.5.12.4"
+    # product_name = "M2I1NXASM.5.12.4"
+    product_name = "M2T1NXRAD.5.12.4"
 
-    ds = download(folder, product_name, latlim, lonlim, timelim)
+    ds = download(folder, latlim, lonlim, timelim, product_name)
 
