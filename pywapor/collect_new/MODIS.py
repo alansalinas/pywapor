@@ -2,8 +2,6 @@ import datetime
 import os
 import json
 import pywapor
-import rasterio.crs
-import rasterio.warp
 import numpy as np
 from functools import partial
 import pywapor.collect.accounts as accounts
