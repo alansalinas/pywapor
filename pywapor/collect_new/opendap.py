@@ -3,21 +3,21 @@ import numpy as np
 import os
 import tqdm
 import rasterio
-import rioxarray
+import rioxarray.merge
 import tempfile
 from pydap.cas.urs import setup_session
 import urllib.parse
-from pywapor.general.processing_functions import save_ds, create_selection
+from pywapor.general.processing_functions import save_ds, create_selection, process_ds
 import warnings
 from joblib import Parallel, delayed
 from functools import partial
 
-def download(folder, product_name, latlim, lonlim, timelim, coords, variables, post_processors, 
+def download(folder, product_name, coords, variables, post_processors, 
                 fn_func, url_func, un_pw = None, tiles = None,  
                 data_source_crs = None, parallel = False, spatial_tiles = True, request_dims = True):
 
     # Create selection object.
-    selection = create_selection(latlim, lonlim, timelim, coords, target_crs = data_source_crs)
+    selection = create_selection(coords, target_crs = data_source_crs)
 
     # Make output filepaths, should be same length as `urls`.
     fps = [os.path.join(folder, fn_func(product_name, x)) for x in tiles]
@@ -119,26 +119,14 @@ def start_session(base_url, selection, un_pw = [None, None]):
     session = setup_session(*un_pw, check_url = url_coords)
     return session
 
-def process_ds(ds, coords, variables, crs = None):
-    ds = ds[list(variables.keys())]
-    if isinstance(crs, type(None)):
-        crs = ds.rio.crs
-    ds = ds.rename({v:k for k,v in coords.items() if k in ["x", "y"]})
-    ds = ds.rename({k: v[1] for k, v in variables.items()})
-    if (ds.rio.grid_mapping not in list(ds.coords)) and ("spatial_ref" in [x[1] for x in variables.values()]):
-        ds = ds.rio.write_grid_mapping("spatial_ref")
-    ds = ds.rio.write_crs(crs)
-    ds.attrs = {}
-    return ds
-
-def download_xarray(url, fp, latlim, lonlim, timelim, coords, variables, post_processors, data_source_crs = None):
+def download_xarray(url, fp, coords, variables, post_processors, data_source_crs = None):
 
     warnings.filterwarnings("ignore", category=xr.SerializationWarning)
     online_ds = xr.open_dataset(url, decode_coords="all")
     # warnings.filterwarnings("default", category=xr.SerializationWarning)
 
     # Define selection.
-    selection = create_selection(latlim, lonlim, timelim, coords, target_crs = data_source_crs)
+    selection = create_selection(coords, target_crs = data_source_crs)
 
     # Make the selection on the remote.
     online_ds = online_ds.sel({k: slice(*v) for k, v in selection.items()})

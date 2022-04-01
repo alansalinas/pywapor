@@ -52,7 +52,7 @@ def download(folder, latlim, lonlim, variables = None, post_processors = None):
     product_name = "SRTM"
     timelim = [datetime.date(2000, 2, 10), datetime.date(2000, 2, 12)]
     tiles = tiles_intersect(latlim, lonlim)
-    coords = {"x": "lon", "y": "lat", "t": "time"}
+    coords = {"x": ["lon", lonlim], "y": ["lat", latlim], "t": ["time", timelim]}
     variables = default_vars()
     post_processors = default_post_processors()
     data_source_crs = None
@@ -61,7 +61,7 @@ def download(folder, latlim, lonlim, variables = None, post_processors = None):
     un_pw = accounts.get("NASA")
     request_dims = True
 
-    ds = opendap.download(folder, product_name, latlim, lonlim, timelim, coords, 
+    ds = opendap.download(folder, product_name, coords, 
                 variables, post_processors, fn_func, url_func, un_pw = un_pw, 
                 tiles = tiles, data_source_crs = data_source_crs, parallel = parallel, 
                 spatial_tiles = spatial_tiles, request_dims = request_dims)

@@ -123,7 +123,7 @@ def default_post_processors(product_name):
 def download(folder, latlim, lonlim, timelim, product_name,
                 variables = None, post_processors = None):
     tiles = tiles_intersect(latlim, lonlim)
-    coords = {"x": "XDim", "y": "YDim", "t": "time"}
+    coords = {"x": ["XDim", lonlim], "y": ["YDim", latlim], "t": ["time",timelim]}
     variables = default_vars(product_name)
     post_processors = default_post_processors(product_name)
     data_source_crs = get_crss("MODIS")
@@ -131,7 +131,7 @@ def download(folder, latlim, lonlim, timelim, product_name,
     spatial_tiles = True
     un_pw = accounts.get("NASA")
     request_dims = True
-    ds = opendap.download(folder, product_name, latlim, lonlim, timelim, coords, 
+    ds = opendap.download(folder, product_name, coords, 
                 variables, post_processors, fn_func, url_func, un_pw = un_pw, 
                 tiles = tiles, data_source_crs = data_source_crs, parallel = parallel, 
                 spatial_tiles = spatial_tiles, request_dims = request_dims)

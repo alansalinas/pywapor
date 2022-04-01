@@ -70,7 +70,7 @@ def url_func(product_name, tile):
 def download(folder, latlim, lonlim, timelim, product_name,
                 variables = None, post_processors = None):
     tiles = pd.date_range(timelim[0], timelim[1], freq="D")
-    coords = {"x": "lon", "y": "lat", "t": "time"}
+    coords = {"x": ["lon", lonlim], "y":["lat", latlim], "t": ["time", timelim]}
     if isinstance(variables, type(None)):
         variables = default_vars(product_name)
     if isinstance(post_processors, type(None)):
@@ -80,7 +80,7 @@ def download(folder, latlim, lonlim, timelim, product_name,
     spatial_tiles = False
     un_pw = accounts.get("NASA")
     request_dims = True
-    ds = opendap.download(folder, product_name, latlim, lonlim, timelim, coords, 
+    ds = opendap.download(folder, product_name, coords, 
                 variables, post_processors, fn_func, url_func, un_pw = un_pw, 
                 tiles = tiles, data_source_crs = data_source_crs, parallel = parallel, 
                 spatial_tiles = spatial_tiles, request_dims = request_dims)

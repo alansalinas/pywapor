@@ -25,7 +25,7 @@ def download(folder, latlim, lonlim, timelim,
                 variables = None, post_processors = None):
     product_name = 'CHIRPS'
     tiles = [None]
-    coords = {"x": "longitude", "y": "latitude", "t": "time"}
+    coords = {"x": ["longitude", lonlim], "y": ["latitude", latlim], "t": ["time", timelim]}
     variables = default_vars()
     post_processors = default_post_processors()
     data_source_crs = get_crss("WGS84")
@@ -33,7 +33,7 @@ def download(folder, latlim, lonlim, timelim,
     spatial_tiles = False
     un_pw = accounts.get("NASA")
     request_dims = False
-    ds = opendap.download(folder, product_name, latlim, lonlim, timelim, coords, 
+    ds = opendap.download(folder, product_name, coords, 
                 variables, post_processors, fn_func, url_func, un_pw = un_pw, 
                 tiles = tiles, data_source_crs = data_source_crs, parallel = parallel, 
                 spatial_tiles = spatial_tiles, request_dims = request_dims)
@@ -43,7 +43,7 @@ if __name__ == "__main__":
 
     import pywapor.collect.accounts as accounts
 
-    folder = r"/Users/hmcoerver/Downloads"
+    folder = r"/Users/hmcoerver/Downloads/merra2"
 
     latlim = [36.9, 43.7]
     lonlim = [5.2, 17.2]

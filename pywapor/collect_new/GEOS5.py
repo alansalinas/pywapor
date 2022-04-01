@@ -25,7 +25,7 @@ def default_post_processors(product_name):
 def download(folder, latlim, lonlim, timelim, product_name,
                 variables = None, post_processors = None):
 
-    coords = {"x": "lon", "y": "lat", "t": "time"}
+    coords = {"x": ["lon", lonlim], "y": ["lat", latlim], "t": ["time", timelim]}
 
     if isinstance(variables, type(None)):
         variables = default_vars(product_name)
@@ -39,7 +39,7 @@ def download(folder, latlim, lonlim, timelim, product_name,
 
     fp = os.path.join(folder, f"{product_name}.nc")
 
-    ds = opendap.download_xarray(url, fp, latlim, lonlim, timelim, coords, 
+    ds = opendap.download_xarray(url, fp, coords, 
                                 variables, post_processors, data_source_crs = data_source_crs)
     
     return ds

@@ -16,24 +16,92 @@ from scipy.interpolate import NearestNDInterpolator, LinearNDInterpolator
 from pywapor.general.logger import log
 import xarray as xr
 import pandas as pd
+from rasterio.crs import CRS
 
-def create_selection(latlim, lonlim, timelim, coords, target_crs = None):
+def create_selection(coords, ds = None, target_crs = None, 
+                        source_crs = CRS.from_epsg(4326)):
+    """Create a dictionary that can be given to `xr.Dataset.sel`.
+
+    Parameters
+    ----------
+    coords : dict
+        Dictionary describing the different dimensions over which to select. Possible keys
+        are "x" for latitude, "y" for longitude and "t" for time, but other selections
+        keys are also allowed (e.g. so select a band). Values are tuples with the first
+        value the respective dimension names in the `ds` and the second value the selector.
+    ds : xr.Dataset, optional
+        Dataset on which the selection will be applied, can be supplied to check if 
+        dimensions are sorted ascending or descending and to derive `target_crs`, by default None.
+    target_crs : rasterio.crs.CRS, optional
+        crs of the dataset on which the selection will be applied, by default None.
+    source_crs : rasterio.crs.CRS, optional
+        crs of the `x` and `y` limits in `coords`, by default `epsg:4326`.
+
+    Returns
+    -------
+    dict
+        Dimension names with slices to apply to each dimension.
+    """
+    selection = {}
 
     if not isinstance(target_crs, type(None)):
-        source_crs = rasterio.crs.CRS.from_epsg(4326)
-        lonlim, latlim = rasterio.warp.transform(source_crs,
+        coords["x"][1], coords["y"][1] = rasterio.warp.transform(source_crs,
                                                 target_crs,
-                                                lonlim, latlim)
+                                                coords["x"][1], coords["y"][1])
+    elif not isinstance(ds, type(None)):
+        if ds.rio.crs != source_crs:
+            coords["x"][1], coords["y"][1] = rasterio.warp.transform(source_crs,
+                                        ds.rio.crs,
+                                        coords["x"][1], coords["y"][1]) 
 
-    # Create xr.Dataset selector.
-    selection = {
-                coords["t"]: [np.datetime64(timelim[0]), 
-                                np.datetime64(timelim[1])],
-                coords["y"]: latlim,
-                coords["x"]: lonlim,
-            }
+    if "t" in coords.keys():
+        coords["t"][1] = [np.datetime64(t) for t in coords["t"][1]]
+
+    for name, lim in coords.values():
+        # If `ds` is given, checks if the dimensions are sorted from high to low
+        # or from low to high and adjusts the limit accordingly.
+        if isinstance(ds, xr.Dataset) and hasattr(lim, "__iter__"):
+            lim = {False: lim, True: lim[::-1]}[bool(ds[name][0] - ds[name][1] > 0)]
+        # Create a slice object if `lim` is a list or tuple.
+        # if hasattr(lim, "__iter__"):
+        #     lim = slice(*lim)
+        selection[name] = lim
 
     return selection
+
+def process_ds(ds, coords, variables, crs = None):
+    ds = ds[list(variables.keys())]
+    if isinstance(crs, type(None)):
+        crs = ds.rio.crs
+    ds = ds.rename({v[0]:k for k,v in coords.items() if k in ["x", "y"]})
+    ds = ds.rename({k: v[1] for k, v in variables.items()})
+    if (ds.rio.grid_mapping not in list(ds.coords)) and ("spatial_ref" in [x[1] for x in variables.values()]):
+        ds = ds.rio.write_grid_mapping("spatial_ref")
+    ds = ds.rio.write_crs(crs)
+    ds.attrs = {}
+    return ds
+
+# def create_selection(latlim, lonlim, timelim, coords, target_crs = None):
+
+#     if not isinstance(target_crs, type(None)):
+#         source_crs = rasterio.crs.CRS.from_epsg(4326)
+#         lonlim, latlim = rasterio.warp.transform(source_crs,
+#                                                 target_crs,
+#                                                 lonlim, latlim)
+
+#     selection = {}
+
+#     if not isinstance(timelim, type(None)) and "t" in coords.keys():
+#         selection[coords["t"]] = [np.datetime64(timelim[0]), 
+#                                 np.datetime64(timelim[1])]
+
+#     if not isinstance(latlim, type(None)) and "y" in coords.keys():
+#         selection[coords["y"]] = latlim
+
+#     if not isinstance(lonlim, type(None)) and "x" in coords.keys():
+#         selection[coords["x"]] = lonlim    
+
+#     return selection
 
 def ds_remove_except(ds, keep_vars):
     """Remove all variables from a dataset except the variables specified with
