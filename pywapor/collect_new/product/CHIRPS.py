@@ -1,7 +1,7 @@
 import datetime
 from pywapor.general.logger import log
-from pywapor.collect_new.projections import get_crss
-import pywapor.collect_new.opendap as opendap
+from pywapor.collect_new.protocol.projections import get_crss
+import pywapor.collect_new.protocol.opendap as opendap
 
 def default_vars():
     variables =  {

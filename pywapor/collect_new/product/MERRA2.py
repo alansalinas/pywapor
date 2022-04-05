@@ -2,10 +2,10 @@ import datetime
 import pandas as pd
 import pywapor.collect.accounts as accounts
 from pywapor.general.logger import log
-from pywapor.collect_new.projections import get_crss
-import pywapor.collect_new.opendap as opendap
+from pywapor.collect_new.protocol.projections import get_crss
+import pywapor.collect_new.protocol.opendap as opendap
 import fnmatch
-from pywapor.collect_new.requests import find_paths
+from pywapor.collect_new.protocol.requests import find_paths
 
 def default_vars(product_name):
     vars = {

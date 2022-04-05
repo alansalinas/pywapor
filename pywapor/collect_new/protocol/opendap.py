@@ -9,7 +9,7 @@ from pydap.cas.urs import setup_session
 import urllib.parse
 from pywapor.general.processing_functions import save_ds, create_selection, process_ds
 import warnings
-from pywapor.collect_new.requests import download_url, download_urls
+from pywapor.collect_new.protocol.requests import download_url, download_urls
 
 def download(folder, product_name, coords, variables, post_processors, 
                 fn_func, url_func, un_pw = None, tiles = None,  

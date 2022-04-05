@@ -6,7 +6,7 @@ import pywapor.collect.accounts as accounts
 from pywapor.general.logger import log
 import re
 import requests
-from pywapor.collect_new.requests import download_urls, crawl
+from pywapor.collect_new.protocol.requests import download_urls, crawl
 
 def download(folder, latlim, lonlim, timelim, product_name,
                 variables = None, post_processors = None):
