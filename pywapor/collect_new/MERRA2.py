@@ -4,11 +4,8 @@ import pywapor.collect.accounts as accounts
 from pywapor.general.logger import log
 from pywapor.collect_new.projections import get_crss
 import pywapor.collect_new.opendap as opendap
-import urllib
-from bs4 import BeautifulSoup
-import re
 import fnmatch
-from cachetools import cached, TTLCache
+from pywapor.collect_new.requests import find_paths
 
 def default_vars(product_name):
     vars = {
@@ -38,26 +35,18 @@ def fn_func(product_name, tile):
     fn = f"{product_name}_{tile.strftime('%Y%m%d')}.nc"
     return fn
 
-@cached(cache=TTLCache(maxsize=2048, ttl=600))
-def find_paths(url, regex, node_type = "a", tag = "href"):
-    f = urllib.request.urlopen(url)
-    soup = BeautifulSoup(f, "lxml")
-    file_tags = soup.find_all(node_type, {tag: re.compile(regex)})
-    files = list()
-    for x in file_tags:
-        tag_value = x[tag]
-        if tag_value[-5:] == ".html":
-            tag_value = tag_value[:-5]
-        if tag_value not in files:
-            files.append(tag_value)
-    return files
-
 def url_func(product_name, tile):
+
+    def _filter(tag):
+        tag_value = tag["href"]
+        if tag_value[-5:] == ".html":
+            tag_value = tag_value[:-5] 
+        return tag_value
     # Find the existing tiles for the given year and month, this is necessary
     # because the version number (`\d{3}`) in the filenames is irregular.
     regex = r"MERRA2_\d{3}\..*\.\d{8}.nc4.html"
     url = f"https://goldsmr4.gesdisc.eosdis.nasa.gov/opendap/MERRA2/{product_name}/{tile.year}/{tile.month:02d}/contents.html"
-    tile_names = find_paths(url, regex, node_type = "a", tag = "href")
+    tile_names = find_paths(url, regex, filter = _filter)
 
     # Find which of the existing tiles matches with the date.
     fn_pattern = f"MERRA2_*.*.{tile.strftime('%Y%m%d')}.nc4"

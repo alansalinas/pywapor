@@ -9,8 +9,7 @@ from pydap.cas.urs import setup_session
 import urllib.parse
 from pywapor.general.processing_functions import save_ds, create_selection, process_ds
 import warnings
-from joblib import Parallel, delayed
-from functools import partial
+from pywapor.collect_new.requests import download_url, download_urls
 
 def download(folder, product_name, coords, variables, post_processors, 
                 fn_func, url_func, un_pw = None, tiles = None,  
@@ -32,13 +31,7 @@ def download(folder, product_name, coords, variables, post_processors,
         urls = [create_url(url_func(product_name, x), idxs, variables, request_dims = request_dims) for x in tiles]
 
     # Download data.
-    dler = partial(download_url, session = session, waitbar = (not parallel))
-    if parallel:
-        n_jobs = 8
-        backend = "loky"
-        files = Parallel(n_jobs=n_jobs, backend = backend)(delayed(dler)(*x) for x in tqdm.tqdm(zip(urls, fps)))
-    else:
-        files = [dler(url, fp) for url, fp in zip(urls, fps)]
+    files = download_urls(urls, "", session, fps = fps, parallel = parallel)
 
     # Merge spatial tiles.
     if spatial_tiles:
@@ -65,32 +58,6 @@ def download(folder, product_name, coords, variables, post_processors,
         os.remove(x)
 
     return ds
-
-def download_url(url, fp, session, waitbar = True):
-    file_object = session.get(url, stream = True)
-    file_object.raise_for_status()
-    
-    folder = os.path.split(fp)[0]
-    if not os.path.exists(folder):
-        os.makedirs(folder)
-
-    if os.path.isfile(fp):
-        os.remove(fp)
-
-    if waitbar:
-        wb = tqdm.tqdm(unit='Bytes', unit_scale=True, position = 0)
-
-    temp_fp = fp.replace(".nc", "_temp")
-
-    with open(temp_fp, 'wb') as z:
-        for data in file_object.iter_content(chunk_size=1024):
-            size = z.write(data)
-            if waitbar:
-                wb.update(size)
-
-    os.rename(temp_fp, fp)
-
-    return fp
 
 def find_idxs(base_url, selection, session):
     def _find_idxs(ds, k, search_range):
