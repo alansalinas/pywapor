@@ -1,5 +1,5 @@
 import os
-from pywapor.collect_new import cog
+from pywapor.collect_new.protocol import cog
 
 def default_vars(product_name):
     vars = {

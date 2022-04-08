@@ -176,15 +176,23 @@ def save_ds(ds, fp, encoding = True, decode_coords = None, chunk = True):
     if isinstance(encoding, bool):
         encoding = {x: {"zlib": True} for x in list(ds.variables) if x not in list(ds.coords)}
 
+    temp_fp = fp.replace(".nc", "_temp")
+
     with ProgressBar():
-        ds.to_netcdf(fp, engine = "netcdf4", encoding = encoding)
+        ds.to_netcdf(temp_fp, engine = "netcdf4", encoding = encoding)
 
     ds = ds.close()
-    ds = open_ds(fp, decode_coords)
+
+    os.rename(temp_fp, fp)
+
+    ds = open_ds(fp, decode_coords, chunk = chunk)
     return ds
 
-def open_ds(fp, decode_coords):
-    ds = xr.open_dataset(fp, decode_coords=decode_coords)
+def open_ds(fp, decode_coords, chunk = True):
+    if chunk:
+        ds = xr.open_dataset(fp, decode_coords=decode_coords, chunks = "auto")
+    else:
+        ds = xr.open_dataset(fp, decode_coords=decode_coords)
     if ("spatial_ref" in list(ds.variables)) and ("spatial_ref" not in list(ds.coords)):
         ds = ds.set_coords(("spatial_ref"))
     return ds

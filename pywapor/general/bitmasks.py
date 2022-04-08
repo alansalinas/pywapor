@@ -410,6 +410,34 @@ def get_radsat_qa_bits(collection, ls_number, level):
 
     return all_flags[collection][ls_number][level]
 
+def PROBAV_qa_translator():
+    flags = {
+
+        'clear':            [(0b0000000000000001, True),
+                            (0b0000000000000010, True),
+                            (0b0000000000000100, True)],
+        'undefined':        [(0b0000000000000001, True),
+                            (0b0000000000000010, False),
+                            (0b0000000000000100, True)],
+        'cloud':            [(0b0000000000000001, True),
+                            (0b0000000000000010, False),
+                            (0b0000000000000100, False)],
+        'ice/snow':         [(0b0000000000000001, False),
+                            (0b0000000000000010, True),
+                            (0b0000000000000100, True)],
+        'shadow':           [(0b0000000000000001, True),    
+                            (0b0000000000000010, True),
+                            (0b0000000000000100, False)],  
+
+        'sea':              [(0b0000000000001000, True)],
+
+        'bad SWIR':         [(0b0000000000010000, True)],
+        'bad NIR':          [(0b0000000000100000, True)],
+        'bad RED':          [(0b0000000001000000, True)], 
+        'bad BLUE':         [(0b0000000010000000, True)],  
+    }
+    return flags
+
 def open_array(path, slc = [slice(None), slice(None)]):
     """Open an image as an numpy array.
 

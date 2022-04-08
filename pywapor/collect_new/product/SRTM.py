@@ -11,10 +11,10 @@ import pywapor.collect.accounts as accounts
 from shapely.geometry.polygon import Polygon
 from pywapor.general.logger import log
 from shapely.geometry import shape
-import pywapor.collect_new.opendap as opendap
+import pywapor.collect_new.protocol.opendap as opendap
 
 def tiles_intersect(latlim, lonlim):
-    with open(os.path.join(pywapor.collect_new.__path__[0], "SRTM30_tiles.geojson")) as f:
+    with open(os.path.join(pywapor.collect_new.__path__[0], "product/SRTM30_tiles.geojson")) as f:
         features = json.load(f)["features"]
     aoi = Polygon.from_bounds(lonlim[0], latlim[0], lonlim[1], latlim[1])
     tiles = list()
@@ -70,12 +70,12 @@ def download(folder, latlim, lonlim, variables = None, post_processors = None):
 
 if __name__ == "__main__":
 
-    folder = r"/Users/hmcoerver/Downloads/dl_test_new"
+    folder = r"/Users/hmcoerver/Downloads/merra2"
 
-    latlim = [26.9, 33.7]
-    lonlim = [25.2, 37.2]
-    # latlim = [28.9, 29.7]
-    # lonlim = [30.2, 31.2]
+    # latlim = [26.9, 33.7]
+    # lonlim = [25.2, 37.2]
+    latlim = [28.9, 29.7]
+    lonlim = [30.2, 31.2]
 
     # SRTM.
     ds = download(folder, latlim, lonlim)

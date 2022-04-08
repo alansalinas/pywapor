@@ -1,5 +1,5 @@
-from pywapor.collect_new import opendap
-from pywapor.collect_new.projections import get_crss
+from pywapor.collect_new.protocol import opendap
+from pywapor.collect_new.protocol.projections import get_crss
 import os
 
 def default_vars(product_name):
@@ -61,4 +61,4 @@ if __name__ == "__main__":
     variables = None
     post_processors = None
 
-    ds = download(folder, latlim, lonlim, timelim, product_name)
+    # ds = download(folder, latlim, lonlim, timelim, product_name)

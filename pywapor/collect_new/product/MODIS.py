@@ -8,8 +8,8 @@ import pywapor.collect.accounts as accounts
 from shapely.geometry.polygon import Polygon
 from pywapor.general.logger import log
 from shapely.geometry import shape
-from pywapor.collect_new.projections import get_crss
-import pywapor.collect_new.opendap as opendap
+from pywapor.collect_new.protocol.projections import get_crss
+import pywapor.collect_new.protocol.opendap as opendap
 from pywapor.general import bitmasks
 
 def fn_func(product_name, tile):
@@ -21,7 +21,7 @@ def url_func(product_name, tile):
     return url
 
 def tiles_intersect(latlim, lonlim):
-    with open(os.path.join(pywapor.collect_new.__path__[0], "MODIS_tiles.geojson")) as f:
+    with open(os.path.join(pywapor.collect_new.__path__[0], "product/MODIS_tiles.geojson")) as f:
         features = json.load(f)["features"]
     aoi = Polygon.from_bounds(lonlim[0], latlim[0], lonlim[1], latlim[1])
     tiles = list()
@@ -35,7 +35,7 @@ def tiles_intersect(latlim, lonlim):
             tiles.append((htile, vtile))
     return tiles
 
-def shortwave_ro(ds):
+def shortwave_r0(ds):
     ds["r0"] = 0.3 * ds["white_r0"] + 0.7 * ds["black_r0"]
     ds = ds.drop_vars(["white_r0", "black_r0"])
     return ds
@@ -115,7 +115,7 @@ def default_post_processors(product_name):
         "MYD13Q1.061": [mask_qa],
         "MOD11A1.061": [mask_bitwise_qa, expand_time_dim],
         "MYD11A1.061": [mask_bitwise_qa, expand_time_dim],
-        "MCD43A3.061": [shortwave_ro, 
+        "MCD43A3.061": [shortwave_r0, 
                         partial(mask_qa, to_mask = "r0", masker = ("r0_qa", 1.))],
     }
     return post_processors[product_name]
@@ -139,7 +139,7 @@ def download(folder, latlim, lonlim, timelim, product_name,
 
 if __name__ == "__main__":
 
-    folder = r"/Users/hmcoerver/Downloads/dl_test_new"
+    folder = r"/Users/hmcoerver/Downloads/merra2"
 
     products = [
         'MCD43A3.061',
@@ -149,10 +149,10 @@ if __name__ == "__main__":
         'MYD13Q1.061',
     ]
 
-    latlim = [26.9, 33.7]
-    lonlim = [25.2, 37.2]
-    # latlim = [28.9, 29.7]
-    # lonlim = [30.2, 31.2]
+    # latlim = [26.9, 33.7]
+    # lonlim = [25.2, 37.2]
+    latlim = [28.9, 29.7]
+    lonlim = [30.2, 31.2]
     timelim = [datetime.date(2021, 7, 1), datetime.date(2021, 8, 1)]
 
     # MODIS.
