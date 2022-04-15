@@ -70,15 +70,26 @@ def create_selection(coords, ds = None, target_crs = None,
     return selection
 
 def process_ds(ds, coords, variables, crs = None):
+
     ds = ds[list(variables.keys())]
-    if isinstance(crs, type(None)):
-        crs = ds.rio.crs
+
     ds = ds.rename({v[0]:k for k,v in coords.items() if k in ["x", "y"]})
     ds = ds.rename({k: v[1] for k, v in variables.items()})
-    if (ds.rio.grid_mapping not in list(ds.coords)) and ("spatial_ref" in [x[1] for x in variables.values()]):
-        ds = ds.rio.write_grid_mapping("spatial_ref")
-    ds = ds.rio.write_crs(crs)
+
+    if not isinstance(crs, type(None)):
+        ds = ds.rio.write_crs(crs)
+
+    ds = ds.rio.write_grid_mapping("spatial_ref")
+
+    for var in [x for x in list(ds.variables) if x not in ds.coords]:
+        if "grid_mapping" in ds[var].attrs.keys():
+            del ds[var].attrs["grid_mapping"]
+
+    ds = ds.sortby("y", ascending = False)
+    ds = ds.sortby("x")
+
     ds.attrs = {}
+
     return ds
 
 # def create_selection(latlim, lonlim, timelim, coords, target_crs = None):
@@ -152,7 +163,7 @@ def domain_overlaps_domain(domain1, domain2, partially = True):
     else:
         return check1 and check2
 
-def save_ds(ds, fp, encoding = True, decode_coords = None, chunk = True):
+def save_ds(ds, fp, decode_coords = None, encoding = None):
     """Save a `xr.Dataset` as netcdf.
 
     Parameters
@@ -170,13 +181,17 @@ def save_ds(ds, fp, encoding = True, decode_coords = None, chunk = True):
     xr.Dataset
         The newly created dataset.
     """
-    if chunk:
-        ds = ds.chunk("auto")
-
-    if isinstance(encoding, bool):
-        encoding = {x: {"zlib": True} for x in list(ds.variables) if x not in list(ds.coords)}
-
     temp_fp = fp.replace(".nc", "_temp")
+
+    folder = os.path.split(fp)[0]
+    if not os.path.isdir(folder):
+        os.makedirs(folder)
+
+    ds = ds.chunk("auto")
+    # ds = ds.sortby(list(ds.dims))
+
+    # if ("spatial_ref" in list(ds.variables)) and ("spatial_ref" not in list(ds.coords)):
+    #     ds = ds.set_coords(("spatial_ref"))
 
     with ProgressBar():
         ds.to_netcdf(temp_fp, engine = "netcdf4", encoding = encoding)
@@ -185,16 +200,14 @@ def save_ds(ds, fp, encoding = True, decode_coords = None, chunk = True):
 
     os.rename(temp_fp, fp)
 
-    ds = open_ds(fp, decode_coords, chunk = chunk)
+    ds = open_ds(fp, decode_coords, chunk = True)
     return ds
 
-def open_ds(fp, decode_coords, chunk = True):
-    if chunk:
+def open_ds(fp, decode_coords = "all", chunk = True):
+    if chunk == True:
         ds = xr.open_dataset(fp, decode_coords=decode_coords, chunks = "auto")
     else:
         ds = xr.open_dataset(fp, decode_coords=decode_coords)
-    if ("spatial_ref" in list(ds.variables)) and ("spatial_ref" not in list(ds.coords)):
-        ds = ds.set_coords(("spatial_ref"))
     return ds
 
 def reproject_ds(ds, fp, target_crs, source_crs = None):

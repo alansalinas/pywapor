@@ -136,18 +136,18 @@ def composite_defaults():
         'lulc': {
                     "composite_type": 'mean',
                     "temporal_interp": 'nearest',
-                    "spatial_interp": "linear",
+                    "spatial_interp": "nearest",
                     "var_name": "lulc",
                     "var_unit": "-",
                 },
         'z': {
                     "composite_type": False,
                     "temporal_interp": False,
-                    "spatial_interp": "linear",
+                    "spatial_interp": "bilinear",
                     "var_name": "z",
                     "var_unit": "m",
                 },
-        'p_24': {
+        'p': {
                     "composite_type": "mean",
                     "temporal_interp": "linear",
                     "spatial_interp": "nearest",
@@ -161,10 +161,10 @@ def composite_defaults():
                     "var_name": "se_root",
                     "var_unit": "-",
                 },
-        'ra_24': {
+        'ra': {
                     "composite_type": "mean",
                     "temporal_interp": "linear",
-                    "spatial_interp": "linear",
+                    "spatial_interp": "bilinear",
                     "var_name": "ra_24",
                     "var_unit": "-",
                 }
@@ -173,11 +173,11 @@ def composite_defaults():
     meteo = {
             "composite_type": "mean",
             "temporal_interp": "linear",
-            "spatial_interp": "linear",
+            "spatial_interp": "bilinear",
             }
 
-    meteo_names_units = {"t_air_max_24": "°C", "t_air_min_24":"°C", "t_air_24":"°C", 
-        "u2m_24":"m/s", "v2m_24":"m/s","qv_24":"kg/kg","p_air_0_24":"kPa"}
+    meteo_names_units = {"t_air_max": "°C", "t_air_min":"°C", "t_air":"°C", 
+        "u2m":"m/s", "v2m":"m/s","qv":"kg/kg","p_air_0":"kPa"}
 
     for name, unit in meteo_names_units.items():
         cdefaults[name] = {**{"var_name": name, "var_unit": unit}, **meteo}
@@ -185,7 +185,7 @@ def composite_defaults():
     static = {
             "composite_type": False,
             "temporal_interp": False,
-            "spatial_interp": "linear",    
+            "spatial_interp": "bilinear",    
     }
 
     statics_names_units = {'land_mask': "-",

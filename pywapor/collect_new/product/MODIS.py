@@ -10,6 +10,7 @@ from pywapor.general.logger import log
 from shapely.geometry import shape
 from pywapor.collect_new.protocol.projections import get_crss
 import pywapor.collect_new.protocol.opendap as opendap
+from pywapor.general.processing_functions import open_ds
 from pywapor.general import bitmasks
 
 def fn_func(product_name, tile):
@@ -74,9 +75,9 @@ def mask_qa(ds, to_mask = "ndvi", masker = ("ndvi_qa", 1.0)):
     ds = ds.drop_vars(masker[0])
     return ds
 
-def default_vars(product_name):
+def default_vars(product_name, req_vars):
 
-    vars = {
+    variables = {
 
         "MOD13Q1.061": {
                     "_250m_16_days_NDVI": [("time", "YDim", "XDim"), "ndvi"],
@@ -107,25 +108,70 @@ def default_vars(product_name):
                     "MOD_Grid_BRDF_eos_cf_projection": [(), "spatial_ref"]
         }
     }
-    return vars[product_name]
 
-def default_post_processors(product_name):
-    post_processors = {
-        "MOD13Q1.061": [mask_qa],
-        "MYD13Q1.061": [mask_qa],
-        "MOD11A1.061": [mask_bitwise_qa, expand_time_dim],
-        "MYD11A1.061": [mask_bitwise_qa, expand_time_dim],
-        "MCD43A3.061": [shortwave_r0, 
-                        partial(mask_qa, to_mask = "r0", masker = ("r0_qa", 1.))],
+    req_dl_vars = {
+        "MOD13Q1.061": {
+            "ndvi": ["_250m_16_days_NDVI", "_250m_16_days_pixel_reliability", "MODIS_Grid_16DAY_250m_500m_VI_eos_cf_projection"],
+        },
+        "MYD13Q1.061": {
+            "ndvi": ["_250m_16_days_NDVI", "_250m_16_days_pixel_reliability", "MODIS_Grid_16DAY_250m_500m_VI_eos_cf_projection"],
+        },
+        "MOD11A1.061": {
+            "lst": ["LST_Day_1km", "Day_view_time", "QC_Day", "MODIS_Grid_Daily_1km_LST_eos_cf_projection"],
+        },
+        "MYD11A1.061": {
+            "lst": ["LST_Day_1km", "Day_view_time", "QC_Day", "MODIS_Grid_Daily_1km_LST_eos_cf_projection"],
+        },
+        "MCD43A3.061": {
+            "r0": ["Albedo_WSA_shortwave", "Albedo_BSA_shortwave", "BRDF_Albedo_Band_Mandatory_Quality_shortwave", "MOD_Grid_BRDF_eos_cf_projection"],
+        },
     }
-    return post_processors[product_name]
 
-def download(folder, latlim, lonlim, timelim, product_name,
+    out = {val:variables[product_name][val] for sublist in map(req_dl_vars[product_name].get, req_vars) for val in sublist}
+    
+    return out
+
+def default_post_processors(product_name, req_vars):
+    
+    post_processors = {
+        "MOD13Q1.061": {
+            "ndvi": [mask_qa]
+            },
+        "MYD13Q1.061": {
+            "ndvi": [mask_qa]
+            },
+        "MOD11A1.061": {
+            "lst": [mask_bitwise_qa, expand_time_dim]
+            },
+        "MYD11A1.061": {
+            "lst": [mask_bitwise_qa, expand_time_dim]
+            },
+        "MCD43A3.061": {
+            "r0": [
+                    shortwave_r0, 
+                    partial(mask_qa, to_mask = "r0", masker = ("r0_qa", 1.))
+                    ]
+            },
+    }
+
+    out = [val for key, sublist in post_processors[product_name].items() for val in sublist if key in req_vars]
+    if "_" in post_processors[product_name].keys():
+        out += post_processors[product_name]["_"]
+
+    return out
+
+def download(folder, latlim, lonlim, timelim, product_name, req_vars,
                 variables = None, post_processors = None):
+    folder = os.path.join(folder, "MODIS")
+
+    fn = os.path.join(folder, f"{product_name}.nc")
+    if os.path.isfile(fn):
+        return open_ds(fn, "all")
+
     tiles = tiles_intersect(latlim, lonlim)
     coords = {"x": ["XDim", lonlim], "y": ["YDim", latlim], "t": ["time",timelim]}
-    variables = default_vars(product_name)
-    post_processors = default_post_processors(product_name)
+    variables = default_vars(product_name, req_vars)
+    post_processors = default_post_processors(product_name, req_vars)
     data_source_crs = get_crss("MODIS")
     parallel = False
     spatial_tiles = True
@@ -139,22 +185,22 @@ def download(folder, latlim, lonlim, timelim, product_name,
 
 if __name__ == "__main__":
 
-    folder = r"/Users/hmcoerver/Downloads/merra2"
-
     products = [
-        'MCD43A3.061',
-        'MOD11A1.061',
-        'MYD11A1.061',
-        'MOD13Q1.061',
-        'MYD13Q1.061',
+        ('MCD43A3.061', ["r0"]),
+        ('MOD11A1.061', ["lst"]),
+        ('MYD11A1.061', ["lst"]),
+        ('MOD13Q1.061', ["ndvi"]),
+        ('MYD13Q1.061', ["ndvi"]),
     ]
 
+    folder = r"/Users/hmcoerver/Downloads/pywapor_test"
     # latlim = [26.9, 33.7]
     # lonlim = [25.2, 37.2]
     latlim = [28.9, 29.7]
     lonlim = [30.2, 31.2]
-    timelim = [datetime.date(2021, 7, 1), datetime.date(2021, 8, 1)]
+    timelim = [datetime.date(2020, 7, 1), datetime.date(2020, 7, 11)]
 
     # MODIS.
-    for product_name in products:
-        ds = download(folder, latlim, lonlim, timelim, product_name)
+    for product_name, req_vars in products:
+        ds = download(folder, latlim, lonlim, timelim, product_name, req_vars)
+        print(ds.rio.crs, ds.rio.grid_mapping)

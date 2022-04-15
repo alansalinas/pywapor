@@ -1,17 +1,41 @@
-import datetime
 from pywapor.general.logger import log
 from pywapor.collect_new.protocol.projections import get_crss
 import pywapor.collect_new.protocol.opendap as opendap
+import pywapor.collect.accounts as accounts
+import os
+from pywapor.general.processing_functions import open_ds
 
-def default_vars():
+def default_vars(product_name, req_vars = ["p"]):
+    
     variables =  {
-        "precip": [("time", "latitude", "longitude"), "p"],
-            }
-    return variables
+        "P05": {
+            "precip": [("time", "latitude", "longitude"), "p"],
+        }
+    }
 
-def default_post_processors():
-    post_processors = []
-    return post_processors
+    req_dl_vars = {
+        "P05": {
+            "p": ["precip"],
+        }
+    }
+
+    out = {val:variables[product_name][val] for sublist in map(req_dl_vars[product_name].get, req_vars) for val in sublist}
+    
+    return out
+
+def default_post_processors(product_name, req_vars = ["p"]):
+
+    post_processors = {
+        "P05": {
+            "p": [],
+        }
+    }
+
+    out = [val for key, sublist in post_processors[product_name].items() for val in sublist if key in req_vars]
+    if "_" in post_processors[product_name].keys():
+        out += post_processors[product_name]["_"]
+
+    return out
 
 def fn_func(product_name, tile):
     fn = f"{product_name}_temp.nc"
@@ -21,13 +45,18 @@ def url_func(product_name, tile):
     url = "https://coastwatch.pfeg.noaa.gov/erddap/griddap/chirps20GlobalDailyP05.nc?"
     return url
 
-def download(folder, latlim, lonlim, timelim, 
+def download(folder, latlim, lonlim, timelim, product_name = "P05", req_vars = ["p"],
                 variables = None, post_processors = None):
-    product_name = 'CHIRPS'
+    folder = os.path.join(folder, "CHIRPS")
+
+    fn = os.path.join(folder, f"{product_name}.nc")
+    if os.path.isfile(fn):
+        return open_ds(fn, "all")
+
     tiles = [None]
     coords = {"x": ["longitude", lonlim], "y": ["latitude", latlim], "t": ["time", timelim]}
-    variables = default_vars()
-    post_processors = default_post_processors()
+    variables = default_vars(product_name, req_vars=req_vars)
+    post_processors = default_post_processors(product_name, req_vars=req_vars)
     data_source_crs = get_crss("WGS84")
     parallel = False
     spatial_tiles = False
@@ -41,16 +70,17 @@ def download(folder, latlim, lonlim, timelim,
 
 if __name__ == "__main__":
 
-    import pywapor.collect.accounts as accounts
+    import datetime
 
-    folder = r"/Users/hmcoerver/Downloads/merra2"
+    folder = r"/Users/hmcoerver/Downloads/pywapor_test"
+    # latlim = [26.9, 33.7]
+    # lonlim = [25.2, 37.2]
+    latlim = [28.9, 29.7]
+    lonlim = [30.2, 31.2]
+    timelim = [datetime.date(2020, 7, 1), datetime.date(2020, 7, 11)]
 
-    latlim = [36.9, 43.7]
-    lonlim = [5.2, 17.2]
-    # latlim = [28.9, 29.7]
-    # lonlim = [30.2, 31.2]
-    timelim = [datetime.date(2021, 7, 1), datetime.date(2021, 8, 1)]
-
+    product_name = "P05"
+    req_vars = ["p"]
     # CHIRPS.
     ds = download(folder, latlim, lonlim, timelim)
 

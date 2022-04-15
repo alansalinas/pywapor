@@ -16,18 +16,24 @@ import tqdm
 import datetime
 import rioxarray.merge
 
-def download(folder, latlim, lonlim, timelim, product_name,
+def download(folder, latlim, lonlim, timelim, product_name, req_vars = ["ndvi", "r0"],
                 variables = None, post_processors = None):
+
+    folder = os.path.join(folder, "PROBAV")
+
+    fn = os.path.join(folder, f"{product_name}.nc")
+    if os.path.isfile(fn):
+        return open_ds(fn, "all")
 
     dates = pd.date_range(timelim[0], timelim[1], freq="D")
 
     bb = (lonlim[0], latlim[0], lonlim[1], latlim[1])
 
     if isinstance(post_processors, type(None)):
-        post_processors = default_post_processors(product_name)
+        post_processors = default_post_processors(product_name, req_vars = req_vars)
 
     if isinstance(variables, type(None)):
-        variables = default_vars(product_name)
+        variables = default_vars(product_name, req_vars)
 
     coords = {"x": ["lon", None], "y": ["lat", None]}
 
@@ -88,6 +94,7 @@ def open_hdf5_groups(fp, variables, coords):
 
         spatial_ref_name = [k for k, v in variables.items() if v[1] == "spatial_ref"][0]
         if (spatial_ref_name in list(ds.variables)) and (spatial_ref_name not in list(ds.coords)):
+            ds = ds.rio.write_grid_mapping(spatial_ref_name)
             ds = ds.set_coords((spatial_ref_name))
 
         for k in variables.keys():
@@ -98,6 +105,9 @@ def open_hdf5_groups(fp, variables, coords):
                 ds[k] = ds_grp.rename({vrs: k})[k]
 
         ds = process_ds(ds, coords, variables)
+
+        # for var in [x for x in list(ds.variables) if x not in ds.coords]:
+        #     del ds[var].attrs["grid_mapping"]
 
         ds = save_ds(ds, nc_fp, decode_coords = "all")
 
@@ -114,26 +124,41 @@ def calc_r0(ds):
     return ds
 
 def drop_vars(ds, to_drop):
+    to_drop = [x for x in to_drop if x in ds.variables]
     ds = ds.drop_vars(to_drop)
     return ds
 
-def default_post_processors(product_name):
+def default_post_processors(product_name, req_vars = ["ndvi", "r0"]):
+    
     post_processors = {
-        "S5_TOC_100_m_C1": [calc_r0, 
-                            partial(mask_bitwise_qa, to_mask = "r0", 
-                            flags = ["bad BLUE", "bad RED", "bad NIR", "bad SWIR", 
-                                    "sea", "undefined", "cloud", "ice/snow", "shadow"]),
-                            partial(mask_bitwise_qa, to_mask = "ndvi", 
-                            flags = ["bad RED", "bad NIR", "sea", "undefined", 
-                            "cloud", "ice/snow", "shadow"]),
-                            partial(drop_vars, to_drop = ["blue", "nir", "red", 
-                            "swir", "vnir_vza", "swir_vza", "qa"])
-                            ]
+        "S5_TOC_100_m_C1": {
+            "r0": [
+                    calc_r0, 
+                    partial(mask_bitwise_qa, to_mask = "r0", 
+                    flags = ["bad BLUE", "bad RED", "bad NIR", "bad SWIR", 
+                            "sea", "undefined", "cloud", "ice/snow", "shadow"]),
+            ],
+            "ndvi": [
+                    partial(mask_bitwise_qa, to_mask = "ndvi", 
+                    flags = ["bad RED", "bad NIR", "sea", "undefined", 
+                    "cloud", "ice/snow", "shadow"]),
+            ],
+            "_": [
+                    partial(drop_vars, to_drop = ["blue", "nir", "red", 
+                    "swir", "vnir_vza", "swir_vza", "qa"])
+            ]
+        }
     }
-    return post_processors[product_name]
 
-def default_vars(product_name):
-    vars = {
+    out = [val for key, sublist in post_processors[product_name].items() for val in sublist if key in req_vars]
+    if "_" in post_processors[product_name].keys():
+        out += post_processors[product_name]["_"]
+
+    return out
+
+def default_vars(product_name, req_vars = ["ndvi", "r0"]):
+    
+    variables = {
         "S5_TOC_100_m_C1": {
             "LEVEL3/NDVI":              [("lon", "lat"), "ndvi"],
             "LEVEL3/RADIOMETRY/BLUE":   [("lon", "lat"), "blue"],
@@ -146,7 +171,19 @@ def default_vars(product_name):
             "crs":                      [(), "spatial_ref"]
         },
     }
-    return vars[product_name]
+
+    req_dl_vars = {
+        "S5_TOC_100_m_C1": {
+            "ndvi": ["LEVEL3/NDVI", "LEVEL3/QUALITY", "crs"],
+            "r0":   ["LEVEL3/RADIOMETRY/BLUE", "LEVEL3/RADIOMETRY/NIR", 
+                    "LEVEL3/RADIOMETRY/RED", "LEVEL3/RADIOMETRY/SWIR",
+                    "LEVEL3/QUALITY", "crs"],
+        }
+    }
+
+    out = {val:variables[product_name][val] for sublist in map(req_dl_vars[product_name].get, req_vars) for val in sublist}
+    
+    return out
 
 def find_tiles(url, dates, session):
 
@@ -187,14 +224,17 @@ if __name__ == "__main__":
 
     product_name = "S5_TOC_100_m_C1"
 
-    folder = r"/Users/hmcoerver/Downloads/merra2"
-
-    latlim = [26.9, 33.7]
-    lonlim = [25.2, 37.2]
-    timelim = [datetime.date(2020, 7, 20), datetime.date(2020, 7, 22)]
+    folder = r"/Users/hmcoerver/Downloads/pywapor_test"
+    # latlim = [26.9, 33.7]
+    # lonlim = [25.2, 37.2]
+    latlim = [28.9, 29.7]
+    lonlim = [30.2, 31.2]
+    timelim = [datetime.date(2020, 7, 2), datetime.date(2020, 7, 9)]
 
     variables = None
     post_processors = None
+    req_vars = ["r0", "ndvi"]
 
-    ds = download(folder, latlim, lonlim, timelim, product_name,
+    ds = download(folder, latlim, lonlim, timelim, product_name, req_vars = req_vars,
                 variables = variables, post_processors = post_processors)
+

@@ -6,7 +6,11 @@ import urllib
 
 def download(folder, product_name, coords, variables, post_processors, url_func):
 
-    # Create waitbar
+    # Create folder.
+    if not os.path.isdir(folder):
+        os.makedirs(folder)
+
+    # Create waitbar.
     waitbar = tqdm.tqdm(position = 0, total = 100, bar_format='{l_bar}{bar}|')
 
     # Define callback function for waitbar progress.
