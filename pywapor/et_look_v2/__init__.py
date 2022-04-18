@@ -263,8 +263,8 @@ Soil Moisture (:mod:` pywapor.et_look_v2.soil_moisture`)
 
 
 """
-from pywapor.et_look_v2 import solar_radiation, clear_sky_radiation, meteo, radiation, evapotranspiration, soil_moisture, leaf, stress, resistance, roughness, neutral, unstable, constants
+from pywapor.et_look_v2 import solar_radiation, clear_sky_radiation, meteo, radiation, evapotranspiration, soil_moisture, leaf, stress, resistance, roughness, neutral, unstable, constants, biomass
 
-__all__ = ['solar_radiation', 'clear_sky_radiation', 'meteo', 'radiation', 'evapotranspiration', 'soil_moisture', 'leaf', 'stress', 'resistance', 'roughness', 'neutral', 'unstable', 'constants']
+__all__ = ['solar_radiation', 'clear_sky_radiation', 'meteo', 'radiation', 'evapotranspiration', 'soil_moisture', 'leaf', 'stress', 'resistance', 'roughness', 'neutral', 'unstable', 'constants', 'biomass']
 
 __version__ = '0.1'

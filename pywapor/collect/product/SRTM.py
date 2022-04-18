@@ -12,7 +12,7 @@ import pywapor.collect.accounts as accounts
 from shapely.geometry.polygon import Polygon
 from pywapor.general.logger import log
 from shapely.geometry import shape
-import pywapor.collect_new.protocol.opendap as opendap
+import pywapor.collect.protocol.opendap as opendap
 
 def tiles_intersect(latlim, lonlim):
     with open(os.path.join(pywapor.collect_new.__path__[0], "product/SRTM30_tiles.geojson")) as f:

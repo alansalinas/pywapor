@@ -1,6 +1,6 @@
 from pywapor.general.logger import log
-from pywapor.collect_new.protocol.projections import get_crss
-import pywapor.collect_new.protocol.opendap as opendap
+from pywapor.collect.protocol.projections import get_crss
+import pywapor.collect.protocol.opendap as opendap
 import pywapor.collect.accounts as accounts
 import os
 from pywapor.general.processing_functions import open_ds

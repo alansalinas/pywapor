@@ -1,5 +1,5 @@
-from pywapor.collect_new.protocol import opendap
-from pywapor.collect_new.protocol.projections import get_crss
+from pywapor.collect.protocol import opendap
+from pywapor.collect.protocol.projections import get_crss
 import os
 
 def default_vars(product_name, req_vars = ["t_air_i", "u2m_i", "v2m_i",
