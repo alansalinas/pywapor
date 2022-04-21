@@ -243,8 +243,8 @@ def main(dss, sources, example_source, bins, folder, enhancers,
     ds = ds.drop_vars("time")
     ds = save_ds(ds, final_path, decode_coords = "all")
 
-    # for nc in dss2:
-    #     os.remove(nc.encoding["source"])
+    for nc in dss2:
+        os.remove(nc.encoding["source"])
 
     return ds
 
