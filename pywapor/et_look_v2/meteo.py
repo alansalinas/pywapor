@@ -1296,7 +1296,11 @@ def wind_speed_blending_height(u, z_obs=2, z_b=100):
     z0m = 0.0171
 
     ws = (c.k * u) / np.log(z_obs / z0m) * np.log(z_b / z0m) / c.k
-    ws = np.clip(ws, 1, 150)
+
+    if isinstance(ws, xr.DataArray):
+        ws = ws.clip(1, 150)
+    else:
+        ws = np.clip(ws, 1, 150)    
 
     return ws
 

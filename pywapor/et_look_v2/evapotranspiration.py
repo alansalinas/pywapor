@@ -155,7 +155,12 @@ def et_reference_mm(et_ref_24, lh_24):
         [mm d-1]
     """
     x = et_ref_24 * c.day_sec / lh_24
-    et_ref_24_mm = np.clip(x, 0, np.inf)
+
+    if isinstance(x, xr.DataArray):
+        et_ref_24_mm = x.clip(0, np.inf)
+    else:
+        et_ref_24_mm = np.clip(x, 0, np.inf)
+
     return et_ref_24_mm
 
 

@@ -578,7 +578,10 @@ def wind_speed_blending_height_bare(u_i, z0m_bare=0.001, z_obs=10, z_b=100):
     """
     ws = (c.k * u_i) / np.log(z_obs / z0m_bare) * np.log(z_b / z0m_bare) / c.k
 
-    ws = np.clip(ws, 1, 150)
+    if isinstance(ws, xr.DataArray):
+        ws = ws.clip(1, 150)
+    else:
+        ws = np.clip(ws, 1, 150)
 
     return ws
 
@@ -620,7 +623,10 @@ def wind_speed_blending_height_full_inst(u_i, z0m_full=0.1, z_obs=10, z_b=100):
     """
     ws = (c.k * u_i) / np.log(z_obs / z0m_full) * np.log(z_b / z0m_full) / c.k
 
-    ws = np.clip(ws, 1, 150)
+    if isinstance(ws, xr.DataArray):
+        ws = ws.clip(1, 150)
+    else:
+        ws = np.clip(ws, 1, 150)
 
     return ws
 

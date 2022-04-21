@@ -123,10 +123,11 @@ def roughness_length(lai, z_oro, z_obst, z_obst_max, land_mask=1):
     else:
         z0m[land_mask == 0] = 0
 
-    z0m = np.where(land_mask == 1, veg_roughness(z_obst, disp, z_obst_max, lai, z_oro), z0m)
     if isinstance(disp, xr.DataArray):
+        z0m = xr.where(land_mask == 1, veg_roughness(z_obst, disp, z_obst_max, lai, z_oro), z0m)
         z0m = xr.where(land_mask == 2, 0.0001, z0m)
     else:
+        z0m = np.where(land_mask == 1, veg_roughness(z_obst, disp, z_obst_max, lai, z_oro), z0m)
         z0m[land_mask == 2] = 0.0001
 
     return z0m

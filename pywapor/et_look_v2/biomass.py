@@ -4,8 +4,96 @@
 
 """
 import numpy as np
+import xarray as xr
 
-R_G = 8.3144 # The molar gas constant in J K -1 mol-1
+def fpar(ndvi, fpar_slope=1.257, fpar_offset=-0.161):
+    r"""
+    Computes the fraction of absorbed PAR.
+    PAR is photosynthetically active radiation, which is the solar radiation
+    in the spectral range from 400-700 nm that is used by plants in
+    photosynthesis. This function computes the fpar as a linear function of
+    the ndvi, and is bounded between 0 and 1.
+
+    .. math ::
+        f_{par}=\Delta_{p}*I_{ndvi} + c_{p}
+
+    Parameters
+    ----------
+    ndvi : float
+        normalized difference vegetation index
+        :math:`I_{ndvi}`
+        [-]
+
+    fpar_slope : float
+        slope of the fpar-ndvi curve
+        :math:`\Delta_{p}`
+        [-]
+
+    fpar_offset : float
+        offset of the fpar-ndvi curve
+        :math:`c_{p}`
+        [-]
+
+    Returns
+    -------
+    f_par : float
+        fraction of absorbed photosynthetically active radiation
+        :math:`f_{par}`
+        [-]
+
+    Examples
+    --------
+    >>> import qattara.components.biomass as bio
+    >>> bio.fpar(0.4)
+    0.34179999999999999
+
+    """
+    x = fpar_offset + fpar_slope * ndvi
+
+    if isinstance(x, xr.DataArray):
+        out = x.clip(0.0,1.0)
+    else:
+        out = np.clip(x, 0.0, 1.0)
+    return out
+
+
+def par(ra_24):
+    r"""
+    Computes the photosynthetically active radiation (PAR). PAR is the solar
+    radiation in the spectral range from 400-700 nm that is used by plants
+    for photosynthesis.
+
+    .. math ::
+        PAR=r_{PAR}S^{\downarrow}
+
+    where the following constant is used
+
+    * :math:`r_{PAR}` = ratio par/solar radiation [-] = 0.48
+
+    Parameters
+    ----------
+    ra_24 : float
+       incoming shortwave radiation
+       :math:`S^{\downarrow}`
+       [W/m2]
+
+    Returns
+    -------
+    apar : float
+       photosynthetically active radiation
+       :math:`PAR`
+       [W/m2]
+
+    Examples
+    --------
+    >>> import qattara.components.biomass as bio
+    >>> bio.par(400.0)
+    192.0
+
+    """
+    ABSORBED_RADIATION = 0.48
+
+    return ABSORBED_RADIATION * ra_24
 
 def co2_level_annual(year):
     r"""
@@ -69,6 +157,8 @@ def temperature_dependency(t_air_k_12, dh_ap=52750, d_s=704.98, dh_dp=211000):
         [-]
 
     """
+    R_G = 8.3144 # The molar gas constant in J K -1 mol-1
+
     c1 = 21.77
     x = R_G * t_air_k_12
     y = c1 - dh_ap / x
@@ -94,6 +184,8 @@ def co2_o2_specificity_ratio(t_air_k_12):
         :math:`\tau_CO{2}O{2}`
         [-]
     """
+    R_G = 8.3144 # The molar gas constant in J K -1 mol-1
+
     a_t = 7.87 * 10 ** -5
     e_t = -42869.9
     x = R_G * t_air_k_12
@@ -118,6 +210,8 @@ def inhibition_constant_o2(t_air_k_12):
         :math:`K_0`
         [% O2]
     """
+    R_G = 8.3144 # The molar gas constant in J K -1 mol-1
+
     a_0 = 8240
     e_0 = 13913.5
     x = R_G * t_air_k_12
@@ -146,9 +240,17 @@ def affinity_constant_co2(t_air_k_12):
     a2 = 1.976 * 10 ** 22
     e1 = 59400
     e2 = 109600
-    k_m = np.zeros(t_air_k_12.shape)
-    k_m[t_air_k_12 >= 288.13] = a1 * np.exp(-e1 / (R_G * t_air_k_12[t_air_k_12 >= 288.13]))
-    k_m[t_air_k_12 < 288.13] = a2 * np.exp(-e2 / (R_G * t_air_k_12[t_air_k_12 < 288.13]))
+
+    R_G = 8.3144 # The molar gas constant in J K -1 mol-1
+    
+    if isinstance(t_air_k_12, xr.DataArray):
+        x1 = a1 * np.exp(-e1 / (R_G * t_air_k_12))
+        x2 = a2 * np.exp(-e2 / (R_G * t_air_k_12))
+        k_m = xr.where(t_air_k_12 >= 288.13, x1, x2)
+    else:
+        k_m = np.zeros(t_air_k_12.shape)
+        k_m[t_air_k_12 >= 288.13] = a1 * np.exp(-e1 / (R_G * t_air_k_12[t_air_k_12 >= 288.13]))
+        k_m[t_air_k_12 < 288.13] = a2 * np.exp(-e2 / (R_G * t_air_k_12[t_air_k_12 < 288.13]))
     return k_m
 
 
