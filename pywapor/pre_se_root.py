@@ -7,6 +7,7 @@ from pywapor.general.logger import log, adjust_logger
 from pywapor.general import compositer
 import pywapor.general.levels as levels#import pre_et_look_levels, find_example
 from pywapor.general import aligner
+import datetime
 
 def rename_meteo(ds, *args):
     ds = ds.rename_vars({
@@ -49,6 +50,7 @@ def main(folder, latlim, lonlim, timelim, sources, bin_length,
     xr.Dataset
         Dataset with data for `pywapor.se_root`.
     """
+    t1 = datetime.datetime.now()
     log.info("> PRE_SE_ROOT").add()
 
     if isinstance(sources, str):
@@ -65,13 +67,13 @@ def main(folder, latlim, lonlim, timelim, sources, bin_length,
     dss = downloader.collect_sources(folder, sources, latlim, lonlim, [bins[0], bins[-1]])
     ds = aligner.main(dss, sources, example_source, folder, enhancers)
 
-    log.sub().info("< PRE_SE_ROOT")
+    t2 = datetime.datetime.now()
+    log.sub().info(f"< PRE_SE_ROOT ({str(t2 - t1)})")
 
     return ds
 
 if __name__ == "__main__":
 
-    import datetime
     from pywapor.se_root import main as se_root
 
     sources = "level_1"

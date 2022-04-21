@@ -7,6 +7,7 @@ import os
 import numpy as np
 import warnings
 import pandas as pd
+import datetime
 import pywapor.general as g
 import pywapor.general.processing_functions as PF
 import pywapor.et_look_dev as ETLook_dev
@@ -23,7 +24,7 @@ def se_root(folder, latlim, lonlim, timelim, bin_length, level, **kwargs):
     ds_out = main(ds_in)
     return ds_out
 
-def main(input_data, se_root_version = "v2", export_vars = "default", export_to_tif = False):
+def main(input_data, se_root_version = "v2", export_vars = "default"):
     """Runs the ETLook model over the provided input data.
 
     Parameters
@@ -47,6 +48,7 @@ def main(input_data, se_root_version = "v2", export_vars = "default", export_to_
         lists with paths to geoTIFF files as values, depending on `export_to_tif`.
     """
 
+    t1 = datetime.datetime.now()
     log.info("> SE_ROOT").add()
 
     # Version
@@ -174,15 +176,10 @@ def main(input_data, se_root_version = "v2", export_vars = "default", export_to_
     fn = fn.replace("in", "out")
     ds = save_ds(ds, os.path.join(fp, fn), "all")
 
-    log.sub().info("< SE_ROOT")
+    t2 = datetime.datetime.now()
+    log.sub().info(f"< SE_ROOT ({str(t2 - t1)})")
 
-    if export_to_tif:
-        files = PF.export_ds_to_tif(ds, keep_vars, None)
-        ds.close()
-        # os.remove(fh)
-        return files
-    else:
-        return ds
+    return ds
 
 def lst_zone_mean(ds):
     # TODO This function needs to be replaced by something like pywapor.enhancers.temperature.local_mean

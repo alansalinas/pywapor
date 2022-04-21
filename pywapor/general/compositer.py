@@ -1,3 +1,7 @@
+"""
+Functions to prepare input for `pywapor.et_look`, more specifically to
+group various parameters in time to create composites. 
+"""
 import os
 import numpy as np
 import xarray as xr
@@ -152,10 +156,8 @@ def main(dss, sources, example_source, bins, folder, enhancers,
     warnings.filterwarnings("ignore", message="All-NaN slice encountered")
 
     final_path = os.path.join(folder, "et_look_in.nc")
-    if diagnostics:
-        final_path = final_path.replace(".nc", "_diags.nc")
 
-    if os.path.isfile(final_path):
+    if os.path.isfile(final_path) and not diagnostics:
         return open_ds(final_path, "all")
 
     example_ds = open_ds(dss[example_source], "all")
@@ -184,7 +186,7 @@ def main(dss, sources, example_source, bins, folder, enhancers,
             dss2.append(open_ds(dst_path, "all"))
             continue
 
-        dss1 = [reproject(open_ds(dss[src])[[var]], example_ds, dst_path.replace(".nc", f"_{i}.nc"), spatial_interp = spatial_interp) for i, src in enumerate(srcs)]
+        dss1 = [reproject(open_ds(dss[src])[[var]], example_ds, dst_path.replace(".nc", f"_x{i}.nc"), spatial_interp = spatial_interp) for i, src in enumerate(srcs)]
 
         if diagnostics:
             dss1 = diags(diagnostics, dss1, var)
@@ -226,6 +228,8 @@ def main(dss, sources, example_source, bins, folder, enhancers,
             os.remove(nc.encoding["source"])
 
     if diagnostics:
+        for nc in dss2:
+            os.remove(nc.encoding["source"])
         return None
 
     ds = xr.merge(dss2, compat = "override")
@@ -239,8 +243,8 @@ def main(dss, sources, example_source, bins, folder, enhancers,
     ds = ds.drop_vars("time")
     ds = save_ds(ds, final_path, decode_coords = "all")
 
-    for nc in dss2:
-        os.remove(nc.encoding["source"])
+    # for nc in dss2:
+    #     os.remove(nc.encoding["source"])
 
     return ds
 

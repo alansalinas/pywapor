@@ -38,7 +38,20 @@ def constants_defaults():
         'se_top': 0.5,
         'porosity': 0.4,
         'r0_grass': 0.23,
-        'eps_a': 0.5
+        'eps_a': 0.5,
+
+        # Biomass
+        'dh_ap': 52750, 
+        'd_s': 704.98, 
+        'dh_dp': 211000,
+        'ar_slo': 0.0, 
+        'ar_int': 0.5,
+        'fpar_slope': 1.257, 
+        'fpar_offset': -0.161,
+        'o2': 20.9,
+        'co2_ref': 281,
+        'gcgdm': 0.4,
+        'phot_eff': 2.49,
     }
 
     return c

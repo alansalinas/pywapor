@@ -7,9 +7,9 @@ import numpy as np
 import pywapor.et_look_dev as ETLook_dev
 import pywapor.et_look_v2 as ETLook_v2
 import pywapor.general as g
+import datetime
 from pywapor.general.logger import log
 import pywapor.general.processing_functions as PF
-import pywapor.general.pre_defaults as defaults
 import xarray as xr
 import pandas as pd
 from pywapor.general.processing_functions import save_ds
@@ -17,7 +17,7 @@ from pywapor.general.processing_functions import save_ds
 import copy
 import warnings
 
-def main(input_data, et_look_version = "v2", export_vars = "default", export_to_tif = False):
+def main(input_data, et_look_version = "v2", export_vars = "default"):
     """Runs the ETLook model over the provided input data.
 
     Parameters
@@ -41,14 +41,16 @@ def main(input_data, et_look_version = "v2", export_vars = "default", export_to_
         Returns a dataset or a dictionary with variable names as keys and
         lists with paths to geoTIFF files as values, depending on `export_to_tif`.
     """
+    t1 = datetime.datetime.now()
+    log.info("> ET_LOOK").add()
 
     # Version
     if et_look_version == "v2":
         ETLook = ETLook_v2
-        log.info("--> Running ETLook_v2")
     elif et_look_version == "dev":
         ETLook = ETLook_dev
-        log.info("--> Running ETLook_dev")
+
+    log.info(f"--> Running `et_look` ({et_look_version}).")
 
     warnings.filterwarnings("ignore", message="invalid value encountered in power")
     warnings.filterwarnings("ignore", message="invalid value encountered in true_divide")
@@ -58,7 +60,6 @@ def main(input_data, et_look_version = "v2", export_vars = "default", export_to_
     # Allow skipping of et_look-functions if not all of its required inputs are
     # available.
     g.lazifier.decorate_submods(ETLook, g.lazifier.etlook_decorator)
-    # g.lazifier.decorate_submods(ETLook_dev, g.lazifier.etlook_decorator)
 
     # Inputs
     if isinstance(input_data, str):
@@ -67,23 +68,12 @@ def main(input_data, et_look_version = "v2", export_vars = "default", export_to_
         ds = input_data
         input_data = ds.encoding["source"]
 
-    # Add constants to ds
-    ds = ds.assign(defaults.constants_defaults())
-
     ds = g.variables.initiate_ds(ds)
 
     if et_look_version == "dev":
         ds["nd_min"] = 0.1
         ds["tenacity"] = 1.0
 
-    # Constants TODO: move to pre_et_look (and improve this code...)
-    doy_epoch_start = [int(pd.Timestamp(x).strftime("%j")) for x in ds["time_bins"].values]
-    doy_epoch_end1 = [int(pd.Timestamp(x).strftime("%j")) for x in ds["time_bins"].values[1:]]
-    doy_epoch_end = doy_epoch_end1 + [int((pd.Timestamp(ds["time_bins"].values[-1]) + pd.Timedelta(days = np.diff(doy_epoch_start)[-1])).strftime("%j"))] 
-    doy = np.mean([doy_epoch_end, doy_epoch_start], axis = 0, dtype = int)
-    ds["doy"] = xr.DataArray(doy, coords = ds["time_bins"].coords).chunk("auto")
-
-    # ds["sc"] = ETLook.solar_radiation.seasonal_correction(ds["doy"])
     ds["decl"] = ETLook.solar_radiation.declination(ds["doy"])
     ds["iesd"] = ETLook.solar_radiation.inverse_earth_sun_distance(ds["doy"])
 
@@ -177,7 +167,7 @@ def main(input_data, et_look_version = "v2", export_vars = "default", export_to_
     ds["disp"] = ETLook.roughness.displacement_height(ds["lai"], ds["z_obst"], land_mask = ds["land_mask"], c1 = ds["c1"])
     ds["u_star_24_init"] = ETLook.unstable.initial_friction_velocity_daily(ds["u_b_24"], ds["z0m"], ds["disp"], z_b = ds["z_b"])
 
-    ds = ds.transpose("time_bins", "y", "x", "time")
+    ds = ds.transpose("time_bins", "y", "x")
 
     # **ETLook.unstable.transpiration***********************************************************
     ds["t_24"] = ETLook.unstable.transpiration(ds["rn_24_canopy"], ds["ssvp_24"], ds["ad_24"], ds["vpd_24"], ds["psy_24"], ds["r_canopy"], ds["h_canopy_24_init"], ds["t_air_k_24"], ds["u_star_24_init"], ds["z0m"], ds["disp"], ds["u_b_24"], z_obs = ds["z_obs"], z_b = ds["z_b"], iter_h = ds["iter_h"])
@@ -243,7 +233,7 @@ def main(input_data, et_look_version = "v2", export_vars = "default", export_to_
         # ds["t_air_k_24"] = ETLook.meteo.mean_temperature_kelvin_daily(ds["t_air_k_min"], ds["t_air_k_max"])
         ds["t_air_k_12"] = ETLook.meteo.mean_temperature_kelvin_daytime(ds["t_air_k_min"], ds["t_air_k_max"])
 
-        ds["t_dep"] = ETLook.biomass.temperature_dependency(ds["t_air_k_12"], dh_ap=52750, d_s=704.98, dh_dp=211000)
+        ds["t_dep"] = ETLook.biomass.temperature_dependency(ds["t_air_k_12"], dh_ap=ds["dh_ap"], d_s=ds["d_s"], dh_dp=ds["dh_dp"])
         ds["k_m"] = ETLook.biomass.affinity_constant_co2(ds["t_air_k_12"])
         ds["k_0"] = ETLook.biomass.inhibition_constant_o2(ds["t_air_k_12"])
         ds["tau_co2_o2"] = ETLook.biomass.co2_o2_specificity_ratio(ds["t_air_k_12"])
@@ -251,14 +241,14 @@ def main(input_data, et_look_version = "v2", export_vars = "default", export_to_
         ds["year"] = ds.time_bins.dt.year.chunk("auto")
 
         ds["co2_act"] = ETLook.biomass.co2_level_annual(ds["year"])
-        ds["a_d"] = ETLook.biomass.autotrophic_respiration(ds["t_air_k_24"], ar_slo=0.0, ar_int=0.5)
+        ds["a_d"] = ETLook.biomass.autotrophic_respiration(ds["t_air_k_24"], ar_slo=ds["ar_slo"], ar_int=ds["ar_int"])
 
         ds["apar"] = ETLook.biomass.par(ds["ra_24"])
-        ds["f_par"] = ETLook.biomass.fpar(ds["ndvi"], fpar_slope=1.257, fpar_offset=-0.161)
+        ds["f_par"] = ETLook.biomass.fpar(ds["ndvi"], fpar_slope=ds["fpar_slope"], fpar_offset=ds["fpar_offset"])
 
-        ds["co2_fert"] = ETLook.biomass.co2_fertilisation(ds["tau_co2_o2"], ds["k_m"], ds["k_0"], ds["co2_act"], o2=20.9, co2_ref=281)
-        ds["npp_max"] = ETLook.biomass.net_primary_production_max(ds["t_dep"], ds["co2_fert"], ds["a_d"], ds["apar"], gcgdm=0.45)
-        ds["npp"] = ETLook.biomass.net_primary_production(ds["npp_max"], ds["f_par"], ds["stress_moist"], phot_eff=2.49)
+        ds["co2_fert"] = ETLook.biomass.co2_fertilisation(ds["tau_co2_o2"], ds["k_m"], ds["k_0"], ds["co2_act"], o2=ds["o2"], co2_ref=ds["co2_ref"])
+        ds["npp_max"] = ETLook.biomass.net_primary_production_max(ds["t_dep"], ds["co2_fert"], ds["a_d"], ds["apar"], gcgdm=ds["gcgdm"])
+        ds["npp"] = ETLook.biomass.net_primary_production(ds["npp_max"], ds["f_par"], ds["stress_moist"], phot_eff=ds["phot_eff"])
 
     ds = ds.drop_vars([x for x in ds.variables if ds[x].dtype == object])
 
@@ -279,6 +269,7 @@ def main(input_data, et_look_version = "v2", export_vars = "default", export_to_
                     # 'biomass_prod',
                     'npp'
                     ]
+        keep_vars = [x for x in keep_vars if x in ds.variables]
         ds = ds[keep_vars]
     elif isinstance(export_vars, list):
         keep_vars = copy.copy(export_vars)
@@ -292,12 +283,10 @@ def main(input_data, et_look_version = "v2", export_vars = "default", export_to_
     fn = fn.replace("in", "out")
     ds = save_ds(ds, os.path.join(fp, fn), "all")
 
-    if export_to_tif:
-        files = PF.export_ds_to_tif(ds, keep_vars, None)
-        ds.close()
-        return files
-    else:
-        return ds
+    t2 = datetime.datetime.now()
+    log.sub().info(f"< ET_LOOK ({str(t2 - t1)})")
+
+    return ds
 
 def check_for_non_chuncked_arrays(ds):
     for var in ds.data_vars:

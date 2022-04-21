@@ -1,3 +1,9 @@
+"""
+Functions to prepare input for `pywapor.se_root`, more specifically to
+interpolate various parameters in time to match with land-surface-temperature
+times. 
+"""
+
 from pywapor.general.processing_functions import save_ds, open_ds
 from pywapor.general.reproject import reproject
 from pywapor.enhancers.apply_enhancers import apply_enhancer
@@ -96,31 +102,3 @@ def main(dss, sources, example_source, folder, enhancers, example_t_var = "lst")
 if __name__ == "__main__":
 
     example_t_var = "lst"
-
-#     import datetime
-#     from pywapor.general import compositer
-#     from pywapor.collect import downloader
-
-#     sources = {
-#         "ndvi":         [("MODIS", "MOD13Q1.061"), ("MODIS", "MYD13Q1.061")],
-#         "lst":          [("MODIS", "MOD11A1.061"), ("MODIS", "MYD11A1.061")],
-#         "t_air":        [("MERRA2", "M2I1NXASM.5.12.4")],
-#         "u2m":          [("MERRA2", "M2I1NXASM.5.12.4")],
-#         "v2m":          [("MERRA2", "M2I1NXASM.5.12.4")],
-#         "qv":           [("MERRA2", "M2I1NXASM.5.12.4")],
-#         "wv":           [("MERRA2", "M2I1NXASM.5.12.4")],
-#         "p_air":        [("MERRA2", "M2I1NXASM.5.12.4")],
-#         "p_air_0":      [("MERRA2", "M2I1NXASM.5.12.4")],
-#     }
-
-#     folder = r"/Users/hmcoerver/Downloads/pywapor_test"
-#     latlim = [28.9, 29.7]
-#     lonlim = [30.2, 31.2]
-#     timelim = [datetime.date(2020, 6, 25), datetime.date(2020, 7, 30)]
-#     example_source = ("MODIS", "MOD13Q1.061")
-#     bin_length = 4
-
-#     bins = compositer.time_bins(timelim, bin_length)
-#     dss = downloader.collect_sources(folder, sources, latlim, lonlim, [bins[0], bins[-1]])
-
-#     main(dss, sources, example_source, folder, example_t_var = "lst")

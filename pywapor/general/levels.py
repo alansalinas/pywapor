@@ -369,6 +369,30 @@ def pre_se_root_levels(level = "level_1"):
             "spatial_interp": "bilinear",
             },
 
+        "t_air_max": {
+            "products": [
+                {
+                    "source": "MERRA2",
+                    "product_name": "M2I1NXASM.5.12.4",
+                    "enhancers": "default",
+                },
+            ],
+            "temporal_interp": "linear",
+            "spatial_interp": "bilinear",
+            },
+
+        "t_air_min": {
+            "products": [
+                {
+                    "source": "MERRA2",
+                    "product_name": "M2I1NXASM.5.12.4",
+                    "enhancers": "default",
+                },
+            ],
+            "temporal_interp": "linear",
+            "spatial_interp": "bilinear",
+            },
+
         "u2m": {
             "products": [
                 {

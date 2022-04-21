@@ -1,4 +1,4 @@
-"""Functions and dictionaries to convert Landsat Quality Assesment Bitmasks
+"""Functions and dictionaries to convert various RS Quality Bitmasks
 into numpy boolean arrays.
 """
 
@@ -311,6 +311,21 @@ def get_pixel_qa_bits(collection, ls_number, level):
     return all_flags[collection][ls_number][level]
 
 def MODIS_qa_translator(product_name):
+    """Returns a dictionary to bridge between labels and bits in
+    MODIS pixel_qa bands.
+
+    Parameters
+    ----------
+    product_name : str
+        For which product to get the values.
+
+    Returns
+    -------
+    dict
+        Keys are labels and values are
+        definitions of the bits.
+    """
+
     flag_bits = dict()
 
     modis_11 = {
@@ -411,6 +426,14 @@ def get_radsat_qa_bits(collection, ls_number, level):
     return all_flags[collection][ls_number][level]
 
 def PROBAV_qa_translator():
+    """Returns a dictionary to bridge between labels and bits in
+    PROBAV pixel_qa bands.
+
+    Returns
+    -------
+    dict
+        Keys are labels and values are definitions of the bits.
+    """
     flags = {
 
         'clear':            [(0b0000000000000001, True),
@@ -438,27 +461,8 @@ def PROBAV_qa_translator():
     }
     return flags
 
-def open_array(path, slc = [slice(None), slice(None)]):
-    """Open an image as an numpy array.
-
-    Parameters
-    ----------
-    path : str
-        Path to image file.
-    slc : list, optional
-        Two slice objects to return only a part of the image, by 
-        default [slice(None), slice(None)]
-
-    Returns
-    -------
-    np.ndarray
-        The pixel values of the image.
-    """
-    array = plt.imread(path)[slc[0],slc[1],...]
-    return array
-
 def get_mask(qa_array, flags, flag_bits):
-    """Given a Landsat bitmask ('qa_array') a list of 'flags' to identify and
+    """Given a bitmask (`qa_array`) a list of `flags` to identify and
     a dictionary to convert between the bits and labels, returns a 
     boolean array.
 
@@ -500,101 +504,3 @@ def get_mask(qa_array, flags, flag_bits):
         final_mask = final_mask | flag_mask
     
     return final_mask > 0
-
-def create_masked_rgb(red, green, blue, mask = None):
-    """Create a 3-dimensional array from three different bands, optionally
-    specifying (transparent) colors to use for masked pixels.
-
-    Parameters
-    ----------
-    red : np.ndarray
-        Pixel values to plot in the red channel.
-    green : np.ndarray
-        Pixel values to plot in the red channel.
-    blue : np.ndarray
-        Pixel values to plot in the red channel.
-    mask : dictionary, optional
-        Should contain; a key `array` with a boolean np.ndarray with the same
-        shape as `red`, `blue` and `green`; `alpha` with a float value and; 
-        `color` as a tuple with rgb values. By default None
-
-    Returns
-    -------
-    np.ndarray
-        3-dimensional array with pixel values to be plotted in red, green 
-        and blue channels.
-
-    Example
-    -------
-    >>> my_mask = np.array([[True, False],[False, True]])
-    >>> mask_plot_info = {"array": my_mask,
-                          "color": (1,0,0),
-                          "alpha": 0.4}
-    >>> red = np.array([[200, 500],[240, 34]])
-    >>> green = np.array([[120, 500],[240, 34]])
-    >>> blue = np.array([[7856, 5650],[2040, 9486]])
-    >>> rgb = create_masked_rgb(red, green, blue, mask = mask_plot_info)
-    >>> plt.imshow(rgb)
-    """
-
-    R = (red - np.min(red))/np.ptp(red)
-    G = (green - np.min(green))/np.ptp(green)
-    B = (blue - np.min(blue))/np.ptp(blue)
-
-    if not isinstance(mask, type(None)):
-
-        R = np.where(mask["array"] == True, np.clip(R*(1-mask["alpha"])+mask["color"][0]*mask["alpha"], 0, 1), R)
-        G = np.where(mask["array"] == True, np.clip(G*(1-mask["alpha"])+mask["color"][1]*mask["alpha"], 0, 1), G)
-        B = np.where(mask["array"] == True, np.clip(B*(1-mask["alpha"])+mask["color"][2]*mask["alpha"], 0, 1), B)
-
-    return np.stack([R, G, B], axis = 2) 
-
-# if __name__ == "__main__":
-
-#     # Define some paths.
-#     img = {
-#         "meta": {"title": "LS8 Collection 2", "collection": 2, "landsat": 8, "level": 2},
-#         "qa": r"/Users/hmcoerver/pywapor_notebooks/my_landsat_folder/LC08_L2SP_200028_20211004_20211013_02_T1/LC08_L2SP_200028_20211004_20211013_02_T1_QA_PIXEL.TIF",
-#         "red": r"/Users/hmcoerver/pywapor_notebooks/my_landsat_folder/LC08_L2SP_200028_20211004_20211013_02_T1/LC08_L2SP_200028_20211004_20211013_02_T1_SR_B4.TIF",
-#         "green": r"/Users/hmcoerver/pywapor_notebooks/my_landsat_folder/LC08_L2SP_200028_20211004_20211013_02_T1/LC08_L2SP_200028_20211004_20211013_02_T1_SR_B3.TIF",
-#         "blue": r"/Users/hmcoerver/pywapor_notebooks/my_landsat_folder/LC08_L2SP_200028_20211004_20211013_02_T1/LC08_L2SP_200028_20211004_20211013_02_T1_SR_B2.TIF",
-#         }
-
-#     # Only plot [3000:4000, 4000:5000] of original image.
-#     slc = [slice(3000, 4000), slice(4000, 5000)]
-    
-#     # Open the images as numpy arrays.
-#     img_arrays = {name: open_array(path, slc = slc) for name, path in 
-#                     img.items() if name != "meta"}
-
-#     # Get collection number.
-#     collection = img["meta"]["collection"]
-#     ls_number = img["meta"]["landsat"]
-#     level = img["meta"]["level"]
-
-#     # Dictionary to convert between bits and flags.
-#     flag_bits = get_pixel_qa_bits(collection, ls_number, level)
-#     # flag_bits = get_radsat_qa_bits(collection, ls_number, level)
-
-#     # Which flags to set to True in mask.
-#     flags = ["dilated_cloud", "cloud"]
-#     # flags = ["saturated_band4", "saturated_band3", "saturated_band2"]
-
-#     # Calculate the mask.
-#     my_mask = get_mask(img_arrays["qa"], flags, flag_bits)
-
-#     # Create an RGB array.
-#     mask_plot_info = {
-#                         "array": my_mask,
-#                         "color": (1,0,0),
-#                         "alpha": 0.4,
-#                         }
-
-#     rgb = create_masked_rgb(img_arrays["red"], 
-#                             img_arrays["green"], 
-#                             img_arrays["blue"], mask_plot_info)
-
-#     # Plot the image with the masks.
-#     plt.figure(collection, figsize = (8,8))
-#     plt.title(img["meta"]["title"])
-#     plt.imshow(rgb)

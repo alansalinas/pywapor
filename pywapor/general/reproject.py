@@ -45,7 +45,7 @@ def reproject_bulk(src_ds, example_ds, dst_path, spatial_interp = "nearest"):
 def reproject(src_ds, example_ds, dst_path, spatial_interp = "nearest", 
                 max_bytes = 2e9, min_times = 10):
     reproj = choose_reprojecter(src_ds, max_bytes = max_bytes, min_times = min_times)
-    log.info(f"--> Using `{reproject.__name__}` for {os.path.split(src_ds.encoding['source'])[-1]}.")
+    log.info(f"--> Using `{reproj.__name__}` on {os.path.split(src_ds.encoding['source'])[-1]}:{list(src_ds.data_vars)[0]} ({spatial_interp}).")
     ds = reproj(src_ds, example_ds, dst_path, spatial_interp = spatial_interp)
     return ds
 
