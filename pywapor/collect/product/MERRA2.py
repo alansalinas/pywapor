@@ -6,8 +6,10 @@ from pywapor.collect.protocol.projections import get_crss
 import pywapor.collect.protocol.opendap as opendap
 import fnmatch
 import os
+from functools import partial
 from pywapor.general.processing_functions import open_ds
 from pywapor.collect.protocol.requests import find_paths
+from pywapor.enhancers.temperature import kelvin_to_celsius
 
 def default_vars(product_name, req_vars):
     variables = {
@@ -28,6 +30,8 @@ def default_vars(product_name, req_vars):
     req_dl_vars = {
         "M2I1NXASM.5.12.4": {
             "t_air": ["T2M"],
+            "t_air_max" :["T2M"],
+            "t_air_min" :["T2M"],
             "u2m": ["U2M"],
             "v2m": ["V2M"],
             "qv": ["QV2M"],
@@ -44,25 +48,29 @@ def default_vars(product_name, req_vars):
     
     return out
 
+def pa_to_kpa(ds, var):
+    ds[var] = ds[var] / 1000
+    return ds
+
 def default_post_processors(product_name, req_vars):
     post_processors = {
         "M2I1NXASM.5.12.4": {
-            "t_air": [],
+            "t_air": [kelvin_to_celsius], 
+            "t_air_max": [partial(kelvin_to_celsius, in_var = "t_air", out_var = "t_air_max")],
+            "t_air_min": [partial(kelvin_to_celsius, in_var = "t_air", out_var = "t_air_min")],
             "u2m": [],
             "v2m": [],
             "qv": [],
             "wv": [],
-            "p_air": [],
-            "p_air_0": [],
+            "p_air": [pa_to_kpa],
+            "p_air_0": [pa_to_kpa],
         },
         "M2T1NXRAD.5.12.4": {
             "ra": [],
         },
     }
 
-    out = [val for key, sublist in post_processors[product_name].items() for val in sublist if key in req_vars]
-    if "_" in post_processors[product_name].keys():
-        out += post_processors[product_name]["_"]
+    out = {k:v for k,v in post_processors[product_name].items() if k in req_vars}
 
     return out
 
@@ -108,8 +116,13 @@ def download(folder, latlim, lonlim, timelim, product_name, req_vars,
     coords = {"x": ["lon", lonlim], "y":["lat", latlim], "t": ["time", timelim]}
     if isinstance(variables, type(None)):
         variables = default_vars(product_name, req_vars)
+    
     if isinstance(post_processors, type(None)):
         post_processors = default_post_processors(product_name, req_vars)
+    else:
+        default_processors = default_post_processors(product_name, req_vars)
+        post_processors = {k: {True: default_processors[k], False: v}[v == "default"] for k,v in post_processors.items()}
+
     data_source_crs = get_crss("WGS84")
     parallel = True
     spatial_tiles = False
@@ -135,12 +148,15 @@ if __name__ == "__main__":
     variables = None
     post_processors = None
     
-    # MERRA2.
-    wanted = [
-                ("M2I1NXASM.5.12.4", ["t_air", "u2m", "v2m", "qv", "wv", "p_air", "p_air_0"]),
-                # ("M2T1NXRAD.5.12.4", ["ra"]),
-            ]
+    # # MERRA2.
+    # wanted = [
+    #             ("M2I1NXASM.5.12.4", ["t_air", "u2m", "v2m", "qv", "wv", "p_air", "p_air_0"]),
+    #             # ("M2T1NXRAD.5.12.4", ["ra"]),
+    #         ]
 
-    for product_name, req_vars in wanted:
-        ds = download(folder, latlim, lonlim, timelim, product_name, req_vars)
-        print(ds.rio.crs, ds.rio.grid_mapping)
+    product_name = "M2I1NXASM.5.12.4"
+    req_vars = ["t_air", "u2m", "v2m", "qv", "wv", "p_air", "p_air_0"]
+
+    # for product_name, req_vars in wanted:
+    # ds = download(folder, latlim, lonlim, timelim, product_name, req_vars)
+    # print(ds.rio.crs, ds.rio.grid_mapping)

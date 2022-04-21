@@ -3,12 +3,12 @@ import rasterio
 from rasterio import shutil as rio_shutil
 from rasterio.vrt import WarpedVRT
 import xarray as xr
+import os
+from pywapor.general.logger import log
 from pywapor.general.processing_functions import process_ds
 from pywapor.general.processing_functions import open_ds, save_ds
 
 def choose_reprojecter(src_ds, max_bytes = 2e9, min_times = 10):
-    
-    # src_ds = open_ds(src_path, decode_coords = "all")
 
     if "time" in src_ds.dims:
         tsize = src_ds.dims["time"]
@@ -20,13 +20,9 @@ def choose_reprojecter(src_ds, max_bytes = 2e9, min_times = 10):
     else:
         reproject = reproject_chunk
 
-    # src_ds = src_ds.close()
-
     return reproject
 
 def reproject_bulk(src_ds, example_ds, dst_path, spatial_interp = "nearest"):
-
-    # ds = open_ds(src_path, decode_coords = "all")
 
     resampling = {'nearest': 0,
                     'bilinear': 1,
@@ -49,6 +45,7 @@ def reproject_bulk(src_ds, example_ds, dst_path, spatial_interp = "nearest"):
 def reproject(src_ds, example_ds, dst_path, spatial_interp = "nearest", 
                 max_bytes = 2e9, min_times = 10):
     reproj = choose_reprojecter(src_ds, max_bytes = max_bytes, min_times = min_times)
+    log.info(f"--> Using `{reproject.__name__}` for {os.path.split(src_ds.encoding['source'])[-1]}.")
     ds = reproj(src_ds, example_ds, dst_path, spatial_interp = spatial_interp)
     return ds
 
@@ -111,6 +108,11 @@ def reproject_chunk(src_ds, example_ds, dst_path, spatial_interp = "nearest"):
     coords = {"x": ["lon", None], "y": ["lat", None]}
 
     ds = process_ds(ds, coords, variables)
+
+    ds = ds.assign_coords({
+                            "x": example_ds.x,
+                            "y": example_ds.y,
+                        })
 
     ds = save_ds(ds, dst_path, decode_coords = "all")#, encoding = encoding)
 

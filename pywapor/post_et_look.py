@@ -413,13 +413,16 @@ def plot_ts(ax, times, values, sources, styling):
 
     for source in np.unique(sources):
 
+        if source == -1:
+            continue
+
         xs = times[sources == source]
         ys = values[sources == source]
 
         if np.sum(np.isnan(ys)) == ys.size:
             continue
 
-        c_styling = eval(styling[source])
+        c_styling = styling[source]
 
         ax.scatter(xs, ys, marker = c_styling[0], c = c_styling[1], label = c_styling[3], zorder = 10, alpha = float(c_styling[2]))
         ax.set_facecolor("lightgray")
@@ -454,41 +457,44 @@ def check_bb(ds, diagnostics_lon, diagnostics_lat):
     if not lat_test:
         print(f"WARNING: {diagnostics_lat} not in boundingbox ({lat_lim}).")
 
-def plot_composite(ds, diagnostics, out_folder = None, band_name = "band_data"):
+def plot_composite(ds, diagnostics, out_folder = None):
 
-    ds = ds.reindex({"lat": ds.lat.sortby("lat"), 
-                     "lon": ds.lon.sortby("lon")})
+    ds = ds.reindex({"y": ds.y.sortby("y"), 
+                     "x": ds.x.sortby("x")})
+
+    var = "_".join([x for x in ds.data_vars if "_values" in x][0].split("_")[0:-1])
+
+    styling = dict()
+    markers = ["*", "o", "v", "s", "*", "p", "h"]
+    colors =  ["r", "g", "b", "y", "purple", "darkblue", "gray", "orange"]
+    for i, source_name in ds[f"{var}_source"].attrs.items():
+        i = int(i)
+        styling[i] = (markers[i], colors[i], 1.0, source_name)
+    styling[255] = (".", "k", 0.7, "Interp.")
 
     for point, (diagnostics_lat, diagnostics_lon) in diagnostics.items():
 
-        # check_bb(ds, diagnostics_lon, diagnostics_lat)
-
-        ts = ds.sel(lon = diagnostics_lon, 
-                    lat = diagnostics_lat, method="nearest")
+        ts = ds.sel(x = diagnostics_lon, 
+                    y = diagnostics_lat, method="nearest")
 
         times = ts.time.values
-        ndvis = ts[band_name].values
-        sources = ts.sources.values
+        ndvis = ts[f"{var}_values"].values
+        sources = ts[f"{var}_source"].values
+        ndvi_composites = ts[var].values
 
-        ndvi_composites = ts[f"{band_name}_composite"].values
-        epoch_starts = ts.epoch_starts.values
-        epoch_ends = ts.epoch_ends.values
-
-        # for t, src in zip(times, sources):
-        #     print(t, styling[src][3])
+        epoch_starts = ts.time_bins.values
+        epoch_ends = np.append(epoch_starts[1:], np.datetime64(ds.bin_end))
 
         fig = plt.figure(1)
         fig.clf()
         fig.set_size_inches(9, 5)
         ax = fig.gca()
 
-        styling = {int(k): ds.attrs[str(int(k))] for k in np.unique(sources)}
-
         plot_ts(ax, times, ndvis, sources, styling)
-        plot_composite_ts(ax, epoch_starts, epoch_ends, ndvi_composites, f"Composite ({ds.attrs['composite_type']})")
+        plot_composite_ts(ax, epoch_starts, epoch_ends, ndvi_composites, f"Composite ({ds.attrs['comp_type']})")
 
-        ax.set_ylabel(f"{ds.attrs['var_name']} [{ds.attrs['var_unit']}]")
-        ax.set_title(f"{ds.attrs['var_name']} at {point}")
+        ax.set_ylabel(f"{var}")
+        ax.set_title(f"{var} at {point}")
 
         fig.autofmt_xdate(bottom=0.2, rotation=30, ha='right')
         fig.suptitle(f"{diagnostics_lon} °E, {diagnostics_lat} °N")
@@ -497,7 +503,7 @@ def plot_composite(ds, diagnostics, out_folder = None, band_name = "band_data"):
         if not isinstance(out_folder, type(None)):
             if not os.path.exists(out_folder):
                 os.makedirs(out_folder)
-            fn = f"{point}_{ds.attrs['var_name']}.png"
+            fn = f"{point}_{var}.png"
             fig.savefig(os.path.join(out_folder, fn))
 
 def plot_tif(tif_file, quantity = None, unit = None):
@@ -554,3 +560,10 @@ def plot_hexbin(ax, arrays, xlabel = "", ylabel = "", title = ""):
     ax.set_xlabel(xlabel)
     ax.set_ylabel(ylabel)
     ax.set_title(title)
+
+
+
+
+# styling[999] = ("P", "orange", 1.0, "-")
+# styling[0] = (".", "k", 0.7, "Interp.")
+# sources = {v[3]: k for k, v in styling.items()}

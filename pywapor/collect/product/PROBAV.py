@@ -10,9 +10,9 @@ import requests
 from pywapor.collect.protocol.requests import download_urls, crawl
 import pywapor.general.bitmasks as bm
 import xarray as xr
+from pywapor.enhancers.apply_enhancers import apply_enhancer
 import numpy as np
 from pywapor.general.processing_functions import process_ds, save_ds, open_ds
-import tqdm
 import datetime
 import rioxarray.merge
 
@@ -29,11 +29,14 @@ def download(folder, latlim, lonlim, timelim, product_name, req_vars = ["ndvi", 
 
     bb = (lonlim[0], latlim[0], lonlim[1], latlim[1])
 
-    if isinstance(post_processors, type(None)):
-        post_processors = default_post_processors(product_name, req_vars = req_vars)
-
     if isinstance(variables, type(None)):
         variables = default_vars(product_name, req_vars)
+
+    if isinstance(post_processors, type(None)):
+        post_processors = default_post_processors(product_name, req_vars)
+    else:
+        default_processors = default_post_processors(product_name, req_vars)
+        post_processors = {k: {True: default_processors[k], False: v}[v == "default"] for k,v in post_processors.items()}
 
     coords = {"x": ["lon", None], "y": ["lat", None]}
 
@@ -52,7 +55,7 @@ def download(folder, latlim, lonlim, timelim, product_name, req_vars = ["ndvi", 
 
     # Convert to netcdf.
     dss = dict()
-    for fp in tqdm.tqdm(fps):
+    for fp in fps:
         date = datetime.datetime.strptime(fp.split("_")[-3], "%Y%m%d")
         ds = open_hdf5_groups(fp, variables, coords).expand_dims({"time": [date]})
         if date in dss.keys():
@@ -73,8 +76,11 @@ def download(folder, latlim, lonlim, timelim, product_name, req_vars = ["ndvi", 
     ds = xr.concat(dss0, dim = "time")
 
     # Apply product specific functions.
-    for func in post_processors:
-        ds = func(ds)
+    for var, funcs in post_processors.items():
+        for func in funcs:
+            ds, _ = apply_enhancer(ds, var, func)
+
+    ds = ds[req_vars]
 
     ds = save_ds(ds, os.path.join(folder, f"{product_name}.nc"), decode_coords = "all")
 
@@ -106,26 +112,18 @@ def open_hdf5_groups(fp, variables, coords):
 
         ds = process_ds(ds, coords, variables)
 
-        # for var in [x for x in list(ds.variables) if x not in ds.coords]:
-        #     del ds[var].attrs["grid_mapping"]
-
         ds = save_ds(ds, nc_fp, decode_coords = "all")
 
     return ds
 
-def mask_bitwise_qa(ds, to_mask, flags):
+def mask_bitwise_qa(ds, var, flags):
     flag_bits = bm.PROBAV_qa_translator()
     mask = bm.get_mask(ds["qa"].astype("uint8"), flags, flag_bits)
-    ds[to_mask] = ds[to_mask].where(~mask, np.nan)
+    ds[var] = ds[var].where(~mask, np.nan)
     return ds
 
-def calc_r0(ds):
+def calc_r0(ds, *args):
     ds["r0"] = 0.429 * ds["blue"] + 0.333 * ds["red"] + 0.133 * ds["nir"] + 0.105 * ds["swir"]
-    return ds
-
-def drop_vars(ds, to_drop):
-    to_drop = [x for x in to_drop if x in ds.variables]
-    ds = ds.drop_vars(to_drop)
     return ds
 
 def default_post_processors(product_name, req_vars = ["ndvi", "r0"]):
@@ -134,25 +132,19 @@ def default_post_processors(product_name, req_vars = ["ndvi", "r0"]):
         "S5_TOC_100_m_C1": {
             "r0": [
                     calc_r0, 
-                    partial(mask_bitwise_qa, to_mask = "r0", 
+                    partial(mask_bitwise_qa, 
                     flags = ["bad BLUE", "bad RED", "bad NIR", "bad SWIR", 
                             "sea", "undefined", "cloud", "ice/snow", "shadow"]),
             ],
             "ndvi": [
-                    partial(mask_bitwise_qa, to_mask = "ndvi", 
+                    partial(mask_bitwise_qa, 
                     flags = ["bad RED", "bad NIR", "sea", "undefined", 
                     "cloud", "ice/snow", "shadow"]),
             ],
-            "_": [
-                    partial(drop_vars, to_drop = ["blue", "nir", "red", 
-                    "swir", "vnir_vza", "swir_vza", "qa"])
-            ]
         }
     }
 
-    out = [val for key, sublist in post_processors[product_name].items() for val in sublist if key in req_vars]
-    if "_" in post_processors[product_name].keys():
-        out += post_processors[product_name]["_"]
+    out = {k:v for k,v in post_processors[product_name].items() if k in req_vars}
 
     return out
 

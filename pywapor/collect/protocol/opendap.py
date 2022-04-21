@@ -7,9 +7,12 @@ import rioxarray.merge
 import tempfile
 from pydap.cas.urs import setup_session
 import urllib.parse
-from pywapor.general.processing_functions import save_ds, create_selection, process_ds
+from pywapor.general.logger import log
+from rasterio.crs import CRS
+from pywapor.general.processing_functions import save_ds, process_ds
 import warnings
-from pywapor.collect_new.protocol.requests import download_url, download_urls
+from pywapor.enhancers.apply_enhancers import apply_enhancer
+from pywapor.collect.protocol.requests import download_url, download_urls
 
 def download(folder, product_name, coords, variables, post_processors, 
                 fn_func, url_func, un_pw = None, tiles = None,  
@@ -45,8 +48,10 @@ def download(folder, product_name, coords, variables, post_processors,
         ds = ds.rio.reproject(rasterio.crs.CRS.from_epsg(4326))
 
     # Apply product specific functions.
-    for func in post_processors:
-        ds = func(ds)
+    for var, funcs in post_processors.items():
+        for func in funcs:
+            ds, label = apply_enhancer(ds, var, func)
+            log.info(label)
 
     # Save final output.
     fp = os.path.join(folder, f"{product_name}.nc")
@@ -105,8 +110,9 @@ def download_xarray(url, fp, coords, variables, post_processors, data_source_crs
     ds = save_ds(online_ds, fp.replace(".nc", "_temp.nc"), decode_coords="all")
 
     # Apply product specific functions.
-    for func in post_processors:
-        ds = func(ds)
+    for var, funcs in post_processors.items():
+        for func in funcs:
+            ds, _ = apply_enhancer(ds, var, func)
 
     # Save final output
     ds = save_ds(ds, fp, decode_coords="all")
@@ -114,3 +120,54 @@ def download_xarray(url, fp, coords, variables, post_processors, data_source_crs
     os.remove(fp.replace(".nc", "_temp.nc"))
 
     return ds
+
+def create_selection(coords, ds = None, target_crs = None, 
+                        source_crs = CRS.from_epsg(4326)):
+    """Create a dictionary that can be given to `xr.Dataset.sel`.
+
+    Parameters
+    ----------
+    coords : dict
+        Dictionary describing the different dimensions over which to select. Possible keys
+        are "x" for latitude, "y" for longitude and "t" for time, but other selections
+        keys are also allowed (e.g. so select a band). Values are tuples with the first
+        value the respective dimension names in the `ds` and the second value the selector.
+    ds : xr.Dataset, optional
+        Dataset on which the selection will be applied, can be supplied to check if 
+        dimensions are sorted ascending or descending and to derive `target_crs`, by default None.
+    target_crs : rasterio.crs.CRS, optional
+        crs of the dataset on which the selection will be applied, by default None.
+    source_crs : rasterio.crs.CRS, optional
+        crs of the `x` and `y` limits in `coords`, by default `epsg:4326`.
+
+    Returns
+    -------
+    dict
+        Dimension names with slices to apply to each dimension.
+    """
+    selection = {}
+
+    if not isinstance(target_crs, type(None)):
+        coords["x"][1], coords["y"][1] = rasterio.warp.transform(source_crs,
+                                                target_crs,
+                                                coords["x"][1], coords["y"][1])
+    elif not isinstance(ds, type(None)):
+        if ds.rio.crs != source_crs:
+            coords["x"][1], coords["y"][1] = rasterio.warp.transform(source_crs,
+                                        ds.rio.crs,
+                                        coords["x"][1], coords["y"][1]) 
+
+    if "t" in coords.keys():
+        coords["t"][1] = [np.datetime64(t) for t in coords["t"][1]]
+
+    for name, lim in coords.values():
+        # If `ds` is given, checks if the dimensions are sorted from high to low
+        # or from low to high and adjusts the limit accordingly.
+        if isinstance(ds, xr.Dataset) and hasattr(lim, "__iter__"):
+            lim = {False: lim, True: lim[::-1]}[bool(ds[name][0] - ds[name][1] > 0)]
+        # Create a slice object if `lim` is a list or tuple.
+        # if hasattr(lim, "__iter__"):
+        #     lim = slice(*lim)
+        selection[name] = lim
+
+    return selection

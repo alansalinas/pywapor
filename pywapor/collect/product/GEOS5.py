@@ -1,71 +1,80 @@
 from pywapor.collect.protocol import opendap
 from pywapor.collect.protocol.projections import get_crss
 import os
+from pywapor.enhancers.temperature import kelvin_to_celsius
+from functools import partial
 
-def default_vars(product_name, req_vars = ["t_air_i", "u2m_i", "v2m_i",
-                    "qv_i", "wv_i", "p_air_i", "p_air_0_i"]):
+def default_vars(product_name, req_vars):
 
     variables = {
         "inst3_2d_asm_Nx": {
-                    "t2m": [("time", "lat", "lon"), "t_air_i"],
-                    "u2m": [("time", "lat", "lon"), "u2m_i"],
-                    "v2m": [("time", "lat", "lon"), "v2m_i"],
-                    "qv2m": [("time", "lat", "lon"), "qv_i"],
-                    "tqv": [("time", "lat", "lon"), "wv_i"],
-                    "ps": [("time", "lat", "lon"), "p_air_i"],
-                    "slp": [("time", "lat", "lon"), "p_air_0_i"],
+                    "t2m": [("time", "lat", "lon"), "t_air"],
+                    "u2m": [("time", "lat", "lon"), "u2m"],
+                    "v2m": [("time", "lat", "lon"), "v2m"],
+                    "qv2m": [("time", "lat", "lon"), "qv"],
+                    "tqv": [("time", "lat", "lon"), "wv"],
+                    "ps": [("time", "lat", "lon"), "p_air"],
+                    "slp": [("time", "lat", "lon"), "p_air_0"],
                         },
     }
 
     req_dl_vars = {
         "inst3_2d_asm_Nx": {
-            "t_air_i": ["t2m"],
-            "u2m_i": ["u2m"],
-            "v2m_i": ["v2m"],
-            "qv_i": ["qv2m"],
-            "wv_i": ["tqv"],
-            "p_air_i": ["ps"],
-            "p_air_0_i": ["slp"],
+            "t_air": ["t2m"],
+            "t_air_max": ["t2m"],
+            "t_air_min": ["t2m"],
+            "u2m": ["u2m"],
+            "v2m": ["v2m"],
+            "qv": ["qv2m"],
+            "wv": ["tqv"],
+            "p_air": ["ps"],
+            "p_air_0": ["slp"],
         }
     }
 
     out = {val:variables[product_name][val] for sublist in map(req_dl_vars[product_name].get, req_vars) for val in sublist}
-    
+
     return out
 
-def default_post_processors(product_name, req_vars = ["t_air_i", "u2m_i", "v2m_i",
-                    "qv_i", "wv_i", "p_air_i", "p_air_0_i"]):
+def pa_to_kpa(ds, var):
+    ds[var] = ds[var] / 1000
+    return ds
+
+def default_post_processors(product_name, req_vars):
 
     post_processors = {
         "inst3_2d_asm_Nx": {
-            "t_air_i": [],
-            "u2m_i": [],
-            "v2m_i": [],
-            "qv_i": [],
-            "wv_i": [],
-            "p_air_i": [],
-            "p_air_0_i": [],
+            "t_air": [kelvin_to_celsius], 
+            "t_air_max": [partial(kelvin_to_celsius, in_var = "t_air", out_var = "t_air_max")],
+            "t_air_min": [partial(kelvin_to_celsius, in_var = "t_air", out_var = "t_air_min")],
+            "u2m": [],
+            "v2m": [],
+            "qv": [],
+            "wv": [],
+            "p_air": [pa_to_kpa],
+            "p_air_0": [pa_to_kpa],
         }
     }
 
-    out = [val for key, sublist in post_processors[product_name].items() for val in sublist if key in req_vars]
-    if "_" in post_processors[product_name].keys():
-        out += post_processors[product_name]["_"]
+    out = {k:v for k,v in post_processors[product_name].items() if k in req_vars}
 
     return out
 
-def download(folder, latlim, lonlim, timelim, product_name, req_vars = ["t_air_i", "u2m_i", "v2m_i",
-            "qv_i", "wv_i", "p_air_i", "p_air_0_i"], variables = None, post_processors = None):
+def download(folder, latlim, lonlim, timelim, product_name, req_vars,
+                 variables = None, post_processors = None):
 
     folder = os.path.join(folder, "GEOS5")
 
     coords = {"x": ["lon", lonlim], "y": ["lat", latlim], "t": ["time", timelim]}
 
     if isinstance(variables, type(None)):
-        variables = default_vars(product_name, req_vars = req_vars)
+        variables = default_vars(product_name, req_vars)
 
     if isinstance(post_processors, type(None)):
-        post_processors = default_post_processors(product_name, req_vars = req_vars)
+        post_processors = default_post_processors(product_name, req_vars)
+    else:
+        default_processors = default_post_processors(product_name, req_vars)
+        post_processors = {k: {True: default_processors[k], False: v}[v == "default"] for k,v in post_processors.items()}
 
     data_source_crs = get_crss("WGS84")
 
@@ -95,7 +104,10 @@ if __name__ == "__main__":
     variables = None
     post_processors = None
 
-    req_vars = ["t_air_i", "u2m_i", "v2m_i", "qv_i", "wv_i", "p_air_i", "p_air_0_i"]
+    req_vars = [
+                # "t_air", "u2m", "v2m", "qv", 
+                # "wv", 
+                "p_air", "p_air_0"]
 
     ds = download(folder, latlim, lonlim, timelim, product_name, req_vars = req_vars)
     print(ds.rio.crs, ds.rio.grid_mapping)

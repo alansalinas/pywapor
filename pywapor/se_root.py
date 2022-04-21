@@ -5,15 +5,23 @@ Code to run the SERoot model.
 import xarray as xr
 import os
 import numpy as np
+import warnings
 import pandas as pd
-import pywapor
 import pywapor.general as g
 import pywapor.general.processing_functions as PF
 import pywapor.et_look_dev as ETLook_dev
 import pywapor.et_look_v2 as ETLook_v2
 from pywapor.general.logger import log
-from pywapor.general.compositer import calculate_ds
+from pywapor.general.processing_functions import save_ds
 import copy
+import pywapor.pre_se_root as pre_se_root
+from pywapor.general import levels
+
+def se_root(folder, latlim, lonlim, timelim, bin_length, level, **kwargs):
+    sources = levels.pre_se_root_levels(level)
+    ds_in = pre_se_root.main(folder, latlim, lonlim, timelim, sources, bin_length)
+    ds_out = main(ds_in)
+    return ds_out
 
 def main(input_data, se_root_version = "v2", export_vars = "default", export_to_tif = False):
     """Runs the ETLook model over the provided input data.
@@ -44,11 +52,14 @@ def main(input_data, se_root_version = "v2", export_vars = "default", export_to_
     # Version
     if se_root_version == "v2":
         ETLook = ETLook_v2
-        log.info("--> Running SEroot_v2.")
     elif se_root_version == "dev":
         ETLook = ETLook_dev
-        log.info("--> Running SEroot_dev.")
+
+    log.info(f"--> Running `se_root` ({se_root_version}).")
     c = ETLook.constants
+
+    warnings.filterwarnings("ignore", message="invalid value encountered in power")
+    warnings.filterwarnings("ignore", message="invalid value encountered in log")
 
     # Inputs
     if isinstance(input_data, str):
@@ -64,9 +75,9 @@ def main(input_data, se_root_version = "v2", export_vars = "default", export_to_
     ds["u_i"] = np.sqrt(ds["v2m_i"]**2 + ds["u2m_i"]**2)
 
     doy = [int(pd.Timestamp(x).strftime("%j")) for x in ds["time"].values]
-    ds["doy"] = xr.DataArray(doy, coords = ds["time"].coords)
+    ds["doy"] = xr.DataArray(doy, coords = ds["time"].coords).chunk("auto")
     dtime = [pd.Timestamp(x).hour + (pd.Timestamp(x).minute / 60) for x in ds["time"].values]
-    ds["dtime"] = xr.DataArray(dtime, coords = ds["time"].coords)
+    ds["dtime"] = xr.DataArray(dtime, coords = ds["time"].coords).chunk("auto")
     ds["sc"] = ETLook.solar_radiation.seasonal_correction(ds["doy"])
     ds["decl"] = ETLook.solar_radiation.declination(ds["doy"])
     ds["day_angle"] = ETLook.clear_sky_radiation.day_angle(ds["doy"])
@@ -90,8 +101,8 @@ def main(input_data, se_root_version = "v2", export_vars = "default", export_to_
     ds["ad_dry_i"] = ETLook.meteo.dry_air_density_inst(ds["p_air_i"], ds["vp_i"], ds["t_air_k_i"])
     ds["ad_i"] = ETLook.meteo.air_density_inst(ds["ad_dry_i"], ds["ad_moist_i"])
     ds["u_b_i_bare"] = ETLook.soil_moisture.wind_speed_blending_height_bare(ds["u_i"], c.z0m_bare, c.z_obs, c.z_b)
-    ds["lon_rad"] = ETLook.solar_radiation.longitude_rad(ds["lon"])
-    ds["lat_rad"] = ETLook.solar_radiation.latitude_rad(ds["lat"])
+    ds["lon_rad"] = ETLook.solar_radiation.longitude_rad(ds["x"]).chunk("auto")
+    ds["lat_rad"] = ETLook.solar_radiation.latitude_rad(ds["y"]).chunk("auto")
     ds["ha"] = ETLook.solar_radiation.hour_angle(ds["sc"], ds["dtime"], ds["lon_rad"])
     
     I0 = ETLook.clear_sky_radiation.solar_constant() # TODO this should come from ETLook.constants
@@ -150,18 +161,18 @@ def main(input_data, se_root_version = "v2", export_vars = "default", export_to_
         ...
     elif export_vars == "default":
         keep_vars = ['se_root']
-        ds = PF.ds_remove_except(ds, keep_vars)
+        ds = ds[keep_vars]
     elif isinstance(export_vars, list):
         keep_vars = copy.copy(export_vars)
-        ds = PF.ds_remove_except(ds, keep_vars)
+        ds = ds[keep_vars]
     else:
         raise ValueError
 
     ds = g.variables.fill_attrs(ds)
 
     fp, fn = os.path.split(input_data)
-    fn = fn.replace("_input", "_output")
-    ds, fh = calculate_ds(ds, os.path.join(fp, fn), "--> Saving outputs.")
+    fn = fn.replace("in", "out")
+    ds = save_ds(ds, os.path.join(fp, fn), "all")
 
     log.sub().info("< SE_ROOT")
 
@@ -218,73 +229,7 @@ def lst_zone_mean(ds):
 
 if __name__ == "__main__":
 
-    import pywapor
-
-    project_folder = r"/Users/hmcoerver/pywapor_notebooks"
-    latlim = [28.9, 29.7]
-    lonlim = [30.2, 31.2]
-
-    startdate = "2021-07-06"
-    enddate = "2021-07-07"
-    composite_length = 1
-    level = "level_2"
-    extra_sources = None
-    extra_source_locations = None
-
-    my_custom_level = {
-        # Main inputs
-        "ndvi":         ["PROBAV", "MOD13", "MYD13"],
-        "r0":           ["PROBAV", "MCD43"],
-        "lst":          ["MOD11", "MYD11"],
-        "lulc":         ["GLOBCOVER"],
-        "z":            ["SRTM"],
-        "p_24":         ["CHIRPS"],
-        "ra_24":        ["MERRA2"],
-
-        # Daily meteo 
-        't_air_24':     ["MERRA2", "GEOS5"],
-        't_air_min_24': ["MERRA2"], 
-        't_air_max_24': ["MERRA2"],
-        'u2m_24':       ["GEOS5"],
-        'v2m_24':       ["GEOS5"],
-        'p_air_0_24':   ["MERRA2"],
-        'qv_24':        ["MERRA2", "GEOS5"],
-
-        # Instanteneous meteo
-        "t_air_i":      ["MERRA2"],
-        "u2m_i":        ["MERRA2"],
-        "v2m_i":        ["MERRA2"],
-        "qv_i":         ["MERRA2"],
-        "wv_i":         ["MERRA2"],
-        "p_air_i":      ["MERRA2"],
-        "p_air_0_i":    ["MERRA2"],
-
-        # Temporal constants
-        "lw_offset":    ["STATICS"],
-        "lw_slope":     ["STATICS"],
-        "r0_bare":      ["STATICS"],
-        "r0_full":      ["STATICS"],
-        "rn_offset":    ["STATICS"],
-        "rn_slope":     ["STATICS"],
-        "t_amp_year":   ["STATICS"],
-        "t_opt":        ["STATICS"],
-        "vpd_slope":    ["STATICS"],
-        "z_oro":        ["STATICS"],
-
-        # Level name
-        "name": "test",
-    }
-
-    diagnostics = None
-
-    ds, fh = pywapor.pre_se_root.main(project_folder, startdate, enddate, latlim, 
-                                        lonlim, level = my_custom_level,
-                                        extra_sources = extra_sources, 
-                                        extra_source_locations = extra_source_locations)
-
     se_root_version = "v2"
-
-    ds_out = main(ds, se_root_version = se_root_version, export_vars = "all", export_to_tif = False)
-
-
+    export_vars = "default"
+    export_to_tif = False
     

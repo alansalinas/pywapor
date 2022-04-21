@@ -4,18 +4,18 @@ https://opendap.cr.usgs.gov/opendap/hyrax/SRTMGL1_NUMNC.003/contents.html
 import datetime
 import os
 import json
-import pywapor
+import pywapor.collect
 import rasterio.crs
 from pywapor.general.processing_functions import open_ds
 import rasterio.warp
 import pywapor.collect.accounts as accounts
 from shapely.geometry.polygon import Polygon
-from pywapor.general.logger import log
+# from pywapor.general.logger import log
 from shapely.geometry import shape
 import pywapor.collect.protocol.opendap as opendap
 
 def tiles_intersect(latlim, lonlim):
-    with open(os.path.join(pywapor.collect_new.__path__[0], "product/SRTM30_tiles.geojson")) as f:
+    with open(os.path.join(pywapor.collect.__path__[0], "product/SRTM30_tiles.geojson")) as f:
         features = json.load(f)["features"]
     aoi = Polygon.from_bounds(lonlim[0], latlim[0], lonlim[1], latlim[1])
     tiles = list()
@@ -23,9 +23,7 @@ def tiles_intersect(latlim, lonlim):
         shp = shape(feature["geometry"])
         tile = feature["properties"]["dataFile"]
         if shp.intersects(aoi):
-            n = int(tile[1:3])
-            e = int(tile[4:7])
-            tiles.append((n, e))
+            tiles.append(tile.split(".")[0])
     return tiles
 
 def default_vars(product_name, req_vars = ["z"]):
@@ -58,18 +56,16 @@ def default_post_processors(product_name, req_vars = ["z"]):
         }
     }
 
-    out = [val for key, sublist in post_processors[product_name].items() for val in sublist if key in req_vars]
-    if "_" in post_processors[product_name].keys():
-        out += post_processors[product_name]["_"]
+    out = {k:v for k,v in post_processors[product_name].items() if k in req_vars}
 
     return out
 
 def fn_func(product_name, tile):
-    fn = f"{product_name}_N{tile[0]:02d}E{tile[1]:03d}.nc"
+    fn = f"{product_name}_{tile}.nc"
     return fn
 
 def url_func(product_name, tile):
-    url = f"https://opendap.cr.usgs.gov/opendap/hyrax/SRTMGL1_NC.003/N{tile[0]:02d}E{tile[1]:03d}.SRTMGL1_NC.ncml.nc4?"
+    url = f"https://opendap.cr.usgs.gov/opendap/hyrax/SRTMGL1_NC.003/{tile}.SRTMGL1_NC.ncml.nc4?"
     return url
 
 def download(folder, latlim, lonlim, product_name = "30M", req_vars = ["z"], variables = None, post_processors = None, **kwargs):
@@ -82,8 +78,15 @@ def download(folder, latlim, lonlim, product_name = "30M", req_vars = ["z"], var
     timelim = [datetime.date(2000, 2, 10), datetime.date(2000, 2, 12)]
     tiles = tiles_intersect(latlim, lonlim)
     coords = {"x": ["lon", lonlim], "y": ["lat", latlim], "t": ["time", timelim]}
-    variables = default_vars(product_name, req_vars = req_vars)
-    post_processors = default_post_processors(product_name, req_vars = req_vars)
+    if isinstance(variables, type(None)):
+        variables = default_vars(product_name, req_vars)
+
+    if isinstance(post_processors, type(None)):
+        post_processors = default_post_processors(product_name, req_vars)
+    else:
+        default_processors = default_post_processors(product_name, req_vars)
+        post_processors = {k: {True: default_processors[k], False: v}[v == "default"] for k,v in post_processors.items()}
+
     data_source_crs = None
     parallel = True
     spatial_tiles = True

@@ -3,6 +3,8 @@ import tqdm
 from pywapor.general.processing_functions import save_ds, open_ds, process_ds
 from osgeo import gdal
 import urllib
+from pywapor.enhancers.apply_enhancers import apply_enhancer
+from pywapor.general.logger import log
 
 def download(folder, product_name, coords, variables, post_processors, url_func):
 
@@ -50,8 +52,10 @@ def download(folder, product_name, coords, variables, post_processors, url_func)
     ds = process_ds(ds, coords, variables)
 
     # Apply product specific functions.
-    for func in post_processors:
-        ds = func(ds)
+    for var, funcs in post_processors.items():
+        for func in funcs:
+            ds, label = apply_enhancer(ds, var, func)
+            log.info(label)
     
     # Save final output.
     ds = save_ds(ds, fp, decode_coords = "all")
@@ -60,3 +64,26 @@ def download(folder, product_name, coords, variables, post_processors, url_func)
     os.remove(fp.replace(".nc", "_temp.nc"))
 
     return ds
+
+# if __name__ == "__main__":
+
+#     folder = r"/Users/hmcoerver/Downloads/pywapor_test/GLOBCOVER"
+#     product_name = r"GLOBCOVER"
+
+#     latlim = [28.9, 29.7]
+#     lonlim = [30.2, 31.2]
+
+#     coords = {"x": ("lon", lonlim), "y": ("lat", latlim)}
+
+#     variables = {
+#                 "Band1": [("lat", "lon"), "lulc"],
+#                 "crs": [(), "spatial_ref"],
+#                     }
+
+
+#     post_processors = []
+
+#     def url_func(product_name):
+#         return r"http://due.esrin.esa.int/files/GLOBCOVER_L4_200901_200912_V2.3.color.tif"
+
+    # download(folder, product_name, coords, variables, post_processors, url_func)

@@ -31,9 +31,7 @@ def default_post_processors(product_name, req_vars = ["p"]):
         }
     }
 
-    out = [val for key, sublist in post_processors[product_name].items() for val in sublist if key in req_vars]
-    if "_" in post_processors[product_name].keys():
-        out += post_processors[product_name]["_"]
+    out = {k:v for k,v in post_processors[product_name].items() if k in req_vars}
 
     return out
 
@@ -55,8 +53,15 @@ def download(folder, latlim, lonlim, timelim, product_name = "P05", req_vars = [
 
     tiles = [None]
     coords = {"x": ["longitude", lonlim], "y": ["latitude", latlim], "t": ["time", timelim]}
-    variables = default_vars(product_name, req_vars=req_vars)
-    post_processors = default_post_processors(product_name, req_vars=req_vars)
+    if isinstance(variables, type(None)):
+        variables = default_vars(product_name, req_vars)
+
+    if isinstance(post_processors, type(None)):
+        post_processors = default_post_processors(product_name, req_vars)
+    else:
+        default_processors = default_post_processors(product_name, req_vars)
+        post_processors = {k: {True: default_processors[k], False: v}[v == "default"] for k,v in post_processors.items()}
+
     data_source_crs = get_crss("WGS84")
     parallel = False
     spatial_tiles = False

@@ -1,5 +1,3 @@
-
-
 import requests, json, time
 import pandas as pd
 import os
@@ -8,8 +6,18 @@ import datetime
 from pyproj import Proj, transform
 import numpy as np
 from datetime import timedelta
+from pywapor.collect import accounts
 
-# import watertools
+def download(folder, latlim, lonlim, timelim, product_name = "L1_LCC_A", req_vars = ["lulc"]):
+
+  auth_token = accounts.get("WAPOR")[0]
+
+  files = WAPOR(folder, 
+                timelim[0].strftime("%Y-%m-%d"), 
+                timelim[1].strftime("%Y-%m-%d"), 
+                latlim, lonlim, product_name, auth_token)
+
+  return files
 
 def WAPOR(output_folder, Startdate, Enddate, latlim, lonlim, Parameter, auth_token, Area = None, Version = "2"):
     
@@ -458,3 +466,16 @@ class LEVEL3:
              'ODN': 32630,
              'ZAN': 32636}
     
+if __name__ == "__main__":
+
+  folder = r"/Users/hmcoerver/Downloads/pywapor_test"
+  # latlim = [26.9, 33.7]
+  # lonlim = [25.2, 37.2]
+  latlim = [28.9, 29.7]
+  lonlim = [30.2, 31.2]
+  timelim = [datetime.date(2020, 7, 1), datetime.date(2020, 7, 11)]
+
+  product_name = 'L1_AETI_M'
+  req_vars = ["lulc"]
+
+  files = download(folder, latlim, lonlim, timelim, product_name = product_name, req_vars = req_vars)

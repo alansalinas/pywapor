@@ -1,5 +1,6 @@
 import os
 from pywapor.collect.protocol import cog
+from pywapor.general.processing_functions import open_ds
 
 def default_vars(product_name, req_vars):
     variables = {
@@ -103,13 +104,17 @@ def default_vars(product_name, req_vars):
     
     return out
 
+def scale_factor(ds, var, scale = 0.01):
+    ds[var] = ds[var] * scale
+    return ds
+
 def default_post_processors(product_name, req_vars):
     post_processors = {
         'land_mask': {"land_mask": []},
         'lw_offset': {"lw_offset": []},
         'lw_slope': {"lw_slope": []},
-        'r0_bare': {"r0_bare": []},
-        'r0_full': {"r0_full": []},
+        'r0_bare': {"r0_bare": [scale_factor]},
+        'r0_full': {"r0_full": [scale_factor]},
         'rn_offset': {"rn_offset": []},
         'rn_slope': {"rn_slope": []},
         'rs_min': {"rs_min": []},
@@ -120,9 +125,7 @@ def default_post_processors(product_name, req_vars):
         'z_oro': {"z_oro": []},
     }
 
-    out = [val for key, sublist in post_processors[product_name].items() for val in sublist if key in req_vars]
-    if "_" in post_processors[product_name].keys():
-        out += post_processors[product_name]["_"]
+    out = {k:v for k,v in post_processors[product_name].items() if k in req_vars}
 
     return out
 
@@ -136,6 +139,10 @@ def download(folder, latlim, lonlim, product_name, req_vars,
     
     folder = os.path.join(folder, "STATICS")
     
+    fn = os.path.join(folder, f"{product_name}.nc")
+    if os.path.isfile(fn):
+        return open_ds(fn, "all")
+
     coords = {"x": ("lon", lonlim), "y": ("lat", latlim)}
 
     if isinstance(variables, type(None)):
@@ -143,6 +150,9 @@ def download(folder, latlim, lonlim, product_name, req_vars,
 
     if isinstance(post_processors, type(None)):
         post_processors = default_post_processors(product_name, req_vars)
+    else:
+        default_processors = default_post_processors(product_name, req_vars)
+        post_processors = {k: {True: default_processors[k], False: v}[v == "default"] for k,v in post_processors.items()}
 
     ds = cog.download(folder, product_name, coords, variables, 
                         post_processors, url_func)

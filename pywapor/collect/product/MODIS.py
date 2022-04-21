@@ -22,7 +22,7 @@ def url_func(product_name, tile):
     return url
 
 def tiles_intersect(latlim, lonlim):
-    with open(os.path.join(pywapor.collect_new.__path__[0], "product/MODIS_tiles.geojson")) as f:
+    with open(os.path.join(pywapor.collect.__path__[0], "product/MODIS_tiles.geojson")) as f:
         features = json.load(f)["features"]
     aoi = Polygon.from_bounds(lonlim[0], latlim[0], lonlim[1], latlim[1])
     tiles = list()
@@ -36,12 +36,13 @@ def tiles_intersect(latlim, lonlim):
             tiles.append((htile, vtile))
     return tiles
 
-def shortwave_r0(ds):
+def shortwave_r0(ds, *args):
     ds["r0"] = 0.3 * ds["white_r0"] + 0.7 * ds["black_r0"]
     ds = ds.drop_vars(["white_r0", "black_r0"])
     return ds
 
-def expand_time_dim(ds):
+def expand_time_dim(ds, *args):
+
     groups = ds.groupby(ds.lst_hour, squeeze = True)
 
     def _expand_hour_dim(x):
@@ -62,17 +63,27 @@ def expand_time_dim(ds):
 
     return ds_expand
 
-def mask_bitwise_qa(ds, to_mask = "lst", masker = "lst_qa", 
-                    product_name = "MOD11A1.061", flags = ["good_qa"]):
+def mask_bitwise_qa(ds, var, masker = "lst_qa", 
+                product_name = "MOD11A1.061", flags = ["good_qa"]):
+
+    new_data = ds[var]
+
     flag_bits = bitmasks.MODIS_qa_translator(product_name)
     mask = bitmasks.get_mask(ds[masker].astype("uint8"), flags, flag_bits)
-    ds[to_mask] = ds[to_mask].where(mask, np.nan)
+    new_data = ds[var].where(mask, np.nan)
     ds = ds.drop_vars([masker])
+
+    ds[var] = new_data
+
     return ds
 
-def mask_qa(ds, to_mask = "ndvi", masker = ("ndvi_qa", 1.0)):
-    ds[to_mask] = ds[to_mask].where(ds[masker[0]] != masker[1], np.nan)
+def mask_qa(ds, var, masker = ("ndvi_qa", 1.0)):
+
+    new_data = ds[var].where(ds[masker[0]] != masker[1], np.nan)
     ds = ds.drop_vars(masker[0])
+
+    ds[var] = new_data
+
     return ds
 
 def default_vars(product_name, req_vars):
@@ -131,7 +142,7 @@ def default_vars(product_name, req_vars):
     
     return out
 
-def default_post_processors(product_name, req_vars):
+def default_post_processors(product_name, req_vars = None):
     
     post_processors = {
         "MOD13Q1.061": {
@@ -149,14 +160,12 @@ def default_post_processors(product_name, req_vars):
         "MCD43A3.061": {
             "r0": [
                     shortwave_r0, 
-                    partial(mask_qa, to_mask = "r0", masker = ("r0_qa", 1.))
+                    partial(mask_qa, masker = ("r0_qa", 1.))
                     ]
             },
     }
 
-    out = [val for key, sublist in post_processors[product_name].items() for val in sublist if key in req_vars]
-    if "_" in post_processors[product_name].keys():
-        out += post_processors[product_name]["_"]
+    out = {k:v for k,v in post_processors[product_name].items() if k in req_vars}
 
     return out
 
@@ -170,8 +179,16 @@ def download(folder, latlim, lonlim, timelim, product_name, req_vars,
 
     tiles = tiles_intersect(latlim, lonlim)
     coords = {"x": ["XDim", lonlim], "y": ["YDim", latlim], "t": ["time",timelim]}
-    variables = default_vars(product_name, req_vars)
-    post_processors = default_post_processors(product_name, req_vars)
+    
+    if isinstance(variables, type(None)):
+        variables = default_vars(product_name, req_vars)
+
+    if isinstance(post_processors, type(None)):
+        post_processors = default_post_processors(product_name, req_vars)
+    else:
+        default_processors = default_post_processors(product_name, req_vars)
+        post_processors = {k: {True: default_processors[k], False: v}[v == "default"] for k,v in post_processors.items()}
+
     data_source_crs = get_crss("MODIS")
     parallel = False
     spatial_tiles = True
@@ -183,24 +200,24 @@ def download(folder, latlim, lonlim, timelim, product_name, req_vars,
                 spatial_tiles = spatial_tiles, request_dims = request_dims)
     return ds
 
-if __name__ == "__main__":
+# if __name__ == "__main__":
 
-    products = [
-        ('MCD43A3.061', ["r0"]),
-        ('MOD11A1.061', ["lst"]),
-        ('MYD11A1.061', ["lst"]),
-        ('MOD13Q1.061', ["ndvi"]),
-        ('MYD13Q1.061', ["ndvi"]),
-    ]
+#     products = [
+#         ('MCD43A3.061', ["r0"]),
+#         ('MOD11A1.061', ["lst"]),
+#         ('MYD11A1.061', ["lst"]),
+#         ('MOD13Q1.061', ["ndvi"]),
+#         ('MYD13Q1.061', ["ndvi"]),
+#     ]
 
-    folder = r"/Users/hmcoerver/Downloads/pywapor_test"
-    # latlim = [26.9, 33.7]
-    # lonlim = [25.2, 37.2]
-    latlim = [28.9, 29.7]
-    lonlim = [30.2, 31.2]
-    timelim = [datetime.date(2020, 7, 1), datetime.date(2020, 7, 11)]
+#     folder = r"/Users/hmcoerver/Downloads/pywapor_test"
+#     # latlim = [26.9, 33.7]
+#     # lonlim = [25.2, 37.2]
+#     latlim = [28.9, 29.7]
+#     lonlim = [30.2, 31.2]
+#     timelim = [datetime.date(2020, 7, 1), datetime.date(2020, 7, 11)]
 
     # MODIS.
-    for product_name, req_vars in products:
-        ds = download(folder, latlim, lonlim, timelim, product_name, req_vars)
-        print(ds.rio.crs, ds.rio.grid_mapping)
+    # for product_name, req_vars in products:
+    #     ds = download(folder, latlim, lonlim, timelim, product_name, req_vars)
+    #     print(ds.rio.crs, ds.rio.grid_mapping)

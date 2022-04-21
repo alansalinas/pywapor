@@ -6,7 +6,18 @@ import numpy as np
 import xarray as xr
 from pywapor.general.logger import log
 
-def kelvin_to_celsius(ds, var, out_var = None):
+def template(ds, var, out_var = None):
+
+    new_data = ds[var]
+
+    if not isinstance(out_var, type(None)):
+        ds[out_var] = new_data
+    else: 
+        ds[var] = new_data
+
+    return ds
+
+def kelvin_to_celsius(ds, var, in_var = None, out_var = None):
     """Convert units of a variable from Kelvin to degrees Celsius.
 
     Parameters
@@ -24,14 +35,24 @@ def kelvin_to_celsius(ds, var, out_var = None):
     xarray.Dataset
         Adjusted data.
     """
+    if not isinstance(in_var, type(None)):
+        var = in_var
 
-    new_data = ds[var] - 273.15
+    if "units" in ds[var].attrs.keys():
+        current_unit = ds[var].attrs["units"]
+    else:
+        current_unit = "unknown"
+
+    if (current_unit == "K") or (current_unit == "unknown"):
+        new_data = ds[var] - 273.15
+    else:
+        new_data = ds[var]
 
     if "sources" in ds[var].attrs.keys():
         new_data.attrs = {"units": "C",
                             "sources": ds[var].attrs["sources"]}
     else:
-        new_data.attrs = {"unit": "C"}
+        new_data.attrs = {"units": "C"}
 
     if not isinstance(out_var, type(None)):
         ds[out_var] = new_data
@@ -107,16 +128,16 @@ def lapse_rate(ds, var, out_var = None, lapse_var = "z",
         log.info(f"--> Calculating local means (r = {radius:.2f}°) of `{lapse_var}`.")
         log.add()
 
-        pixel_size = (np.median(np.diff(ds.lon)), 
-                        np.median(np.diff(ds.lat)))
+        pixel_size = (np.median(np.diff(ds.x)), 
+                        np.median(np.diff(ds.y)))
         dem = ds[lapse_var].values
         
         dem_coarse = local_mean(dem, pixel_size, radius)
         t_diff = (dem - dem_coarse) * lapse_rate
         ds["t_diff"] = xr.DataArray(t_diff, 
                                     coords = {
-                                                "lat": ds.lat, 
-                                                "lon": ds.lon})
+                                                "y": ds.y, 
+                                                "x": ds.x})
 
         ds["t_diff"].attrs = {"sources": ["temperature.lapse_rate()"]}
 
