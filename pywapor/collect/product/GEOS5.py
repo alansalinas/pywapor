@@ -2,7 +2,9 @@ from pywapor.collect.protocol import opendap
 from pywapor.collect.protocol.projections import get_crss
 import os
 from pywapor.enhancers.temperature import kelvin_to_celsius
+from pywapor.enhancers.other import offset_time
 from functools import partial
+import numpy as np
 
 def default_vars(product_name, req_vars):
 
@@ -82,8 +84,11 @@ def download(folder, latlim, lonlim, timelim, product_name, req_vars,
 
     fp = os.path.join(folder, f"{product_name}.nc")
 
-    ds = opendap.download_xarray(url, fp, coords, 
-                                variables, post_processors, data_source_crs = data_source_crs)
+    timedelta = np.timedelta64(90, "m")
+
+    ds = opendap.download_xarray(url, fp, coords, variables, post_processors, 
+                                    data_source_crs = data_source_crs,
+                                    timedelta = timedelta)
     
     return ds
 

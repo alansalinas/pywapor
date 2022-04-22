@@ -5,12 +5,9 @@ import datetime
 import os
 import json
 import pywapor.collect
-import rasterio.crs
 from pywapor.general.processing_functions import open_ds
-import rasterio.warp
 import pywapor.collect.accounts as accounts
 from shapely.geometry.polygon import Polygon
-# from pywapor.general.logger import log
 from shapely.geometry import shape
 import pywapor.collect.protocol.opendap as opendap
 

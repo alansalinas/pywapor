@@ -12,6 +12,7 @@ from pywapor.collect.protocol.projections import get_crss
 import pywapor.collect.protocol.opendap as opendap
 from pywapor.general.processing_functions import open_ds
 from pywapor.general import bitmasks
+import pandas as pd
 
 def fn_func(product_name, tile):
     fn = f"{product_name}_h{tile[0]:02d}v{tile[1]:02d}.nc"
@@ -143,7 +144,7 @@ def default_vars(product_name, req_vars):
     return out
 
 def default_post_processors(product_name, req_vars = None):
-    
+
     post_processors = {
         "MOD13Q1.061": {
             "ndvi": [mask_qa]
@@ -160,7 +161,7 @@ def default_post_processors(product_name, req_vars = None):
         "MCD43A3.061": {
             "r0": [
                     shortwave_r0, 
-                    partial(mask_qa, masker = ("r0_qa", 1.))
+                    partial(mask_qa, masker = ("r0_qa", 1.)),
                     ]
             },
     }
@@ -176,6 +177,16 @@ def download(folder, latlim, lonlim, timelim, product_name, req_vars,
     fn = os.path.join(folder, f"{product_name}.nc")
     if os.path.isfile(fn):
         return open_ds(fn, "all")
+
+    if product_name == "MOD13Q1.061" or product_name == "MYD13Q1.061":
+        log.info(f"{product_name}!!!")
+        timedelta = np.timedelta64(8, "D")
+        timelim[0] = timelim[0] - pd.Timedelta(timedelta)
+    elif product_name == "MCD43A3.061":
+        timedelta = np.timedelta64(12, "h")
+        timelim[0] = timelim[0] - pd.Timedelta(timedelta)
+    else:
+        timedelta = None
 
     tiles = tiles_intersect(latlim, lonlim)
     coords = {"x": ["XDim", lonlim], "y": ["YDim", latlim], "t": ["time",timelim]}
@@ -197,7 +208,8 @@ def download(folder, latlim, lonlim, timelim, product_name, req_vars,
     ds = opendap.download(folder, product_name, coords, 
                 variables, post_processors, fn_func, url_func, un_pw = un_pw, 
                 tiles = tiles, data_source_crs = data_source_crs, parallel = parallel, 
-                spatial_tiles = spatial_tiles, request_dims = request_dims)
+                spatial_tiles = spatial_tiles, request_dims = request_dims,
+                timedelta = timedelta)
     return ds
 
 # if __name__ == "__main__":

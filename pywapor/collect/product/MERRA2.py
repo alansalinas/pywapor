@@ -6,6 +6,7 @@ from pywapor.collect.protocol.projections import get_crss
 import pywapor.collect.protocol.opendap as opendap
 import fnmatch
 import os
+import numpy as np
 from functools import partial
 from pywapor.general.processing_functions import open_ds
 from pywapor.collect.protocol.requests import find_paths
@@ -53,6 +54,7 @@ def pa_to_kpa(ds, var):
     return ds
 
 def default_post_processors(product_name, req_vars):
+
     post_processors = {
         "M2I1NXASM.5.12.4": {
             "t_air": [kelvin_to_celsius], 
@@ -123,6 +125,7 @@ def download(folder, latlim, lonlim, timelim, product_name, req_vars,
         default_processors = default_post_processors(product_name, req_vars)
         post_processors = {k: {True: default_processors[k], False: v}[v == "default"] for k,v in post_processors.items()}
 
+    timedelta = np.timedelta64(30, "m")
     data_source_crs = get_crss("WGS84")
     parallel = True
     spatial_tiles = False
@@ -132,7 +135,8 @@ def download(folder, latlim, lonlim, timelim, product_name, req_vars,
     ds = opendap.download(folder, product_name, coords, 
                 variables, post_processors, fn_func, url_func, un_pw = un_pw, 
                 tiles = tiles, data_source_crs = data_source_crs, parallel = parallel, 
-                spatial_tiles = spatial_tiles, request_dims = request_dims)
+                spatial_tiles = spatial_tiles, request_dims = request_dims,
+                timedelta = timedelta)
     return ds
 
 

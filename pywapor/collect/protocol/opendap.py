@@ -16,7 +16,8 @@ from pywapor.collect.protocol.requests import download_url, download_urls
 
 def download(folder, product_name, coords, variables, post_processors, 
                 fn_func, url_func, un_pw = None, tiles = None,  
-                data_source_crs = None, parallel = False, spatial_tiles = True, request_dims = True):
+                data_source_crs = None, parallel = False, spatial_tiles = True, 
+                request_dims = True, timedelta = None):
 
     # Create selection object.
     selection = create_selection(coords, target_crs = data_source_crs)
@@ -52,6 +53,9 @@ def download(folder, product_name, coords, variables, post_processors,
         for func in funcs:
             ds, label = apply_enhancer(ds, var, func)
             log.info(label)
+
+    if isinstance(timedelta, np.timedelta64):
+        ds["time"] = ds["time"] + timedelta
 
     # Save final output.
     fp = os.path.join(folder, f"{product_name}.nc")
@@ -91,7 +95,8 @@ def start_session(base_url, selection, un_pw = [None, None]):
     session = setup_session(*un_pw, check_url = url_coords)
     return session
 
-def download_xarray(url, fp, coords, variables, post_processors, data_source_crs = None):
+def download_xarray(url, fp, coords, variables, post_processors, 
+                    data_source_crs = None, timedelta = None):
 
     warnings.filterwarnings("ignore", category=xr.SerializationWarning)
     online_ds = xr.open_dataset(url, decode_coords="all")
@@ -112,7 +117,11 @@ def download_xarray(url, fp, coords, variables, post_processors, data_source_crs
     # Apply product specific functions.
     for var, funcs in post_processors.items():
         for func in funcs:
-            ds, _ = apply_enhancer(ds, var, func)
+            ds, label = apply_enhancer(ds, var, func)
+            log.info(label)
+
+    if isinstance(timedelta, np.timedelta64):
+        ds["time"] = ds["time"] + timedelta
 
     # Save final output
     ds = save_ds(ds, fp, decode_coords="all")

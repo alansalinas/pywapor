@@ -17,7 +17,7 @@ import datetime
 import rioxarray.merge
 
 def download(folder, latlim, lonlim, timelim, product_name, req_vars = ["ndvi", "r0"],
-                variables = None, post_processors = None):
+                variables = None, post_processors = None, timedelta = None):
 
     folder = os.path.join(folder, "PROBAV")
 
@@ -80,6 +80,9 @@ def download(folder, latlim, lonlim, timelim, product_name, req_vars = ["ndvi", 
         for func in funcs:
             ds, _ = apply_enhancer(ds, var, func)
 
+    if product_name == "S5_TOC_100_m_C1":
+        ds["time"] = ds["time"] + np.datetime64(int(2.5 * 24), "h")
+
     ds = ds[req_vars]
 
     ds = save_ds(ds, os.path.join(folder, f"{product_name}.nc"), decode_coords = "all")
@@ -127,7 +130,7 @@ def calc_r0(ds, *args):
     return ds
 
 def default_post_processors(product_name, req_vars = ["ndvi", "r0"]):
-    
+
     post_processors = {
         "S5_TOC_100_m_C1": {
             "r0": [

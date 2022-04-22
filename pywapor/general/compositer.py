@@ -57,7 +57,7 @@ def add_times(ds, bins, composite_type):
     if composite_type == "mean":
         new_t = [x.mid for x in empty_bins.values]
     else:
-        new_t1 = [x.left for x in empty_bins.values]
+        new_t1 = [x.left + pd.Timedelta(seconds=1) for x in empty_bins.values]
         new_t2 = [x.right - pd.Timedelta(seconds=1) for x in empty_bins.values]
         new_t = new_t1 + new_t2
 
@@ -202,8 +202,8 @@ def main(dss, sources, example_source, bins, folder, enhancers,
 
             ds = ds.chunk({"time": -1, "y": "auto", "x": "auto"})
 
-            # Interpolate (temporal).
-            ds = add_times(ds, bins, composite_type = composite_type)
+            if temporal_interp:
+                ds = add_times(ds, bins, composite_type = composite_type)
             
             if diagnostics:
                 ds[f"{var}_source"] = ds[f"{var}_source"].fillna(255)
@@ -212,7 +212,8 @@ def main(dss, sources, example_source, bins, folder, enhancers,
             else:
                 log.info(f"--> Compositing `{var}` ({composite_type}).")
 
-            ds = ds.interpolate_na(dim="time", method = temporal_interp)
+            if temporal_interp:
+                ds = ds.interpolate_na(dim="time", method = temporal_interp)
 
             # Make composites.
             ds[var] = compositers[composite_type](ds[var].groupby_bins("time", bins, labels = bins[:-1]))

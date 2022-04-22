@@ -95,7 +95,7 @@ def main(folder, latlim, lonlim, timelim, sources, bin_length,
                     ]
 
     # sources.pop("se_root")
-    # sources = {k:v for k, v in sources.items() if k in ["ndvi", "p_air", "p_air_0"]}
+    sources = {k:v for k, v in sources.items() if k in ["ndvi"]}
 
     dss = downloader.collect_sources(folder, sources, latlim, lonlim, [bins[0], bins[-1]])
 
@@ -124,20 +124,27 @@ if __name__ == "__main__":
                     "urban":	    (29.30962,	30.84109),
                     }
 
-    diagnostics = None
+    # diagnostics = None
     example_source = None
     enhancers = "default"
+
     sources = "level_1"
+    sources = levels.pre_et_look_levels(sources)
+    sources = {k:v for k, v in sources.items() if k in ["ndvi"]}
+
+    sources["ndvi"]["temporal_interp"] = False
+    sources["ndvi"]["composite_type"] = "max"
 
     folder = r"/Users/hmcoerver/Downloads/pywapor_test"
     latlim = [28.9, 29.7]
     lonlim = [30.2, 31.2]
-    timelim = [datetime.date(2020, 7, 1), datetime.date(2020, 7, 11)]
-    bin_length = "DEKAD"
+    timelim = [datetime.date(2020, 7, 1), datetime.date(2020, 8, 5)]
+    # bin_length = "DEKAD"
+    bin_length = 15
 
     ds = main(folder, latlim, lonlim, timelim, sources, 
                 bin_length, diagnostics = diagnostics)
 
     # from pywapor.general.processing_functions import open_ds
-    # ds = open_ds(r"/Users/hmcoerver/Downloads/pywapor_test/et_look_in.nc")
-    ds_out = et_look(ds)
+    # input_data = open_ds(r"/Users/hmcoerver/Downloads/pywapor_test/et_look_in.nc")
+    # ds_out = et_look(ds, export_vars = "default")

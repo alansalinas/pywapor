@@ -37,9 +37,8 @@ def main(input_data, et_look_version = "v2", export_vars = "default"):
 
     Returns
     -------
-    xr.Dataset | dict
-        Returns a dataset or a dictionary with variable names as keys and
-        lists with paths to geoTIFF files as values, depending on `export_to_tif`.
+    xr.Dataset
+        Dataset with variables selected through `export_vars`.
     """
     t1 = datetime.datetime.now()
     log.info("> ET_LOOK").add()
@@ -65,7 +64,7 @@ def main(input_data, et_look_version = "v2", export_vars = "default"):
     if isinstance(input_data, str):
         ds = xr.open_dataset(input_data)
     else:
-        ds = input_data
+        ds = copy.deepcopy(input_data)
         input_data = ds.encoding["source"]
 
     ds = g.variables.initiate_ds(ds)
@@ -278,10 +277,13 @@ def main(input_data, et_look_version = "v2", export_vars = "default"):
     else:
         raise ValueError
 
-    ds = ds.transpose("time_bins", "y", "x") # set dimension order the same for all vars.
-    
-    fn = fn.replace("in", "out")
-    ds = save_ds(ds, os.path.join(fp, fn), "all")
+    if len(ds.data_vars) == 0:
+        log.info("--> No data to export, try adjusting `export_vars`.")
+        ds = None
+    else:
+        ds = ds.transpose("time_bins", "y", "x") # set dimension order the same for all vars.
+        fn = fn.replace("in", "out")
+        ds = save_ds(ds, os.path.join(fp, fn), "all")
 
     t2 = datetime.datetime.now()
     log.sub().info(f"< ET_LOOK ({str(t2 - t1)})")
