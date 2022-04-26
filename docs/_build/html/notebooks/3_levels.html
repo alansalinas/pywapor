@@ -53,7 +53,7 @@
 </li>
 <li class="toctree-l2"><a class="reference internal" href="4_sideloading.html">Sideloading data</a></li>
 <li class="toctree-l2"><a class="reference internal" href="5_enhancers.html">Enhancing data</a></li>
-<li class="toctree-l2"><a class="reference internal" href="6_wapor_vs_pywapor.html">pyWaPOR vs. WaPOR</a></li>
+<li class="toctree-l2"><a class="reference internal" href="6_wapor_vs_pywapor.html">pyWaPOR vs. WaPOR</a></li>
 </ul>
 </li>
 <li class="toctree-l1"><a class="reference internal" href="../_pywapor_api.html">pyWaPOR API</a></li>
@@ -445,9 +445,9 @@ div.rendered_html tbody tr:hover {
  &#39;z_oro&#39;: [&#39;STATICS&#39;]}
 </pre></div></div>
 </div>
-<p>You can see that at level-1, e.g. <code class="docutils literal notranslate"><span class="pre">ndvi</span></code> data comes from <code class="docutils literal notranslate"><span class="pre">MOD13</span></code> and <code class="docutils literal notranslate"><span class="pre">MYD13</span></code>, while daily precipitation (<code class="docutils literal notranslate"><span class="pre">p_24</span></code>) comes from the <code class="docutils literal notranslate"><span class="pre">CHIRPS</span></code> dataset. So by checking the keys of this dictionary, we can see which pre-defined levels are available in this version of pyWAPOR.</p>
+<p>You can see that at level-1, e.g. <code class="docutils literal notranslate"><span class="pre">ndvi</span></code> data comes from <code class="docutils literal notranslate"><span class="pre">MOD13</span></code> and <code class="docutils literal notranslate"><span class="pre">MYD13</span></code>, while daily precipitation (<code class="docutils literal notranslate"><span class="pre">p_24</span></code>) comes from the <code class="docutils literal notranslate"><span class="pre">CHIRPS</span></code> dataset. So by checking the keys of this dictionary, we can see which pre-defined levels are available in this version of pyWAPOR.</p>
 <blockquote>
-<div><p>If you want to find some more information about these variables, you can get a dictionary with definitions and units for each variable by running <code class="docutils literal notranslate"><span class="pre">defs</span> <span class="pre">=</span> <span class="pre">pywapor.general.variables.get_var_definitions()</span></code> and then e.g. <code class="docutils literal notranslate"><span class="pre">defs[&quot;rn_offset&quot;]</span></code>.</p>
+<div><p>If you want to find some more information about these variables, you can get a dictionary with definitions and units for each variable by running <code class="docutils literal notranslate"><span class="pre">defs</span> <span class="pre">=</span> <span class="pre">pywapor.general.variables.get_var_definitions()</span></code> and then e.g. <code class="docutils literal notranslate"><span class="pre">defs[&quot;rn_offset&quot;]</span></code>.</p>
 </div></blockquote>
 <div class="nbinput docutils container">
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[4]:
@@ -1198,7 +1198,7 @@ median: 0.15
 <img alt="../_images/notebooks_3_levels_24_1.png" src="../_images/notebooks_3_levels_24_1.png" />
 </div>
 </div>
-<p>Since we used a very short <code class="docutils literal notranslate"><span class="pre">composite_length</span></code> in this notebook (to keep the time required to download the data down), the chances of a pixel having no valid data increases (e.g. there is less time per composite to acquire a cloudfree measurement). Also, since we only processed one epoch, temporal interpolation wasn’t possible.</p>
+<p>Since we used a very short <code class="docutils literal notranslate"><span class="pre">composite_length</span></code> in this notebook (to keep the time required to download the data down), the chances of a pixel having no valid data increases (e.g. there is less time per composite to acquire a cloudfree measurement). Also, since we only processed one epoch, temporal interpolation wasn’t possible.</p>
 </section>
 <section id="Custom-inputs">
 <h2>Custom inputs<a class="headerlink" href="#Custom-inputs" title="Permalink to this headline"></a></h2>
@@ -1206,11 +1206,11 @@ median: 0.15
 <p>Lets start by creating such a dictionary by choosing some sources from this table.</p>
 <table class="docutils align-default">
 <colgroup>
-<col style="width: 62%" />
-<col style="width: 11%" />
-<col style="width: 10%" />
-<col style="width: 10%" />
-<col style="width: 7%" />
+<col style="width: 20%" />
+<col style="width: 20%" />
+<col style="width: 20%" />
+<col style="width: 20%" />
+<col style="width: 20%" />
 </colgroup>
 <thead>
 <tr class="row-odd"><th class="head"><p>Source</p></th>

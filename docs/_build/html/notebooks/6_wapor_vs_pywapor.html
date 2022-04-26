@@ -49,7 +49,7 @@
 <li class="toctree-l2"><a class="reference internal" href="3_levels.html">Levels</a></li>
 <li class="toctree-l2"><a class="reference internal" href="4_sideloading.html">Sideloading data</a></li>
 <li class="toctree-l2"><a class="reference internal" href="5_enhancers.html">Enhancing data</a></li>
-<li class="toctree-l2 current"><a class="current reference internal" href="#">pyWaPOR vs. WaPOR</a></li>
+<li class="toctree-l2 current"><a class="current reference internal" href="#">pyWaPOR vs. WaPOR</a></li>
 </ul>
 </li>
 <li class="toctree-l1"><a class="reference internal" href="../_pywapor_api.html">pyWaPOR API</a></li>
@@ -72,7 +72,7 @@
   <ul class="wy-breadcrumbs">
       <li><a href="../index.html" class="icon icon-home"></a> &raquo;</li>
           <li><a href="../_user_guide.html">User Guide</a> &raquo;</li>
-      <li>pyWaPOR vs. WaPOR</li>
+      <li>pyWaPOR vs. WaPOR</li>
       <li class="wy-breadcrumbs-aside">
               <a href="https://bitbucket.org///src/notebooks/6_wapor_vs_pywapor.ipynb?mode=view" class="fa fa-bitbucket"> Edit on Bitbucket</a>
       </li>
@@ -352,8 +352,8 @@ div.rendered_html tbody tr:hover {
     text-align: unset;
 }
 </style>
-<section id="pyWaPOR-vs.-WaPOR">
-<h1>pyWaPOR vs. WaPOR<a class="headerlink" href="#pyWaPOR-vs.-WaPOR" title="Permalink to this headline"></a></h1>
+<section id="pyWaPOR-vs. WaPOR">
+<h1>pyWaPOR vs. WaPOR<a class="headerlink" href="#pyWaPOR-vs. WaPOR" title="Permalink to this headline"></a></h1>
 <p>In this notebook we’ll make an comparison between dekadal Evapotranspiration data from WaPOR and from pyWaPOR.</p>
 <p>First we install pywapor, in case it’s not installed yet.</p>
 <div class="nbinput nblast docutils container">
@@ -666,7 +666,7 @@ array_shape wapor   : (539, 629)
 <img alt="../_images/notebooks_6_wapor_vs_pywapor_16_0.png" src="../_images/notebooks_6_wapor_vs_pywapor_16_0.png" />
 </div>
 </div>
-<p>You’ll see that the spatial extent of the WaPOR geoTIFF is larger than pyWaPORs, e.g. clearly a larger part of the Nile delta is visible on the WaPOR map. This shouldn’t be a surprise though, as we’ve just seen that (1) the WaPOR pixels are larger and (2) the WaPOR geoTIFF has more pixels.</p>
+<p>You’ll see that the spatial extent of the WaPOR geoTIFF is larger than pyWaPORs, e.g. clearly a larger part of the Nile delta is visible on the WaPOR map. This shouldn’t be a surprise though, as we’ve just seen that (1) the WaPOR pixels are larger and (2) the WaPOR geoTIFF has more pixels.</p>
 <p>Nevertheless, in order to really compare the two files, we’ll have to reproject one of them to match all the pixels with eachother. We’ll reproject the WaPOR file to match with the pyWaPOR file using a nearest-neighbor interpolation.</p>
 <div class="nbinput docutils container">
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[8]:
@@ -695,7 +695,7 @@ array_shape pywapor : (408, 510)
 array_shape wapor   : (408, 510)
 </pre></div></div>
 </div>
-<p>Now the pixels have the same size and the arrays have the same shape (i.e. the same amount of pixels).</p>
+<p>Now the pixels have the same size and the arrays have the same shape (i.e. the same amount of pixels).</p>
 <p>In the figure we’ve created earlier, you might also have noticed that the ET values on the WaPOR map were extremely high compared to the pyWaPOR map. As you can read in the WaPOR documentation, we need to apply a scale-factor of 0.1 to the pixel values to get the correct values.</p>
 <div class="nbinput nblast docutils container">
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[9]:
