@@ -192,7 +192,10 @@ def main(dss, sources, example_source, bins, folder, enhancers,
             dss1 = diags(diagnostics, dss1, var)
 
         # Combine different source_products (along time dimension).
-        ds = xr.combine_nested(dss1, concat_dim = "time").sortby("time").squeeze()
+        ds = xr.combine_nested(dss1, concat_dim = "time").sortby("time")
+
+        if ds.time.size == 1:
+            ds = ds.squeeze("time")
 
         if diagnostics:
             ds[f"{var}_source"].attrs = create_diags_attrs(srcs)

@@ -7,6 +7,7 @@ from pywapor.general import compositer
 import pywapor.general.levels as levels
 import datetime
 import numpy as np
+import os
 import pandas as pd
 import xarray as xr
 from functools import partial
@@ -37,7 +38,7 @@ def add_constants(ds, *args):
     ds = ds.assign(defaults.constants_defaults())
     return ds
 
-def main(folder, latlim, lonlim, timelim, sources, bin_length, 
+def main(folder, latlim, lonlim, timelim, sources = "level_1", bin_length = "DEKAD", 
             enhancers = "default", diagnostics = None, example_source = None):
     """Prepare input data for `et_look`.
 
@@ -70,11 +71,17 @@ def main(folder, latlim, lonlim, timelim, sources, bin_length,
     xr.Dataset
         Dataset with data for `pywapor.et_look`.
     """
+    if not os.path.exists(folder):
+        os.makedirs(folder)
 
     _ = adjust_logger(True, folder, "INFO")
 
     t1 = datetime.datetime.now()
     log.info("> PRE_ET_LOOK").add()
+
+    if isinstance(timelim[0], str):
+        timelim[0] = datetime.datetime.strptime(timelim[0], "%Y-%m-%d")
+        timelim[1] = datetime.datetime.strptime(timelim[1], "%Y-%m-%d")
 
     if isinstance(sources, str):
         sources = levels.pre_et_look_levels(sources)
@@ -93,9 +100,6 @@ def main(folder, latlim, lonlim, timelim, sources, bin_length,
                     partial(calc_doys, bins = bins),
                     add_constants
                     ]
-
-    # sources.pop("se_root")
-    sources = {k:v for k, v in sources.items() if k in ["ndvi"]}
 
     dss = downloader.collect_sources(folder, sources, latlim, lonlim, [bins[0], bins[-1]])
 
@@ -118,29 +122,31 @@ if __name__ == "__main__":
     from pywapor.et_look import main as et_look
 
     diagnostics = { # label          # lat      # lon
-                    "water":	    (29.44977,	30.58215),
-                    "desert":	    (29.12343,	30.51222),
+                    # "water":	    (29.44977,	30.58215),
+                    # "desert":	    (29.12343,	30.51222),
                     "agriculture":	(29.32301,	30.77599),
-                    "urban":	    (29.30962,	30.84109),
+                    # "urban":	    (29.30962,	30.84109),
                     }
 
-    # diagnostics = None
+    diagnostics = None
     example_source = None
     enhancers = "default"
 
-    sources = "level_1"
-    sources = levels.pre_et_look_levels(sources)
-    sources = {k:v for k, v in sources.items() if k in ["ndvi"]}
+    sources = "level_2"
+    # sources = levels.pre_et_look_levels(sources)
+    # sources = {k:v for k, v in sources.items() if k in ["ndvi", "z", "rs_min"]}
 
-    sources["ndvi"]["temporal_interp"] = False
-    sources["ndvi"]["composite_type"] = "max"
+    # sources["ndvi"]["temporal_interp"] = False
+    # sources["ndvi"]["composite_type"] = "max"
 
-    folder = r"/Users/hmcoerver/Downloads/pywapor_test"
+    # folder = r"/Users/hmcoerver/Downloads/pywapor_test"
+    folder = r"/Users/hmcoerver/pywapor_notebooks_2"
     latlim = [28.9, 29.7]
     lonlim = [30.2, 31.2]
-    timelim = [datetime.date(2020, 7, 1), datetime.date(2020, 8, 5)]
-    # bin_length = "DEKAD"
-    bin_length = 15
+    timelim = [datetime.date(2020, 7, 1), datetime.date(2020, 7, 11)]
+    # timelim = [datetime.date(2020, 7, 6), datetime.date(2020, 7, 7)]
+    bin_length = "DEKAD"
+    # bin_length = 1
 
     ds = main(folder, latlim, lonlim, timelim, sources, 
                 bin_length, diagnostics = diagnostics)
@@ -148,3 +154,5 @@ if __name__ == "__main__":
     # from pywapor.general.processing_functions import open_ds
     # input_data = open_ds(r"/Users/hmcoerver/Downloads/pywapor_test/et_look_in.nc")
     # ds_out = et_look(ds, export_vars = "default")
+
+

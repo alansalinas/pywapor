@@ -81,7 +81,7 @@ def download(folder, latlim, lonlim, timelim, product_name, req_vars = ["ndvi", 
             ds, _ = apply_enhancer(ds, var, func)
 
     if product_name == "S5_TOC_100_m_C1":
-        ds["time"] = ds["time"] + np.datetime64(int(2.5 * 24), "h")
+        ds["time"] = ds["time"] + np.timedelta64(int(2.5 * 24), "h")
 
     ds = ds[req_vars]
 
@@ -230,6 +230,6 @@ if __name__ == "__main__":
     post_processors = None
     req_vars = ["r0", "ndvi"]
 
-    ds = download(folder, latlim, lonlim, timelim, product_name, req_vars = req_vars,
-                variables = variables, post_processors = post_processors)
+    # ds = download(folder, latlim, lonlim, timelim, product_name, req_vars = req_vars,
+    #             variables = variables, post_processors = post_processors)
 

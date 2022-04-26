@@ -5,9 +5,12 @@ Generates input data for `pywapor.se_root`.
 from pywapor.collect import downloader
 from pywapor.general.logger import log, adjust_logger
 from pywapor.general import compositer
+from pywapor.general.processing_functions import open_ds, save_ds
 import pywapor.general.levels as levels#import pre_et_look_levels, find_example
 from pywapor.general import aligner
 import datetime
+import os
+from pywapor.general.logger import log, adjust_logger
 
 def rename_meteo(ds, *args):
     ds = ds.rename_vars({
@@ -20,7 +23,7 @@ def rename_meteo(ds, *args):
                     "p_air_0": "p_air_0_i"})
     return ds
 
-def main(folder, latlim, lonlim, timelim, sources, bin_length,
+def main(folder, latlim, lonlim, timelim, sources = "level_1", bin_length = "DEKAD",
             enhancers = "default", example_source = None, **kwargs):
     """Prepare input data for `se_root`.
 
@@ -53,6 +56,19 @@ def main(folder, latlim, lonlim, timelim, sources, bin_length,
     t1 = datetime.datetime.now()
     log.info("> PRE_SE_ROOT").add()
 
+    final_path = os.path.join(folder, "se_root_in.nc")
+    if os.path.isfile(final_path):
+        t2 = datetime.datetime.now()
+        log.sub().info(f"< PRE_SE_ROOT ({str(t2 - t1)})")
+        return open_ds(final_path, chunk_size = "10MiB")
+
+    if isinstance(timelim[0], str):
+        timelim[0] = datetime.datetime.strptime(timelim[0], "%Y-%m-%d")
+        timelim[1] = datetime.datetime.strptime(timelim[1], "%Y-%m-%d")
+
+    if not os.path.exists(folder):
+        os.makedirs(folder)
+
     if isinstance(sources, str):
         sources = levels.pre_se_root_levels(sources)
 
@@ -76,21 +92,38 @@ if __name__ == "__main__":
 
     from pywapor.se_root import main as se_root
 
-    sources = "level_1"
+    sources = "level_2"
 
     enhancers = "default"
 
-    folder = r"/Users/hmcoerver/Downloads/pywapor_test"
+    folder = r"/Users/hmcoerver/pywapor_notebooks_2"
     latlim = [28.9, 29.7]
     lonlim = [30.2, 31.2]
-    timelim = [datetime.date(2020, 7, 1), datetime.date(2020, 7, 21)]
+    timelim = [datetime.date(2020, 7, 1), datetime.date(2020, 7, 11)]
     bin_length = "DEKAD"
     example_source = None
+
+    _ = adjust_logger(True, folder, "INFO")
 
     sources = levels.pre_se_root_levels(sources)
     example = levels.find_example(sources)
 
     # print(example)
-    ds = main(folder, latlim, lonlim, timelim, sources, bin_length)
+    # ds = main(folder, latlim, lonlim, timelim, sources, bin_length)
     
+    chunk_size = "20MiB"
+    ds = open_ds(r"/Users/hmcoerver/pywapor_notebooks_2/se_root_in.nc", chunk_size = chunk_size)
+    # ds_out = se_root(ds)
+    # ds_out = ds_out[["se_root"]]
+    # save_ds(ds_out, r"/Users/hmcoerver/pywapor_notebooks_2/test_1.nc", chunk_size = chunk_size)
+
+    import xarray as xr
+    from dask.diagnostics import ProgressBar
+
+    # ds = xr.open_dataset(r"/Users/hmcoerver/pywapor_notebooks_2/se_root_in.nc", 
+    #                         chunks= {"time": -1, "x": 10,"y": 10})
     ds_out = se_root(ds)
+    ds_out = ds_out[["se_root"]]
+
+    # with ProgressBar():
+    #     ds_out.to_netcdf(r"/Users/hmcoerver/pywapor_notebooks_2/test_3.nc")

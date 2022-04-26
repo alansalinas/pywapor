@@ -12,7 +12,7 @@ from pywapor.general.logger import log
 import pywapor.general.processing_functions as PF
 import xarray as xr
 import pandas as pd
-from pywapor.general.processing_functions import save_ds
+from pywapor.general.processing_functions import save_ds, open_ds
 # from pywapor.general.compositer import calculate_ds
 import copy
 import warnings
@@ -62,7 +62,7 @@ def main(input_data, et_look_version = "v2", export_vars = "default"):
 
     # Inputs
     if isinstance(input_data, str):
-        ds = xr.open_dataset(input_data)
+        ds = open_ds(input_data)
     else:
         ds = copy.deepcopy(input_data)
         input_data = ds.encoding["source"]
@@ -283,7 +283,10 @@ def main(input_data, et_look_version = "v2", export_vars = "default"):
     else:
         ds = ds.transpose("time_bins", "y", "x") # set dimension order the same for all vars.
         fn = fn.replace("in", "out")
-        ds = save_ds(ds, os.path.join(fp, fn), "all")
+        fp_out = os.path.join(fp, fn)
+        if os.path.isfile(fp_out):
+            fp_out = fp_out.replace(".nc", "_.nc")
+        ds = save_ds(ds, fp_out, "all")
 
     t2 = datetime.datetime.now()
     log.sub().info(f"< ET_LOOK ({str(t2 - t1)})")

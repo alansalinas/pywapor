@@ -11,7 +11,6 @@ from pywapor.general.logger import log
 import xarray as xr
 import pandas as pd
 import dask
-dask.config.set(**{'array.chunk-size': '64MiB'})
 
 def process_ds(ds, coords, variables, crs = None):
 
@@ -36,7 +35,7 @@ def process_ds(ds, coords, variables, crs = None):
 
     return ds
 
-def save_ds(ds, fp, decode_coords = "all", encoding = None):
+def save_ds(ds, fp, decode_coords = "all", encoding = None, chunk_size = '64MiB'):
     """Save a `xr.Dataset` as netcdf.
 
     Parameters
@@ -60,6 +59,7 @@ def save_ds(ds, fp, decode_coords = "all", encoding = None):
     if not os.path.isdir(folder):
         os.makedirs(folder)
 
+    dask.config.set(**{'array.chunk-size': chunk_size})
     ds = ds.chunk("auto")
 
     with ProgressBar(minimum = 10, dt = 2.0):
@@ -69,10 +69,11 @@ def save_ds(ds, fp, decode_coords = "all", encoding = None):
 
     os.rename(temp_fp, fp)
 
-    ds = open_ds(fp, decode_coords)
+    ds = open_ds(fp, decode_coords, chunk_size = chunk_size)
     return ds
 
-def open_ds(fp, decode_coords = "all"):
+def open_ds(fp, decode_coords = "all", chunk_size = '64MiB'):
+    dask.config.set(**{'array.chunk-size': chunk_size})
     ds = xr.open_dataset(fp, decode_coords=decode_coords, chunks = "auto")
     return ds
 

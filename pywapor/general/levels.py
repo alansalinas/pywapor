@@ -104,8 +104,8 @@ def pre_et_look_levels(level = "level_1", bin_length = "DEKAD"):
         "t_air": {
             "products": [
                 {
-                    "source": "MERRA2",
-                    "product_name": "M2I1NXASM.5.12.4",
+                    "source": "GEOS5",
+                    "product_name": "inst3_2d_asm_Nx",
                     "enhancers": "default",
                 },
             ],
@@ -117,8 +117,8 @@ def pre_et_look_levels(level = "level_1", bin_length = "DEKAD"):
         "t_air_max": {
             "products": [
                 {
-                    "source": "MERRA2",
-                    "product_name": "M2I1NXASM.5.12.4",
+                    "source": "GEOS5",
+                    "product_name": "inst3_2d_asm_Nx",
                     "enhancers": "default",
                 },
             ],
@@ -130,8 +130,8 @@ def pre_et_look_levels(level = "level_1", bin_length = "DEKAD"):
         "t_air_min": {
             "products": [
                 {
-                    "source": "MERRA2",
-                    "product_name": "M2I1NXASM.5.12.4",
+                    "source": "GEOS5",
+                    "product_name": "inst3_2d_asm_Nx",
                     "enhancers": "default",
                 },
             ],
@@ -143,8 +143,8 @@ def pre_et_look_levels(level = "level_1", bin_length = "DEKAD"):
         "u2m": {
             "products": [
                 {
-                    "source": "MERRA2",
-                    "product_name": "M2I1NXASM.5.12.4",
+                    "source": "GEOS5",
+                    "product_name": "inst3_2d_asm_Nx",
                     "enhancers": "default",
                 },
             ],
@@ -156,8 +156,8 @@ def pre_et_look_levels(level = "level_1", bin_length = "DEKAD"):
         "v2m": {
             "products": [
                 {
-                    "source": "MERRA2",
-                    "product_name": "M2I1NXASM.5.12.4",
+                    "source": "GEOS5",
+                    "product_name": "inst3_2d_asm_Nx",
                     "enhancers": "default",
                 },
             ],
@@ -169,8 +169,8 @@ def pre_et_look_levels(level = "level_1", bin_length = "DEKAD"):
         "qv": {
             "products": [
                 {
-                    "source": "MERRA2",
-                    "product_name": "M2I1NXASM.5.12.4",
+                    "source": "GEOS5",
+                    "product_name": "inst3_2d_asm_Nx",
                     "enhancers": "default",
                 },
             ],
@@ -182,8 +182,8 @@ def pre_et_look_levels(level = "level_1", bin_length = "DEKAD"):
         "p_air": {
             "products": [
                 {
-                    "source": "MERRA2",
-                    "product_name": "M2I1NXASM.5.12.4",
+                    "source": "GEOS5",
+                    "product_name": "inst3_2d_asm_Nx",
                     "enhancers": "default",
                 },
             ],
@@ -195,8 +195,8 @@ def pre_et_look_levels(level = "level_1", bin_length = "DEKAD"):
         "p_air_0": {
             "products": [
                 {
-                    "source": "MERRA2",
-                    "product_name": "M2I1NXASM.5.12.4",
+                    "source": "GEOS5",
+                    "product_name": "inst3_2d_asm_Nx",
                     "enhancers": "default",
                 },
             ],
@@ -208,8 +208,8 @@ def pre_et_look_levels(level = "level_1", bin_length = "DEKAD"):
         "wv": {
             "products": [
                 {
-                    "source": "MERRA2",
-                    "product_name": "M2I1NXASM.5.12.4",
+                    "source": "GEOS5",
+                    "product_name": "inst3_2d_asm_Nx",
                     "enhancers": "default",
                 },
             ],
@@ -360,8 +360,8 @@ def pre_se_root_levels(level = "level_1"):
         "t_air": {
             "products": [
                 {
-                    "source": "MERRA2",
-                    "product_name": "M2I1NXASM.5.12.4",
+                    "source": "GEOS5",
+                    "product_name": "inst3_2d_asm_Nx",
                     "enhancers": "default",
                 },
             ],
@@ -372,8 +372,8 @@ def pre_se_root_levels(level = "level_1"):
         "t_air_max": {
             "products": [
                 {
-                    "source": "MERRA2",
-                    "product_name": "M2I1NXASM.5.12.4",
+                    "source": "GEOS5",
+                    "product_name": "inst3_2d_asm_Nx",
                     "enhancers": "default",
                 },
             ],
@@ -384,8 +384,8 @@ def pre_se_root_levels(level = "level_1"):
         "t_air_min": {
             "products": [
                 {
-                    "source": "MERRA2",
-                    "product_name": "M2I1NXASM.5.12.4",
+                    "source": "GEOS5",
+                    "product_name": "inst3_2d_asm_Nx",
                     "enhancers": "default",
                 },
             ],
@@ -396,8 +396,8 @@ def pre_se_root_levels(level = "level_1"):
         "u2m": {
             "products": [
                 {
-                    "source": "MERRA2",
-                    "product_name": "M2I1NXASM.5.12.4",
+                    "source": "GEOS5",
+                    "product_name": "inst3_2d_asm_Nx",
                     "enhancers": "default",
                 },
             ],
@@ -408,8 +408,8 @@ def pre_se_root_levels(level = "level_1"):
         "v2m": {
             "products": [
                 {
-                    "source": "MERRA2",
-                    "product_name": "M2I1NXASM.5.12.4",
+                    "source": "GEOS5",
+                    "product_name": "inst3_2d_asm_Nx",
                     "enhancers": "default",
                 },
             ],
@@ -420,8 +420,8 @@ def pre_se_root_levels(level = "level_1"):
         "qv": {
             "products": [
                 {
-                    "source": "MERRA2",
-                    "product_name": "M2I1NXASM.5.12.4",
+                    "source": "GEOS5",
+                    "product_name": "inst3_2d_asm_Nx",
                     "enhancers": "default",
                 },
             ],
@@ -432,8 +432,8 @@ def pre_se_root_levels(level = "level_1"):
         "wv": {
             "products": [
                 {
-                    "source": "MERRA2",
-                    "product_name": "M2I1NXASM.5.12.4",
+                    "source": "GEOS5",
+                    "product_name": "inst3_2d_asm_Nx",
                     "enhancers": "default",
                 },
             ],
@@ -444,8 +444,8 @@ def pre_se_root_levels(level = "level_1"):
         "p_air": {
             "products": [
                 {
-                    "source": "MERRA2",
-                    "product_name": "M2I1NXASM.5.12.4",
+                    "source": "GEOS5",
+                    "product_name": "inst3_2d_asm_Nx",
                     "enhancers": "default",
                 },
             ],
@@ -456,8 +456,8 @@ def pre_se_root_levels(level = "level_1"):
         "p_air_0": {
             "products": [
                 {
-                    "source": "MERRA2",
-                    "product_name": "M2I1NXASM.5.12.4",
+                    "source": "GEOS5",
+                    "product_name": "inst3_2d_asm_Nx",
                     "enhancers": "default",
                 },
             ],

@@ -179,7 +179,6 @@ def download(folder, latlim, lonlim, timelim, product_name, req_vars,
         return open_ds(fn, "all")
 
     if product_name == "MOD13Q1.061" or product_name == "MYD13Q1.061":
-        log.info(f"{product_name}!!!")
         timedelta = np.timedelta64(8, "D")
         timelim[0] = timelim[0] - pd.Timedelta(timedelta)
     elif product_name == "MCD43A3.061":

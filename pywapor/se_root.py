@@ -13,7 +13,7 @@ import pywapor.general.processing_functions as PF
 import pywapor.et_look_dev as ETLook_dev
 import pywapor.et_look_v2 as ETLook_v2
 from pywapor.general.logger import log
-from pywapor.general.processing_functions import save_ds
+from pywapor.general.processing_functions import save_ds, open_ds
 import copy
 import pywapor.pre_se_root as pre_se_root
 from pywapor.general import levels
@@ -65,10 +65,18 @@ def main(input_data, se_root_version = "v2", export_vars = "default"):
 
     # Inputs
     if isinstance(input_data, str):
-        ds = xr.open_dataset(input_data)
+        ds = open_ds(input_data)
     else:
         ds = input_data
         input_data = ds.encoding["source"]
+
+    fp, fn = os.path.split(input_data)
+    fn = fn.replace("in", "out")
+    final_path = os.path.join(fp, fn)
+    if os.path.isfile(final_path):
+        t2 = datetime.datetime.now()
+        log.sub().info(f"< SE_ROOT ({str(t2 - t1)})")
+        return open_ds(final_path)
 
     if se_root_version == "dev":
         c.z0m_full = 0.04 + 0.01 * (ds.pixel_size - 30)/(250-30)
@@ -106,7 +114,7 @@ def main(input_data, se_root_version = "v2", export_vars = "default"):
     ds["lon_rad"] = ETLook.solar_radiation.longitude_rad(ds["x"]).chunk("auto")
     ds["lat_rad"] = ETLook.solar_radiation.latitude_rad(ds["y"]).chunk("auto")
     ds["ha"] = ETLook.solar_radiation.hour_angle(ds["sc"], ds["dtime"], ds["lon_rad"])
-    
+
     I0 = ETLook.clear_sky_radiation.solar_constant() # TODO this should come from ETLook.constants
     ds["ied"] = ETLook.clear_sky_radiation.inverse_earth_sun_distance(ds["day_angle"])
     ds["h0"] = ETLook.clear_sky_radiation.solar_elevation_angle(ds["lat_rad"], ds["decl"], ds["ha"])
@@ -118,35 +126,30 @@ def main(input_data, se_root_version = "v2", export_vars = "default"):
     ds["B0c"] = ETLook.clear_sky_radiation.beam_irradiance_normal_clear(ds["G0"], ds["Tl2"], ds["m"], ds["rotm"], ds["h0"])
     ds["Bhc"] = ETLook.clear_sky_radiation.beam_irradiance_horizontal_clear(ds["B0c"], ds["h0"])
     ds["Dhc"] = ETLook.clear_sky_radiation.diffuse_irradiance_horizontal_clear(ds["G0"], ds["Tl2"], ds["h0"])
-    
+
     ds["ra_hor_clear_i"] = ETLook.clear_sky_radiation.ra_clear_horizontal(ds["Bhc"], ds["Dhc"])
     ds["emiss_atm_i"] = ETLook.soil_moisture.atmospheric_emissivity_inst(ds["vp_i"], ds["t_air_k_i"])
-    
+
     ds["rn_bare"] = ETLook.soil_moisture.net_radiation_bare(ds["ra_hor_clear_i"], ds["emiss_atm_i"], ds["t_air_k_i"], ds["lst"], ds["r0_bare"])
     ds["rn_full"] = ETLook.soil_moisture.net_radiation_full(ds["ra_hor_clear_i"], ds["emiss_atm_i"], ds["t_air_k_i"], ds["lst"], ds["r0_full"])
     ds["h_bare"] = ETLook.soil_moisture.sensible_heat_flux_bare(ds["rn_bare"], c.fraction_h_bare)
     ds["h_full"] = ETLook.soil_moisture.sensible_heat_flux_full(ds["rn_full"], c.fraction_h_full)
     ds["u_b_i_full"] = ETLook.soil_moisture.wind_speed_blending_height_full_inst(ds["u_i"], c.z0m_full, c.z_obs, c.z_b)
-    
+
     ds["u_star_i_bare"] = ETLook.soil_moisture.friction_velocity_bare_inst(ds["u_b_i_bare"], c.z0m_bare, c.disp_bare, c.z_b)
     ds["u_star_i_full"] = ETLook.soil_moisture.friction_velocity_full_inst(ds["u_b_i_full"], c.z0m_full, c.disp_full, c.z_b)
     ds["L_bare"] = ETLook.soil_moisture.monin_obukhov_length_bare(ds["h_bare"], ds["ad_i"], ds["u_star_i_bare"], ds["t_air_k_i"])
     ds["L_full"] = ETLook.soil_moisture.monin_obukhov_length_full(ds["h_full"], ds["ad_i"], ds["u_star_i_full"], ds["t_air_k_i"])
-    
+
     ds["u_i_soil"] = ETLook.soil_moisture.wind_speed_soil_inst(ds["u_i"], ds["L_bare"], c.z_obs)
     ds["ras"] = ETLook.soil_moisture.aerodynamical_resistance_soil(ds["u_i_soil"])
     ds["raa"] = ETLook.soil_moisture.aerodynamical_resistance_bare(ds["u_i"], ds["L_bare"], c.z0m_bare, c.disp_bare, c.z_obs)
     ds["rac"] = ETLook.soil_moisture.aerodynamical_resistance_full(ds["u_i"], ds["L_full"], c.z0m_full, c.disp_full, c.z_obs)
-    
+
     ds["t_max_bare"] = ETLook.soil_moisture.maximum_temperature_bare(ds["ra_hor_clear_i"], ds["emiss_atm_i"], ds["t_air_k_i"], ds["ad_i"], ds["raa"], ds["ras"], ds["r0_bare"])
     ds["t_max_full"] = ETLook.soil_moisture.maximum_temperature_full(ds["ra_hor_clear_i"], ds["emiss_atm_i"], ds["t_air_k_i"], ds["ad_i"], ds["rac"], ds["r0_full"])
 
-    # od["w_i"] = ETLook.soil_moisture.dew_point_temperature_inst(od["vp_i"])
-    # od["t_dew_i"] = ETLook.soil_moisture.dew_point_temperature_inst(od["vp_i"])
-    # od["t_wet_i"] = ETLook.soil_moisture.wet_bulb_temperature_inst(id["t_air_i"], od["t_dew_i"], id["p_air_i"])
     ds["t_wet_i"] = ETLook.soil_moisture.wet_bulb_temperature_inst_new(ds["t_air_i"], ds["qv_i"], ds["p_air_i"])
-    #t_wet_i_new2 = ETLook.soil_moisture.wet_bulb_temperature_inst_new2(t_air_i)
-
     ds["lst_max"] = ETLook.soil_moisture.maximum_temperature(ds["t_max_bare"], ds["t_max_full"], ds["vc"])
 
     if se_root_version == "v2":
@@ -172,9 +175,7 @@ def main(input_data, se_root_version = "v2", export_vars = "default"):
 
     ds = g.variables.fill_attrs(ds)
 
-    fp, fn = os.path.split(input_data)
-    fn = fn.replace("in", "out")
-    ds = save_ds(ds, os.path.join(fp, fn), "all")
+    ds = save_ds(ds, final_path, "all")
 
     t2 = datetime.datetime.now()
     log.sub().info(f"< SE_ROOT ({str(t2 - t1)})")
@@ -224,9 +225,22 @@ def lst_zone_mean(ds):
 
     return lst_zone_mean_da
 
-if __name__ == "__main__":
+# if __name__ == "__main__":
 
-    se_root_version = "v2"
-    export_vars = "default"
-    export_to_tif = False
+#     se_root_version = "v2"
+#     export_vars = "default"
+#     export_to_tif = False
+
+#     from pywapor.general.processing_functions import open_ds
+
+#     input_data = open_ds(r"/Users/hmcoerver/Downloads/pywapor_test/se_root_in.nc")
     
+#     out_ds = main(input_data)
+
+#     import dask
+#     dask.config.set(**{'array.chunk-size': '10MiB'})
+#     test = out_ds.chunk("auto")
+
+#     fp = r"/Users/hmcoerver/Downloads/pywapor_test/test_1.nc"
+
+#     bla = save_ds(test, fp, "all")

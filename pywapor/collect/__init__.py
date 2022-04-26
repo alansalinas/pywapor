@@ -3,6 +3,6 @@
 This WAPOR toolbox is a set of functions to collect and run the WAPOR ET model
 """
 
-from pywapor.collect import product, protocol
+from pywapor.collect import product, protocol, accounts
 
-__all__ = ['product', 'protocol']
+__all__ = ['product', 'protocol', 'accounts']

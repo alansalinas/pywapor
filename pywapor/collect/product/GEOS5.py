@@ -1,8 +1,8 @@
 from pywapor.collect.protocol import opendap
 from pywapor.collect.protocol.projections import get_crss
 import os
+from pywapor.general.processing_functions import open_ds
 from pywapor.enhancers.temperature import kelvin_to_celsius
-from pywapor.enhancers.other import offset_time
 from functools import partial
 import numpy as np
 
@@ -66,6 +66,9 @@ def download(folder, latlim, lonlim, timelim, product_name, req_vars,
                  variables = None, post_processors = None):
 
     folder = os.path.join(folder, "GEOS5")
+    fn = os.path.join(folder, f"{product_name}.nc")
+    if os.path.isfile(fn):
+        return open_ds(fn, "all")
 
     coords = {"x": ["lon", lonlim], "y": ["lat", latlim], "t": ["time", timelim]}
 
