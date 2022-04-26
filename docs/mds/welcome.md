@@ -134,6 +134,14 @@ For questions, requests or issues with this repository, please contact Bert Coer
 #### Release Notes
 
 <p><details open>
+<summary><b>2.4.2 (2022-04-26)</b></summary>
+<br>
+<ul>
+    <li> New biomass module and NPP calculation.</li>
+</ul>
+</details></p>
+
+<p><details>
 <summary><b>2.4.1 (2022-03-11)</b></summary>
 <br>
 <ul>
