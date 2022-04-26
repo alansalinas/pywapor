@@ -37,6 +37,30 @@ def air_temperature_celcius(t_air_k):
     """
     return t_air_k - c.zero_celcius
 
+def mean_temperature_kelvin_daytime(t_air_k_min, t_air_k_max):
+    r"""
+    Computes the mean temperature over the daily sunshine period.
+
+    Parameters
+    ----------
+    t_air_k_min : float
+        maximum air temperature
+        :math:`T_{a,min}`
+        [K]
+    t_air_k_max : float
+        maximum air temperature
+        :math:`T_{a,max}`
+        [K]
+
+    Returns
+    -------
+    t_air_k_12 : float
+        daytime air temperature
+        :math:`T_{a,12}`
+        [K]
+
+    """
+    return 0.25 * t_air_k_min + 0.75 * t_air_k_max
 
 def air_temperature_kelvin(t_air):
     r"""

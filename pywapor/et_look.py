@@ -219,10 +219,34 @@ def main(input_data, et_look_version = "v2", export_vars = "default", export_to_
     ds["et_ref_24"] = ETLook.evapotranspiration.et_reference(ds["rn_24_grass"], ds["ad_24"], ds["psy_24"], ds["vpd_24"], ds["ssvp_24"], ds["u_24"])
     ds["et_ref_24_mm"] = ETLook.evapotranspiration.et_reference_mm(ds["et_ref_24"], ds["lh_24"])
 
-    ds["lue"] = ETLook_dev.biomass.lue(ds["lue_max"], ds["stress_temp"], ds["stress_moist"], ds["eps_a"])
-    ds["fpar"] = ETLook_dev.leaf.fpar(ds["vc"], ds["ndvi"])
-    ds["apar"] = ETLook_dev.leaf.apar(ds["ra_24"], ds["fpar"])       
-    ds["biomass_prod"] = ETLook_dev.biomass.biomass(ds["apar"], ds["lue"])         
+    if et_look_version == "dev":
+        ds["lue"] = ETLook_dev.biomass.lue(ds["lue_max"], ds["stress_temp"], ds["stress_moist"], ds["eps_a"])
+        ds["fpar"] = ETLook_dev.leaf.fpar(ds["vc"], ds["ndvi"])
+        ds["apar"] = ETLook_dev.leaf.apar(ds["ra_24"], ds["fpar"])       
+        ds["biomass_prod"] = ETLook_dev.biomass.biomass(ds["apar"], ds["lue"])         
+    else:
+        ds["t_air_k_min"] = ETLook.meteo.air_temperature_kelvin_daily(ds["t_air_min_24"])
+        ds["t_air_k_max"] = ETLook.meteo.air_temperature_kelvin_daily(ds["t_air_max_24"])
+
+        ds["t_air_k_12"] = ETLook.meteo.mean_temperature_kelvin_daytime(ds["t_air_k_min"], ds["t_air_k_max"])
+
+        ds["t_dep"] = ETLook.biomass.temperature_dependency(ds["t_air_k_12"], dh_ap=ds["dh_ap"], d_s=ds["d_s"], dh_dp=ds["dh_dp"])
+        ds["k_m"] = ETLook.biomass.affinity_constant_co2(ds["t_air_k_12"])
+        ds["k_0"] = ETLook.biomass.inhibition_constant_o2(ds["t_air_k_12"])
+        ds["tau_co2_o2"] = ETLook.biomass.co2_o2_specificity_ratio(ds["t_air_k_12"])
+
+        ds["year"] = ds.epoch_starts.dt.year
+
+        ds["co2_act"] = ETLook.biomass.co2_level_annual(ds["year"])
+        ds["a_d"] = ETLook.biomass.autotrophic_respiration(ds["t_air_k_24"], ar_slo=ds["ar_slo"], ar_int=ds["ar_int"])
+
+        ds["apar"] = ETLook.biomass.par(ds["ra_24"])
+        ds["f_par"] = ETLook.biomass.fpar(ds["ndvi"], fpar_slope=ds["fpar_slope"], fpar_offset=ds["fpar_offset"])
+
+        ds["co2_fert"] = ETLook.biomass.co2_fertilisation(ds["tau_co2_o2"], ds["k_m"], ds["k_0"], ds["co2_act"], o2=ds["o2"], co2_ref=ds["co2_ref"])
+        ds["npp_max"] = ETLook.biomass.net_primary_production_max(ds["t_dep"], ds["co2_fert"], ds["a_d"], ds["apar"], gcgdm=ds["gcgdm"])
+        ds["npp"] = ETLook.biomass.net_primary_production(ds["npp_max"], ds["f_par"], ds["stress_moist"], phot_eff=ds["phot_eff"])
+
 
     ds = ds.drop_vars([x for x in ds.variables if ds[x].dtype == object])
 
@@ -240,7 +264,7 @@ def main(input_data, et_look_version = "v2", export_vars = "default", export_to_
                     'et_24_mm',
                     'et_ref_24_mm',
                     'se_root',
-                    'biomass_prod',
+                    'npp',
                     'epoch_ends',
                     'epoch_starts']
         ds = PF.ds_remove_except(ds, keep_vars)
@@ -272,13 +296,16 @@ if __name__ == "__main__":
     # level = "level_1"
     et_look_version = "v2"
 
-    input_data = r"/Users/hmcoerver/pywapor_notebooks/level_1/et_look_input.nc"
+    input_data = r"/Users/hmcoerver/Downloads/et_look_input.nc"
     input_data = xr.open_dataset(input_data)
     # input_data = input_data.drop_vars(["ndvi"])
 
-    ds = main(input_data, 
-                et_look_version=et_look_version, 
-                export_vars="all")
+    input_data = input_data.assign(defaults.constants_defaults())
 
+    ds = main(input_data,
+                et_look_version=et_look_version, 
+                export_vars="default")
+
+    # input_data["year"] = input_data.epoch_starts.dt.year
 
 
