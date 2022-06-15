@@ -8,7 +8,7 @@ import pywapor.et_look_dev as ETLook_dev
 import pywapor.et_look_v2 as ETLook_v2
 import pywapor.general as g
 import datetime
-from pywapor.general.logger import log
+from pywapor.general.logger import log, adjust_logger
 import pywapor.general.processing_functions as PF
 import xarray as xr
 import pandas as pd
@@ -40,6 +40,17 @@ def main(input_data, et_look_version = "v2", export_vars = "default"):
     xr.Dataset
         Dataset with variables selected through `export_vars`.
     """
+    chunks = {"time": 1, "x": 2000, "y": 2000}
+
+    # Inputs
+    if isinstance(input_data, str):
+        ds = open_ds(input_data, chunks = {"time": 1, "x": 2000, "y": 2000})
+    else:
+        ds = copy.deepcopy(input_data).chunk(chunks)
+        input_data = ds.encoding["source"]
+
+    _ = adjust_logger(True, os.path.split(input_data)[0], "INFO")
+
     t1 = datetime.datetime.now()
     log.info("> ET_LOOK").add()
 
@@ -59,13 +70,6 @@ def main(input_data, et_look_version = "v2", export_vars = "default"):
     # Allow skipping of et_look-functions if not all of its required inputs are
     # available.
     g.lazifier.decorate_submods(ETLook, g.lazifier.etlook_decorator)
-
-    # Inputs
-    if isinstance(input_data, str):
-        ds = open_ds(input_data)
-    else:
-        ds = copy.deepcopy(input_data)
-        input_data = ds.encoding["source"]
 
     ds = g.variables.initiate_ds(ds)
 
@@ -165,8 +169,6 @@ def main(input_data, et_look_version = "v2", export_vars = "default"):
     # **ETLook.unstable.initial_friction_velocity_daily***********************************************************
     ds["disp"] = ETLook.roughness.displacement_height(ds["lai"], ds["z_obst"], land_mask = ds["land_mask"], c1 = ds["c1"])
     ds["u_star_24_init"] = ETLook.unstable.initial_friction_velocity_daily(ds["u_b_24"], ds["z0m"], ds["disp"], z_b = ds["z_b"])
-
-    ds = ds.transpose("time_bins", "y", "x")
 
     # **ETLook.unstable.transpiration***********************************************************
     ds["t_24"] = ETLook.unstable.transpiration(ds["rn_24_canopy"], ds["ssvp_24"], ds["ad_24"], ds["vpd_24"], ds["psy_24"], ds["r_canopy"], ds["h_canopy_24_init"], ds["t_air_k_24"], ds["u_star_24_init"], ds["z0m"], ds["disp"], ds["u_b_24"], z_obs = ds["z_obs"], z_b = ds["z_b"], iter_h = ds["iter_h"])
@@ -306,13 +308,14 @@ if __name__ == "__main__":
 
     # level = "level_1"
     et_look_version = "v2"
+    export_vars = "default"
 
-    # input_data = r"/Users/hmcoerver/pywapor_notebooks/level_1/et_look_input.nc"
+    input_data = r"/Users/hmcoerver/pywapor_notebooks_2/et_look_in.nc"
     # input_data = xr.open_dataset(input_data)
     # # input_data = input_data.drop_vars(["ndvi"])
 
-    # ds = main(input_data, 
-    #             et_look_version=et_look_version, 
-    #             export_vars="all")
+    ds = main(input_data, 
+                et_look_version=et_look_version, 
+                export_vars="all")
 
 

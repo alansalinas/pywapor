@@ -60,7 +60,7 @@ def main(folder, latlim, lonlim, timelim, sources = "level_1", bin_length = "DEK
     if os.path.isfile(final_path):
         t2 = datetime.datetime.now()
         log.sub().info(f"< PRE_SE_ROOT ({str(t2 - t1)})")
-        return open_ds(final_path, chunk_size = "10MiB")
+        return open_ds(final_path)
 
     if isinstance(timelim[0], str):
         timelim[0] = datetime.datetime.strptime(timelim[0], "%Y-%m-%d")
@@ -90,7 +90,7 @@ def main(folder, latlim, lonlim, timelim, sources = "level_1", bin_length = "DEK
 
 if __name__ == "__main__":
 
-    from pywapor.se_root import main as se_root
+    # from pywapor.se_root import main as se_root
 
     sources = "level_2"
 
@@ -99,31 +99,31 @@ if __name__ == "__main__":
     folder = r"/Users/hmcoerver/pywapor_notebooks_2"
     latlim = [28.9, 29.7]
     lonlim = [30.2, 31.2]
-    timelim = [datetime.date(2020, 7, 1), datetime.date(2020, 7, 11)]
-    bin_length = "DEKAD"
+    timelim = [datetime.date(2020, 7, 6), datetime.date(2020, 7, 6)]
+    bin_length = 1
     example_source = None
 
-    _ = adjust_logger(True, folder, "INFO")
+    # _ = adjust_logger(True, folder, "INFO")
 
-    sources = levels.pre_se_root_levels(sources)
-    example = levels.find_example(sources)
+    # sources = levels.pre_se_root_levels(sources)
+    # example = levels.find_example(sources)
 
     # print(example)
     # ds = main(folder, latlim, lonlim, timelim, sources, bin_length)
     
-    chunk_size = "20MiB"
-    ds = open_ds(r"/Users/hmcoerver/pywapor_notebooks_2/se_root_in.nc", chunk_size = chunk_size)
+    # chunk_size = "20MiB"
+    # ds = open_ds(r"/Users/hmcoerver/pywapor_notebooks_2/se_root_in.nc", chunk_size = chunk_size)
     # ds_out = se_root(ds)
     # ds_out = ds_out[["se_root"]]
     # save_ds(ds_out, r"/Users/hmcoerver/pywapor_notebooks_2/test_1.nc", chunk_size = chunk_size)
 
-    import xarray as xr
-    from dask.diagnostics import ProgressBar
+    # import xarray as xr
+    # from dask.diagnostics import ProgressBar
 
     # ds = xr.open_dataset(r"/Users/hmcoerver/pywapor_notebooks_2/se_root_in.nc", 
     #                         chunks= {"time": -1, "x": 10,"y": 10})
-    ds_out = se_root(ds)
-    ds_out = ds_out[["se_root"]]
+    # ds_out = se_root(ds)
+    # ds_out = ds_out[["se_root"]]
 
     # with ProgressBar():
     #     ds_out.to_netcdf(r"/Users/hmcoerver/pywapor_notebooks_2/test_3.nc")

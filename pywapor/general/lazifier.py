@@ -29,7 +29,7 @@ def decorate_mod(module, decorator):
                         "stability_parameter_obs", 
                         "stability_correction_heat_obs"]:
             obj = getattr(module, name)
-            if isinstance(obj, types.FunctionType):
+            if isinstance(obj, types.FunctionType) and not hasattr(obj, 'decorated'):
                 setattr(module, name, decorator(obj))
 
 def decorate_submods(module, decorator):
@@ -70,4 +70,5 @@ def etlook_decorator(func):
             log.info(f"--> Insufficient data found for `{func.__name__}`.")
     wrapper_func.__module__ = func.__module__
     wrapper_func.__name__ = func.__name__
+    setattr(wrapper_func, "decorated", True)
     return wrapper_func

@@ -400,6 +400,9 @@ def net_radiation_bare(ra_hor_clear_i, emiss_atm_i, t_air_k_i, lst, r0_bare=0.38
         - emiss_bare * c.sb * (lst) ** 4
     )
 
+    if isinstance(rn_bare, xr.DataArray):
+        rn_bare = rn_bare.transpose("time", "y", "x").chunk("auto")
+
     return rn_bare
 
 
@@ -447,6 +450,9 @@ def net_radiation_full(ra_hor_clear_i, emiss_atm_i, t_air_k_i, lst, r0_full=0.18
         + emiss_atm_i * emiss_full * c.sb * (t_air_k_i) ** 4
         - emiss_full * c.sb * (lst) ** 4
     )
+
+    if isinstance(rn_full, xr.DataArray):
+        rn_full = rn_full.transpose("time", "y", "x").chunk("auto")
 
     return rn_full
 
@@ -970,6 +976,9 @@ def maximum_temperature_full(
     tc_max_denom = 4 * emiss_full * c.sb * (t_air_k_i) ** 3 + (ad_i * c.sh) / rac
     tc_max = tc_max_num / tc_max_denom + t_air_k_i
 
+    if isinstance(tc_max, xr.DataArray):
+        tc_max = tc_max.transpose("time", "y", "x").chunk("auto")
+
     return tc_max
 
 
@@ -1033,7 +1042,13 @@ def maximum_temperature_bare(
     ts_max_denom = 4 * emiss_bare * c.sb * (t_air_k_i) ** 3 + (ad_i * c.sh) / (
         (raa + ras) * (1 - 0.35)
     )
-    return ts_max_num / ts_max_denom + t_air_k_i
+
+    out = ts_max_num / ts_max_denom + t_air_k_i
+
+    if isinstance(out, xr.DataArray):
+        out = out.transpose("time", "y", "x").chunk("auto")
+
+    return out
 
 
 def maximum_temperature(t_max_bare, t_max_full, vc):
@@ -1069,7 +1084,12 @@ def maximum_temperature(t_max_bare, t_max_full, vc):
         [K]
 
     """
-    return vc * (t_max_full - t_max_bare) + t_max_bare
+    out = vc * (t_max_full - t_max_bare) + t_max_bare
+
+    if isinstance(out, xr.DataArray):
+        out = out.transpose("time", "y", "x").chunk("auto")
+
+    return out
 
 
 def minimum_temperature(t_wet_k_i, t_air_k_i, vc):
@@ -1105,8 +1125,12 @@ def minimum_temperature(t_wet_k_i, t_air_k_i, vc):
         [K]
 
     """
-    return vc * (t_air_k_i - t_wet_k_i) + t_wet_k_i
+    out = vc * (t_air_k_i - t_wet_k_i) + t_wet_k_i
 
+    if isinstance(out, xr.DataArray):
+        out = out.transpose("time", "y", "x").chunk("auto")
+
+    return out
 
 def soil_moisture_from_maximum_temperature(lst_max, lst, lst_min):
     r"""

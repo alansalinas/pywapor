@@ -43,7 +43,10 @@ def interception_mm(P_24, vc, lai, int_max=0.2):
         [mm day :math:`^{-1}`]
 
     """
-    zero_mask = np.logical_or.reduce((lai == 0, vc == 0, P_24 == 0))
+    if isinstance(lai, xr.DataArray):
+        zero_mask = np.logical_or(np.logical_or(vc == 0, lai ==0), P_24 == 0)
+    else:
+        zero_mask = np.logical_or.reduce((lai == 0, vc == 0, P_24 == 0))
 
     res = int_max * lai * (1 - (1 / (1 + ((vc * P_24) / (int_max * lai)))))
 

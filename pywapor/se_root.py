@@ -12,7 +12,7 @@ import pywapor.general as g
 import pywapor.general.processing_functions as PF
 import pywapor.et_look_dev as ETLook_dev
 import pywapor.et_look_v2 as ETLook_v2
-from pywapor.general.logger import log
+from pywapor.general.logger import log, adjust_logger
 from pywapor.general.processing_functions import save_ds, open_ds
 import copy
 import pywapor.pre_se_root as pre_se_root
@@ -48,6 +48,17 @@ def main(input_data, se_root_version = "v2", export_vars = "default"):
         lists with paths to geoTIFF files as values, depending on `export_to_tif`.
     """
 
+    chunks = {"time": 1, "x": 2000, "y": 2000}
+
+    # Inputs
+    if isinstance(input_data, str):
+        ds = open_ds(input_data, chunks = chunks)
+    else:
+        ds = input_data.chunk(chunks)
+        input_data = ds.encoding["source"]
+
+    _ = adjust_logger(True, os.path.split(input_data)[0], "INFO")
+
     t1 = datetime.datetime.now()
     log.info("> SE_ROOT").add()
 
@@ -63,20 +74,13 @@ def main(input_data, se_root_version = "v2", export_vars = "default"):
     warnings.filterwarnings("ignore", message="invalid value encountered in power")
     warnings.filterwarnings("ignore", message="invalid value encountered in log")
 
-    # Inputs
-    if isinstance(input_data, str):
-        ds = open_ds(input_data)
-    else:
-        ds = input_data
-        input_data = ds.encoding["source"]
-
     fp, fn = os.path.split(input_data)
     fn = fn.replace("in", "out")
     final_path = os.path.join(fp, fn)
     if os.path.isfile(final_path):
         t2 = datetime.datetime.now()
         log.sub().info(f"< SE_ROOT ({str(t2 - t1)})")
-        return open_ds(final_path)
+        return open_ds(final_path, chunks = "auto")
 
     if se_root_version == "dev":
         c.z0m_full = 0.04 + 0.01 * (ds.pixel_size - 30)/(250-30)
@@ -118,6 +122,9 @@ def main(input_data, se_root_version = "v2", export_vars = "default"):
     I0 = ETLook.clear_sky_radiation.solar_constant() # TODO this should come from ETLook.constants
     ds["ied"] = ETLook.clear_sky_radiation.inverse_earth_sun_distance(ds["day_angle"])
     ds["h0"] = ETLook.clear_sky_radiation.solar_elevation_angle(ds["lat_rad"], ds["decl"], ds["ha"])
+    
+    # ds["h0"] = ds["h0"].transpose("time", "y", "x").chunk("auto")
+    
     ds["h0ref"] = ETLook.clear_sky_radiation.solar_elevation_angle_refracted(ds["h0"])
     ds["m"] = ETLook.clear_sky_radiation.relative_optical_airmass(ds["p_air_i"], ds["p_air_0_i"], ds["h0ref"])
     ds["rotm"] = ETLook.clear_sky_radiation.rayleigh_optical_thickness(ds["m"])
@@ -131,7 +138,11 @@ def main(input_data, se_root_version = "v2", export_vars = "default"):
     ds["emiss_atm_i"] = ETLook.soil_moisture.atmospheric_emissivity_inst(ds["vp_i"], ds["t_air_k_i"])
 
     ds["rn_bare"] = ETLook.soil_moisture.net_radiation_bare(ds["ra_hor_clear_i"], ds["emiss_atm_i"], ds["t_air_k_i"], ds["lst"], ds["r0_bare"])
+    # ds["rn_bare"] = ds["rn_bare"].transpose("time", "y", "x").chunk("auto")
+
     ds["rn_full"] = ETLook.soil_moisture.net_radiation_full(ds["ra_hor_clear_i"], ds["emiss_atm_i"], ds["t_air_k_i"], ds["lst"], ds["r0_full"])
+    # ds["rn_full"] = ds["rn_full"].transpose("time", "y", "x").chunk("auto")
+
     ds["h_bare"] = ETLook.soil_moisture.sensible_heat_flux_bare(ds["rn_bare"], c.fraction_h_bare)
     ds["h_full"] = ETLook.soil_moisture.sensible_heat_flux_full(ds["rn_full"], c.fraction_h_full)
     ds["u_b_i_full"] = ETLook.soil_moisture.wind_speed_blending_height_full_inst(ds["u_i"], c.z0m_full, c.z_obs, c.z_b)
@@ -175,7 +186,8 @@ def main(input_data, se_root_version = "v2", export_vars = "default"):
 
     ds = g.variables.fill_attrs(ds)
 
-    ds = save_ds(ds, final_path, "all")
+    ds = save_ds(ds, final_path, decode_coords = "all", 
+                    chunks = chunks)
 
     t2 = datetime.datetime.now()
     log.sub().info(f"< SE_ROOT ({str(t2 - t1)})")
@@ -225,22 +237,35 @@ def lst_zone_mean(ds):
 
     return lst_zone_mean_da
 
-# if __name__ == "__main__":
+def test_ds(ds, var):
+    from dask.diagnostics import Profiler, ResourceProfiler, CacheProfiler, ProgressBar
+    from dask.diagnostics import visualize
 
-#     se_root_version = "v2"
-#     export_vars = "default"
-#     export_to_tif = False
+    with Profiler() as prof, ResourceProfiler(dt=0.25) as rprof, CacheProfiler() as cprof, ProgressBar():
+        out = ds[var].compute()
 
-#     from pywapor.general.processing_functions import open_ds
+    visualize([prof, rprof, cprof])
+    return out
 
-#     input_data = open_ds(r"/Users/hmcoerver/Downloads/pywapor_test/se_root_in.nc")
+if __name__ == "__main__":
+
+    se_root_version = "v2"
+    export_vars = "default"
+    export_to_tif = False
+
+    from pywapor.general.processing_functions import open_ds
+
+    input_data = xr.open_dataset(r"/Users/hmcoerver/pywapor_notebooks_2/se_root_in.nc", 
+                                decode_coords="all")
+
+    # input_data = open_ds(r"/Users/hmcoerver/pywapor_notebooks_2/se_root_in.nc")
     
-#     out_ds = main(input_data)
+    out_ds = main(input_data)
 
-#     import dask
-#     dask.config.set(**{'array.chunk-size': '10MiB'})
-#     test = out_ds.chunk("auto")
+    # import dask
+    # dask.config.set(**{'array.chunk-size': '10MiB'})
+    # test = out_ds.chunk("auto")
 
-#     fp = r"/Users/hmcoerver/Downloads/pywapor_test/test_1.nc"
+    # fp = r"/Users/hmcoerver/Downloads/pywapor_test/test_1.nc"
 
-#     bla = save_ds(test, fp, "all")
+    # bla = save_ds(test, fp, "all")

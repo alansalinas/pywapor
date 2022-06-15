@@ -35,7 +35,7 @@ def process_ds(ds, coords, variables, crs = None):
 
     return ds
 
-def save_ds(ds, fp, decode_coords = "all", encoding = None, chunk_size = '64MiB'):
+def save_ds(ds, fp, decode_coords = "all", encoding = None, chunks = "auto"):
     """Save a `xr.Dataset` as netcdf.
 
     Parameters
@@ -59,8 +59,7 @@ def save_ds(ds, fp, decode_coords = "all", encoding = None, chunk_size = '64MiB'
     if not os.path.isdir(folder):
         os.makedirs(folder)
 
-    dask.config.set(**{'array.chunk-size': chunk_size})
-    ds = ds.chunk("auto")
+    ds = ds.chunk(chunks)
 
     with ProgressBar(minimum = 10, dt = 2.0):
         ds.to_netcdf(temp_fp, engine = "netcdf4", encoding = encoding)
@@ -69,12 +68,12 @@ def save_ds(ds, fp, decode_coords = "all", encoding = None, chunk_size = '64MiB'
 
     os.rename(temp_fp, fp)
 
-    ds = open_ds(fp, decode_coords, chunk_size = chunk_size)
+    ds = open_ds(fp, decode_coords = decode_coords, chunks = chunks)
+
     return ds
 
-def open_ds(fp, decode_coords = "all", chunk_size = '64MiB'):
-    dask.config.set(**{'array.chunk-size': chunk_size})
-    ds = xr.open_dataset(fp, decode_coords=decode_coords, chunks = "auto")
+def open_ds(fp, decode_coords = "all", chunks = "auto"):
+    ds = xr.open_dataset(fp, decode_coords = decode_coords, chunks = chunks)
     return ds
 
 # def ds_remove_except(ds, keep_vars):

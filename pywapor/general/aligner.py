@@ -92,7 +92,8 @@ def main(dss, sources, example_source, folder, enhancers, example_t_var = "lst")
         log.info(label)
 
     ds = ds.drop_vars([x for x in ds.coords if (x not in ds.dims) and (x != "spatial_ref")])
-    ds = save_ds(ds, final_path, decode_coords = "all")
+    ds = save_ds(ds, final_path, decode_coords = "all",
+                    chunks = {"time": 1, "x": 2000, "y": 2000})
 
     for nc in dss2:
         os.remove(nc.encoding["source"])
