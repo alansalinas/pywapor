@@ -157,9 +157,6 @@ def main(dss, sources, example_source, bins, folder, enhancers,
 
     final_path = os.path.join(folder, "et_look_in.nc")
 
-    if os.path.isfile(final_path) and not diagnostics:
-        return open_ds(final_path, "all")
-
     example_ds = open_ds(dss[example_source], "all")
 
     dss2 = list()
@@ -187,6 +184,9 @@ def main(dss, sources, example_source, bins, folder, enhancers,
             continue
 
         dss1 = [reproject(open_ds(dss[src])[[var]], example_ds, dst_path.replace(".nc", f"_x{i}.nc"), spatial_interp = spatial_interp) for i, src in enumerate(srcs)]
+
+        # TODO FIX this at collect-level (i.e. remove weirds coords using `.drop_vars`)! --> MODIS_Grid_16DAY_250m_500m_VI_eos_cf_projection
+        dss1 = [x.drop_vars([y for y in list(x.coords) if y not in ["x", "y", "time", "spatial_ref"]]) for x in dss1]
 
         if diagnostics:
             dss1 = diags(diagnostics, dss1, var)
@@ -216,6 +216,17 @@ def main(dss, sources, example_source, bins, folder, enhancers,
                 log.info(f"--> Compositing `{var}` ({composite_type}).")
 
             if temporal_interp:
+
+                # When combining different products, it is possible to have images 
+                # on the exact same date & time. In that case, the median of those images
+                # is used. So gaps in one image are filled in with data from the other
+                # image(s).
+                if np.unique(ds.time).size != ds.time.size:
+                    groups = ds.groupby(ds["time"])
+                    ds = groups.median(dim = "time")
+                    ds = ds.chunk({"time": -1, "y": "auto", "x": "auto"})
+                    log.warning(f"--> Multiple `{var}` images for the same date & time found, reducing those with 'median'.")
+
                 ds = ds.interpolate_na(dim="time", method = temporal_interp)
 
             # Make composites.
@@ -245,6 +256,9 @@ def main(dss, sources, example_source, bins, folder, enhancers,
 
     ds = ds.drop_vars([x for x in ds.coords if (x not in ds.dims) and (x != "spatial_ref")])
     ds = ds.drop_vars("time")
+    
+    if os.path.isfile(final_path):
+        fp_out = final_path.replace(".nc", "_.nc")
     ds = save_ds(ds, final_path, decode_coords = "all")
 
     for nc in dss2:
