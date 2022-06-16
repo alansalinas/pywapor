@@ -20,7 +20,9 @@ def decorate_mod(module, decorator):
         Function to decorate with.
     """
     for name in dir(module):
-        if name not in ["ra_soil", 
+        if name not in [
+                        "ra_soil",
+                        "initial_friction_velocity_inst",
                         "monin_obukhov_length", 
                         "stability_parameter", 
                         "stability_factor", 
