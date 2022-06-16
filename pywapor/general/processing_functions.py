@@ -59,9 +59,12 @@ def save_ds(ds, fp, decode_coords = "all", encoding = None, chunks = "auto"):
     if not os.path.isdir(folder):
         os.makedirs(folder)
 
+    if isinstance(chunks, dict):
+        chunks = {dim: v for dim, v in chunks.items() if dim in ds.dims}
+
     ds = ds.chunk(chunks)
 
-    with ProgressBar(minimum = 10, dt = 2.0):
+    with ProgressBar(minimum = 50, dt = 2.0):
         ds.to_netcdf(temp_fp, engine = "netcdf4", encoding = encoding)
 
     ds = ds.close()
