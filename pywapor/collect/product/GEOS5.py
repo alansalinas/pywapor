@@ -70,6 +70,11 @@ def download(folder, latlim, lonlim, timelim, product_name, req_vars,
     if os.path.isfile(fn):
         return open_ds(fn, "all")
 
+    spatial_buffer = True
+    if spatial_buffer:
+        latlim = [latlim[0] - 0.25, latlim[1] + 0.25]
+        lonlim = [lonlim[0] - 0.3125, lonlim[1] + 0.3125]
+
     coords = {"x": ["lon", lonlim], "y": ["lat", latlim], "t": ["time", timelim]}
 
     if isinstance(variables, type(None)):

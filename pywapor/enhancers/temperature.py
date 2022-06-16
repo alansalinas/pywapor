@@ -131,7 +131,12 @@ def lapse_rate(ds, var, out_var = None, lapse_var = "z",
         pixel_size = (np.median(np.diff(ds.x)), 
                         np.median(np.diff(ds.y)))
         dem = ds[lapse_var].values
-        
+
+        missing_dem = np.count_nonzero(np.isnan(dem))
+        if missing_dem > 0:
+            log.warning(f"--> Filling {missing_dem} missing pixels in 'z'.")
+            dem[np.isnan(dem)] = 0.0
+
         dem_coarse = local_mean(dem, pixel_size, radius)
         t_diff = (dem - dem_coarse) * lapse_rate
         ds["t_diff"] = xr.DataArray(t_diff, 
@@ -238,35 +243,35 @@ def local_mean(array, pixel_size, radius, method = 3):
 
     return array_coarse
 
-if __name__ == "__main__":
+# if __name__ == "__main__":
 
-    import numpy as np
-    import cProfile
-    import time
+#     import numpy as np
+#     import cProfile
+#     import time
 
-    # fast case
-    # array = np.random.rand(800, 800)
-    # pixel_size = (0.01, 0.01)
-    # radius = 0.25    
+#     # fast case
+#     # array = np.random.rand(800, 800)
+#     # pixel_size = (0.01, 0.01)
+#     # radius = 0.25    
 
-    # real case
-    array = np.random.rand(1009, 807)
-    pixel_size = (9.92063500e-04, -9.92063500e-04)
-    radius = 0.25
+#     # real case
+#     array = np.random.rand(1009, 807)
+#     pixel_size = (9.92063500e-04, -9.92063500e-04)
+#     radius = 0.25
 
-    print("\n method2")
-    start = time.time()
-    result2 = local_mean(array, pixel_size, radius, method = 2)
-    end = time.time()
-    dt = end - start
-    print(dt)
+#     print("\n method2")
+#     start = time.time()
+#     result2 = local_mean(array, pixel_size, radius, method = 2)
+#     end = time.time()
+#     dt = end - start
+#     print(dt)
 
-    print("\n method3")
-    start = time.time()
-    result3 = local_mean(array, pixel_size, radius, method = 3)
-    end = time.time()
-    dt = end - start
-    print(dt)
+#     print("\n method3")
+#     start = time.time()
+#     result3 = local_mean(array, pixel_size, radius, method = 3)
+#     end = time.time()
+#     dt = end - start
+#     print(dt)
 
     # print("\n method1")
     # start = time.time()

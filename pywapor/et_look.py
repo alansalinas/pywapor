@@ -40,11 +40,11 @@ def main(input_data, et_look_version = "v2", export_vars = "default"):
     xr.Dataset
         Dataset with variables selected through `export_vars`.
     """
-    chunks = {"time": 1, "x": 2000, "y": 2000}
+    chunks = {"time_bins": 1, "x": 2000, "y": 2000}
 
     # Inputs
     if isinstance(input_data, str):
-        ds = open_ds(input_data, chunks = {"time": 1, "x": 2000, "y": 2000})
+        ds = open_ds(input_data, chunks = chunks)
     else:
         ds = copy.deepcopy(input_data).chunk(chunks)
         input_data = ds.encoding["source"]
@@ -310,12 +310,12 @@ if __name__ == "__main__":
     et_look_version = "v2"
     export_vars = "default"
 
-    input_data = r"/Users/hmcoerver/pywapor_notebooks_2/et_look_in.nc"
+    input_data = r"/Users/hmcoerver/pywapor_notebooks_1/et_look_in.nc"
     # input_data = xr.open_dataset(input_data)
     # # input_data = input_data.drop_vars(["ndvi"])
 
-    ds = main(input_data, 
-                et_look_version=et_look_version, 
-                export_vars="all")
+    # ds = main(input_data, 
+    #             et_look_version=et_look_version, 
+    #             export_vars="all")
 
 

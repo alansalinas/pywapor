@@ -72,9 +72,17 @@ def download(folder, latlim, lonlim, product_name = "30M", req_vars = ["z"], var
     if os.path.isfile(fn):
         return open_ds(fn, "all")
 
+    spatial_buffer = True
+    if spatial_buffer:
+        dx = dy = 0.0002777777777777768
+        latlim = [latlim[0] - dy, latlim[1] + dy]
+        lonlim = [lonlim[0] - dx, lonlim[1] + dx]
+
     timelim = [datetime.date(2000, 2, 10), datetime.date(2000, 2, 12)]
     tiles = tiles_intersect(latlim, lonlim)
+        
     coords = {"x": ["lon", lonlim], "y": ["lat", latlim], "t": ["time", timelim]}
+    
     if isinstance(variables, type(None)):
         variables = default_vars(product_name, req_vars)
 
