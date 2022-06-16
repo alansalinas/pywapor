@@ -10,6 +10,7 @@ import pywapor.general.levels as levels#import pre_et_look_levels, find_example
 from pywapor.general import aligner
 import datetime
 import os
+import pywapor.general.pre_defaults as defaults
 from pywapor.general.logger import log, adjust_logger
 
 def rename_meteo(ds, *args):
@@ -21,6 +22,11 @@ def rename_meteo(ds, *args):
                     "p_air": "p_air_i",
                     "wv": "wv_i",
                     "p_air_0": "p_air_0_i"})
+    return ds
+
+def add_constants(ds, *args):
+    # TODO remove, this is duplicate from pywapor.pre_et_look
+    ds = ds.assign(defaults.constants_defaults())
     return ds
 
 def main(folder, latlim, lonlim, timelim, sources = "level_1", bin_length = "DEKAD",
@@ -56,12 +62,6 @@ def main(folder, latlim, lonlim, timelim, sources = "level_1", bin_length = "DEK
     t1 = datetime.datetime.now()
     log.info("> PRE_SE_ROOT").add()
 
-    final_path = os.path.join(folder, "se_root_in.nc")
-    if os.path.isfile(final_path):
-        t2 = datetime.datetime.now()
-        log.sub().info(f"< PRE_SE_ROOT ({str(t2 - t1)})")
-        return open_ds(final_path)
-
     if isinstance(timelim[0], str):
         timelim[0] = datetime.datetime.strptime(timelim[0], "%Y-%m-%d")
         timelim[1] = datetime.datetime.strptime(timelim[1], "%Y-%m-%d")
@@ -77,7 +77,8 @@ def main(folder, latlim, lonlim, timelim, sources = "level_1", bin_length = "DEK
         log.info(f"--> Example dataset is {example_source[0]}.{example_source[1]}.")
 
     if enhancers == "default":
-        enhancers = [rename_meteo]
+        enhancers = [rename_meteo,
+                    add_constants]
 
     bins = compositer.time_bins(timelim, bin_length)
     dss = downloader.collect_sources(folder, sources, latlim, lonlim, [bins[0], bins[-1]])
@@ -92,24 +93,38 @@ if __name__ == "__main__":
 
     # from pywapor.se_root import main as se_root
 
-    sources = "level_2"
+    sources = "level_1"
 
     enhancers = "default"
 
     folder = r"/Users/hmcoerver/pywapor_notebooks_2"
     latlim = [28.9, 29.7]
     lonlim = [30.2, 31.2]
-    timelim = [datetime.date(2020, 7, 6), datetime.date(2020, 7, 6)]
-    bin_length = 1
+    timelim = [datetime.date(2021, 7, 1), datetime.date(2021, 7, 11)]
+    bin_length = "DEKAD"
     example_source = None
 
     # _ = adjust_logger(True, folder, "INFO")
 
-    # sources = levels.pre_se_root_levels(sources)
+    sources = levels.pre_se_root_levels(sources)
+
+    sources["ndvi"]["products"] = [
+        {'source': 'MODIS',
+            'product_name': 'MOD13Q1.061',
+            'enhancers': 'default'},
+        {'source': 'MODIS', 
+            'product_name': 'MYD13Q1.061', 
+            'enhancers': 'default'},
+        {'source': 'PROBAV',
+            'product_name': 'S5_TOC_100_m_C1',
+            'enhancers': 'default',
+            'is_example': True}
+    ]
+
     # example = levels.find_example(sources)
 
     # print(example)
-    # ds = main(folder, latlim, lonlim, timelim, sources, bin_length)
+    ds = main(folder, latlim, lonlim, timelim, sources, bin_length)
     
     # chunk_size = "20MiB"
     # ds = open_ds(r"/Users/hmcoerver/pywapor_notebooks_2/se_root_in.nc", chunk_size = chunk_size)
