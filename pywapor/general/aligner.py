@@ -39,8 +39,6 @@ def main(dss, sources, example_source, folder, enhancers, example_t_var = "lst")
         Dataset in which all variables have been interpolated to the same times.
     """
     final_path = os.path.join(folder, "se_root_in.nc")
-    if os.path.isfile(final_path):
-        return open_ds(final_path, "all")
 
     example_ds = open_ds(dss[example_source], "all")
 
@@ -68,6 +66,9 @@ def main(dss, sources, example_source, folder, enhancers, example_t_var = "lst")
         # Align pixels.
         dss1 = [reproject(open_ds(dss[src])[[var]], example_ds, dst_path.replace(".nc", f"_x{i}.nc"), spatial_interp = spatial_interp) for i, src in enumerate(srcs)]
 
+        # TODO FIX this at collect-level (i.e. remove weirds coords using `.drop_vars`)! --> MODIS_Grid_16DAY_250m_500m_VI_eos_cf_projection
+        dss1 = [x.drop_vars([y for y in list(x.coords) if y not in ["x", "y", "time", "spatial_ref"]]) for x in dss1]
+
         # Combine different source_products (along time dimension).
         ds = xr.combine_nested(dss1, concat_dim = "time").chunk({"time": -1}).sortby("time").squeeze()
 
@@ -91,7 +92,12 @@ def main(dss, sources, example_source, folder, enhancers, example_t_var = "lst")
         ds, label = apply_enhancer(ds, var, func)
         log.info(label)
 
+    # TODO FIX this at collect-level (i.e. remove weirds coords using `.drop_vars`)! --> MODIS_Grid_16DAY_250m_500m_VI_eos_cf_projection
     ds = ds.drop_vars([x for x in ds.coords if (x not in ds.dims) and (x != "spatial_ref")])
+
+    if os.path.isfile(final_path):
+        final_path = final_path.replace(".nc", "_.nc")
+
     ds = save_ds(ds, final_path, decode_coords = "all",
                     chunks = {"time": 1, "x": 2000, "y": 2000})
 
