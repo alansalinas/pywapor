@@ -220,6 +220,11 @@ def get_var_definitions():
     """
 
     defs = {
+        "IO": {
+            "long_name": "Solar constant",
+            "units": "W m-2",
+            "definition": ""
+        },
         "B0c": {
             "long_name": "Beam irradiance normal to the solar beam",
             "units": "W m-2",
@@ -317,6 +322,16 @@ def get_var_definitions():
         },
         "disp": {
             "long_name": "Displacement height",
+            "units": "m",
+            "definition": ""
+        },
+        "disp_bare": {
+            "long_name": "Displacement height (bare)",
+            "units": "m",
+            "definition": ""
+        },
+        "disp_full": {
+            "long_name": "Displacement height (fully vegetated)",
             "units": "m",
             "definition": ""
         },
@@ -1012,6 +1027,31 @@ def get_var_definitions():
         "z0m": {
             "long_name": "Surface roughness",
             "units": "m",
+            "definition": ""
+        },
+        "z0m_bare": {
+            "long_name": "Surface roughness (bare soil)",
+            "units": "m",
+            "definition": ""
+        },
+        "z0m_full": {
+            "long_name": "Surface roughness (fully vegetated soil)",
+            "units": "m",
+            "definition": ""
+        },
+        "aod550_i": {
+            "long_name": "",
+            "units": "",
+            "definition": ""
+        },
+        "fraction_h_bare": {
+            "long_name": "",
+            "units": "",
+            "definition": ""
+        },
+        "fraction_h_full": {
+            "long_name": "",
+            "units": "",
             "definition": ""
         },
         "z_obst": {

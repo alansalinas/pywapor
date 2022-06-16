@@ -40,6 +40,17 @@ def constants_defaults():
         'r0_grass': 0.23,
         'eps_a': 0.5,
 
+        # se_root
+        'z0m_full': 0.1,
+        'z0m_bare': 0.001,
+        'aod550_i': 0.01,
+        'fraction_h_bare': 0.65,
+        'fraction_h_full': 0.95,
+        'disp_bare': 0.0,
+        'disp_full': 0.667,
+        'r0_bare_wet': 0.2,
+        'IO': 1367.,
+
         # Biomass
         'dh_ap': 52750, 
         'd_s': 704.98, 
@@ -52,6 +63,9 @@ def constants_defaults():
         'co2_ref': 281,
         'gcgdm': 0.4,
         'phot_eff': 2.49,
+
+
+
     }
 
     return c
