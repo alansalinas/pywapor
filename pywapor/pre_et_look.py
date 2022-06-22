@@ -31,7 +31,8 @@ def lapse_rate(ds, *args):
 def calc_doys(ds, *args, bins = None):
     bin_doys = [int(pd.Timestamp(x).strftime("%j")) for x in bins]
     doy = np.mean([bin_doys[:-1], bin_doys[1:]], axis=0, dtype = int)
-    ds["doy"] = xr.DataArray(doy, coords = ds["time_bins"].coords).chunk("auto")
+    if "time_bins" in list(ds.variables):
+        ds["doy"] = xr.DataArray(doy, coords = ds["time_bins"].coords).chunk("auto")
     return ds
 
 def add_constants(ds, *args):
@@ -39,7 +40,7 @@ def add_constants(ds, *args):
     return ds
 
 def main(folder, latlim, lonlim, timelim, sources = "level_1", bin_length = "DEKAD", 
-            enhancers = "default", diagnostics = None, example_source = None):
+            enhancers = [lapse_rate], diagnostics = None, example_source = None):
     """Prepare input data for `et_look`.
 
     Parameters
@@ -92,14 +93,8 @@ def main(folder, latlim, lonlim, timelim, sources = "level_1", bin_length = "DEK
 
     bins = compositer.time_bins(timelim, bin_length)
 
-    if enhancers == "default":
-        enhancers = [
-                    rename_vars, 
-                    fill_attrs, 
-                    lapse_rate, 
-                    partial(calc_doys, bins = bins),
-                    add_constants
-                    ]
+    enhancers = enhancers + [rename_vars, fill_attrs, partial(calc_doys, bins = bins),
+                                add_constants]
 
     dss = downloader.collect_sources(folder, sources, latlim, lonlim, [bins[0], bins[-1]])
 
@@ -119,40 +114,61 @@ def main(folder, latlim, lonlim, timelim, sources = "level_1", bin_length = "DEK
 
 if __name__ == "__main__":
 
-    from pywapor.et_look import main as et_look
-
-    diagnostics = { # label          # lat      # lon
-                    # "water":	    (29.44977,	30.58215),
-                    # "desert":	    (29.12343,	30.51222),
-                    "agriculture":	(29.32301,	30.77599),
-                    # "urban":	    (29.30962,	30.84109),
-                    }
-
+    enhancers = "default"
     diagnostics = None
     example_source = None
-    enhancers = "default"
 
-    sources = "level_2"
-    # sources = levels.pre_et_look_levels(sources)
-    # sources = {k:v for k, v in sources.items() if k in ["ndvi", "z", "rs_min"]}
+#     import pywapor
 
-    # sources["ndvi"]["temporal_interp"] = False
-    # sources["ndvi"]["composite_type"] = "max"
+#     folder = r"/Users/hmcoerver/pywapor_notebooks_b"
+#     latlim = [28.9, 29.7]
+#     lonlim = [30.2, 31.2]
+#     timelim = ["2021-07-01", "2021-07-11"]
+#     composite_length = "DEKAD"
 
-    # folder = r"/Users/hmcoerver/Downloads/pywapor_test"
-    folder = r"/Users/hmcoerver/pywapor_notebooks_2"
-    latlim = [28.9, 29.7]
-    lonlim = [30.2, 31.2]
-    timelim = [datetime.date(2020, 7, 1), datetime.date(2020, 7, 11)]
-    # timelim = [datetime.date(2020, 7, 6), datetime.date(2020, 7, 7)]
-    bin_length = "DEKAD"
-    # bin_length = 1
+#     et_look_version = "v2"
+#     export_vars = "default"
 
-    ds = main(folder, latlim, lonlim, timelim, sources, 
-                bin_length, diagnostics = diagnostics)
+#     level = "level_1"
 
-    # from pywapor.general.processing_functions import open_ds
-    # input_data = open_ds(r"/Users/hmcoerver/Downloads/pywapor_test/et_look_in.nc")
-    # ds_out = et_look(ds, export_vars = "default")
+#     et_look_sources = pywapor.general.levels.pre_et_look_levels(level)
+
+#     et_look_sources = {k: v for k, v in et_look_sources.items() if k in ["ndvi", "z"]}
+
+    # et_look_sources["ndvi"]["products"] = [
+    #     {'source': 'MODIS',
+    #         'product_name': 'MOD13Q1.061',
+    #         'enhancers': 'default'},
+    #     {'source': 'MODIS', 
+    #         'product_name': 'MYD13Q1.061', 
+    #         'enhancers': 'default'},
+    #     {'source': 'PROBAV',
+    #         'product_name': 'S5_TOC_100_m_C1',
+    #         'enhancers': 'default',
+    #         'is_example': True}
+    # ]
+
+    # et_look_sources["r0"]["products"] = [
+    #     {'source': 'MODIS',
+    #         'product_name': 'MCD43A3.061',
+    #         'enhancers': 'default'},
+    #     {'source': 'PROBAV',
+    #         'product_name': 'S5_TOC_100_m_C1',
+    #         'enhancers': 'default'}
+    # ]
+
+    # se_root_sources = pywapor.general.levels.pre_se_root_levels(level)
+    # se_root_sources["ndvi"]["products"] = et_look_sources["ndvi"]["products"]
+
+    # from functools import partial
+    # et_look_sources["se_root"]["products"] = [
+    #     {'source': partial(pywapor.se_root.se_root, sources = se_root_sources),
+    #         'product_name': 'v2',
+    #         'enhancers': 'default'},]
+
+    # ds = pywapor.pre_et_look.main(folder, latlim, lonlim, timelim, 
+    #                                 sources = et_look_sources,
+    #                                 bin_length = composite_length)
+
 
 

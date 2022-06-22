@@ -2,12 +2,12 @@ import os
 import urllib
 from bs4 import BeautifulSoup
 import urllib
-from bs4 import BeautifulSoup
 from joblib import Parallel, delayed
 from functools import partial
 import re
 import numpy as np
 import tqdm
+import requests
 from cachetools import cached, TTLCache
 
 @cached(cache=TTLCache(maxsize=2048, ttl=3600))
@@ -36,7 +36,7 @@ def crawl(urls, regex, filter_regex, session, label_filter = None, list_out = Fa
     else:
         crawled_urls = dict()
 
-    for url in tqdm.tqdm(urls.values()):
+    for url in tqdm.tqdm(urls.values(), delay = 20):
         raw_paths = find_paths(url, regex, filter = _filter, session = session)
         if list_out:
             crawled_urls += raw_paths
@@ -63,7 +63,7 @@ def download_urls(urls, folder, session, fps = None, parallel = 0):
 
     return files
 
-def download_url(url, fp, session, waitbar = True):
+def download_url(url, fp, session = None, waitbar = True):
 
     if os.path.isfile(fp):
         return fp
@@ -75,6 +75,9 @@ def download_url(url, fp, session, waitbar = True):
     ext = os.path.splitext(fp)[-1]
     temp_fp = fp.replace(ext, "_temp")
 
+    if isinstance(session, type(None)):
+        session = requests.Session()
+
     file_object = session.get(url, stream = True)
     file_object.raise_for_status()
     
@@ -85,7 +88,7 @@ def download_url(url, fp, session, waitbar = True):
 
     if waitbar:
         wb = tqdm.tqdm(unit='Bytes', unit_scale=True, leave = False, 
-                        total = tot_size, desc = fn)
+                        total = tot_size, desc = fn, delay = 20)
 
     with open(temp_fp, 'wb') as z:
         for data in file_object.iter_content(chunk_size=1024):

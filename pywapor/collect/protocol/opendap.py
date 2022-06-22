@@ -28,7 +28,7 @@ def download(folder, product_name, coords, variables, post_processors,
     # Make data request URLs.
     session = start_session(url_func(product_name, tiles[0]), selection, un_pw)
     if spatial_tiles:
-        idxss = [find_idxs(url_func(product_name, x), selection, session) for x in tqdm.tqdm(tiles)]
+        idxss = [find_idxs(url_func(product_name, x), selection, session) for x in tqdm.tqdm(tiles, delay = 20)]
         urls = [create_url(url_func(product_name, x), idxs, variables, request_dims = request_dims) for x, idxs in zip(tiles, idxss)]
     else:
         idxs = find_idxs(url_func(product_name, tiles[0]), selection, session)

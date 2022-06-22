@@ -15,12 +15,15 @@ def collect_sources(folder, sources, latlim, lonlim, timelim, return_fps = True)
                                 fromlist=[source])
             dler = dl_module.download
             log.info(f"--> Collecting `{'`, `'.join(req_vars)}` from {source}.{product_name}.")
+            source_name = source
         elif isinstance(source, types.FunctionType):
             dler = source
             log.info(f"--> Collecting `{'`, `'.join(req_vars)}` from `{dler.__name__}`.")
+            source_name = source.__name__
         elif isinstance(source, functools.partial):
             dler = source
             log.info(f"--> Collecting `{'`, `'.join(req_vars)}` from `{dler.func.__name__}`.")
+            source_name = source.func.__name__
 
         args = {
             "folder": folder,
@@ -32,7 +35,7 @@ def collect_sources(folder, sources, latlim, lonlim, timelim, return_fps = True)
             "post_processors": reversed_enhancers[(source, product_name)]
         }
 
-        dss[(source, product_name)] = dler(**args)
+        dss[(source_name, product_name)] = dler(**args)
 
     if return_fps:
         for key, ds in dss.items():

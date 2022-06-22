@@ -13,7 +13,7 @@ def download(folder, product_name, coords, variables, post_processors, url_func)
         os.makedirs(folder)
 
     # Create waitbar.
-    waitbar = tqdm.tqdm(position = 0, total = 100, bar_format='{l_bar}{bar}|')
+    waitbar = tqdm.tqdm(position = 0, total = 100, bar_format='{l_bar}{bar}|', delay = 20)
 
     # Define callback function for waitbar progress.
     def _callback_func(info, *args):

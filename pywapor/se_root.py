@@ -18,7 +18,7 @@ import copy
 import pywapor.pre_se_root as pre_se_root
 from pywapor.general import levels
 
-def se_root(folder, latlim, lonlim, timelim, sources, bin_length = "DEKAD", **kwargs):
+def se_root(folder, latlim, lonlim, timelim, sources = "level_1", bin_length = "DEKAD", **kwargs):
     if isinstance(sources, str):
         sources = levels.pre_se_root_levels(sources)
     ds_in = pre_se_root.main(folder, latlim, lonlim, timelim, sources, bin_length)
@@ -271,11 +271,11 @@ if __name__ == "__main__":
     example_source = None
 
     # input_data = pywapor.pre_se_root.main(folder, latlim, lonlim, timelim, "level_1", bin_length)
-    input_data = xr.open_dataset(r"/Users/hmcoerver/pywapor_notebooks_1/se_root_in.nc", decode_coords="all")
+    input_data = xr.open_dataset(r"/Users/hmcoerver/pywapor_notebooks_2/se_root_in.nc", decode_coords="all", chunks = {"time": 1, "x": 2000, "y": 2000})
     
     # input_data = input_data[["qv_i", "p_air_i"]]
 
-    out_ds = pywapor.se_root.main(input_data)
+    out_ds = pywapor.se_root.main(input_data, export_vars = "all")
 
     # import dask
     # dask.config.set(**{'array.chunk-size': '10MiB'})

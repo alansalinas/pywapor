@@ -1,19 +1,26 @@
 import copy
 import pywapor.se_root as se_root
 from functools import partial
+import types
 
 def find_example(sources):
     for x in sources.values():
         prod = [product for product in x["products"] if "is_example" in product.keys()]
-        if len(prod) == 1:
-            if prod[0]["is_example"]:
-                example_source = (prod[0]["source"], prod[0]["product_name"])
-                return example_source
+        if len(prod) >= 1:
+            for pro in prod:
+                if pro["is_example"]:
+                    example_source = (pro["source"], pro["product_name"])
+                    if isinstance(example_source[0], types.FunctionType):
+                        example_source = (example_source[0].__name__, example_source[1])
+                    elif isinstance(example_source[0], partial):
+                        example_source = (example_source[0].func.__name__, example_source[1])
+                    return example_source
+
 
 def pre_et_look_levels(level = "level_1", bin_length = "DEKAD"):
 
     se_root_dler = partial(se_root.se_root, bin_length = bin_length, 
-                            level = level)
+                            sources = level)
 
     level_1 = {
 

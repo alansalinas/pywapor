@@ -76,8 +76,9 @@ def main(dss, sources, example_source, folder, enhancers, example_t_var = "lst")
             example_time = ds["time"]
         elif "time" in ds[var].dims:
             log.info(f"--> Aligning times in `{var}` with `{example_t_var}` ({temporal_interp}).")
+            ds = ds.interpolate_na(dim = "time", method = temporal_interp)
             ds = ds.interp_like(example_time, method = temporal_interp)
-            ds = ds.ffill("time").bfill("time") # NOTE extrapolate.
+            ds = ds.ffill("time").bfill("time") # NOTE extrapolate. TODO is this a good idea?
 
         # Save output
         dss2.append(save_ds(ds, dst_path, decode_coords = "all"))

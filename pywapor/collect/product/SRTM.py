@@ -93,7 +93,7 @@ def download(folder, latlim, lonlim, product_name = "30M", req_vars = ["z"], var
         post_processors = {k: {True: default_processors[k], False: v}[v == "default"] for k,v in post_processors.items()}
 
     data_source_crs = None
-    parallel = True
+    parallel = False
     spatial_tiles = True
     un_pw = accounts.get("NASA")
     request_dims = True

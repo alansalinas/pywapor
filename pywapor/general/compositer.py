@@ -172,7 +172,15 @@ def main(dss, sources, example_source, bins, folder, enhancers,
         spatial_interp = config["spatial_interp"]
         temporal_interp = config["temporal_interp"]
         composite_type = config["composite_type"]
-        srcs = [(x["source"], x["product_name"]) for x in config["products"]]
+        
+        srcs = list()
+        for x in config["products"]:
+            if isinstance(x["source"], str):
+                srcs.append((x["source"], x["product_name"]))
+            elif isinstance(x["source"], types.FunctionType):
+                srcs.append((x["source"].__name__, x["product_name"]))
+            elif isinstance(x["source"], functools.partial):
+                srcs.append((x["source"].func.__name__, x["product_name"]))
 
         # Align pixels.
         dst_path = os.path.join(folder, f"{var}.nc")
@@ -255,10 +263,11 @@ def main(dss, sources, example_source, bins, folder, enhancers,
         log.info(label)
 
     ds = ds.drop_vars([x for x in ds.coords if (x not in ds.dims) and (x != "spatial_ref")])
-    ds = ds.drop_vars("time")
+    if "time" in list(ds.variables):
+        ds = ds.drop_vars("time")
     
-    if os.path.isfile(final_path):
-        fp_out = final_path.replace(".nc", "_.nc")
+    while os.path.isfile(final_path):
+        final_path = final_path.replace(".nc", "_.nc")
     ds = save_ds(ds, final_path, decode_coords = "all")
 
     for nc in dss2:
