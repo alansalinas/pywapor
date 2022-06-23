@@ -14,6 +14,7 @@
         <script data-url_root="../" id="documentation_options" src="../_static/documentation_options.js"></script>
         <script src="../_static/jquery.js"></script>
         <script src="../_static/underscore.js"></script>
+        <script src="../_static/_sphinx_javascript_frameworks_compat.js"></script>
         <script src="../_static/doctools.js"></script>
         <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
     <script src="../_static/js/theme.js"></script>
@@ -48,7 +49,6 @@
 <li class="toctree-l2 current"><a class="current reference internal" href="#">pywapor.pre_se_root</a></li>
 <li class="toctree-l2"><a class="reference internal" href="se_root.html">pywapor.se_root</a></li>
 <li class="toctree-l2"><a class="reference internal" href="enhancers.html">pywapor.enhancers</a></li>
-<li class="toctree-l2"><a class="reference internal" href="collect.html">pywapor.collect</a></li>
 <li class="toctree-l2"><a class="reference internal" href="general.html">pywapor.general</a></li>
 </ul>
 </li>
@@ -107,60 +107,32 @@
 }
 </style>
 <section id="module-pywapor.pre_se_root">
-<span id="pywapor-pre-se-root"></span><h1>pywapor.pre_se_root<a class="headerlink" href="#module-pywapor.pre_se_root" title="Permalink to this headline"></a></h1>
+<span id="pywapor-pre-se-root"></span><h1>pywapor.pre_se_root<a class="headerlink" href="#module-pywapor.pre_se_root" title="Permalink to this heading"></a></h1>
 <p>Generates input data for <cite>pywapor.se_root</cite>.</p>
 <dl class="py function">
 <dt class="sig sig-object py" id="pywapor.pre_se_root.main">
-<span class="sig-name descname"><span class="pre">main</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">project_folder</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">startdate</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">enddate</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">latlim</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">lonlim</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">level</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'level_1'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">extra_source_locations</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pywapor.pre_se_root.main" title="Permalink to this definition"></a></dt>
-<dd><p>Generates an input file for <cite>pywapor.se_root</cite> based on, among others, a
-bounding-box and time period.</p>
+<span class="sig-name descname"><span class="pre">main</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">folder</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">latlim</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">lonlim</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">timelim</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">sources</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'level_1'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">bin_length</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'DEKAD'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">enhancers</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'default'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">example_source</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pywapor.pre_se_root.main" title="Permalink to this definition"></a></dt>
+<dd><p>Prepare input data for <cite>se_root</cite>.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><ul class="simple">
-<li><p><strong>project_folder</strong> (<em>str</em>) – Path to folder in which (intermediate) data will be stored.</p></li>
-<li><p><strong>startdate</strong> (<em>str</em>) – Start of the period for which to generate the input data, formatted as
-“YYYY-MM-DD”.</p></li>
-<li><p><strong>enddate</strong> (<em>str</em>) – End of the period for which to generate the input data, formatted as
-“YYYY-MM-DD”.</p></li>
-<li><p><strong>latlim</strong> (<em>List</em><em>[</em><em>float</em><em>, </em><em>float</em><em>]</em>) – Latitude limits of the bounding-box, first value should be smaller than
-second value.</p></li>
-<li><p><strong>lonlim</strong> (<em>List</em><em>[</em><em>float</em><em>, </em><em>float</em><em>]</em>) – Longitude limits of the bounding-box, first value should be smaller than
-second value.</p></li>
-<li><p><strong>level</strong> (<em>&quot;level_1&quot;</em><em> | </em><em>&quot;level_2&quot;</em><em> | </em><em>dict</em><em>, </em><em>optional</em>) – Controls which sources are collected for the various variables,
-by default “level_1”.</p></li>
-<li><p><strong>extra_source_locations</strong> (<em>dict</em><em>, </em><em>optional</em>) – Paths in which to look for sideloaded data, by default {}.</p></li>
+<li><p><strong>folder</strong> (<em>str</em>) – Path to folder in which to store (intermediate) data.</p></li>
+<li><p><strong>latlim</strong> (<em>list</em>) – Latitude limits of area of interest.</p></li>
+<li><p><strong>lonlim</strong> (<em>list</em>) – Longitude limits of area of interest.</p></li>
+<li><p><strong>timelim</strong> (<em>list</em>) – Period for which to prepare data.</p></li>
+<li><p><strong>sources</strong> (<em>str</em><em> | </em><em>dict</em>) – Configuration for each variable and source.</p></li>
+<li><p><strong>bin_length</strong> (<em>int</em><em> | </em><em>&quot;DEKAD&quot;</em>) – Composite length.</p></li>
+<li><p><strong>enhancers</strong> (<em>list</em><em> | </em><em>&quot;default&quot;</em><em>, </em><em>optional</em>) – Functions to apply to the xr.Dataset before creating the final
+output, by default “default”.</p></li>
+<li><p><strong>example_source</strong> (<em>tuple</em><em>, </em><em>optional</em>) – Which source to use for spatial alignment, overrides product selected
+through sources, by default None.</p></li>
 </ul>
 </dd>
 <dt class="field-even">Returns</dt>
-<dd class="field-even"><p><ul class="simple">
-<li><p><em>xr.Dataset</em> – Dataset with all the required data for pywapor.se_root.</p></li>
-<li><p><em>str</em> – Path to the netCDF file containing the generated dataset.</p></li>
-</ul>
-</p>
+<dd class="field-even"><p>Dataset with data for <cite>pywapor.se_root</cite>.</p>
 </dd>
-</dl>
-</dd></dl>
-
-<dl class="py function">
-<dt class="sig sig-object py" id="pywapor.pre_se_root.calc_periods">
-<span class="sig-name descname"><span class="pre">calc_periods</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">times</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">freq</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pywapor.pre_se_root.calc_periods" title="Permalink to this definition"></a></dt>
-<dd><p>Calculates which GEOS5 or MERRA2 periods for a given time need to be collected,
-e.g. checks which GEOS5 or MERRA2 datapoint in time is closest to the given
-<cite>times</cite>. Used by <cite>pywapor.Collect.MERRA2</cite> and <cite>pywapor.Collect.GEOS5</cite>.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
-<dd class="field-odd"><ul class="simple">
-<li><p><strong>times</strong> (<em>np.ndarray</em>) – Array with values that can be ingested by pd.Timestamp.</p></li>
-<li><p><strong>freq</strong> (<em>{&quot;3H&quot;</em><em> | </em><em>&quot;H&quot;}</em>) – The frequency of the data for which the periods are calculated.</p></li>
-</ul>
-</dd>
-<dt class="field-even">Returns</dt>
-<dd class="field-even"><p><ul class="simple">
-<li><p><em>list</em> – List of start datetimes.</p></li>
-<li><p><em>list</em> – List of end datetimes.</p></li>
-<li><p><em>list</em> – List of periods corresponding to the gives <cite>times</cite>.</p></li>
-</ul>
-</p>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>xr.Dataset</p>
 </dd>
 </dl>
 </dd></dl>

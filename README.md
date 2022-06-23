@@ -33,14 +33,13 @@ To run the model for one dekad (from 2021-07-01 to 2021-07-11 in this case) for 
 import pywapor
 
 # User inputs.
-startdate = "2021-07-01"
-enddate = "2021-07-11"
+timelim = ["2021-07-01", "2021-07-11"]
 latlim = [28.9, 29.7]
 lonlim = [30.2, 31.2]
 project_folder = r"/my_first_ETLook_run/"
 
 # Download and prepare input data.
-ds_in, fh_in = pywapor.pre_et_look.main(project_folder, startdate, enddate, latlim, lonlim)
+ds_in  = pywapor.pre_et_look.main(project_folder, latlim, lonlim, timelim)
 
 # Run the model.
 ds_out = pywapor.et_look.main(ds_in)
@@ -58,7 +57,6 @@ Go [here](https://www.fao.org/aquastat/py-wapor/) for the full pyWaPOR documenta
       <tr class="row-odd" style="text-align:center">
          <th class="head"></th>
          <th class="head">Name</th>
-         <th class="head">Duration<sup>1</sup></th>
          <th class="head" width = "150">Colab</th>
       </tr>
    </thead>
@@ -66,43 +64,35 @@ Go [here](https://www.fao.org/aquastat/py-wapor/) for the full pyWaPOR documenta
       <tr class="row-odd">
          <td>1.</td>
          <td>Introduction</td>
-         <td>10 + 100</td>
          <td style="text-align:center"><a href="https://colab.research.google.com/github/bertcoerver/pywapor_notebooks/blob/main/1_introduction.ipynb"><img src="https://colab.research.google.com/assets/colab-badge.svg" alt="colab"/></a></td>
       </tr>
       <tr class="row-even">
          <td>2.</td>
-         <td>Composites</td>
-         <td>10 + 10</td>
-         <td style="text-align:center"><a href="https://colab.research.google.com/github/bertcoerver/pywapor_notebooks/blob/main/2_composites.ipynb"><img src="https://colab.research.google.com/assets/colab-badge.svg" alt="colab"/></a></td>
+         <td>Levels</td>
+         <td style="text-align:center"><a href="https://colab.research.google.com/github/bertcoerver/pywapor_notebooks/blob/main/2_levels.ipynb"><img src="https://colab.research.google.com/assets/colab-badge.svg" alt="colab"/></a></td>
       </tr>
       <tr class="row-odd">
          <td>3.</td>
-         <td>Levels</td>
-         <td>10 + 20</td>
-         <td style="text-align:center"><a href="https://colab.research.google.com/github/bertcoerver/pywapor_notebooks/blob/main/3_levels.ipynb"><img src="https://colab.research.google.com/assets/colab-badge.svg" alt="colab"/></a></td>
+         <td>Composites</td>
+         <td style="text-align:center"><a href="https://colab.research.google.com/github/bertcoerver/pywapor_notebooks/blob/main/3_composites.ipynb"><img src="https://colab.research.google.com/assets/colab-badge.svg" alt="colab"/></a></td>
       </tr>
       <tr class="row-even">
          <td>4.</td>
          <td>Sideloading</td>
-         <td>10 + 5</td>
          <td style="text-align:center"><a href="https://colab.research.google.com/github/bertcoerver/pywapor_notebooks/blob/main/4_sideloading.ipynb"><img src="https://colab.research.google.com/assets/colab-badge.svg" alt="colab"/></a></td>
       </tr>
       <tr class="row-odd">
          <td>5.</td>
          <td>Enhancers</td>
-         <td>10 + 5</td>
          <td style="text-align:center"><a href="https://colab.research.google.com/github/bertcoerver/pywapor_notebooks/blob/main/5_enhancers.ipynb"><img src="https://colab.research.google.com/assets/colab-badge.svg" alt="colab"/></a></td>
       </tr>
       <tr class="row-even">
          <td>6.</td>
          <td>pyWaPOR vs. WaPOR</td>
-         <td>10 + 10</td>
          <td style="text-align:center"><a href="https://colab.research.google.com/github/bertcoerver/pywapor_notebooks/blob/main/6_wapor_vs_pywapor.ipynb"><img src="https://colab.research.google.com/assets/colab-badge.svg" alt="colab"/></a></td>
       </tr>
    </tbody>
 </table>
-
-<sup>1</sup> Estimation of the time required in minutes, as in "active" + "download time", assuming the notebooks have access to previously downloaded data.
 
 #### WaPOR v2
 
@@ -127,6 +117,14 @@ The code in the pywapor.et_look_v2 module of this repository, containing all cor
 For questions, requests or issues with this repository, please contact Bert Coerver at [bert.coerver@fao.org](mailto:bert.coerver@fao.org) or the WaPOR team at [wapor@fao.org](mailto:wapor@fao.org).
 
 ### Release Notes
+
+#### 2.5.0 (2022-06-23)
+<br>
+<ul>
+    <li> Rewritten collect tools.</li>
+    <li> The entire workflow now works with netCDF.</li>
+    <li>All the netCDF files are formatted to support the <a href = "https://corteva.github.io/rioxarray/stable/getting_started/getting_started.html">rio-acccessor</a>.</li>
+</ul>
 
 #### 2.4.1 (2022-03-11)
 <br>

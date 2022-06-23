@@ -31,7 +31,7 @@ def add_times(ds, bins, composite_type):
     ds : xr.Dataset
         Datasat for which to check empty bins.
     bins : list
-        List of `np.datetime64`s which are the boundaries of the groups into
+        List of np.datetime64's which are the boundaries of the groups into
         which the variables will grouped.
     composite_type : {"min" | "max" | "mean"}
         Type of composites that will be created based on the data inside each bin.
@@ -79,7 +79,7 @@ def time_bins(timelim, bin_length):
     Returns
     -------
     list
-        List of `np.datetime64`s which are the boundaries of the groups into
+        List of np.datetime64's which are the boundaries of the groups into
         which the variables will grouped.
     """
     sdate = timelim[0]
@@ -124,12 +124,12 @@ def create_diags_attrs(srcs):
 
 def main(dss, sources, example_source, bins, folder, enhancers,
                 diagnostics = None):
-    """Create composites for variables contained in the `xr.Dataset`s in `dss`.
+    """Create composites for variables contained in the 'xr.Dataset's in 'dss'.
 
     Parameters
     ----------
     dss : dict
-        Keys are tuples of (`source`, `product_name`), values are xr.Dataset's 
+        Keys are tuples of ('source', 'product_name'), values are xr.Dataset's 
         which will be aligned along the time dimensions.
     sources : dict
         Configuration for each variable and source.
@@ -137,7 +137,7 @@ def main(dss, sources, example_source, bins, folder, enhancers,
         Which source to use for spatial alignment, overrides product selected
         through sources, by default None.
     bins : list
-        List of `np.datetime64`s which are the boundaries of the groups into
+        List of 'np.datetime64's which are the boundaries of the groups into
         which the variables will grouped.
     folder : str
         Path to folder in which to store (intermediate) data.

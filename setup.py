@@ -1,8 +1,8 @@
 from setuptools import setup, find_packages
 
 setup(
-    name = 'pywapor-test',
-    version = '2.5.3',
+    name = 'pywapor',
+    version = '2.5.0',
     url = 'https://www.fao.org/aquastat/py-wapor/',
     author = "FAO",
     author_email = "bert.coerver@fao.org",
