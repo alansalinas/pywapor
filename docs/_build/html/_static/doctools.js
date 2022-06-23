@@ -171,13 +171,6 @@ const Documentation = {
     window.history.replaceState({}, "", url);
   },
 
-   /**
-   * helper function to focus on search bar
-   */
-  focusSearchBar : function() {
-    $('input[name=q]').first().focus();
-  },
-
   /**
    * helper function to focus on search bar
    */
