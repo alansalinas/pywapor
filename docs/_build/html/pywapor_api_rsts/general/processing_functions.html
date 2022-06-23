@@ -14,6 +14,7 @@
         <script data-url_root="../../" id="documentation_options" src="../../_static/documentation_options.js"></script>
         <script src="../../_static/jquery.js"></script>
         <script src="../../_static/underscore.js"></script>
+        <script src="../../_static/_sphinx_javascript_frameworks_compat.js"></script>
         <script src="../../_static/doctools.js"></script>
         <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
     <script src="../../_static/js/theme.js"></script>
@@ -48,7 +49,6 @@
 <li class="toctree-l2"><a class="reference internal" href="../pre_se_root.html">pywapor.pre_se_root</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../se_root.html">pywapor.se_root</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../enhancers.html">pywapor.enhancers</a></li>
-<li class="toctree-l2"><a class="reference internal" href="../collect.html">pywapor.collect</a></li>
 <li class="toctree-l2 current"><a class="reference internal" href="../general.html">pywapor.general</a><ul class="current">
 <li class="toctree-l3"><a class="reference internal" href="compositer.html">compositer</a></li>
 <li class="toctree-l3"><a class="reference internal" href="logger.html">logger</a></li>
@@ -117,343 +117,25 @@
 }
 </style>
 <section id="module-pywapor.general.processing_functions">
-<span id="processing-functions"></span><h1>processing_functions<a class="headerlink" href="#module-pywapor.general.processing_functions" title="Permalink to this headline"></a></h1>
-<p>Module with a range of general purpose GIS tools, mainly (but not only) consisting of
-GDAL routines.</p>
-<p>Some functions in this module will be deprecated in future versions.</p>
+<span id="processing-functions"></span><h1>processing_functions<a class="headerlink" href="#module-pywapor.general.processing_functions" title="Permalink to this heading"></a></h1>
 <dl class="py function">
-<dt class="sig sig-object py" id="pywapor.general.processing_functions.ds_remove_except">
-<span class="sig-name descname"><span class="pre">ds_remove_except</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">ds</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">keep_vars</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pywapor.general.processing_functions.ds_remove_except" title="Permalink to this definition"></a></dt>
-<dd><p>Remove all variables from a dataset except the variables specified with
-<cite>keep_vars</cite>. Variables that are coordinates are never removed.</p>
+<dt class="sig sig-object py" id="pywapor.general.processing_functions.save_ds">
+<span class="sig-name descname"><span class="pre">save_ds</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">ds</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">fp</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">decode_coords</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'all'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">encoding</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">chunks</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'auto'</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pywapor.general.processing_functions.save_ds" title="Permalink to this definition"></a></dt>
+<dd><p>Save a <cite>xr.Dataset</cite> as netcdf.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><ul class="simple">
-<li><p><strong>ds</strong> (<em>xr.Dataset</em>) – Dataset from which to remove variables.</p></li>
-<li><p><strong>keep_vars</strong> (<em>list</em>) – List of variables to keep.</p></li>
+<li><p><strong>ds</strong> (<em>xr.Dataset</em>) – Dataset to save.</p></li>
+<li><p><strong>fp</strong> (<em>str</em>) – Path to file to create.</p></li>
+<li><p><strong>decode_coords</strong> (<em>str</em><em>, </em><em>optional</em>) – Controls which variables are set as coordinate variables when
+reopening the dataset, by default None.</p></li>
 </ul>
 </dd>
 <dt class="field-even">Returns</dt>
-<dd class="field-even"><p>Dataset from which variables have been removed.</p>
+<dd class="field-even"><p>The newly created dataset.</p>
 </dd>
 <dt class="field-odd">Return type</dt>
 <dd class="field-odd"><p>xr.Dataset</p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py function">
-<dt class="sig sig-object py" id="pywapor.general.processing_functions.export_ds_to_tif">
-<span class="sig-name descname"><span class="pre">export_ds_to_tif</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">ds</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">vars</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">base_folder</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pywapor.general.processing_functions.export_ds_to_tif" title="Permalink to this definition"></a></dt>
-<dd><p>Export selected <cite>vars</cite> from a xr.Dataset (<cite>ds</cite>) into <cite>base_folder</cite> as geotiffs.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
-<dd class="field-odd"><ul class="simple">
-<li><p><strong>ds</strong> (<em>xr.Dataset</em>) – Dataset to export.</p></li>
-<li><p><strong>vars</strong> (<em>list</em>) – Variables in <cite>ds</cite> to export.</p></li>
-<li><p><strong>base_folder</strong> (<em>str</em>) – Path to folder in which to store geotiffs.</p></li>
-</ul>
-</dd>
-<dt class="field-even">Returns</dt>
-<dd class="field-even"><p>Keys are variable names, values are lists with paths to the generated
-geotiffs.</p>
-</dd>
-<dt class="field-odd">Return type</dt>
-<dd class="field-odd"><p>dict</p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py function">
-<dt class="sig sig-object py" id="pywapor.general.processing_functions.select_template">
-<span class="sig-name descname"><span class="pre">select_template</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">fhs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pywapor.general.processing_functions.select_template" title="Permalink to this definition"></a></dt>
-<dd><p>Given a list of lists with paths to geotiffs, determines which one of
-all the geotiffs has the highest resolution. Note that this is not based on
-pixel size, so passing geotiffs with very different domains can give unexpected
-results.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
-<dd class="field-odd"><p><strong>fhs</strong> (<em>list</em>) – List of lists with paths to geotiffs.</p>
-</dd>
-<dt class="field-even">Returns</dt>
-<dd class="field-even"><p><ul class="simple">
-<li><p><em>str</em> – First file with the highest resolution.</p></li>
-<li><p><em>xr.Dataset</em> – Dataset with the required <cite>lat</cite> and <cite>lon</cite> values.</p></li>
-<li><p><em>tuple</em> – The geotransform of the selected geotiff.</p></li>
-<li><p><em>resolution</em> – Pixel size in units of the geotiffs projection.</p></li>
-</ul>
-</p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py function">
-<dt class="sig sig-object py" id="pywapor.general.processing_functions.get_resolution">
-<span class="sig-name descname"><span class="pre">get_resolution</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">example_filepath</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pywapor.general.processing_functions.get_resolution" title="Permalink to this definition"></a></dt>
-<dd><p>Get the average resolution of the given geotiff.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
-<dd class="field-odd"><p><strong>example_filepath</strong> (<em>str</em>) – Path to geotiff.</p>
-</dd>
-<dt class="field-even">Returns</dt>
-<dd class="field-even"><p>Pixel size in units of the geotiffs projection.</p>
-</dd>
-<dt class="field-odd">Return type</dt>
-<dd class="field-odd"><p>float</p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py function">
-<dt class="sig sig-object py" id="pywapor.general.processing_functions.reproject_clip">
-<span class="sig-name descname"><span class="pre">reproject_clip</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">source_fp</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dest_fp</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">bb</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">compress</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dstSRS</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'epsg:4326'</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pywapor.general.processing_functions.reproject_clip" title="Permalink to this definition"></a></dt>
-<dd><p>Function that calls gdal.Warp(), can be used to clip and reproject
-a geotiff in one go.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
-<dd class="field-odd"><ul class="simple">
-<li><p><strong>source_fp</strong> (<em>str</em>) – Path to file to be warped.</p></li>
-<li><p><strong>dest_fp</strong> (<em>[</em><em>type</em><em>]</em><em>, </em><em>optional</em>) – Warped output file, overwrites input when <cite>None</cite> given, by default None.</p></li>
-<li><p><strong>bb</strong> (<em>tuple</em><em>, </em><em>optional</em>) – Clip the geotiff the a bounding-box.
-First item is latlim, second item is lonlim, by default None.</p></li>
-<li><p><strong>compress</strong> (<em>bool</em><em>, </em><em>optional</em>) – Compress the data using DEFLATE, by default True.</p></li>
-<li><p><strong>dstSRS</strong> (<em>str</em><em>, </em><em>optional</em>) – Reproject the output to <cite>dstSRS</cite>, by default “epsg:4326”.</p></li>
-</ul>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py function">
-<dt class="sig sig-object py" id="pywapor.general.processing_functions.apply_mask">
-<span class="sig-name descname"><span class="pre">apply_mask</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">a</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">indices</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">axis</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pywapor.general.processing_functions.apply_mask" title="Permalink to this definition"></a></dt>
-<dd><p>Select indices in <cite>a</cite> along an axis.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
-<dd class="field-odd"><ul class="simple">
-<li><p><strong>a</strong> (<em>np.ndarray</em>) – Array with one dimension more than <cite>indices</cite>.</p></li>
-<li><p><strong>indices</strong> (<em>np.ndarray</em>) – Array used to index <cite>a</cite>, should have one dimension fewer than <cite>a</cite>.</p></li>
-<li><p><strong>axis</strong> (<em>int</em>) – Axis along which to select values from <cite>a</cite>.</p></li>
-</ul>
-</dd>
-<dt class="field-even">Returns</dt>
-<dd class="field-even"><p>Array with same shape as <cite>indices</cite>.</p>
-</dd>
-<dt class="field-odd">Return type</dt>
-<dd class="field-odd"><p>np.ndarray</p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py function">
-<dt class="sig sig-object py" id="pywapor.general.processing_functions.reproj_file">
-<span class="sig-name descname"><span class="pre">reproj_file</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">file</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">template</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">method</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pywapor.general.processing_functions.reproj_file" title="Permalink to this definition"></a></dt>
-<dd><p>Reprojects and resamples a file and return the output as an np.ndarray.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
-<dd class="field-odd"><ul class="simple">
-<li><p><strong>file</strong> (<em>{str</em><em> | </em><em>gdal.Dataset}</em>) – File to reproject.</p></li>
-<li><p><strong>template</strong> (<em>{str</em><em> | </em><em>gdal.Dataset}</em>) – File to use a reprojection template.</p></li>
-<li><p><strong>method</strong> (<em>int</em>) – Interpolation method, see ‘pywapor.processing_functions.reproject_dataset_example’
-for more info.</p></li>
-</ul>
-</dd>
-<dt class="field-even">Returns</dt>
-<dd class="field-even"><p>The resamples data.</p>
-</dd>
-<dt class="field-odd">Return type</dt>
-<dd class="field-odd"><p>np.ndarray</p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py function">
-<dt class="sig sig-object py" id="pywapor.general.processing_functions.combine_dicts">
-<span class="sig-name descname"><span class="pre">combine_dicts</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">dicts</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pywapor.general.processing_functions.combine_dicts" title="Permalink to this definition"></a></dt>
-<dd><p>Combines dictionaries by appending values for identical keys in a list.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
-<dd class="field-odd"><p><strong>dicts</strong> (<em>list</em>) – A list of dictionaries.</p>
-</dd>
-<dt class="field-even">Returns</dt>
-<dd class="field-even"><p>Dictionary with all the values and keys from the dictionaries passed inside
-the list <cite>dicts</cite>.</p>
-</dd>
-<dt class="field-odd">Return type</dt>
-<dd class="field-odd"><p>dict</p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py function">
-<dt class="sig sig-object py" id="pywapor.general.processing_functions.get_geoinfo">
-<span class="sig-name descname"><span class="pre">get_geoinfo</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">template_file</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pywapor.general.processing_functions.get_geoinfo" title="Permalink to this definition"></a></dt>
-<dd><p>Extract relevant geo information from a geotiff file.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
-<dd class="field-odd"><p><strong>template_file</strong> (<em>str</em>) – Path to geotiff file.</p>
-</dd>
-<dt class="field-even">Returns</dt>
-<dd class="field-even"><p>Tuple with the geotransform, projection, amount of pixels in x-direction and
-amount of pixels in y-direction.</p>
-</dd>
-<dt class="field-odd">Return type</dt>
-<dd class="field-odd"><p>tuple</p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py function">
-<dt class="sig sig-object py" id="pywapor.general.processing_functions.Extract_Data_gz">
-<span class="sig-name descname"><span class="pre">Extract_Data_gz</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">zip_filename</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">outfilename</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pywapor.general.processing_functions.Extract_Data_gz" title="Permalink to this definition"></a></dt>
-<dd><p>Extract a zip-file and removes the zip-file afterwards.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
-<dd class="field-odd"><ul class="simple">
-<li><p><strong>zip_filename</strong> (<em>str</em>) – Path to zip-file.</p></li>
-<li><p><strong>outfilename</strong> (<em>str</em>) – Path to output.</p></li>
-</ul>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py function">
-<dt class="sig sig-object py" id="pywapor.general.processing_functions.Save_as_MEM">
-<span class="sig-name descname"><span class="pre">Save_as_MEM</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">data</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">''</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">geo</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">''</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">projection</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">''</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pywapor.general.processing_functions.Save_as_MEM" title="Permalink to this definition"></a></dt>
-<dd><p>Create a gdal.Dataset in memory from a np.ndarray.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
-<dd class="field-odd"><ul class="simple">
-<li><p><strong>data</strong> (<em>np.ndarray</em>) – Data to put inside the gdal.Dataset.</p></li>
-<li><p><strong>geo</strong> (<em>list</em>) – Geotransform</p></li>
-<li><p><strong>projection</strong> (<em>osr.SpatialReference</em>) – Projection to be used in the gdal.Dataset, by default “WGS84”.</p></li>
-</ul>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py function">
-<dt class="sig sig-object py" id="pywapor.general.processing_functions.Save_as_tiff">
-<span class="sig-name descname"><span class="pre">Save_as_tiff</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">name</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">''</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">data</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">''</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">geo</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">''</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">projection</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">''</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pywapor.general.processing_functions.Save_as_tiff" title="Permalink to this definition"></a></dt>
-<dd><p>Create a geotiff from a np.ndarray.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
-<dd class="field-odd"><ul class="simple">
-<li><p><strong>nme</strong> (<em>str</em>) – Path to output file.</p></li>
-<li><p><strong>data</strong> (<em>np.ndarray</em>) – Data to put inside the geotiff.</p></li>
-<li><p><strong>geo</strong> (<em>list</em>) – Geotransform</p></li>
-<li><p><strong>projection</strong> (<em>osr.SpatialReference</em>) – Projection to be used in the geotiff, by default “WGS84”.</p></li>
-</ul>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py function">
-<dt class="sig sig-object py" id="pywapor.general.processing_functions.clip_data">
-<span class="sig-name descname"><span class="pre">clip_data</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">input_file</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">latlim</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">lonlim</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pywapor.general.processing_functions.clip_data" title="Permalink to this definition"></a></dt>
-<dd><p>Clip the extents of a geotiff.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
-<dd class="field-odd"><ul class="simple">
-<li><p><strong>input_file</strong> (<em>{str</em><em> | </em><em>gdal.Dataset}</em>) – Dataset to be clipped</p></li>
-<li><p><strong>latlim</strong> (<em>list</em>) – List with lower and upper latitude boundaries.</p></li>
-<li><p><strong>lonlim</strong> (<em>list</em>) – List with lower and upper longitude boundaries.</p></li>
-</ul>
-</dd>
-<dt class="field-even">Returns</dt>
-<dd class="field-even"><p><ul class="simple">
-<li><p><em>np.ndarray</em> – The clipped data.</p></li>
-<li><p><em>tuple</em> – The new geotransform.</p></li>
-</ul>
-</p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py function">
-<dt class="sig sig-object py" id="pywapor.general.processing_functions.Extract_Data">
-<span class="sig-name descname"><span class="pre">Extract_Data</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">input_file</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">output_folder</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pywapor.general.processing_functions.Extract_Data" title="Permalink to this definition"></a></dt>
-<dd><p>Extract a zipfile.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
-<dd class="field-odd"><ul class="simple">
-<li><p><strong>input_file</strong> (<em>str</em>) – Path to zip-file.</p></li>
-<li><p><strong>output_folder</strong> (<em>str</em>) – Path to output folder.</p></li>
-</ul>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py function">
-<dt class="sig sig-object py" id="pywapor.general.processing_functions.reproj_ds">
-<span class="sig-name descname"><span class="pre">reproj_ds</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">source_file</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">example_file</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ndv</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">-</span> <span class="pre">9999</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">override_dtype</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pywapor.general.processing_functions.reproj_ds" title="Permalink to this definition"></a></dt>
-<dd><p>Reproject and resample (nearest neighbour) a geotiff to match with
-<cite>example_file</cite>.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
-<dd class="field-odd"><ul class="simple">
-<li><p><strong>source_file</strong> (<em>str</em>) – Path to source file.</p></li>
-<li><p><strong>example_file</strong> (<em>str</em>) – Path to example file.</p></li>
-<li><p><strong>ndv</strong> (<em>int</em><em>, </em><em>optional</em>) – No-data-value to be used in the reprojected dataset, by default -9999</p></li>
-<li><p><strong>override_dtype</strong> (<em>bool</em><em>, </em><em>optional</em>) – Use the same dtype as <cite>example_file</cite> (True) or as <cite>source_file</cite> (False),
-by default True.</p></li>
-</ul>
-</dd>
-<dt class="field-even">Returns</dt>
-<dd class="field-even"><p>The reprojected dataset.</p>
-</dd>
-<dt class="field-odd">Return type</dt>
-<dd class="field-odd"><p>gdal.Dataset</p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py function">
-<dt class="sig sig-object py" id="pywapor.general.processing_functions.reproject_dataset_example">
-<span class="sig-name descname"><span class="pre">reproject_dataset_example</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">dataset</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dataset_example</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">method</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pywapor.general.processing_functions.reproject_dataset_example" title="Permalink to this definition"></a></dt>
-<dd><p>Reproject and resample a dataset to match with <cite>dataset_example</cite>.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
-<dd class="field-odd"><ul class="simple">
-<li><p><strong>dataset</strong> (<em>{str</em><em> | </em><em>gdal.Dataset}</em>) – The dataset to be reprojected.</p></li>
-<li><p><strong>dataset_example</strong> (<em>{str</em><em> | </em><em>gdal.Dataset}</em>) – The dataset to be used as a reprojection example.</p></li>
-<li><p><strong>method</strong> (<em>int</em><em>, </em><em>optional</em>) – Select which method to use for resampling, with:
-1 = gdal.GRA_NearestNeighbour,
-2 = gdal.GRA_Bilinear,
-3 = gdal.GRA_Lanczos,
-4 = gdal.GRA_Average,
-5 = gdal.GRA_Cubic,
-6 = gdal.GRA_CubicSpline,
-7 = gdal.GRA_Mode,
-8 = gdal.GRA_Max,
-9 = gdal.GRA_Min,
-10 = gdal.GRA_Med,
-11 = gdal.GRA_Q1,
-12 = gdal.GRA_Q3,
-13 = gdal.GRA_Sum, by default 1.</p></li>
-</ul>
-</dd>
-<dt class="field-even">Returns</dt>
-<dd class="field-even"><p>The reprojected dataset.</p>
-</dd>
-<dt class="field-odd">Return type</dt>
-<dd class="field-odd"><p>gdal.Dataset</p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py function">
-<dt class="sig sig-object py" id="pywapor.general.processing_functions.open_as_array">
-<span class="sig-name descname"><span class="pre">open_as_array</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">input</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pywapor.general.processing_functions.open_as_array" title="Permalink to this definition"></a></dt>
-<dd><p>Open dataset as array, replacing no-data-values with np.nan.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
-<dd class="field-odd"><p><strong>input</strong> (<em>{str</em><em> | </em><em>gdal.Dataset}</em>) – The dataset to open.</p>
-</dd>
-<dt class="field-even">Returns</dt>
-<dd class="field-even"><p>The data contained inside <cite>input</cite>.</p>
-</dd>
-<dt class="field-odd">Return type</dt>
-<dd class="field-odd"><p>np.ndarray</p>
 </dd>
 </dl>
 </dd></dl>

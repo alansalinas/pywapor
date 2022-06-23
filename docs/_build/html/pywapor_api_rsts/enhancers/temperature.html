@@ -14,6 +14,7 @@
         <script data-url_root="../../" id="documentation_options" src="../../_static/documentation_options.js"></script>
         <script src="../../_static/jquery.js"></script>
         <script src="../../_static/underscore.js"></script>
+        <script src="../../_static/_sphinx_javascript_frameworks_compat.js"></script>
         <script src="../../_static/doctools.js"></script>
         <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
     <script src="../../_static/js/theme.js"></script>
@@ -55,7 +56,6 @@
 <li class="toctree-l3"><a class="reference internal" href="apply_enhancers.html">apply_enhancers</a></li>
 </ul>
 </li>
-<li class="toctree-l2"><a class="reference internal" href="../collect.html">pywapor.collect</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../general.html">pywapor.general</a></li>
 </ul>
 </li>
@@ -115,11 +115,11 @@
 }
 </style>
 <section id="module-pywapor.enhancers.temperature">
-<span id="temperature"></span><h1>temperature<a class="headerlink" href="#module-pywapor.enhancers.temperature" title="Permalink to this headline"></a></h1>
+<span id="temperature"></span><h1>temperature<a class="headerlink" href="#module-pywapor.enhancers.temperature" title="Permalink to this heading"></a></h1>
 <p>Functions to make adjustments to temperature maps.</p>
 <dl class="py function">
 <dt class="sig sig-object py" id="pywapor.enhancers.temperature.kelvin_to_celsius">
-<span class="sig-name descname"><span class="pre">kelvin_to_celsius</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">ds</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">var</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">out_var</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pywapor.enhancers.temperature.kelvin_to_celsius" title="Permalink to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">kelvin_to_celsius</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">ds</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">var</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">in_var</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">out_var</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pywapor.enhancers.temperature.kelvin_to_celsius" title="Permalink to this definition"></a></dt>
 <dd><p>Convert units of a variable from Kelvin to degrees Celsius.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>

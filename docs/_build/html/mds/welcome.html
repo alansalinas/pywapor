@@ -14,6 +14,7 @@
         <script data-url_root="../" id="documentation_options" src="../_static/documentation_options.js"></script>
         <script src="../_static/jquery.js"></script>
         <script src="../_static/underscore.js"></script>
+        <script src="../_static/_sphinx_javascript_frameworks_compat.js"></script>
         <script src="../_static/doctools.js"></script>
         <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
     <script src="../_static/js/theme.js"></script>
@@ -94,14 +95,14 @@
 }
 </style>
 <section id="pywapor">
-<h1>pyWaPOR<a class="headerlink" href="#pywapor" title="Permalink to this headline"></a></h1>
+<h1>pyWaPOR<a class="headerlink" href="#pywapor" title="Permalink to this heading"></a></h1>
 <a class="reference external image-reference" href="https://img.shields.io/pypi/dw/pywapor"><img alt="downloads" src="https://img.shields.io/pypi/dw/pywapor" /></a>
 <a class="reference external image-reference" href="https://pypi.org/project/pywapor/"><img alt="version" src="https://img.shields.io/pypi/v/pywapor" /></a>
 <a class="reference external image-reference" href="https://img.shields.io/pypi/pyversions/pywapor"><img alt="python" src="https://img.shields.io/pypi/pyversions/pywapor" /></a>
 <a class="reference external image-reference" href="https://colab.research.google.com/github/bertcoerver/pywapor_notebooks/blob/main/1_introduction.ipynb"><img alt="Open In Colab" src="https://colab.research.google.com/assets/colab-badge.svg" /></a>
 <p>This repository contains a Python implementation of the algorithm used to generate the <a class="reference external" href="http://www.fao.org/in-action/remote-sensing-for-water-productivity/en/">WaPOR</a> <a class="reference external" href="https://wapor.apps.fao.org/home/WAPOR_2/1">datasets</a>. It can be used to calculate evaporation, transpiration and biomass production maps.</p>
 <section id="installation">
-<h2>Installation<a class="headerlink" href="#installation" title="Permalink to this headline"></a></h2>
+<h2>Installation<a class="headerlink" href="#installation" title="Permalink to this heading"></a></h2>
 <p>Its recommended to install in a clean <a class="reference external" href="https://docs.conda.io/projects/conda/en/latest/user-guide/concepts/environments.html">conda environment</a> and use <a class="reference external" href="https://docs.conda.io/projects/conda/en/latest/user-guide/install/">conda</a> to install GDAL before installing pywapor. Only Python 3.7 and 3.8 are supported.</p>
 <div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>conda create -n my_pywapor_env <span class="nv">python</span><span class="o">=</span><span class="m">3</span>.8 pip gdal
 conda activate my_pywapor_env
@@ -117,19 +118,18 @@ conda activate my_pywapor_env
 </div>
 </section>
 <section id="usage">
-<h2>Usage<a class="headerlink" href="#usage" title="Permalink to this headline"></a></h2>
+<h2>Usage<a class="headerlink" href="#usage" title="Permalink to this heading"></a></h2>
 <p>To run the model for one dekad (from 2021-07-01 to 2021-07-11 in this case) for the Fayoum irrigation scheme in Egypt (but feel free to change the <a class="reference external" href="http://bboxfinder.com">boundingbox</a> defined by <code class="docutils literal notranslate"><span class="pre">latlim</span></code> and <code class="docutils literal notranslate"><span class="pre">lonlim</span></code>) using mainly MODIS data, run the following code.</p>
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">pywapor</span>
 
 <span class="c1"># User inputs.</span>
-<span class="n">startdate</span> <span class="o">=</span> <span class="s2">&quot;2021-07-01&quot;</span>
-<span class="n">enddate</span> <span class="o">=</span> <span class="s2">&quot;2021-07-11&quot;</span>
+<span class="n">timelim</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;2021-07-01&quot;</span><span class="p">,</span> <span class="s2">&quot;2021-07-11&quot;</span><span class="p">]</span>
 <span class="n">latlim</span> <span class="o">=</span> <span class="p">[</span><span class="mf">28.9</span><span class="p">,</span> <span class="mf">29.7</span><span class="p">]</span>
 <span class="n">lonlim</span> <span class="o">=</span> <span class="p">[</span><span class="mf">30.2</span><span class="p">,</span> <span class="mf">31.2</span><span class="p">]</span>
 <span class="n">project_folder</span> <span class="o">=</span> <span class="sa">r</span><span class="s2">&quot;/my_first_ETLook_run/&quot;</span>
 
 <span class="c1"># Download and prepare input data.</span>
-<span class="n">ds_in</span><span class="p">,</span> <span class="n">fh_in</span> <span class="o">=</span> <span class="n">pywapor</span><span class="o">.</span><span class="n">pre_et_look</span><span class="o">.</span><span class="n">main</span><span class="p">(</span><span class="n">project_folder</span><span class="p">,</span> <span class="n">startdate</span><span class="p">,</span> <span class="n">enddate</span><span class="p">,</span> <span class="n">latlim</span><span class="p">,</span> <span class="n">lonlim</span><span class="p">)</span>
+<span class="n">ds_in</span>  <span class="o">=</span> <span class="n">pywapor</span><span class="o">.</span><span class="n">pre_et_look</span><span class="o">.</span><span class="n">main</span><span class="p">(</span><span class="n">project_folder</span><span class="p">,</span> <span class="n">latlim</span><span class="p">,</span> <span class="n">lonlim</span><span class="p">,</span> <span class="n">timelim</span><span class="p">)</span>
 
 <span class="c1"># Run the model.</span>
 <span class="n">ds_out</span> <span class="o">=</span> <span class="n">pywapor</span><span class="o">.</span><span class="n">et_look</span><span class="o">.</span><span class="n">main</span><span class="p">(</span><span class="n">ds_in</span><span class="p">)</span>
@@ -138,7 +138,7 @@ conda activate my_pywapor_env
 <p>Check out the documentation and the notebooks below to learn more!</p>
 </section>
 <section id="documentation">
-<h2>Documentation<a class="headerlink" href="#documentation" title="Permalink to this headline"></a></h2>
+<h2>Documentation<a class="headerlink" href="#documentation" title="Permalink to this heading"></a></h2>
 <p><details>
 <summary><b>Notebooks</b></summary>
 
@@ -147,7 +147,6 @@ conda activate my_pywapor_env
       <tr class="row-odd" style="text-align:center">
          <th class="head"></th>
          <th class="head">Name</th>
-         <th class="head">Duration<sup>1</sup></th>
          <th class="head" width = "150">Colab</th>
       </tr>
    </thead>
@@ -155,43 +154,35 @@ conda activate my_pywapor_env
       <tr class="row-odd">
          <td>1.</td>
          <td>Introduction</td>
-         <td>10 + 100</td>
          <td style="text-align:center"><a href="https://colab.research.google.com/github/bertcoerver/pywapor_notebooks/blob/main/1_introduction.ipynb"><img src="https://colab.research.google.com/assets/colab-badge.svg" alt="colab"/></a></td>
       </tr>
       <tr class="row-even">
          <td>2.</td>
-         <td>Composites</td>
-         <td>10 + 10</td>
-         <td style="text-align:center"><a href="https://colab.research.google.com/github/bertcoerver/pywapor_notebooks/blob/main/2_composites.ipynb"><img src="https://colab.research.google.com/assets/colab-badge.svg" alt="colab"/></a></td>
+         <td>Levels</td>
+         <td style="text-align:center"><a href="https://colab.research.google.com/github/bertcoerver/pywapor_notebooks/blob/main/2_levels.ipynb"><img src="https://colab.research.google.com/assets/colab-badge.svg" alt="colab"/></a></td>
       </tr>
       <tr class="row-odd">
          <td>3.</td>
-         <td>Levels</td>
-         <td>10 + 20</td>
-         <td style="text-align:center"><a href="https://colab.research.google.com/github/bertcoerver/pywapor_notebooks/blob/main/3_levels.ipynb"><img src="https://colab.research.google.com/assets/colab-badge.svg" alt="colab"/></a></td>
+         <td>Composites</td>
+         <td style="text-align:center"><a href="https://colab.research.google.com/github/bertcoerver/pywapor_notebooks/blob/main/3_composites.ipynb"><img src="https://colab.research.google.com/assets/colab-badge.svg" alt="colab"/></a></td>
       </tr>
       <tr class="row-even">
          <td>4.</td>
          <td>Sideloading</td>
-         <td>10 + 5</td>
          <td style="text-align:center"><a href="https://colab.research.google.com/github/bertcoerver/pywapor_notebooks/blob/main/4_sideloading.ipynb"><img src="https://colab.research.google.com/assets/colab-badge.svg" alt="colab"/></a></td>
       </tr>
       <tr class="row-odd">
          <td>5.</td>
          <td>Enhancers</td>
-         <td>10 + 5</td>
          <td style="text-align:center"><a href="https://colab.research.google.com/github/bertcoerver/pywapor_notebooks/blob/main/5_enhancers.ipynb"><img src="https://colab.research.google.com/assets/colab-badge.svg" alt="colab"/></a></td>
       </tr>
       <tr class="row-even">
          <td>6.</td>
          <td>pyWaPOR vs. WaPOR</td>
-         <td>10 + 10</td>
          <td style="text-align:center"><a href="https://colab.research.google.com/github/bertcoerver/pywapor_notebooks/blob/main/6_wapor_vs_pywapor.ipynb"><img src="https://colab.research.google.com/assets/colab-badge.svg" alt="colab"/></a></td>
       </tr>
    </tbody>
 </table>
-
-<sup>1</sup> Estimation of the time required in minutes, as in "active" + "download time", assuming the notebooks have access to previously downloaded data.
 
 </details></p><p><details>
 <summary><b>WaPOR v2</b></summary>
@@ -209,25 +200,25 @@ conda activate my_pywapor_env
 </ul>
 </details></p></section>
 <section id="acknowledgments">
-<h2>Acknowledgments<a class="headerlink" href="#acknowledgments" title="Permalink to this headline"></a></h2>
+<h2>Acknowledgments<a class="headerlink" href="#acknowledgments" title="Permalink to this heading"></a></h2>
 <p>The methodology for WaPOR was developed by the FRAME1 consortium, consisting of eLEAF (lead), VITO, ITC, University of Twente and Waterwatch foundation, commissioned by and in partnership with the Land and Water Division of FAO. The method for calculating evapotranspiration is based on the ETLook model developed by eLEAF in 2010. The method for calculating total biomass production is based on the C-Fix model.</p>
 <p>The code in the <code class="docutils literal notranslate"><span class="pre">pywapor.et_look_v2</span></code> module of this repository, containing all core physical functions used by ETLook, was written by Henk Pelgrum (eLEAF) and Rutger Kassies (eLEAF). The remaining modules have been developed by Bert Coerver (FAO), Tim Hessels (WaterSat), and, in the framework of the ESA-funded ET4FAO project, Radoslaw Guzinski (DHI-GRAS), Hector Nieto (Complutig) and Laust Faerch (DHI-GRAS).</p>
 </section>
 <section id="contact">
-<h2>Contact<a class="headerlink" href="#contact" title="Permalink to this headline"></a></h2>
+<h2>Contact<a class="headerlink" href="#contact" title="Permalink to this heading"></a></h2>
 <p>For questions, requests or issues with this repository, please contact Bert Coerver at <a class="reference external" href="mailto:bert&#46;coerver&#37;&#52;&#48;fao&#46;org">bert<span>&#46;</span>coerver<span>&#64;</span>fao<span>&#46;</span>org</a> or the WaPOR team at <a class="reference external" href="mailto:wapor&#37;&#52;&#48;fao&#46;org">wapor<span>&#64;</span>fao<span>&#46;</span>org</a>.</p>
 </section>
 <section id="release-notes">
-<h2>Release Notes<a class="headerlink" href="#release-notes" title="Permalink to this headline"></a></h2>
+<h2>Release Notes<a class="headerlink" href="#release-notes" title="Permalink to this heading"></a></h2>
 <p><details open>
-<summary><b>2.4.2 (2022-04-26)</b></summary>
-<br>
+<summary><b>2.5.0 (2022-06-23)</b></summary>
 <ul>
-    <li> New biomass module and NPP calculation.</li>
+    <li> Rewritten collect tools.</li>
+    <li> The entire workflow now works with netCDF.</li>
+    <li>All the netCDF files are formatted to support the <a href = "https://corteva.github.io/rioxarray/stable/getting_started/getting_started.html">rio-acccessor</a>.</li>
 </ul>
 </details></p><p><details>
 <summary><b>2.4.1 (2022-03-11)</b></summary>
-<br>
 <ul>
     <li> NetCDF files are now compressed when saved to disk.</li>
     <li> Calculation of Total Biomass Production is now turned on by default.</li>
@@ -238,7 +229,6 @@ conda activate my_pywapor_env
 </ul>
 </details></p><p><details>
 <summary><b>2.4.0 (2022-02-03)</b></summary>
-<br>
 <ul>
     <li> Easily apply your own functions to data, i.e. use your own custom filters, gap-fillers etc.</li>
     <li> Side-load your own data, i.e. easily incorporate you own datasets.</li>
@@ -255,7 +245,6 @@ conda activate my_pywapor_env
 </ul>
 </details></p><p><details>
 <summary><b>2.3.0 (2021-11-19)</b></summary>
-<br>
 <ul>
     <li>Automatically create input composites before running ETLook.</li>
     <li>Choose composite lengths in number of days or dekads.</li>
@@ -267,7 +256,7 @@ conda activate my_pywapor_env
 </ul>
 </details></p></section>
 <section id="license">
-<h2>License<a class="headerlink" href="#license" title="Permalink to this headline"></a></h2>
+<h2>License<a class="headerlink" href="#license" title="Permalink to this heading"></a></h2>
 <p><a class="reference external" href="https://bitbucket.org/cioapps/wapor-et-look/src/dev/LICENSE">APACHE</a></p>
 </section>
 </section>

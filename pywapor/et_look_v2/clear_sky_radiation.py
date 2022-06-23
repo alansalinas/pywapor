@@ -5,6 +5,7 @@
 
 """
 import numpy as np
+import xarray as xr
 
 def extraterrestrial_irradiance_normal(I0, ied):
     r"""
@@ -291,6 +292,9 @@ def solar_elevation_angle(lat, decl, ha):
     h0_rad = np.arcsin(sin_h0)
 
     h0 = h0_rad * 180 / np.pi
+
+    if isinstance(h0, xr.DataArray):
+        h0 = h0.transpose("time", "y", "x").chunk("auto")
 
     return h0
 

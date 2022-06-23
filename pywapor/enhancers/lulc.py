@@ -3,7 +3,7 @@
 """
 import numpy as np
 
-def lulc_to_x(ds, var, convertor, out_var = None):
+def lulc_to_x(ds, var, convertor, in_var = None, out_var = None):
     """Convert values in a classified map to other values based on a dictionary.
 
     Parameters
@@ -22,6 +22,8 @@ def lulc_to_x(ds, var, convertor, out_var = None):
     xr.Dataset
         Dataset with the replaced values.
     """
+    if not isinstance(in_var, type(None)):
+        var = in_var
 
     new_data = ds[var] * np.nan
 

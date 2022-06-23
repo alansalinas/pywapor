@@ -7,14 +7,17 @@ import numpy as np
 import pywapor.et_look_dev as ETLook_dev
 import pywapor.et_look_v2 as ETLook_v2
 import pywapor.general as g
+import datetime
+from pywapor.general.logger import log, adjust_logger
 import pywapor.general.processing_functions as PF
-import pywapor.general.pre_defaults as defaults
 import xarray as xr
 import pandas as pd
-from pywapor.general.compositer import calculate_ds
+from pywapor.general.processing_functions import save_ds, open_ds
+# from pywapor.general.compositer import calculate_ds
 import copy
+import warnings
 
-def main(input_data, et_look_version = "v2", export_vars = "default", export_to_tif = False):
+def main(input_data, et_look_version = "v2", export_vars = "default"):
     """Runs the ETLook model over the provided input data.
 
     Parameters
@@ -28,39 +31,42 @@ def main(input_data, et_look_version = "v2", export_vars = "default", export_to_
         `t_24_mm`, `e_24_mm`, `et_24_mm`, `et_ref_24_mm`, `se_root`, `biomass_prod`,
         `epoch_ends` and `epoch_starts`. `"all"` stores all calculated variables. Use a
         list to specify a custom output set, by default "default".
-    export_to_tif : bool, optional
-        Return the variables selected with `export_vars` as netCDF (False) 
-        or geoTIFF (True), by default False.
 
     Returns
     -------
-    xr.Dataset | dict
-        Returns a dataset or a dictionary with variable names as keys and
-        lists with paths to geoTIFF files as values, depending on `export_to_tif`.
+    xr.Dataset
+        Dataset with variables selected through `export_vars`.
     """
+    chunks = {"time_bins": 1, "x": 2000, "y": 2000}
+
+    # Inputs
+    if isinstance(input_data, str):
+        ds = open_ds(input_data, chunks = chunks)
+    else:
+        ds = copy.deepcopy(input_data).chunk(chunks)
+        input_data = ds.encoding["source"]
+
+    _ = adjust_logger(True, os.path.split(input_data)[0], "INFO")
+
+    t1 = datetime.datetime.now()
+    log.info("> ET_LOOK").add()
 
     # Version
     if et_look_version == "v2":
         ETLook = ETLook_v2
-        print("--> Running ETLook_v2")
     elif et_look_version == "dev":
         ETLook = ETLook_dev
-        print("--> Running ETLook_dev")
+
+    log.info(f"--> Running `et_look` ({et_look_version}).")
+
+    warnings.filterwarnings("ignore", message="invalid value encountered in power")
+    warnings.filterwarnings("ignore", message="invalid value encountered in true_divide")
+    warnings.filterwarnings("ignore", message="divide by zero encountered in power")
+    warnings.filterwarnings("ignore", message="divide by zero encountered in true_divide")
 
     # Allow skipping of et_look-functions if not all of its required inputs are
     # available.
-    g.lazifier.decorate_submods(ETLook_v2, g.lazifier.etlook_decorator)
-    g.lazifier.decorate_submods(ETLook_dev, g.lazifier.etlook_decorator)
-
-    # Inputs
-    if isinstance(input_data, str):
-        ds = xr.open_dataset(input_data)
-    else:
-        ds = input_data
-        input_data = ds.encoding["source"]
-
-    # Add constants to ds
-    # ds = ds.assign(defaults.constants_defaults())
+    g.lazifier.decorate_submods(ETLook, g.lazifier.etlook_decorator)
 
     ds = g.variables.initiate_ds(ds)
 
@@ -68,13 +74,6 @@ def main(input_data, et_look_version = "v2", export_vars = "default", export_to_
         ds["nd_min"] = 0.1
         ds["tenacity"] = 1.0
 
-    # Constants TODO: move to pre_et_look
-    doy_epoch_start = [int(pd.Timestamp(x).strftime("%j")) for x in ds["epoch_starts"].values]
-    doy_epoch_end = [int(pd.Timestamp(x).strftime("%j")) for x in ds["epoch_ends"].values]
-    doy = [int((x+y)/2) for x, y in zip(doy_epoch_start, doy_epoch_end)]
-    ds["doy"] = xr.DataArray(doy, coords = ds["epoch_starts"].coords)
-
-    # ds["sc"] = ETLook.solar_radiation.seasonal_correction(ds["doy"])
     ds["decl"] = ETLook.solar_radiation.declination(ds["doy"])
     ds["iesd"] = ETLook.solar_radiation.inverse_earth_sun_distance(ds["doy"])
 
@@ -91,7 +90,7 @@ def main(input_data, et_look_version = "v2", export_vars = "default", export_to_
     ds["sf_soil"] = ETLook.radiation.soil_fraction(ds["lai"])
 
     # **atmospheric canopy resistance***********************************************
-    ds["lat_rad"] = ETLook.solar_radiation.latitude_rad(ds["lat_deg"])
+    ds["lat_rad"] = ETLook.solar_radiation.latitude_rad(ds["y"]).chunk("auto")
     ds["ws"] = ETLook.solar_radiation.sunset_hour_angle(ds["lat_rad"], ds["decl"])
 
     ds["ra_24_toa_flat"] = ETLook.solar_radiation.daily_solar_radiation_toa_flat(ds["decl"], ds["iesd"], ds["lat_rad"], ds["ws"])
@@ -220,14 +219,16 @@ def main(input_data, et_look_version = "v2", export_vars = "default", export_to_
     ds["et_ref_24_mm"] = ETLook.evapotranspiration.et_reference_mm(ds["et_ref_24"], ds["lh_24"])
 
     if et_look_version == "dev":
-        ds["lue"] = ETLook_dev.biomass.lue(ds["lue_max"], ds["stress_temp"], ds["stress_moist"], ds["eps_a"])
-        ds["fpar"] = ETLook_dev.leaf.fpar(ds["vc"], ds["ndvi"])
-        ds["apar"] = ETLook_dev.leaf.apar(ds["ra_24"], ds["fpar"])       
-        ds["biomass_prod"] = ETLook_dev.biomass.biomass(ds["apar"], ds["lue"])         
+        ds["lue"] = ETLook.biomass.lue(ds["lue_max"], ds["stress_temp"], ds["stress_moist"], ds["eps_a"])
+        ds["fpar"] = ETLook.leaf.fpar(ds["vc"], ds["ndvi"])
+        ds["apar"] = ETLook.leaf.apar(ds["ra_24"], ds["fpar"])       
+        ds["biomass_prod"] = ETLook.biomass.biomass(ds["apar"], ds["lue"])         
     else:
+
         ds["t_air_k_min"] = ETLook.meteo.air_temperature_kelvin_daily(ds["t_air_min_24"])
         ds["t_air_k_max"] = ETLook.meteo.air_temperature_kelvin_daily(ds["t_air_max_24"])
 
+        # ds["t_air_k_24"] = ETLook.meteo.mean_temperature_kelvin_daily(ds["t_air_k_min"], ds["t_air_k_max"])
         ds["t_air_k_12"] = ETLook.meteo.mean_temperature_kelvin_daytime(ds["t_air_k_min"], ds["t_air_k_max"])
 
         ds["t_dep"] = ETLook.biomass.temperature_dependency(ds["t_air_k_12"], dh_ap=ds["dh_ap"], d_s=ds["d_s"], dh_dp=ds["dh_dp"])
@@ -235,7 +236,7 @@ def main(input_data, et_look_version = "v2", export_vars = "default", export_to_
         ds["k_0"] = ETLook.biomass.inhibition_constant_o2(ds["t_air_k_12"])
         ds["tau_co2_o2"] = ETLook.biomass.co2_o2_specificity_ratio(ds["t_air_k_12"])
 
-        ds["year"] = ds.epoch_starts.dt.year
+        ds["year"] = ds.time_bins.dt.year.chunk("auto")
 
         ds["co2_act"] = ETLook.biomass.co2_level_annual(ds["year"])
         ds["a_d"] = ETLook.biomass.autotrophic_respiration(ds["t_air_k_24"], ar_slo=ds["ar_slo"], ar_int=ds["ar_int"])
@@ -246,7 +247,6 @@ def main(input_data, et_look_version = "v2", export_vars = "default", export_to_
         ds["co2_fert"] = ETLook.biomass.co2_fertilisation(ds["tau_co2_o2"], ds["k_m"], ds["k_0"], ds["co2_act"], o2=ds["o2"], co2_ref=ds["co2_ref"])
         ds["npp_max"] = ETLook.biomass.net_primary_production_max(ds["t_dep"], ds["co2_fert"], ds["a_d"], ds["apar"], gcgdm=ds["gcgdm"])
         ds["npp"] = ETLook.biomass.net_primary_production(ds["npp_max"], ds["f_par"], ds["stress_moist"], phot_eff=ds["phot_eff"])
-
 
     ds = ds.drop_vars([x for x in ds.variables if ds[x].dtype == object])
 
@@ -264,48 +264,90 @@ def main(input_data, et_look_version = "v2", export_vars = "default", export_to_
                     'et_24_mm',
                     'et_ref_24_mm',
                     'se_root',
-                    'npp',
-                    'epoch_ends',
-                    'epoch_starts']
-        ds = PF.ds_remove_except(ds, keep_vars)
+                    # 'biomass_prod',
+                    'npp'
+                    ]
+        keep_vars = [x for x in keep_vars if x in ds.variables]
+        ds = ds[keep_vars]
     elif isinstance(export_vars, list):
         keep_vars = copy.copy(export_vars)
-        keep_vars = np.unique(keep_vars + ['epoch_ends', 'epoch_starts']).tolist()
-        ds = PF.ds_remove_except(ds, keep_vars)
+        ds = ds[keep_vars]
     else:
         raise ValueError
 
-    ds = ds.transpose("epoch", "lat", "lon") # set dimension order the same for all vars.
-    
-    fn = fn.replace("_input", "_output")
-    ds, fh = calculate_ds(ds, os.path.join(fp, fn), "--> Saving outputs.")
-
-    if export_to_tif:
-        files = PF.export_ds_to_tif(ds, keep_vars, None)
-        ds.close()
-        os.remove(fh)
-        return files
+    if len(ds.data_vars) == 0:
+        log.info("--> No data to export, try adjusting `export_vars`.")
+        ds = None
     else:
-        return ds
+        ds = ds.transpose("time_bins", "y", "x") # set dimension order the same for all vars.
+        fn = fn.replace("in", "out")
+        fp_out = os.path.join(fp, fn)
+        if os.path.isfile(fp_out):
+            fp_out = fp_out.replace(".nc", "_.nc")
+        ds = save_ds(ds, fp_out, "all")
+
+    t2 = datetime.datetime.now()
+    log.sub().info(f"< ET_LOOK ({str(t2 - t1)})")
+
+    return ds
+
+def check_for_non_chuncked_arrays(ds):
+    for var in ds.data_vars:
+        if len(ds[var].dims) > 0:
+            if isinstance(ds[var].chunks, type(None)):
+                print(var)
 
 if __name__ == "__main__":
 
     # project_folder = r"/Volumes/Data/FAO/WaPOR_vs_pyWaPOR/pyWAPOR_v1"
     # startdate = date = "2021-07-01"
 
-    # level = "level_1"
+    project_folder = r"/Users/hmcoerver/pywapor_notebooks_2"
+    latlim = [28.9, 29.7]
+    lonlim = [30.2, 31.2]
+    timelim = ["2021-07-01", "2021-07-11"]
+    composite_length = "DEKAD"
+
+    import pywapor
+
     et_look_version = "v2"
+    export_vars = "default"
 
-    input_data = r"/Users/hmcoerver/Downloads/et_look_input.nc"
-    input_data = xr.open_dataset(input_data)
-    # input_data = input_data.drop_vars(["ndvi"])
+    level = "level_1"
 
-    input_data = input_data.assign(defaults.constants_defaults())
+    et_look_sources = pywapor.general.levels.pre_et_look_levels(level)
 
-    ds = main(input_data,
-                et_look_version=et_look_version, 
-                export_vars="default")
+    et_look_sources["ndvi"]["products"] = [
+        {'source': 'MODIS',
+            'product_name': 'MOD13Q1.061',
+            'enhancers': 'default'},
+        {'source': 'MODIS', 
+            'product_name': 'MYD13Q1.061', 
+            'enhancers': 'default'},
+        {'source': 'PROBAV',
+            'product_name': 'S5_TOC_100_m_C1',
+            'enhancers': 'default',
+            'is_example': True}
+    ]
 
-    # input_data["year"] = input_data.epoch_starts.dt.year
+    et_look_sources["r0"]["products"] = [
+        {'source': 'MODIS',
+            'product_name': 'MCD43A3.061',
+            'enhancers': 'default'},
+        {'source': 'PROBAV',
+            'product_name': 'S5_TOC_100_m_C1',
+            'enhancers': 'default'}
+    ]
 
+    se_root_sources = pywapor.general.levels.pre_se_root_levels(level)
+    se_root_sources["ndvi"]["products"] = et_look_sources["ndvi"]["products"]
 
+    from functools import partial
+    et_look_sources["se_root"]["products"] = [
+        {'source': partial(pywapor.se_root.se_root, sources = se_root_sources),
+            'product_name': 'v2',
+            'enhancers': 'default'},]
+
+    # ds = pywapor.pre_et_look.main(project_folder, latlim, lonlim, timelim, 
+    #                                 sources = et_look_sources,
+    #                                 bin_length = composite_length)

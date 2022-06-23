@@ -7,6 +7,7 @@ as output is required, pre_et_look doesn't need to download and process all vari
 import types
 import numpy as np
 import inspect
+from pywapor.general.logger import log
 
 def decorate_mod(module, decorator):
     """Apply a decorator to all the functions inside a module.
@@ -19,7 +20,9 @@ def decorate_mod(module, decorator):
         Function to decorate with.
     """
     for name in dir(module):
-        if name not in ["ra_soil", 
+        if name not in [
+                        "ra_soil",
+                        "initial_friction_velocity_inst",
                         "monin_obukhov_length", 
                         "stability_parameter", 
                         "stability_factor", 
@@ -28,7 +31,7 @@ def decorate_mod(module, decorator):
                         "stability_parameter_obs", 
                         "stability_correction_heat_obs"]:
             obj = getattr(module, name)
-            if isinstance(obj, types.FunctionType):
+            if isinstance(obj, types.FunctionType) and not hasattr(obj, 'decorated'):
                 setattr(module, name, decorator(obj))
 
 def decorate_submods(module, decorator):
@@ -60,10 +63,14 @@ def etlook_decorator(func):
         check1 = np.all([arg.dtype != object for arg in args])
         check2 = np.all([arg.dtype != object for _, arg in kwargs.items()])
         if check1 and check2:
+            log.info(f"--> Calculating `{func.__name__}`.")
             x = func(*args, **kwargs)
             x.attrs["calculated_with"] = [arg.name for arg in args]
             x.attrs["et_look_module"] = group
             return x
+        else:
+            log.info(f"--> Insufficient data found for `{func.__name__}`.")
     wrapper_func.__module__ = func.__module__
     wrapper_func.__name__ = func.__name__
+    setattr(wrapper_func, "decorated", True)
     return wrapper_func

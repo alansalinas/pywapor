@@ -93,7 +93,7 @@ def get_source_level_selections():
 
     return levels
 
-def fill_attrs(ds):
+def fill_attrs(ds, *args):
     """Fills in the attributes of a xr.Dataset.
 
     Parameters
@@ -220,6 +220,11 @@ def get_var_definitions():
     """
 
     defs = {
+        "IO": {
+            "long_name": "Solar constant",
+            "units": "W m-2",
+            "definition": ""
+        },
         "B0c": {
             "long_name": "Beam irradiance normal to the solar beam",
             "units": "W m-2",
@@ -317,6 +322,16 @@ def get_var_definitions():
         },
         "disp": {
             "long_name": "Displacement height",
+            "units": "m",
+            "definition": ""
+        },
+        "disp_bare": {
+            "long_name": "Displacement height (bare)",
+            "units": "m",
+            "definition": ""
+        },
+        "disp_full": {
+            "long_name": "Displacement height (fully vegetated)",
             "units": "m",
             "definition": ""
         },
@@ -1014,6 +1029,31 @@ def get_var_definitions():
             "units": "m",
             "definition": ""
         },
+        "z0m_bare": {
+            "long_name": "Surface roughness (bare soil)",
+            "units": "m",
+            "definition": ""
+        },
+        "z0m_full": {
+            "long_name": "Surface roughness (fully vegetated soil)",
+            "units": "m",
+            "definition": ""
+        },
+        "aod550_i": {
+            "long_name": "",
+            "units": "",
+            "definition": ""
+        },
+        "fraction_h_bare": {
+            "long_name": "",
+            "units": "",
+            "definition": ""
+        },
+        "fraction_h_full": {
+            "long_name": "",
+            "units": "",
+            "definition": ""
+        },
         "z_obst": {
             "long_name": "Obstacle height",
             "units": "m",
@@ -1140,8 +1180,67 @@ def get_var_definitions():
         'eps_a': {
             'long_name': '', 
             'units': '', 
-            'definition': ''}
-
+            'definition': ''},
+        "tau_co2_o2": {
+            'long_name': '', 
+            'units': '', 
+            'definition': ''},
+        "year": {
+            'long_name': '', 
+            'units': '', 
+            'definition': ''},
+        "t_air_k_min": {
+            'long_name': '', 
+            'units': '', 
+            'definition': ''},
+        "t_air_k_max": {
+            'long_name': '', 
+            'units': '', 
+            'definition': ''},
+        "t_air_k_12": {
+            'long_name': '', 
+            'units': '', 
+            'definition': ''},
+        "t_dep": {
+            'long_name': '', 
+            'units': '', 
+            'definition': ''},
+        "k_m": {
+            'long_name': '', 
+            'units': '', 
+            'definition': ''},
+        "k_0": {
+            'long_name': '', 
+            'units': '', 
+            'definition': ''},
+        "npp": {
+            'long_name': '', 
+            'units': 'gC m-2', 
+            'definition': ''},
+        "npp_max": {
+            'long_name': '', 
+            'units': '', 
+            'definition': ''},
+        "co2_fert": {
+            'long_name': '', 
+            'units': '', 
+            'definition': ''},
+        "f_par": {
+            'long_name': '', 
+            'units': '', 
+            'definition': ''},
+        "apar": {
+            'long_name': '', 
+            'units': '', 
+            'definition': ''},
+        "a_d": {
+            'long_name': '', 
+            'units': '', 
+            'definition': ''},
+        "co2_act": {
+            'long_name': '', 
+            'units': '', 
+            'definition': ''},
     }
 
     return defs

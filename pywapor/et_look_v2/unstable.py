@@ -1,6 +1,6 @@
 import numpy as np
 from pywapor.et_look_v2 import constants as c
-
+import xarray as xr
 
 def initial_sensible_heat_flux_canopy_daily(rn_24_canopy, t_24_init):
     r"""
@@ -431,18 +431,29 @@ def ra_canopy(
     while (iteration < iter_ra) and (np.nanmax(epsilon) > 0.01):
         iteration += 1
         monin = monin_obukhov_length(h_flux, ad, u_star_start, t_air_k)
-        x_b = np.where(monin > 0, 1, stability_parameter(monin, disp, z_b))
+        if isinstance(monin, xr.DataArray):
+            x_b = xr.where(monin > 0, 1, stability_parameter(monin, disp, z_b))
+        else:
+            x_b = np.where(monin > 0, 1, stability_parameter(monin, disp, z_b))
         sf = stability_factor(x_b)
         u_star = friction_velocity(u_b, z_b, z0m, disp, sf)
         epsilon = abs(u_star - u_star_start)
         u_star_start = u_star
 
-    x_b_obs = np.where(monin <= 0, stability_parameter_obs(monin, z_obs), 1)
-    sf_obs = np.where(monin <= 0, stability_correction_heat_obs(x_b_obs), 0)
+    if isinstance(monin, xr.DataArray):
+        x_b_obs = xr.where(monin <= 0, stability_parameter_obs(monin, z_obs), 1)
+        sf_obs = xr.where(monin <= 0, stability_correction_heat_obs(x_b_obs), 0)
+    else:
+        x_b_obs = np.where(monin <= 0, stability_parameter_obs(monin, z_obs), 1)
+        sf_obs = np.where(monin <= 0, stability_correction_heat_obs(x_b_obs), 0)
 
     disp = np.minimum(disp, 1.5)
     ra = (np.log((z_obs - disp) / (0.1 * z0m)) - sf_obs) / (c.k * u_star)
-    ra = np.clip(ra, 25, 500)
+    
+    if isinstance(monin, xr.DataArray):
+        ra = ra.clip(25, 500)
+    else:
+        ra = np.clip(ra, 25, 500)
 
     return ra
 
@@ -651,14 +662,21 @@ def ra_soil(
     while (iteration < iter_ra) and (np.nanmax(epsilon) > 0.01):
         iteration += 1
         monin = monin_obukhov_length(h_flux, ad, u_star_start, t_air_k)
-        x_b = np.where(monin > 0, 0, stability_parameter(monin, disp, z_b))
+        if isinstance(monin, xr.DataArray):
+            x_b = xr.where(monin > 0, 0, stability_parameter(monin, disp, z_b))
+        else:
+            x_b = np.where(monin > 0, 0, stability_parameter(monin, disp, z_b))
         sf = stability_factor(x_b)
         u_star = friction_velocity(u_b, z_b, c.z0_soil, disp, sf)
         epsilon = abs(u_star - u_star_start)
         u_star_start = u_star
 
-    x_b_obs = np.where(monin <= 0, stability_parameter_obs(monin, z_obs), 1)
-    sf_obs = np.where(monin <= 0, stability_correction_heat_obs(x_b_obs), 0)
+    if isinstance(monin, xr.DataArray):
+        x_b_obs = xr.where(monin <= 0, stability_parameter_obs(monin, z_obs), 1)
+        sf_obs = xr.where(monin <= 0, stability_correction_heat_obs(x_b_obs), 0)
+    else:
+        x_b_obs = np.where(monin <= 0, stability_parameter_obs(monin, z_obs), 1)
+        sf_obs = np.where(monin <= 0, stability_correction_heat_obs(x_b_obs), 0)
 
     # 1.5 limit is from ETLook IDL
     disp = np.minimum(disp, 1.5)

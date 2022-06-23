@@ -1,238 +1,108 @@
-import pywapor.collect as c
-import tqdm
-import requests
-import os
+from pywapor.general.logger import log
+import types
+import functools
 
-def collect_sources(param, sources, dl_args, extra_source_locations = None):
-    """Download an ETLook variable from selected sources.
+def collect_sources(folder, sources, latlim, lonlim, timelim, return_fps = True):
+    
+    reversed_sources, reversed_enhancers = reverse_sources(sources)
 
-    Parameters
-    ----------
-    param : str
-        The variable to download.
-    sources : list
-        The sources from which to download `param`.
-    dl_args : dict
-        Should have `Dir`, `latlim`, `lonlim`, `startdate` and `enddate` as
-        keys. Defining the output folder, and the spatial and temporal domain
-        to be downloaded.
-    extra_source_locations : dict, optional
-        Describes paths to folders where non-default sources can be found, by default None.
+    dss = dict()
 
-    Returns
-    -------
-    list
-        List of lists with each list containing the geotiff files downloaded per source.
+    for (source, product_name), req_vars in reversed_sources.items():
 
-    Examples
-    --------
-    >>> dl_args = {
-    ...            "Dir": r"/my/folder/RAW",
-    ...            "latlim": [28.9, 29.7],
-    ...            "lonlim": [30.2, 31.2],
-    ...            "Startdate": "2021-07-01",
-    ...            "Enddate": "2021-07-03",
-    ...        }
-    >>> raw_ndvi_files = collect_sources("ndvi", ['MYD13', 'MOD13'], dl_args)
-    >>> print(raw_ndvi_files)
-    [['/my/folder/RAW/MODIS/MYD13/NDVI_MYD13Q1_-_16-daily_2021.06.18.tif'], 
-    ['/my/folder/RAW/MODIS/MOD13/NDVI_MOD13Q1_-_16-daily_2021.06.26.tif']]
-    """
-    files = list()
-    for source in sources:
+        if isinstance(source, str):
+            dl_module = __import__(f"pywapor.collect.product.{source}", 
+                                fromlist=[source])
+            dler = dl_module.download
+            log.info(f"--> Collecting `{'`, `'.join(req_vars)}` from {source}.{product_name}.")
+            source_name = source
+        elif isinstance(source, types.FunctionType):
+            dler = source
+            log.info(f"--> Collecting `{'`, `'.join(req_vars)}` from `{dler.__name__}`.")
+            source_name = source.__name__
+        elif isinstance(source, functools.partial):
+            dler = source
+            log.info(f"--> Collecting `{'`, `'.join(req_vars)}` from `{dler.func.__name__}`.")
+            source_name = source.func.__name__
 
-        if source == "PROBAV" and param == "ndvi":
-            files.append(c.PROBAV.NDVI(**dl_args))
-        elif source == "MOD13" and param == "ndvi":
-            files.append(c.MOD13.NDVI(**dl_args))
-        elif source == "MYD13" and param == "ndvi":
-            files.append(c.MYD13.NDVI(**dl_args))
-
-        elif source == "PROBAV" and param == "r0":
-            files.append(c.PROBAV.ALBEDO(**dl_args))
-        elif source == "MCD43" and param == "r0":
-            files.append(c.MCD43.ALBEDO(**dl_args))
-
-        elif source == "MOD11" and param == "lst":
-            files.append(c.MOD11.LST(**dl_args))
-        elif source == "MYD11" and param == "lst":
-            files.append(c.MYD11.LST(**dl_args))
-
-        elif source == "CHIRPS" and param == "p_24":
-            files.append(c.CHIRPS.PRECIPITATION(**dl_args))
-        elif source == "SRTM" and param == "z":
-            files.append([c.SRTM.DEM(**dl_args)])
-
-        elif source == "GLOBCOVER" and param == "lulc":
-            files.append([c.Globcover.LULC(**dl_args)])
-        elif source == "WAPOR" and param == "lulc":
-            files.append(c.WAPOR.LULC(**dl_args))
-
-        elif source == "GEOS5" and param == "t_air_24":
-            files.append(c.GEOS5.daily(**dl_args, Vars = ['t2m']))
-        elif source == "GEOS5" and param == "t_air_max_24":
-            files.append(c.GEOS5.daily(**dl_args, Vars = ['t2m-max']))
-        elif source == "GEOS5" and param == "t_air_min_24":
-            files.append(c.GEOS5.daily(**dl_args, Vars = ['t2m-min']))
-        elif source == "GEOS5" and param == "u2m_24":
-            files.append(c.GEOS5.daily(**dl_args, Vars = ['u2m']))
-        elif source == "GEOS5" and param == "v2m_24":
-            files.append(c.GEOS5.daily(**dl_args, Vars = ['v2m']))
-        elif source == "GEOS5" and param == "qv_24":
-            files.append(c.GEOS5.daily(**dl_args, Vars = ['qv2m']))
-        elif source == "GEOS5" and param == "p_air_0_24":
-            files.append(c.GEOS5.daily(**dl_args, Vars = ['slp']))
-
-        elif source == "GEOS5" and param == "t_air_i":
-            files.append(c.GEOS5.three_hourly(**dl_args, Vars = ["t2m"]))
-        elif source == "GEOS5" and param == "u2m_i":
-            files.append(c.GEOS5.three_hourly(**dl_args, Vars = ["u2m"]))
-        elif source == "GEOS5" and param == "v2m_i":
-            files.append(c.GEOS5.three_hourly(**dl_args, Vars = ["v2m"]))
-        elif source == "GEOS5" and param == "qv_i":
-            files.append(c.GEOS5.three_hourly(**dl_args, Vars = ["qv2m"]))
-        elif source == "GEOS5" and param == "wv_i":
-            files.append(c.GEOS5.three_hourly(**dl_args, Vars = ["tqv"]))
-        elif source == "GEOS5" and param == "p_air_i":
-            files.append(c.GEOS5.three_hourly(**dl_args, Vars = ["ps"]))
-        elif source == "GEOS5" and param == "p_air_0_i":
-            files.append(c.GEOS5.three_hourly(**dl_args, Vars = ["slp"]))
-
-        elif source == "MERRA2" and param == "t_air_24":
-            files.append(c.MERRA2.daily_MERRA2(**dl_args, Vars = ['t2m']))
-        elif source == "MERRA2" and param == "t_air_max_24":
-            files.append(c.MERRA2.daily_MERRA2(**dl_args, Vars = ['t2m'], data_type = ["max"]))
-        elif source == "MERRA2" and param == "t_air_min_24":
-            files.append(c.MERRA2.daily_MERRA2(**dl_args, Vars = ['t2m'], data_type = ["min"]))
-        elif source == "MERRA2" and param == "u2m_24":
-            files.append(c.MERRA2.daily_MERRA2(**dl_args, Vars = ['u2m']))
-        elif source == "MERRA2" and param == "v2m_24":
-            files.append(c.MERRA2.daily_MERRA2(**dl_args, Vars = ['v2m']))
-        elif source == "MERRA2" and param == "qv_24":
-            files.append(c.MERRA2.daily_MERRA2(**dl_args, Vars = ['q2m']))
-        elif source == "MERRA2" and param == "p_air_0_24":
-            files.append(c.MERRA2.daily_MERRA2(**dl_args, Vars = ['slp']))
-
-        elif source == "MERRA2" and param == "t_air_i":
-            files.append(c.MERRA2.hourly_MERRA2(**dl_args, Vars = ["t2m"]))
-        elif source == "MERRA2" and param == "u2m_i":
-            files.append(c.MERRA2.hourly_MERRA2(**dl_args, Vars = ["u2m"]))
-        elif source == "MERRA2" and param == "v2m_i":
-            files.append(c.MERRA2.hourly_MERRA2(**dl_args, Vars = ["v2m"]))
-        elif source == "MERRA2" and param == "qv_i":
-            files.append(c.MERRA2.hourly_MERRA2(**dl_args, Vars = ["q2m"]))
-        elif source == "MERRA2" and param == "wv_i":
-            files.append(c.MERRA2.hourly_MERRA2(**dl_args, Vars = ["tpw"]))
-        elif source == "MERRA2" and param == "p_air_i":
-            files.append(c.MERRA2.hourly_MERRA2(**dl_args, Vars = ["ps"]))
-        elif source == "MERRA2" and param == "p_air_0_i":
-            files.append(c.MERRA2.hourly_MERRA2(**dl_args, Vars = ["slp"]))
-
-        elif source == "MERRA2" and param == "ra_24":
-            files.append(c.MERRA2.daily_MERRA2(**dl_args, Vars = ['swgnet']))
-
-        elif source == "STATICS" and param == "land_mask":
-            files.append(c.STATICS.collect(**dl_args, vars = ['land_mask']))
-        elif source == "STATICS" and param == "lw_offset":
-            files.append(c.STATICS.collect(**dl_args, vars = ['lw_offset']))
-        elif source == "STATICS" and param == "lw_slope":
-            files.append(c.STATICS.collect(**dl_args, vars = ['lw_slope']))
-        elif source == "STATICS" and param == "r0_bare":
-            files.append(c.STATICS.collect(**dl_args, vars = ['r0_bare']))
-        elif source == "STATICS" and param == "r0_full":
-            files.append(c.STATICS.collect(**dl_args, vars = ['r0_full']))
-        elif source == "STATICS" and param == "rn_offset":
-            files.append(c.STATICS.collect(**dl_args, vars = ['rn_offset']))
-        elif source == "STATICS" and param == "rn_slope":
-            files.append(c.STATICS.collect(**dl_args, vars = ['rn_slope']))
-        elif source == "STATICS" and param == "rs_min":
-            files.append(c.STATICS.collect(**dl_args, vars = ['rs_min']))
-        elif source == "STATICS" and param == "t_amp_year":
-            files.append(c.STATICS.collect(**dl_args, vars = ['t_amp_year']))
-        elif source == "STATICS" and param == "t_opt":
-            files.append(c.STATICS.collect(**dl_args, vars = ['t_opt']))
-        elif source == "STATICS" and param == "vpd_slope":
-            files.append(c.STATICS.collect(**dl_args, vars = ['vpd_slope']))
-        elif source == "STATICS" and param == "z_obst_max":
-            files.append(c.STATICS.collect(**dl_args, vars = ['z_obst_max']))
-        elif source == "STATICS" and param == "z_oro":
-            files.append(c.STATICS.collect(**dl_args, vars = ['z_oro']))
-
-        elif (source, param) in extra_source_locations.keys():
-            sideload_files = c.sideloader.search_product_files(source, extra_source_locations[(source, param)])
-            if len(sideload_files) > 0:
-                files.append(sideload_files)
-        else:
-            raise ValueError
-
-        # Remove sources for which no files were downloaded.
-        files = [x for x in files if len(x) > 0]
-
-    return files
-
-def url_to_file(url, out_file):
-    """Download a file from a url.
-
-    Parameters
-    ----------
-    url : str
-        The url to download.
-    out_file : str
-        Path to where the data should be saved.
-    """
-
-    file_object = requests.get(url)
-    file_object.raise_for_status()
-
-    total_size = int(file_object.headers.get('content-length', 0))
-
-    waitbar = tqdm.tqdm(total = total_size, unit='Bytes', unit_scale=True, position = 0)
-
-    folder = os.path.split(out_file)[0]
-    if not os.path.exists(folder):
-        os.makedirs(folder)
-
-    with open(out_file, 'wb') as z:
-        for data in file_object.iter_content(chunk_size=1024):
-            size = z.write(data)
-            waitbar.update(size)
-
-if __name__ == "__main__":
-
-    project_folder = r"/Users/hmcoerver/pywapor_notebooks"
-    latlim = [28.9, 29.7]
-    lonlim = [30.2, 31.2]
-    startdate = "2021-07-01"
-    enddate = "2021-07-03"
-
-    dl_args = {
-            "Dir": os.path.join(project_folder, "RAW"),
+        args = {
+            "folder": folder,
             "latlim": latlim,
             "lonlim": lonlim,
-            "Startdate": startdate,
-            "Enddate": enddate,
-            }
+            "timelim": timelim,
+            "product_name": product_name,
+            "req_vars": req_vars,
+            "post_processors": reversed_enhancers[(source, product_name)]
+        }
 
-    # raw_r0_files = collect_sources("r0", ['MCD43'], dl_args, None)
-    # raw_lst_files = collect_sources("lst", ['MOD11', 'MYD11'], dl_args, None)
-    raw_ndvi_files = collect_sources("ndvi", ['MYD13', 'MOD13'], dl_args, None)
+        dss[(source_name, product_name)] = dler(**args)
 
-    # ds_lst = pywapor.pre_se_root.combine_lst(raw_lst_files)
+    if return_fps:
+        for key, ds in dss.items():
+            fp = ds.encoding["source"]
+            ds = ds.close()
+            dss[key] = fp
 
-    # sds, eds, prds = pywapor.pre_se_root.calc_periods(ds_lst.time.values, "3H")
+    return dss
 
-    # dl_args["Startdate"] = sds
-    # dl_args["Enddate"] = eds
-    # dl_args["Periods"] = prds
+def reverse_sources(sources):
+    reversed_sources = dict()
+    reversed_enhancers = dict()
+    for var, value in sources.items():
+        for src in value["products"]:
+            key = (src["source"], src["product_name"])
+            enhancers = src["enhancers"]
 
-    # MERRAmeteo_vars = ['t2m', 'u2m', 'v2m', 'q2m',  'tpw', 'ps', 'slp']
-    # GEOSmeteo_vars = ['t2m', 'u2m', 'v2m', 'qv2m', 'tqv', 'ps', 'slp']
+            if key in reversed_sources.keys():
+                reversed_sources[key].append(var)
+                reversed_enhancers[key][var] = enhancers
+            else:
+                reversed_sources[key] = [var]
+                reversed_enhancers[key] = {var: enhancers}
 
-    # # all_files = dict()
-    # for var in ["t_air_i", 
-    #             "u2m_i", "v2m_i", "qv_i", "wv_i", "p_air_i", "p_air_0_i"
-    #             ]:
+    return reversed_sources, reversed_enhancers
 
-    #     files = collect_sources(var, ["GEOS5", "MERRA2"], dl_args, extra_source_locations = None)
+# if __name__ == "__main__":
 
-    # print(files)
+#     import datetime
+
+#     sources = {
+
+#         "ndvi":         [("MODIS", "MOD13Q1.061"), ("MODIS", "MYD13Q1.061")],
+#         "r0":           [("MODIS", "MCD43A3.061")],
+#         # "lst":          [("MODIS", "MOD11A1.061"), ("MODIS", "MYD11A1.061")],
+
+#         "z":            [("SRTM", "30M")],
+#         "p":            [("CHIRPS", "P05")],
+#         "ra":           [("MERRA2", "M2T1NXRAD.5.12.4")],
+#         "t_air":        [("MERRA2", "M2I1NXASM.5.12.4")],
+#         "t_air_max":    [("MERRA2", "M2I1NXASM.5.12.4")],
+#         # "u2m":          [("MERRA2", "M2I1NXASM.5.12.4")],
+#         # "v2m":          [("MERRA2", "M2I1NXASM.5.12.4")],
+#         # "qv":           [("MERRA2", "M2I1NXASM.5.12.4")],
+#         # "wv":           [("MERRA2", "M2I1NXASM.5.12.4")],
+#         # "p_air":        [("MERRA2", "M2I1NXASM.5.12.4")],
+#         # "p_air_0":      [("MERRA2", "M2I1NXASM.5.12.4")],
+
+#         # "lw_offset":    [("STATICS", "lw_offset")],
+#         # "lw_slope":     [("STATICS", "lw_slope")],
+#         # "r0_bare":      [("STATICS", "r0_bare")],
+#         # "r0_full":      [("STATICS", "r0_full")],
+#         # "rn_offset":    [("STATICS", "rn_offset")],
+#         # "rn_slope":     [("STATICS", "rn_slope")],
+#         # "t_amp_year":   [("STATICS", "t_amp_year")],
+#         # "t_opt":        [("STATICS", "t_opt")],
+#         # "vpd_slope":    [("STATICS", "vpd_slope")],
+#         # "z_oro":        [("STATICS", "z_oro")],
+
+#         # "level_name":   "sideloading",
+#     }
+
+    # folder = r"/Users/hmcoerver/Downloads/pywapor_test"
+    # latlim = [26.9, 33.7]
+    # lonlim = [25.2, 37.2]
+    # latlim = [28.9, 29.7]
+    # lonlim = [30.2, 31.2]
+    # timelim = [datetime.date(2020, 7, 1), datetime.date(2020, 8, 1)]
+
+    # dss0 = collect_sources(folder, sources, latlim, lonlim, timelim)

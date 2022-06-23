@@ -2,7 +2,7 @@ from setuptools import setup, find_packages
 
 setup(
     name = 'pywapor',
-    version = '2.4.2',
+    version = '2.5.0',
     url = 'https://www.fao.org/aquastat/py-wapor/',
     author = "FAO",
     author_email = "bert.coerver@fao.org",
@@ -14,7 +14,7 @@ setup(
         'gdal',
         'xarray>=0.20',
         'numpy',
-        'aiohttp',
+        'pydap',
         'pandas',
         'requests',
         'matplotlib',
@@ -30,14 +30,13 @@ setup(
         'rasterio',
         'bottleneck>=1.3.1',
         'geojson',
-        'vito_download',
-        'nest_asyncio',
         'tqdm',
         'dask',
         'rioxarray',
         'python_log_indenter',
         'cryptography',
         'pyvis',
+        'cachetools',
     ],
     classifiers=[
         "Operating System :: OS Independent",

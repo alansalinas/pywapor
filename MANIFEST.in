@@ -1,4 +1,5 @@
-include pywapor/collect/MOD11/sn_gring_10deg.txt
+include pywapor/collect/product/MODIS_tiles.geojson
+include pywapor/collect/product/SRTM30_tiles.geojson
 prune tests/
 prune docs/
 prune examples/

@@ -6,6 +6,7 @@
 from pywapor.et_look_v2 import constants as c
 from pywapor.et_look_v2 import unstable
 import numpy as np
+import xarray as xr
 
 
 def wet_bulb_temperature_inst(t_air_i, t_dew_i, p_air_i):
@@ -399,6 +400,9 @@ def net_radiation_bare(ra_hor_clear_i, emiss_atm_i, t_air_k_i, lst, r0_bare=0.38
         - emiss_bare * c.sb * (lst) ** 4
     )
 
+    if isinstance(rn_bare, xr.DataArray):
+        rn_bare = rn_bare.transpose("time", "y", "x").chunk("auto")
+
     return rn_bare
 
 
@@ -446,6 +450,9 @@ def net_radiation_full(ra_hor_clear_i, emiss_atm_i, t_air_k_i, lst, r0_full=0.18
         + emiss_atm_i * emiss_full * c.sb * (t_air_k_i) ** 4
         - emiss_full * c.sb * (lst) ** 4
     )
+
+    if isinstance(rn_full, xr.DataArray):
+        rn_full = rn_full.transpose("time", "y", "x").chunk("auto")
 
     return rn_full
 
@@ -546,7 +553,10 @@ def wind_speed_blending_height_bare(u_i, z0m_bare=0.001, z_obs=10, z_b=100):
     """
     ws = (c.k * u_i) / np.log(z_obs / z0m_bare) * np.log(z_b / z0m_bare) / c.k
 
-    ws = np.clip(ws, 1, 150)
+    if isinstance(ws, xr.DataArray):
+        ws = ws.clip(1, 150)
+    else:
+        ws = np.clip(ws, 1, 150)
 
     return ws
 
@@ -589,7 +599,10 @@ def wind_speed_blending_height_full_inst(u_i, z0m_full=0.1, z_obs=10, z_b=100):
     """
     ws = (c.k * u_i) / np.log(z_obs / z0m_full) * np.log(z_b / z0m_full) / c.k
 
-    ws = np.clip(ws, 1, 150)
+    if isinstance(ws, xr.DataArray):
+        ws = ws.clip(1, 150)
+    else:
+        ws = np.clip(ws, 1, 150)
 
     return ws
 
@@ -963,6 +976,9 @@ def maximum_temperature_full(
     tc_max_denom = 4 * emiss_full * c.sb * (t_air_k_i) ** 3 + (ad_i * c.sh) / rac
     tc_max = tc_max_num / tc_max_denom + t_air_k_i
 
+    if isinstance(tc_max, xr.DataArray):
+        tc_max = tc_max.transpose("time", "y", "x").chunk("auto")
+
     return tc_max
 
 
@@ -1026,7 +1042,13 @@ def maximum_temperature_bare(
     ts_max_denom = 4 * emiss_bare * c.sb * (t_air_k_i) ** 3 + (ad_i * c.sh) / (
         (raa + ras) * (1 - 0.35)
     )
-    return ts_max_num / ts_max_denom + t_air_k_i
+
+    out = ts_max_num / ts_max_denom + t_air_k_i
+
+    if isinstance(out, xr.DataArray):
+        out = out.transpose("time", "y", "x").chunk("auto")
+
+    return out
 
 
 def maximum_temperature(t_max_bare, t_max_full, vc):
@@ -1062,7 +1084,12 @@ def maximum_temperature(t_max_bare, t_max_full, vc):
         [K]
 
     """
-    return vc * (t_max_full - t_max_bare) + t_max_bare
+    out = vc * (t_max_full - t_max_bare) + t_max_bare
+
+    if isinstance(out, xr.DataArray):
+        out = out.transpose("time", "y", "x").chunk("auto")
+
+    return out
 
 
 def minimum_temperature(t_wet_k_i, t_air_k_i, vc):
@@ -1098,8 +1125,12 @@ def minimum_temperature(t_wet_k_i, t_air_k_i, vc):
         [K]
 
     """
-    return vc * (t_air_k_i - t_wet_k_i) + t_wet_k_i
+    out = vc * (t_air_k_i - t_wet_k_i) + t_wet_k_i
 
+    if isinstance(out, xr.DataArray):
+        out = out.transpose("time", "y", "x").chunk("auto")
+
+    return out
 
 def soil_moisture_from_maximum_temperature(lst_max, lst, lst_min):
     r"""
@@ -1136,5 +1167,10 @@ def soil_moisture_from_maximum_temperature(lst_max, lst, lst_min):
 
     """
     ratio = (lst - lst_min) / (lst_max - lst_min)
-    ratio = np.clip(ratio, 0, 1)
+
+    if isinstance(ratio, xr.DataArray):
+        ratio = ratio.clip(0, 1)
+    else:
+        ratio = np.clip(ratio, 0, 1)
+
     return 1 - ratio

@@ -10,6 +10,56 @@ from pywapor.et_look_v2 import constants as c
 import numpy as np
 import xarray as xr
 
+def mean_temperature_kelvin_daily(t_air_k_min, t_air_k_max):
+    r"""
+    Computes the mean temperature over day and night.
+
+    Parameters
+    ----------
+    t_air_k_min : float
+        maximum air temperature
+        :math:`T_{a,min}`
+        [K]
+    t_air_k_max : float
+        maximum air temperature
+        :math:`T_{a,max}`
+        [K]
+
+    Returns
+    -------
+    t_air_k_24 : float
+        daily air temperature
+        :math:`T_{a,24}`
+        [K]
+
+    """
+    return (t_air_k_max + t_air_k_min) / 2
+
+def mean_temperature_kelvin_daytime(t_air_k_min, t_air_k_max):
+    r"""
+    Computes the mean temperature over the daily sunshine period.
+
+    Parameters
+    ----------
+    t_air_k_min : float
+        maximum air temperature
+        :math:`T_{a,min}`
+        [K]
+    t_air_k_max : float
+        maximum air temperature
+        :math:`T_{a,max}`
+        [K]
+
+    Returns
+    -------
+    t_air_k_12 : float
+        daytime air temperature
+        :math:`T_{a,12}`
+        [K]
+
+    """
+    return 0.25 * t_air_k_min + 0.75 * t_air_k_max
+
 def air_temperature_celcius(t_air_k):
     r"""
     Converts air temperature from Kelvin to Celcius, where 0 degrees Celcius
@@ -1270,7 +1320,11 @@ def wind_speed_blending_height(u, z_obs=2, z_b=100):
     z0m = 0.0171
 
     ws = (c.k * u) / np.log(z_obs / z0m) * np.log(z_b / z0m) / c.k
-    ws = np.clip(ws, 1, 150)
+
+    if isinstance(ws, xr.DataArray):
+        ws = ws.clip(1, 150)
+    else:
+        ws = np.clip(ws, 1, 150)    
 
     return ws
 

@@ -1,3 +1,8 @@
+"""
+Functions to create an interactive network graph based on metadata
+attributes in the xr.Dataset output by `pywapor.et_look`.
+"""
+
 from pyvis.network import Network
 import json
 
