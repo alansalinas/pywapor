@@ -15,7 +15,7 @@ def fpar(ndvi, fpar_slope=1.257, fpar_offset=-0.161):
     the ndvi, and is bounded between 0 and 1.
 
     .. math ::
-        f_{par}=\Delta_{p}*I_{ndvi} + c_{p}
+        f_{par}=\Delta_{p} \cdot I_{ndvi} + c_{p}
 
     Parameters
     ----------
@@ -64,7 +64,7 @@ def par(ra_24):
     for photosynthesis.
 
     .. math ::
-        PAR=r_{PAR}S^{\downarrow}
+        PAR=r_{PAR} \cdot S^{\downarrow}
 
     where the following constant is used
 
@@ -136,17 +136,17 @@ def temperature_dependency(t_air_k_12, dh_ap=52750, d_s=704.98, dh_dp=211000):
 
     dh_ap : float
         activation energy
-        :math:`\deltaDH_{a,P}`
+        :math:`\delta DH_{a,P}`
         [J/mol]
 
     d_s : float
         entropy of the denaturation equilibrium of CO2
-        :math:`\deltaS`
+        :math:`\delta S`
         [J/K.mol]
 
     dh_dp : float
         deactivation energy
-        :math:`\deltaH_{d,P}`
+        :math:`\delta H_{d,P}`
         [J/mol]
 
     Returns
@@ -390,7 +390,7 @@ def net_primary_production(npp_max, f_par, stress_moist, phot_eff=2.49):
 
     phot_eff : float
         Default Radiation Use Efficiency
-        :math:`\eps`
+        :math:` \eps`
         [gDM/MJ(APAR)]
 
     f_par : float
