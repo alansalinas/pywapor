@@ -6,7 +6,7 @@ import os
 import datetime
 try:
     import IPython
-    valids = ['osx', 'inline',]
+    valids = ['inline', 'osx']
     for valid in valids:
         # print(f"Trying {valid}")
         try:

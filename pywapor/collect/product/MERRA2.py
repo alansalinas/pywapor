@@ -127,7 +127,7 @@ def download(folder, latlim, lonlim, timelim, product_name, req_vars,
 
     timedelta = np.timedelta64(30, "m")
     data_source_crs = get_crss("WGS84")
-    parallel = True
+    parallel = False
     spatial_tiles = False
     un_pw = accounts.get("NASA")
     request_dims = True

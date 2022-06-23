@@ -274,7 +274,6 @@ def main(input_data, et_look_version = "v2", export_vars = "default"):
         ds = ds[keep_vars]
     elif isinstance(export_vars, list):
         keep_vars = copy.copy(export_vars)
-        keep_vars = np.unique(keep_vars + ['epoch_ends', 'epoch_starts']).tolist()
         ds = ds[keep_vars]
     else:
         raise ValueError
@@ -306,16 +305,52 @@ if __name__ == "__main__":
     # project_folder = r"/Volumes/Data/FAO/WaPOR_vs_pyWaPOR/pyWAPOR_v1"
     # startdate = date = "2021-07-01"
 
-    # level = "level_1"
+    project_folder = r"/Users/hmcoerver/pywapor_notebooks_2"
+    latlim = [28.9, 29.7]
+    lonlim = [30.2, 31.2]
+    timelim = ["2021-07-01", "2021-07-11"]
+    composite_length = "DEKAD"
+
+    import pywapor
+
     et_look_version = "v2"
     export_vars = "default"
 
-    input_data = r"/Users/hmcoerver/pywapor_notebooks_1/et_look_in.nc"
-    # input_data = xr.open_dataset(input_data)
-    # # input_data = input_data.drop_vars(["ndvi"])
+    level = "level_1"
 
-    # ds = main(input_data, 
-    #             et_look_version=et_look_version, 
-    #             export_vars="all")
+    et_look_sources = pywapor.general.levels.pre_et_look_levels(level)
 
+    et_look_sources["ndvi"]["products"] = [
+        {'source': 'MODIS',
+            'product_name': 'MOD13Q1.061',
+            'enhancers': 'default'},
+        {'source': 'MODIS', 
+            'product_name': 'MYD13Q1.061', 
+            'enhancers': 'default'},
+        {'source': 'PROBAV',
+            'product_name': 'S5_TOC_100_m_C1',
+            'enhancers': 'default',
+            'is_example': True}
+    ]
 
+    et_look_sources["r0"]["products"] = [
+        {'source': 'MODIS',
+            'product_name': 'MCD43A3.061',
+            'enhancers': 'default'},
+        {'source': 'PROBAV',
+            'product_name': 'S5_TOC_100_m_C1',
+            'enhancers': 'default'}
+    ]
+
+    se_root_sources = pywapor.general.levels.pre_se_root_levels(level)
+    se_root_sources["ndvi"]["products"] = et_look_sources["ndvi"]["products"]
+
+    from functools import partial
+    et_look_sources["se_root"]["products"] = [
+        {'source': partial(pywapor.se_root.se_root, sources = se_root_sources),
+            'product_name': 'v2',
+            'enhancers': 'default'},]
+
+    # ds = pywapor.pre_et_look.main(project_folder, latlim, lonlim, timelim, 
+    #                                 sources = et_look_sources,
+    #                                 bin_length = composite_length)
