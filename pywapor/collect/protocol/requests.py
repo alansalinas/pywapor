@@ -88,7 +88,7 @@ def download_url(url, fp, session = None, waitbar = True):
 
     if waitbar:
         wb = tqdm.tqdm(unit='Bytes', unit_scale=True, leave = False, 
-                        total = tot_size, desc = fn, delay = 20)
+                        total = tot_size, desc = fn)
 
     with open(temp_fp, 'wb') as z:
         for data in file_object.iter_content(chunk_size=1024):

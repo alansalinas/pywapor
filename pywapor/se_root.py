@@ -38,9 +38,6 @@ def main(input_data, se_root_version = "v2", export_vars = "default"):
         Specify which variables to save inside the output file. `"Default"` only 
         stores `se_root`. `"all"` stores all calculated variables. Use a
         list to specify a custom output set, by default "default".
-    export_to_tif : bool, optional
-        Return the variables selected with `export_vars` as netCDF (False) 
-        or geoTIFF (True), by default False.
 
     Returns
     -------

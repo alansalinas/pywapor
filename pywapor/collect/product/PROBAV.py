@@ -211,7 +211,7 @@ def find_tiles(url, dates, session):
 
     dl_urls = [os.path.join(re.sub("\?coord=.*","",prods[date_str]), fn) for date_str, fn, in fns]
 
-    log.info(f"--> Found {len(dl_urls)} PROBAV tiles.")
+    log.info(f"--> Downloading {len(dl_urls)} PROBAV tiles.")
 
     return dl_urls
 

@@ -43,7 +43,7 @@ def main(folder, latlim, lonlim, timelim, sources = "level_1", bin_length = "DEK
         Longitude limits of area of interest.
     timelim : list
         Period for which to prepare data.
-    sources : dict
+    sources : str | dict
         Configuration for each variable and source.
     bin_length : int | "DEKAD"
         Composite length.

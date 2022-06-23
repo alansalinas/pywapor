@@ -31,9 +31,6 @@ def main(input_data, et_look_version = "v2", export_vars = "default"):
         `t_24_mm`, `e_24_mm`, `et_24_mm`, `et_ref_24_mm`, `se_root`, `biomass_prod`,
         `epoch_ends` and `epoch_starts`. `"all"` stores all calculated variables. Use a
         list to specify a custom output set, by default "default".
-    export_to_tif : bool, optional
-        Return the variables selected with `export_vars` as netCDF (False) 
-        or geoTIFF (True), by default False.
 
     Returns
     -------

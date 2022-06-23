@@ -25,6 +25,7 @@
 devs/
 dist/
 build/
+collect_old/
 pywapor_test.egg-info/
 pywapor.egg-info/
 
