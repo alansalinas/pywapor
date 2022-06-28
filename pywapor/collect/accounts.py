@@ -7,13 +7,14 @@ import requests
 import time
 from pywapor.general.logger import log
 from cryptography.fernet import Fernet
+import cdsapi
 
 def setup(account):
     """Asks, saves and tests a username/password combination for `account`.
 
     Parameters
     ----------
-    account : {"NASA" | "VITO" | "WAPOR"}
+    account : {"NASA" | "VITO" | "WAPOR" | "ECMWF"}
         Which un/pw combination to store.
     """
 
@@ -42,6 +43,10 @@ def setup(account):
 
     if account == "WAPOR":
         API_Key = input(f"{account} API token: ")
+        API_Key_crypt = cipher_suite.encrypt(("%s" %API_Key).encode('utf-8'))
+        obj[account] = [str(API_Key_crypt.decode("utf-8"))]
+    elif account == "ECMWF":
+        API_Key = input(f"{account} CDS API key: ")
         API_Key_crypt = cipher_suite.encrypt(("%s" %API_Key).encode('utf-8'))
         obj[account] = [str(API_Key_crypt.decode("utf-8"))]
     else:
@@ -88,6 +93,17 @@ def setup(account):
                 json.dump(obj, outfile)
             sys.exit(f"Please fix your WAPOR token.")  
 
+    if account == "ECMWF":
+        log.info("--> Testing ECMWF key.")
+        succes = True
+        if succes:
+            log.info("--> ECMWF key working.")
+        else:
+            _ = obj.pop("ECMWF")
+            with open(json_filehandle, 'w') as outfile:
+                json.dump(obj, outfile)
+            sys.exit(f"Please fix your ECMWF key.")  
+
     return
 
 def get(account):
@@ -95,7 +111,7 @@ def get(account):
 
     Parameters
     ----------
-    account : {"NASA" | "VITO" | "WAPOR"}
+    account : {"NASA" | "VITO" | "WAPOR" | "ECMWF"}
         Which un/pw combination to load.
     """
 
@@ -132,15 +148,19 @@ def get(account):
             datastore = f.read()
         obj = json.loads(datastore)      
         f.close()       
-    
-    if not account == "WAPOR":
-        username_crypt, pwd_crypt = obj[account]
-        username = cipher_suite.decrypt(username_crypt.encode("utf-8"))
-        pwd = cipher_suite.decrypt(pwd_crypt.encode("utf-8"))        
-    else:
+
+    if account == "WAPOR":
         username_crypt = obj[account]
         username = cipher_suite.decrypt(username_crypt[0].encode("utf-8"))
         pwd = b''
+    elif account == "ECMWF":
+        pwd_crypt = obj[account]
+        pwd = cipher_suite.decrypt(pwd_crypt[0].encode("utf-8"))
+        username = b'https://cds.climate.copernicus.eu/api/v2'
+    else:
+        username_crypt, pwd_crypt = obj[account]
+        username = cipher_suite.decrypt(username_crypt.encode("utf-8"))
+        pwd = cipher_suite.decrypt(pwd_crypt.encode("utf-8"))  
     
     return(str(username.decode("utf-8")), str(pwd.decode("utf-8")))
 
@@ -334,9 +354,68 @@ def wapor_account(user_pw = None):
 
     return succes
 
+def ecmwf_account(user_pw = None):
+    """Check if the given or stored ECMWF key is 
+    correct. Accounts can be created on https://cds.climate.copernicus.eu/#!/home.
+
+    Parameters
+    ----------
+    user_pw : tuple, optional
+        ("", "key") to check, if `None` will try to load the 
+        password from the keychain, by default None.
+
+    Returns
+    -------
+    bool
+        True if the password works, otherwise False.
+    """
+    n_max = 1
+    succes = False
+    n = 1
+
+    while not succes and n <= n_max:
+
+        if not isinstance(user_pw, type(None)):
+            url, key = user_pw
+        else:
+            url, key = get('ECMWF')
+
+        try:
+            c = cdsapi.Client(url = url, key = key, verify = True, quiet = True)
+            fp = os.path.join(pywapor.__path__[0], "test.zip")
+            _ = c.retrieve(
+                'sis-agrometeorological-indicators',
+                {
+                    'format': 'zip',
+                    'variable': '2m_temperature',
+                    'statistic': '24_hour_mean',
+                    'year': '2005',
+                    'month': '11',
+                    'day': ['01'],
+                    'area': [2,-2,-2,2]
+                },
+                fp)
+            os.remove(fp)
+            succes = True
+        except:
+            error = "wrong key."
+            succes = False
+
+        if not succes:
+            log.warning(f"Try {n}/{n_max} failed.")
+            time.sleep(3)
+            
+        n += 1
+
+    if not succes:
+        log.warning(error)
+
+    return succes
+
 if __name__ == "__main__":
     nasa_succes = nasa_account()
     vito_succes = vito_account()
     wapor_succes = wapor_account()
+    ecmwf_succes = ecmwf_account()
 
-    print(nasa_succes, vito_succes, wapor_succes)
+    print(nasa_succes, vito_succes, wapor_succes, ecmwf_succes)
