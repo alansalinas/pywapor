@@ -129,6 +129,7 @@ For questions, requests or issues with this repository, please contact Bert Coer
     <li> Rewritten collect tools.</li>
     <li> The entire workflow now works with netCDF.</li>
     <li>All the netCDF files are formatted to support the <a href = "https://corteva.github.io/rioxarray/stable/getting_started/getting_started.html">rio-acccessor</a>.</li>
+</ul>
 
 <p><details>
 <summary><b>2.4.2 (2022-04-26)</b></summary>
