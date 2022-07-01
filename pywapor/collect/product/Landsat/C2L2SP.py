@@ -127,7 +127,7 @@ def main(folder, max_lst_uncertainty = 2.5, final_bb = None):
 
     ds = xr.merge(dss, combine_attrs = "drop")
 
-    fp = os.path.join(folder, "processed.nc")
+    fp = os.path.join(folder, "LANDSAT.nc")
 
     if os.path.isfile(fp):
         os.remove(fp)
@@ -136,6 +136,9 @@ def main(folder, max_lst_uncertainty = 2.5, final_bb = None):
     encoding["time"] = {"dtype": "float64"}
 
     ds = save_ds(ds, fp, encoding = encoding)
+
+    for x in dss:
+        os.remove(x.encoding["source"])
 
     return ds
 
@@ -456,10 +459,9 @@ def calc_albedo(data, ls_number = None, weights = None):
         Dataset that has a variable called "ndvi".
     """
 
-    if isinstance(ls_number, type(None)):
-        ls_number = data.attrs["ls_number"]
-
     if isinstance(weights, type(None)):
+        if isinstance(ls_number, type(None)):
+            ls_number = data.attrs["ls_number"]
         weights = albedo_weight()[ls_number]
 
     offset_band = xr.ones_like(data.isel(band=0)).expand_dims("band").assign_coords({"band": ["offset"]})
