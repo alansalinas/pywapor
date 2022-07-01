@@ -296,6 +296,9 @@ def get_pixel_qa_bits(collection, ls_number, level):
     all_flags[1][8] = dict()
     all_flags[2][8] = dict()
     all_flags[2][7] = dict()
+    all_flags[2][4] = dict()
+    all_flags[2][5] = dict()
+    all_flags[2][9] = dict()
     all_flags[1][7] = dict()
     all_flags[1][5] = dict()
     all_flags[1][4] = dict()
@@ -307,6 +310,9 @@ def get_pixel_qa_bits(collection, ls_number, level):
     all_flags[1][4][1] = c1l754lvl1
     all_flags[2][8][2] = c2l8lvl2
     all_flags[2][7][2] = c2l7lvl2
+    all_flags[2][4][2] = c2l7lvl2
+    all_flags[2][5][2] = c2l7lvl2
+    all_flags[2][9][2] = c2l8lvl2
 
     return all_flags[collection][ls_number][level]
 
@@ -419,9 +425,15 @@ def get_radsat_qa_bits(collection, ls_number, level):
     all_flags =dict()
     all_flags[2] = dict()
     all_flags[2][8] = dict()
+    all_flags[2][9] = dict()
     all_flags[2][7] = dict()
+    all_flags[2][4] = dict()
+    all_flags[2][5] = dict()
     all_flags[2][7][2] = c2l7lvl2
+    all_flags[2][4][2] = c2l7lvl2
+    all_flags[2][5][2] = c2l7lvl2
     all_flags[2][8][2] = c2l8lvl2
+    all_flags[2][9][2] = c2l8lvl2
 
     return all_flags[collection][ls_number][level]
 
