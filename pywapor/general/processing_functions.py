@@ -1,16 +1,12 @@
 import os
 from dask.diagnostics import ProgressBar
-from osgeo import osr
-from osgeo import gdal
-import gzip
-import rasterio
-import zipfile
 import numpy as np
-from scipy.interpolate import NearestNDInterpolator, LinearNDInterpolator
 from pywapor.general.logger import log
 import xarray as xr
-import pandas as pd
-import dask
+from scipy.interpolate import griddata
+import numpy as np
+from scipy.spatial import cKDTree
+from scipy.interpolate.interpnd import _ndim_coords_from_arrays
 
 def process_ds(ds, coords, variables, crs = None):
 
@@ -78,6 +74,51 @@ def save_ds(ds, fp, decode_coords = "all", encoding = None, chunks = "auto"):
 def open_ds(fp, decode_coords = "all", chunks = "auto"):
     ds = xr.open_dataset(fp, decode_coords = decode_coords, chunks = chunks)
     return ds
+
+def regrid_curvilinear(ds, resolution, bb = None):
+
+    # Define new grid.
+    xmin = ds.x.min().values
+    xmax = ds.x.max().values
+    ymin = ds.y.min().values
+    ymax = ds.y.max().values
+    dx = dy = resolution
+    gridx = np.arange(xmin, xmax + dx, dx)
+    gridy = np.arange(ymin, ymax + dy, dy)
+    mgridx, mgridy = np.meshgrid(gridx, gridy)
+
+    out_ds = xr.Dataset(None, coords = {"y": gridy, "x": gridx})
+
+    for var in ds.data_vars:
+
+        values = ds[var].values.ravel()
+
+        # Remove no-data pixels.
+        y = ds.y.values.ravel()[np.isfinite(values)]
+        x = ds.x.values.ravel()[np.isfinite(values)]
+        values = values[np.isfinite(values)]
+        points = np.dstack((x,y))[0]
+
+        # Calculate pixel distances to points.
+        tree = cKDTree(points)
+        xi = _ndim_coords_from_arrays((mgridx, mgridy))
+        dists = tree.query(xi)[0]
+
+        # Interpolate points to grid.
+        grid_z0 = griddata(points, values, (mgridx, mgridy), method = "linear")
+        
+        # Mask pixels too far away from any point.
+        grid_z0[dists > dx] = np.nan
+
+        # Wrap output into xr.Dataset.
+        out_ds[var] = xr.DataArray(grid_z0, coords = out_ds.coords)
+
+    out_ds = out_ds.rio.write_crs("epsg:4326")
+
+    if not isinstance(bb, type(None)):
+        out_ds = out_ds.rio.clip_box(*bb)
+
+    return out_ds
 
 # def ds_remove_except(ds, keep_vars):
 #     """Remove all variables from a dataset except the variables specified with
