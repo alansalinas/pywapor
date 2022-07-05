@@ -8,13 +8,14 @@ import time
 from pywapor.general.logger import log
 from cryptography.fernet import Fernet
 import cdsapi
+from sentinelsat import SentinelAPI
 
 def setup(account):
     """Asks, saves and tests a username/password combination for `account`.
 
     Parameters
     ----------
-    account : {"NASA" | "VITO" | "WAPOR" | "ECMWF"}
+    account : {"NASA" | "VITO" | "WAPOR" | "ECMWF" | "SENTINEL"}
         Which un/pw combination to store.
     """
 
@@ -95,14 +96,25 @@ def setup(account):
 
     if account == "ECMWF":
         log.info("--> Testing ECMWF key.")
-        succes = True
+        succes = ecmwf_account()
         if succes:
             log.info("--> ECMWF key working.")
         else:
             _ = obj.pop("ECMWF")
             with open(json_filehandle, 'w') as outfile:
                 json.dump(obj, outfile)
-            sys.exit(f"Please fix your ECMWF key.")  
+            sys.exit(f"Please fix your ECMWF key.")
+
+    if account == "SENTINEL":
+        log.info("--> Testing Sentinel key.")
+        succes = sentinel_account()
+        if succes:
+            log.info("--> Sentinel key working.")
+        else:
+            _ = obj.pop("Sentinel")
+            with open(json_filehandle, 'w') as outfile:
+                json.dump(obj, outfile)
+            sys.exit(f"Please fix your Sentinel key.") 
 
     return
 
@@ -111,7 +123,7 @@ def get(account):
 
     Parameters
     ----------
-    account : {"NASA" | "VITO" | "WAPOR" | "ECMWF"}
+    account : {"NASA" | "VITO" | "WAPOR" | "ECMWF" | "SENTINEL"}
         Which un/pw combination to load.
     """
 
@@ -354,6 +366,53 @@ def wapor_account(user_pw = None):
 
     return succes
 
+def sentinel_account(user_pw = None):
+    """Check if the given or stored SENTINEL username and password is 
+    correct. Accounts can be created on https://scihub.copernicus.eu/userguide/SelfRegistration.
+
+    Parameters
+    ----------
+    user_pw : tuple, optional
+        ("", "token") to check, if `None` will try to load the 
+        password from the keychain, by default None.
+
+    Returns
+    -------
+    bool
+        True if the password works, otherwise False.
+    """
+    n_max = 3
+    succes = False
+    n = 1
+
+    while not succes and n <= n_max:
+
+        if not isinstance(user_pw, type(None)):
+            username, password = user_pw
+        else:
+            username, password = get('SENTINEL')
+
+        try:
+            api = SentinelAPI(username, password, 'https://apihub.copernicus.eu/apihub')
+            _ = api.count(
+                        platformname = 'Sentinel-2',
+                        producttype = 'S2MSI2A')
+            succes = True
+        except:
+            error = "wrong token."
+            succes = False
+
+        if not succes:
+            log.warning(f"Try {n}/{n_max} failed.")
+            time.sleep(3)
+            
+        n += 1
+
+    if not succes:
+        log.warning(error)
+
+    return succes
+
 def ecmwf_account(user_pw = None):
     """Check if the given or stored ECMWF key is 
     correct. Accounts can be created on https://cds.climate.copernicus.eu/#!/home.
@@ -417,5 +476,6 @@ if __name__ == "__main__":
     vito_succes = vito_account()
     wapor_succes = wapor_account()
     ecmwf_succes = ecmwf_account()
+    sentinel_succes = sentinel_account()
 
-    print(nasa_succes, vito_succes, wapor_succes, ecmwf_succes)
+    print(nasa_succes, vito_succes, wapor_succes, ecmwf_succes, sentinel_succes)
