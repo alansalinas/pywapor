@@ -7,6 +7,9 @@ from scipy.interpolate import griddata
 import numpy as np
 from scipy.spatial import cKDTree
 from scipy.interpolate.interpnd import _ndim_coords_from_arrays
+import shutil
+import glob
+import rasterio.warp
 
 def process_ds(ds, coords, variables, crs = None):
 
@@ -75,7 +78,25 @@ def open_ds(fp, decode_coords = "all", chunks = "auto"):
     ds = xr.open_dataset(fp, decode_coords = decode_coords, chunks = chunks)
     return ds
 
-def regrid_curvilinear(ds, resolution, bb = None):
+def create_wkt(latlim, lonlim):
+    left = lonlim[0]
+    bottom = latlim[0]
+    right = lonlim[1]
+    top = latlim[1]
+    x = f"{left} {bottom},{right} {bottom},{right} {top},{right} {bottom},{left} {bottom}"
+    return "GEOMETRYCOLLECTION(POLYGON((" + x + ")))"
+
+def unpack(file, folder):
+    fn = os.path.splitext(file)[0]
+    shutil.unpack_archive(os.path.join(folder, file), folder)
+    folder = [x for x in glob.glob(os.path.join(folder, fn + "*")) if os.path.isdir(x)][0]
+    return folder
+
+def transform_bb(src_crs, dst_crs, bb):
+    bb =rasterio.warp.transform_bounds(src_crs, dst_crs, *bb, densify_pts=21)
+    return bb
+
+def regrid_curvilinear(ds, resolution):
 
     # Define new grid.
     xmin = ds.x.min().values
@@ -115,8 +136,7 @@ def regrid_curvilinear(ds, resolution, bb = None):
 
     out_ds = out_ds.rio.write_crs("epsg:4326")
 
-    if not isinstance(bb, type(None)):
-        out_ds = out_ds.rio.clip_box(*bb)
+    out_ds = out_ds.sortby(out_ds.y, ascending=False)
 
     return out_ds
 

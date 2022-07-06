@@ -7,7 +7,7 @@ import os
 import tarfile
 import json
 import shutil
-from pywapor.general.processing_functions import save_ds
+from pywapor.general.processing_functions import save_ds, transform_bb
 import numpy as np
 import xarray as xr
 from osgeo import gdal
@@ -807,11 +807,6 @@ def check_projs_geots(files, ref_proj_geot = None):
         assert proj == ref_proj_geot[0]
         assert geot == ref_proj_geot[1]
     return proj, geot
-
-# TODO move to general
-def transform_bb(src_crs, dst_crs, bb):
-    bb =rasterio.warp.transform_bounds(src_crs, dst_crs, *bb, densify_pts=21)
-    return bb
 
 def dl_landsat_test(folder):
     out_file = os.path.join(folder, "LE07_L2SP_177040_20210707_20210802_02_T1.tar")
