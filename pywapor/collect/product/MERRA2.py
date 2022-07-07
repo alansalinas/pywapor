@@ -9,7 +9,7 @@ import os
 import numpy as np
 from functools import partial
 from pywapor.general.processing_functions import open_ds
-from pywapor.collect.protocol.requests import find_paths
+from pywapor.collect.protocol.crawler import find_paths
 from pywapor.enhancers.temperature import kelvin_to_celsius
 
 def default_vars(product_name, req_vars):

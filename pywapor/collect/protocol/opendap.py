@@ -12,7 +12,7 @@ from rasterio.crs import CRS
 from pywapor.general.processing_functions import save_ds, process_ds
 import warnings
 from pywapor.enhancers.apply_enhancers import apply_enhancer
-from pywapor.collect.protocol.requests import download_url, download_urls
+from pywapor.collect.protocol.crawler import download_url, download_urls
 
 def download(folder, product_name, coords, variables, post_processors, 
                 fn_func, url_func, un_pw = None, tiles = None,  

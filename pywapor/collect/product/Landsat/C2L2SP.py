@@ -14,7 +14,7 @@ from osgeo import gdal
 from datetime import datetime
 from pywapor.general.logger import log
 from pywapor.general import bitmasks
-from pywapor.collect.protocol.requests import download_url
+from pywapor.collect.protocol.crawler import download_url
 
 def main(folder, max_lst_uncertainty = 2.5, final_bb = None):
     """Processes Landsat 7 or 8 Collection-2 Level-2 tar-files into GeoTIFFs
