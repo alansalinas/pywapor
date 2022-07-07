@@ -4,10 +4,11 @@ import cdsapi
 import logging
 import pandas as pd
 import numpy as np
-import shutil
 import glob
 import xarray as xr
-import rasterio
+import rasterio.crs
+import re
+import shutil
 from pywapor.general.processing_functions import save_ds
 
 def create_time_settings(timelim):
@@ -41,36 +42,68 @@ def download(folder, product_name, latlim, lonlim, timelim, variables):
     log_settings.setLevel(logging.CRITICAL)
 
     dss = list()
+    subfolders = list()
 
     # Loop over requests
     for setting in settings:
-        ext = {"zip": "zip", "netcdf": "nc", "grib": "grib", "tgz": "tar.gz"}[setting["format"]]
-        fn = f"{setting['year']}_{setting['month']}_{setting['variable']}"
-        subfolder = os.path.join(folder, fn)
-        fp = os.path.join(subfolder, f"{fn}.{ext}")
 
-        if not os.path.exists(subfolder):
-            os.makedirs(subfolder)
+        ext = {"zip": "zip", "netcdf": "nc", "grib": "grib", "tgz": "tar.gz"}[setting["format"]]
+        fn = f"{setting['year']}_{setting['month']}_{setting['variable']}_{product_name}"
+        fp = os.path.join(folder, f"{fn}.{ext}")
 
         # Make the request
-        _ = c.retrieve(product_name, setting, fp)
+        if not os.path.isfile(fp):
+            _ = c.retrieve(product_name, setting, fp)
 
         # Unpack if necessary
         if ext in ["zip", "tar.gz"]:
+            subfolder = os.path.join(folder, fn)
+            if not os.path.exists(subfolder):
+                os.makedirs(subfolder)
             shutil.unpack_archive(fp, subfolder)
-            os.remove(fp)
+            fps = glob.glob(os.path.join(subfolder, "*.nc"))
+            subfolders.append(subfolder)
+        else:
+            fps = [fp]
 
-        # Rename to common variable name in xr.Dataset
-        ncs = glob.glob(os.path.join(subfolder, "*.nc"))
-        ds = xr.open_mfdataset(ncs)
-        ds = ds.rename_vars({list(ds.data_vars)[0]: variables[setting["variable"]][1]})
+        # Open downloaded data
+        ds = xr.open_mfdataset(fps)
+
+        das = list()
+
+        for var in ds.data_vars:
+            if bool(re.search(r'_[01]\dh', var)):
+                offset = int(re.search(r'_[01]\dh', var).group()[1:-1])
+                da = ds[var].assign_coords({"time": ds[var].time + np.timedelta64(offset, "h")})
+            elif "valid_time" in ds.coords:
+                da = ds[var]
+            else:
+                da = ds[var].assign_coords({"time": ds[var].time + np.timedelta64(12, "h")})
+            das.append(da)
+
+        ds = xr.concat(das, dim="time").to_dataset().sortby("time")
+
+        renames = {x: variables[setting["variable"]][1] for x in ds.data_vars}
+        ds = ds.rename_vars(renames)
+        
         dss.append(ds)
-            
+
     # Merge everything together.
     ds = xr.merge(dss)
 
     # Clean up the dataset.
-    ds = ds.rename_dims({"lat": "y", "lon": "x"}).rename_vars({"lat": "y", "lon": "x"})
+    relevant_coords = {
+        "lat": "y", 
+        "latitude": "y", 
+        "lon": "x", 
+        "longitude": "x", 
+        # "time": "time",
+    }
+
+    coord_renames = {k: v for k, v in relevant_coords.items() if k in ds.coords}
+    ds = ds.rename_dims(coord_renames)
+    ds = ds.rename_vars(coord_renames)
+    ds = ds.drop_vars([x for x in ds.coords if x not in ds.dims])
     ds = ds.rio.write_crs(rasterio.crs.CRS.from_epsg(4326))
     ds = ds.rio.write_grid_mapping("spatial_ref")
     for var in list(ds.data_vars):
@@ -81,7 +114,24 @@ def download(folder, product_name, latlim, lonlim, timelim, variables):
 
     # Save the netcdf.
     ds = save_ds(ds, fn_final)
+
+    # Remove unpacked zips.
+    for subfolder in subfolders:
+        shutil.rmtree(subfolder)
     
     return ds
 
+if __name__ == "__main__":
 
+    folder = r"/Users/hmcoerver/On My Mac/era_test/ERA5"
+    latlim = [28.9, 29.7]
+    lonlim = [30.2, 31.2]
+    timelim = ["2021-06-26", "2021-07-11"]
+
+    # product_name = "sis-agrometeorological-indicators"
+    product_name = "reanalysis-era5-single-levels"
+
+    # req_vars = ["t_air", "t_dew", "rh", "u", "vp", "ra"]
+    req_vars = ["u_10m", "v_10m", "t_dew", "p_air_0", "p_air", "t_air"]
+
+    variables = pywapor.collect.product.ERA5.default_vars(product_name, req_vars)
