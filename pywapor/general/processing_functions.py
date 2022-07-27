@@ -96,49 +96,49 @@ def transform_bb(src_crs, dst_crs, bb):
     bb =rasterio.warp.transform_bounds(src_crs, dst_crs, *bb, densify_pts=21)
     return bb
 
-def regrid_curvilinear(ds, resolution):
+# def regrid_curvilinear(ds, resolution):
 
-    # Define new grid.
-    xmin = ds.x.min().values
-    xmax = ds.x.max().values
-    ymin = ds.y.min().values
-    ymax = ds.y.max().values
-    dx = dy = resolution
-    gridx = np.arange(xmin, xmax + dx, dx)
-    gridy = np.arange(ymin, ymax + dy, dy)
-    mgridx, mgridy = np.meshgrid(gridx, gridy)
+#     # Define new grid.
+#     xmin = ds.x.min().values
+#     xmax = ds.x.max().values
+#     ymin = ds.y.min().values
+#     ymax = ds.y.max().values
+#     dx = dy = resolution
+#     gridx = np.arange(xmin, xmax + dx, dx)
+#     gridy = np.arange(ymin, ymax + dy, dy)
+#     mgridx, mgridy = np.meshgrid(gridx, gridy)
 
-    out_ds = xr.Dataset(None, coords = {"y": gridy, "x": gridx})
+#     out_ds = xr.Dataset(None, coords = {"y": gridy, "x": gridx})
 
-    for var in ds.data_vars:
+#     for var in ds.data_vars:
 
-        values = ds[var].values.ravel()
+#         values = ds[var].values.ravel()
 
-        # Remove no-data pixels.
-        y = ds.y.values.ravel()[np.isfinite(values)]
-        x = ds.x.values.ravel()[np.isfinite(values)]
-        values = values[np.isfinite(values)]
-        points = np.dstack((x,y))[0]
+#         # Remove no-data pixels.
+#         y = ds.y.values.ravel()[np.isfinite(values)]
+#         x = ds.x.values.ravel()[np.isfinite(values)]
+#         values = values[np.isfinite(values)]
+#         points = np.dstack((x,y))[0]
 
-        # Calculate pixel distances to points.
-        tree = cKDTree(points)
-        xi = _ndim_coords_from_arrays((mgridx, mgridy))
-        dists = tree.query(xi)[0]
+#         # Calculate pixel distances to points.
+#         tree = cKDTree(points)
+#         xi = _ndim_coords_from_arrays((mgridx, mgridy))
+#         dists = tree.query(xi)[0]
 
-        # Interpolate points to grid.
-        grid_z0 = griddata(points, values, (mgridx, mgridy), method = "linear")
+#         # Interpolate points to grid.
+#         grid_z0 = griddata(points, values, (mgridx, mgridy), method = "linear")
         
-        # Mask pixels too far away from any point.
-        grid_z0[dists > dx] = np.nan
+#         # Mask pixels too far away from any point.
+#         grid_z0[dists > dx] = np.nan
 
-        # Wrap output into xr.Dataset.
-        out_ds[var] = xr.DataArray(grid_z0, coords = out_ds.coords)
+#         # Wrap output into xr.Dataset.
+#         out_ds[var] = xr.DataArray(grid_z0, coords = out_ds.coords)
 
-    out_ds = out_ds.rio.write_crs("epsg:4326")
+#     out_ds = out_ds.rio.write_crs("epsg:4326")
 
-    out_ds = out_ds.sortby(out_ds.y, ascending=False)
+#     out_ds = out_ds.sortby(out_ds.y, ascending=False)
 
-    return out_ds
+#     return out_ds
 
 # def ds_remove_except(ds, keep_vars):
 #     """Remove all variables from a dataset except the variables specified with
