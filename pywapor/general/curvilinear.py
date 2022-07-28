@@ -29,7 +29,7 @@ def create_grid(input_ds, dx, dy):
     
     # Add relevant variables.
     for var in input_ds.data_vars:
-        dims = [(x, input_ds[x]) for x in input_ds[var].dims if x not in ("ny", "nx")]
+        dims = [(x, input_ds[x]) for x in input_ds[var].dims if x not in input_ds.y.dims]
         dims += [("y", grid_ds.y), ("x", grid_ds.x)]
         grid_ds[var] = xr.DataArray(coords = {k:v for k,v, in dims}, dims = [x[0] for x in dims])
 
@@ -57,29 +57,28 @@ def regrid(grid_ds, input_ds, max_px_dist = 10):
     if isinstance(input_ds, str):
         input_ds = xr.open_dataset(input_ds, chunks = "auto")
 
+    # Move `x` and `y` to variables, so they can be masked later on.
+    input_ds = input_ds.reset_coords(["x", "y"])
+
     # Filter out irrelevant input data for current chunk.
-    ymask = input_ds.y.where((input_ds.y >= bb[1] - dy) &
-                             (input_ds.y <= bb[3] + dy), drop = False)
-    xmask = input_ds.x.where((input_ds.x >= bb[0] - dx) & 
-                             (input_ds.x <= bb[2] + dx), drop = False)
-    xmask = xmask.where(ymask.notnull())
-    ymask = ymask.where(xmask.notnull())
-    data = input_ds.where(xmask.notnull())
-
-    # Transform input data from 2D to 1D and remove empty pixels.
-    xmask_pixel = xmask.stack({"pixel": ("nx", "ny")}).dropna("pixel")
-    ymask_pixel = ymask.stack({"pixel": ("nx", "ny")}).dropna("pixel")
-    # NOTE: not using .dropna() because data needs to have same dimensions as `ymask_pixel`
-    # and `xmask_pixel`, but can contain nan inside the chunk domain.
-    data_pixel = data.stack({"pixel": ("nx", "ny")}).sel(pixel = xmask_pixel.pixel)
-
-    # Load input data coordinates for scipy.
-    xy = np.dstack((xmask_pixel.values,
-                    ymask_pixel.values))[0]
+    mask = ((input_ds.y >= bb[1] - dy) & 
+            (input_ds.y <= bb[3] + dy) & 
+            (input_ds.x >= bb[0] - dx) & 
+            (input_ds.x <= bb[2] + dx))
 
     # Check if there is enough input data for current chunk.
-    if xy.size < 20:
+    if mask.sum().values < 10:
         return output_ds.unstack()
+
+    # Mask irrelevant pixels.
+    data = input_ds.where(mask, drop = False)
+
+    # --heavy-> Transform input data from 2D to 1D and remove empty pixels.
+    data_pixel = data.stack({"pixel": input_ds.x.dims}).dropna("pixel")
+
+    # Load input data coordinates for scipy.
+    xy = np.dstack((data_pixel.x.values,
+                    data_pixel.y.values))[0]
 
     # Determine distances between grid pixel and nearest input data point.
     tree = cKDTree(xy)
@@ -108,14 +107,16 @@ def regrid(grid_ds, input_ds, max_px_dist = 10):
     wts = np.hstack((bary, 1 - bary.sum(axis = 1, keepdims = True)))
 
     # Wrap vertices and weights in xr.DataArray.
-    wts_da = xr.DataArray(wts, dims  = ("grid_pixel", "j"), coords = {"j": range(3), "grid_pixel": grid_adj_ds.grid_pixel})
-    vtx_da = xr.DataArray(vtx, dims  = ("grid_pixel", "j"), coords = {"j": range(3), "grid_pixel": grid_adj_ds.grid_pixel})
+    kwargs = {"dims": ("grid_pixel", "j"), 
+              "coords": {"j": range(3), "grid_pixel": grid_adj_ds.grid_pixel}}
+    wts_da = xr.DataArray(wts, **kwargs)
+    vtx_da = xr.DataArray(vtx, **kwargs)
 
-    # Select relevant input data.
-    vls = data_pixel.isel(pixel = vtx_da)
+    # --heavy-> Select relevant input data.
+    vls = data_pixel.drop(["x", "y"]).isel(pixel = vtx_da)
 
     # Apply weights to input data.
-    for var in input_ds.data_vars:
+    for var in vls.data_vars:
         da = xr.dot(vls[var], wts_da, dims = "j").where((wts_da > 0).all("j"))
         output_ds[var] = da.reindex(grid_pixel = dists_pixel.grid_pixel).drop("grid_pixel")
 
@@ -127,24 +128,24 @@ if __name__ == "__main__":
     input_ds = xr.tutorial.open_dataset("rasm")
     input_ds = input_ds.rename_dims({"x": "nx", "y": "ny"}).rename_vars({"xc":"x", "yc": "y"})
 
-    grid_ds = create_grid(input_ds, 3.0, 2.5).chunk({"x":500, "y":500})
+    grid_ds = create_grid(input_ds, 1.0, 1.0).chunk({"x":500, "y":500})
 
-    with ProgressBar():
-        out = xr.map_blocks(regrid, grid_ds, (input_ds,), template = grid_ds).compute()
+    # with ProgressBar():
+    #     out = xr.map_blocks(regrid, grid_ds, (input_ds,), template = grid_ds).compute()
 
-    from cartopy import crs as ccrs
+    # from cartopy import crs as ccrs
 
-    fig = plt.figure(figsize=(15, 10))
-    ax1 = plt.subplot(2, 1, 1, projection = ccrs.PlateCarree())
-    ax2 = plt.subplot(2, 1, 2, projection = ccrs.PlateCarree())
-    kwargs = {"x": "x", "y": "y", "vmin": -20, "vmax": 20}
-    bla = input_ds.isel(time=0).Tair.plot.pcolormesh(ax = ax1, **kwargs)
-    ax1.coastlines()
-    ax1.set_facecolor("lightgray")
-    ax1.gridlines(draw_labels = True, color='gray', linestyle=':')
-    ax1.set_title("curvilinear")
-    out.isel(time=0).Tair.plot.pcolormesh(ax = ax2, **kwargs)
-    ax2.coastlines()
-    ax2.set_facecolor("lightgray")
-    ax2.gridlines(draw_labels = True, color='gray', linestyle=':')
-    ax2.set_title("rectolinear")
+    # fig = plt.figure(figsize=(15, 10))
+    # ax1 = plt.subplot(2, 1, 1, projection = ccrs.PlateCarree())
+    # ax2 = plt.subplot(2, 1, 2, projection = ccrs.PlateCarree())
+    # kwargs = {"x": "x", "y": "y", "vmin": -20, "vmax": 20}
+    # bla = input_ds.isel(time=0).Tair.plot.pcolormesh(ax = ax1, **kwargs)
+    # ax1.coastlines()
+    # ax1.set_facecolor("lightgray")
+    # ax1.gridlines(draw_labels = True, color='gray', linestyle=':')
+    # ax1.set_title("curvilinear")
+    # out.isel(time=0).Tair.plot.pcolormesh(ax = ax2, **kwargs)
+    # ax2.coastlines()
+    # ax2.set_facecolor("lightgray")
+    # ax2.gridlines(draw_labels = True, color='gray', linestyle=':')
+    # ax2.set_title("rectolinear")
