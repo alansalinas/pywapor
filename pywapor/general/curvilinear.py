@@ -4,21 +4,23 @@ import matplotlib.pyplot as plt
 from scipy.spatial import Delaunay, cKDTree
 from dask.diagnostics import ProgressBar
 
-def create_grid(input_ds, dx, dy):
+def create_grid(input_ds, dx, dy, bb = None, precision = 0.1):
 
-    # The left and lower bounds will snap to a `1/precision`-th degree 
+    # precision: The left and lower bounds will snap to a `1/precision`-th degree 
     # below smallest coordinate in input_ds.
-    precision = 0.1
 
     # Open input dataset if necessary.
     if isinstance(input_ds, str):
         input_ds = xr.open_dataset(input_ds, chunks = "auto")
 
+    if isinstance(bb, type(None)):
+        bb = [input_ds.x.min().values, input_ds.y.min().values, input_ds.x.max().values, input_ds.y.max().values]
+
     # Determine box that is just larger then domain in input_ds.
-    xmin = np.floor(input_ds.x.min().values * precision**-1) / precision**-1
-    xmax = np.ceil(input_ds.x.max().values * precision**-1) / precision**-1
-    ymin = np.floor(input_ds.y.min().values * precision**-1) / precision**-1
-    ymax = np.ceil(input_ds.y.max().values * precision**-1) / precision**-1
+    xmin = np.floor(bb[0] * precision**-1) / precision**-1
+    xmax = np.ceil(bb[2] * precision**-1) / precision**-1
+    ymin = np.floor(bb[1] * precision**-1) / precision**-1
+    ymax = np.ceil(bb[3] * precision**-1) / precision**-1
 
     # Determine coordinates.
     gridx = np.arange(xmin, xmax + dx, dx)
