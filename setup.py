@@ -37,6 +37,10 @@ setup(
         'cryptography',
         'pyvis',
         'cachetools',
+        'cdsapi',
+        'sentinelsat',
+        'shapely',
+        'lxml',
     ],
     classifiers=[
         "Operating System :: OS Independent",
