@@ -45,7 +45,7 @@ def crawl(urls, regex, filter_regex, session, label_filter = None, list_out = Fa
 
     return crawled_urls
 
-def download_urls(urls, folder, session, fps = None, parallel = 0):
+def download_urls(urls, folder, session, fps = None, parallel = 0, headers = None):
 
     if isinstance(parallel, bool):
         parallel = {True: -1, False: 0}[parallel]
@@ -53,7 +53,7 @@ def download_urls(urls, folder, session, fps = None, parallel = 0):
     if isinstance(fps, type(None)):
         fps = [os.path.join(folder, os.path.split(url)[-1]) for url in urls]
 
-    dler = partial(download_url, session = session)
+    dler = partial(download_url, session = session, headers = headers)
 
     if parallel:
         backend = "loky"
@@ -63,7 +63,7 @@ def download_urls(urls, folder, session, fps = None, parallel = 0):
 
     return files
 
-def download_url(url, fp, session = None, waitbar = True):
+def download_url(url, fp, session = None, waitbar = True, headers = None):
 
     if os.path.isfile(fp):
         return fp
@@ -78,9 +78,9 @@ def download_url(url, fp, session = None, waitbar = True):
     if isinstance(session, type(None)):
         session = requests.Session()
 
-    file_object = session.get(url, stream = True)
+    file_object = session.get(url, stream = True, headers = headers)
     file_object.raise_for_status()
-    
+
     if "Content-Length" in file_object.headers.keys():
         tot_size = int(file_object.headers["Content-Length"])
     else:
