@@ -56,7 +56,7 @@ def expand_time_dim(ds, *args):
 
     new_coords = [time + hour for time, hour in zip(ds_expand.time.values, ds_expand.hour.values)]
 
-    ds_expand = ds_expand.assign_coords({"datetime": new_coords})
+    ds_expand = ds_expand.drop_vars(["hour", "time"]).assign_coords({"datetime": new_coords}) #TODO fix warning!!
     ds_expand = ds_expand.rename({"datetime": "time"}).sortby("time")
     ds_expand = ds_expand.drop_vars(["lst_hour"])
     ds_expand = ds_expand.transpose("time", "y", "x")
