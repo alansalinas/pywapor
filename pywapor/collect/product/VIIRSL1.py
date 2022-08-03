@@ -13,7 +13,6 @@ import pandas as pd
 import numpy as np
 from datetime import datetime as dt
 from itertools import chain
-from pywapor.general.OrbNavClient.orbnav_client.client import Client
 from pywapor.general.logger import log
 from pywapor.collect import accounts
 from pywapor.enhancers.apply_enhancers import apply_enhancer
@@ -113,7 +112,7 @@ def regrid_VNP(workdir, latlim, lonlim, dx_dy = (0.0033, 0.0033)):
 
     return ds
 
-def boxtimes(latlim, lonlim, timelim):
+def boxtimes(latlim, lonlim, timelim, folder):
     """Check in which 6-min periods SUOMI NPPs swatch crosses a AOI
     defined by `latlim` and `lonlim` and remove night recordings.
 
@@ -146,22 +145,27 @@ def boxtimes(latlim, lonlim, timelim):
 
     # Define search kwargs.
     kwargs = {
-        "sat" : 'SUOMI NPP',
-        "start" : timelim[0],
-        "end" : timelim[1],
-        "ur" : (np.ceil(very_ur.latitude), np.ceil(very_ur.longitude)),
-        "ll" : (np.floor(very_ll.latitude), np.floor(very_ll.longitude)),
+        "sat" : '37849',
+        "start" : timelim[0].strftime("%Y-%m-%dT%H:%M:%SZ"),
+        "end" : timelim[1].strftime("%Y-%m-%dT%H:%M:%SZ"),
+        "ur" : f"{int(np.ceil(very_ur.latitude))},{int(np.ceil(very_ur.longitude))}",
+        "ll" : f"{int(np.floor(very_ll.latitude))},{int(np.floor(very_ll.longitude))}",
     }
 
     # Search boxtimes.
-    data = Client().boxtimes(**kwargs)
+    base_url = "https://sips.ssec.wisc.edu/orbnav/api/v1/boxtimes.json"
+    url = base_url + "?&" + "&".join([f"{k}={v}" for k, v in kwargs.items()])
+    fp = os.path.join(folder, "boxtimes.json")
+    _ = download_url(url, fp)
+    data = json.load(open(fp))
 
     # Group to SUOMI NPP 6 minute tiles.
-    dates = [x[0] for x in chain.from_iterable(data["data"]) if x[3] > 40.]
+    dates = [datetime.datetime.strptime(x[0], "%Y-%m-%dT%H:%M:%SZ") for x in chain.from_iterable(data["data"]) if x[3] > 40.]
     df = pd.DataFrame({"date": dates}).set_index("date")
     count = df.groupby(pd.Grouper(freq = "6min")).apply(lambda x: len(x))
     to_dl = count[count >= 1].index.values
-    
+    os.remove(fp)
+
     # Create list with relevant year/doy/times tuples.
     year_doy_time = [[pd.to_datetime(x).strftime("%Y"), pd.to_datetime(x).strftime("%j"), pd.to_datetime(x).strftime("%H%M")] for x in to_dl]
 
@@ -327,7 +331,7 @@ def download(folder, latlim, lonlim, timelim, product_name, req_vars,
         timelim[1] = dt.strptime(timelim[1], "%Y-%m-%d")
 
     # Find SUOMI NPP overpass times.
-    year_doy_time = boxtimes(latlim, lonlim, timelim)
+    year_doy_time = boxtimes(latlim, lonlim, timelim, folder)
 
     # Search for valid urls at overpass times for geolocation files.
     urls = find_VIIRSL1_urls(year_doy_time, "VNP03IMG", folder)
@@ -364,7 +368,7 @@ if __name__ == "__main__":
     folder = "/Users/hmcoerver/On My Mac/viirs_test/"
     latlim = [28.9, 29.7]
     lonlim = [30.2, 31.2]
-    timelim = ["2022-06-01", "2022-06-03"]
+    timelim = ["2022-06-01", "2022-06-02"]
     product_name = "VNP02IMG"
     req_vars = ["bt"]
 
