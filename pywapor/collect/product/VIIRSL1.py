@@ -13,7 +13,7 @@ import pandas as pd
 import numpy as np
 from datetime import datetime as dt
 from itertools import chain
-from orbnav_client import Client
+from pywapor.general.OrbNavClient.orbnav_client.client import Client
 from pywapor.general.logger import log
 from pywapor.collect import accounts
 from pywapor.enhancers.apply_enhancers import apply_enhancer
@@ -364,7 +364,8 @@ if __name__ == "__main__":
     folder = "/Users/hmcoerver/On My Mac/viirs_test/"
     latlim = [28.9, 29.7]
     lonlim = [30.2, 31.2]
-    timelim = ["2022-06-01", "2022-06-10"]
+    timelim = ["2022-06-01", "2022-06-03"]
     product_name = "VNP02IMG"
     req_vars = ["bt"]
 
+    ds = download(folder, latlim, lonlim, timelim, product_name, req_vars)

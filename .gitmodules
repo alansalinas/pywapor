@@ -7,3 +7,6 @@
 [submodule "pywapor_notebooks"]
 	path = docs/notebooks
 	url = https://github.com/bertcoerver/pywapor_notebooks.git
+[submodule "pywapor/general/OrbNavClient"]
+	path = pywapor/general/OrbNavClient
+	url = https://gitlab.ssec.wisc.edu/sips/OrbNavClient.git
