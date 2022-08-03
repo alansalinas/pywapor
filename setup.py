@@ -42,6 +42,7 @@ setup(
         'shapely',
         'lxml',
         'cfgrib',
+        'geopy',
     ],
     classifiers=[
         "Operating System :: OS Independent",
