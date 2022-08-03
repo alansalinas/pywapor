@@ -81,14 +81,14 @@ def reproject_chunk(src_ds, example_ds, dst_path, spatial_interp = "nearest"):
 
     for var in src_ds.data_vars:
 
-        part_path = dst_path.replace(".nc", f"_{var}_temp")
+        part_path = dst_path.replace(".nc", f"_{var}_temp.nc")
 
         with rasterio.open(f'netcdf:{src_path}:{var}') as src:
             with WarpedVRT(src, **vrt_options) as vrt:
                 rio_shutil.copy(vrt, part_path, driver='netcdf')
 
         ds_part = xr.open_dataset(part_path, chunks = "auto", decode_coords="all", decode_times = False)
-        
+
         if "time" in src_ds.coords:
             da = ds_part.to_array("time", name = var).assign_coords({"time": src_ds.time})
         else:
@@ -123,36 +123,41 @@ def reproject_chunk(src_ds, example_ds, dst_path, spatial_interp = "nearest"):
 
 if __name__ == "__main__":
 
-    import tracemalloc
-    import datetime
-    import glob
+    src_ds = xr.open_dataset(r"/Users/hmcoerver/On My Mac/create_table/MODIS/MCD43A3.061.nc", decode_coords="all")
+    example_ds = xr.open_dataset(r"/Users/hmcoerver/On My Mac/create_table/MODIS/MOD13Q1.061.nc", decode_coords="all")
+    dst_path = r"/Users/hmcoerver/On My Mac/create_table/test.nc"
+    out = reproject_chunk(src_ds, example_ds, dst_path, spatial_interp = "nearest")
 
-    example_path = r"/Users/hmcoerver/Downloads/pywapor_test/MODIS/MOD13Q1.061.nc"
-    example_ds = xr.open_dataset(example_path, decode_coords="all")
+    # import tracemalloc
+    # import datetime
+    # import glob
 
-    folder = r"/Users/hmcoerver/Downloads/pywapor_test"
-    src_paths = glob.glob(os.path.join(folder, "*/*.nc"))
+    # example_path = r"/Users/hmcoerver/On My Mac/create_table/MODIS/MOD13Q1.061.nc"
+    # example_ds = xr.open_dataset(example_path, decode_coords="all")
 
-    for src_path in src_paths:
+    # folder = r"/Users/hmcoerver/On My Mac/create_table/MERRA2"
+    # src_paths = glob.glob(os.path.join(folder, "*.nc"))
 
-        _, fn = os.path.split(src_path)
-        dst_path = os.path.join(folder, fn)
+    # for src_path in src_paths:
 
-        reproject = choose_reprojecter(src_path, max_bytes = 2e9, min_times = 10)
+    #     _, fn = os.path.split(src_path)
+    #     dst_path = os.path.join(folder, fn)
 
-        print(f"--> Using `{reproject.__name__}` for {fn}.")
+    #     reproject = choose_reprojecter(src_path, max_bytes = 2e9, min_times = 10)
 
-        t1 = datetime.datetime.now()
+    #     print(f"--> Using `{reproject.__name__}` for {fn}.")
 
-        dst_path = dst_path.replace(".nc", f"_{reproject.__name__.split('_')[-1]}.nc")
-        if os.path.isfile(dst_path):
-            dst_path = dst_path.replace(".nc", "_.nc")
+    #     t1 = datetime.datetime.now()
 
-        tracemalloc.start()
-        ds1 = reproject(src_path, example_ds, dst_path)
-        mem_test1 = tracemalloc.get_traced_memory()
-        print(f"--> Memory usage: {mem_test1[1]-mem_test1[0]}")
-        tracemalloc.stop()
+    #     dst_path = dst_path.replace(".nc", f"_{reproject.__name__.split('_')[-1]}.nc")
+    #     if os.path.isfile(dst_path):
+    #         dst_path = dst_path.replace(".nc", "_.nc")
 
-        t2 = datetime.datetime.now()
-        print(f"--> Time: {t2-t1}\n")
+    #     tracemalloc.start()
+    #     ds1 = reproject(src_path, example_ds, dst_path)
+    #     mem_test1 = tracemalloc.get_traced_memory()
+    #     print(f"--> Memory usage: {mem_test1[1]-mem_test1[0]}")
+    #     tracemalloc.stop()
+
+    #     t2 = datetime.datetime.now()
+    #     print(f"--> Time: {t2-t1}\n")
