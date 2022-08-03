@@ -41,6 +41,7 @@ setup(
         'sentinelsat',
         'shapely',
         'lxml',
+        'cfgrib',
     ],
     classifiers=[
         "Operating System :: OS Independent",

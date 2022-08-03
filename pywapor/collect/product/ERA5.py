@@ -81,6 +81,10 @@ def download(folder, latlim, lonlim, timelim, product_name, req_vars,
                 variables = None, post_processors = None):
 
     product_folder = os.path.join(folder, "ERA5")
+
+    if not os.path.exists(product_folder):
+        os.makedirs(product_folder)
+
     fn_final = os.path.join(product_folder, f"{product_name}.nc")
     if os.path.isfile(fn_final):
         return open_ds(fn_final, "all")

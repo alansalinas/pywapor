@@ -68,6 +68,9 @@ def process_sentinel(scenes, variables, specific_processor, time_func, final_fn,
 
         target_crs = rasterio.crs.CRS.from_epsg(4326)
 
+        # NOTE: see https://github.com/corteva/rioxarray/issues/545
+        ds = ds.sortby("y", ascending = False)
+
         # Clip and pad to bounding-box
         if isinstance(example_ds, type(None)):
             if not isinstance(bb, type(None)):
@@ -75,7 +78,7 @@ def process_sentinel(scenes, variables, specific_processor, time_func, final_fn,
                     bb = transform_bb(target_crs, ds.rio.crs, bb)
                 ds = ds.rio.clip_box(*bb)
                 ds = ds.rio.pad_box(*bb)
-            ds = save_ds(ds, os.path.join(scene_folder, os.path.splitext(fn)[0], "temp.nc")) # NOTE saving because otherwise rio.reproject bugs.
+            ds = save_ds(ds, os.path.join(scene_folder, "temp.nc")) # NOTE saving because otherwise rio.reproject bugs.
             ds = ds.rio.reproject(target_crs)
             example_ds = ds
         else:

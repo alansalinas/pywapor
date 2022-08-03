@@ -11,9 +11,11 @@ import geopy.distance
 import xarray as xr
 import pandas as pd
 import numpy as np
+from datetime import datetime as dt
 from itertools import chain
 from orbnav_client import Client
 from pywapor.general.logger import log
+from pywapor.collect import accounts
 from pywapor.enhancers.apply_enhancers import apply_enhancer
 from pywapor.general.processing_functions import save_ds, open_ds
 from pywapor.general.curvilinear import create_grid, regrid
@@ -131,6 +133,11 @@ def boxtimes(latlim, lonlim, timelim):
         the bb during the day (night is filtered out).
     """
 
+    # Convert to datetime object if necessary
+    if isinstance(timelim[0], str):
+        timelim[0] = dt.strptime(timelim[0], "%Y-%m-%d")
+        timelim[1] = dt.strptime(timelim[1], "%Y-%m-%d")
+
     # Expand bb with 1500km (is half of SUOMI NPP swath width).
     ur = (latlim[1], lonlim[1])
     ll = (latlim[0], lonlim[0])
@@ -140,8 +147,8 @@ def boxtimes(latlim, lonlim, timelim):
     # Define search kwargs.
     kwargs = {
         "sat" : 'SUOMI NPP',
-        "start" : datetime.datetime.strptime(timelim[0], "%Y-%m-%d"),
-        "end" : datetime.datetime.strptime(timelim[1], "%Y-%m-%d"),
+        "start" : timelim[0],
+        "end" : timelim[1],
         "ur" : (np.ceil(very_ur.latitude), np.ceil(very_ur.longitude)),
         "ll" : (np.floor(very_ll.latitude), np.floor(very_ll.longitude)),
     }
@@ -187,9 +194,9 @@ def find_VIIRSL1_urls(year_doy_time, product, workdir,
 
         # Define url at which to find the json with the exact tile urls.
         url = f"https://ladsweb.modaps.eosdis.nasa.gov/archive/allData/{server_folders[product]}/{product}/{year}/{doy}.json"
-        
+
         # Download the json.
-        fp = f"/Users/hmcoerver/On My Mac/viirs_test/{product}_{year}{doy}.json"
+        fp = os.path.join(workdir, f"{product}_{year}{doy}.json")
         if not os.path.isfile(fp):
             _ = download_url(url, fp)
 
@@ -298,6 +305,10 @@ def default_post_processors(product_name, req_vars = None):
 def download(folder, latlim, lonlim, timelim, product_name, req_vars,
                 variables = None, post_processors = None):
 
+    folder = os.path.join(folder, "VIIRSL1")
+    if not os.path.exists(folder):
+        os.makedirs(folder)
+
     fn = os.path.join(folder, f"{product_name}.nc")
     if os.path.isfile(fn):
         return open_ds(fn, "all")
@@ -311,6 +322,10 @@ def download(folder, latlim, lonlim, timelim, product_name, req_vars,
         default_processors = default_post_processors(product_name, req_vars)
         post_processors = {k: {True: default_processors[k], False: v}[v == "default"] for k,v in post_processors.items()}
 
+    if isinstance(timelim[0], str):
+        timelim[0] = dt.strptime(timelim[0], "%Y-%m-%d")
+        timelim[1] = dt.strptime(timelim[1], "%Y-%m-%d")
+
     # Find SUOMI NPP overpass times.
     year_doy_time = boxtimes(latlim, lonlim, timelim)
 
@@ -318,7 +333,7 @@ def download(folder, latlim, lonlim, timelim, product_name, req_vars,
     urls = find_VIIRSL1_urls(year_doy_time, "VNP03IMG", folder)
 
     # Download urls.
-    token = "Yi5jb2VydmVyOllpNWpiMlZ5ZG1WeVFHWmhieTV2Y21jPToxNjU5MzY1MTQ1OjdkN2VhZjRkODQ5MzBhODFjYWRmNTg4YjY2NTUwOWNjMzYzZmIxYTE"
+    token, _ = accounts.get('VIIRSL1')
     headers = {'Authorization': 'Bearer ' + token}
     _ = download_urls(urls, folder, None, parallel = 3, headers = headers)
 

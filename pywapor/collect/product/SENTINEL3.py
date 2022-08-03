@@ -1,12 +1,13 @@
 import os
 import pywapor.collect.protocol.sentinelapi as sentinelapi
-from pywapor.general.processing_functions import regrid_curvilinear
+from pywapor.general.curvilinear import regrid, create_grid
 from pywapor.enhancers.apply_enhancers import apply_enhancer
 from pywapor.general.logger import log
 import glob
 import xarray as xr
 import numpy as np
 from datetime import datetime as dt
+from pywapor.general.processing_functions import open_ds
 
 def default_vars(product_name, req_vars):
 
@@ -28,7 +29,16 @@ def default_vars(product_name, req_vars):
     return out
 
 def default_post_processors(product_name, req_vars):
-    return {}
+
+    post_processors = {
+        "SL_2_LST___": {
+            "lst": []
+            },
+    }
+
+    out = {k:v for k,v in post_processors[product_name].items() if k in req_vars}
+
+    return out
 
 def time_func(fn):
     start_dtime = np.datetime64(dt.strptime(fn.split("_")[7], "%Y%m%dT%H%M%S"))
@@ -50,7 +60,9 @@ def process_s3(scene_folder, variables):
     ds = ds.where(ds.LST_uncertainty < 2.5)
     ds = ds.drop_vars("LST_uncertainty")
 
-    ds = regrid_curvilinear(ds, 0.01)
+    grid_ds = create_grid(ds, 0.01, 0.01)
+    ds = regrid(grid_ds, ds)
+    ds = ds.rio.write_crs(4326)
 
     ds = ds.rename_vars({"LST": "lst"})
 
@@ -61,6 +73,10 @@ def download(folder, latlim, lonlim, timelim, product_name,
                 extra_search_kwargs = {}):
     
     product_folder = os.path.join(folder, "SENTINEL3")
+
+    fn = os.path.join(product_folder, f"{product_name}.nc")
+    if os.path.isfile(fn):
+        return open_ds(fn, "all")
 
     if isinstance(variables, type(None)):
         variables = default_vars(product_name, req_vars)
@@ -87,7 +103,7 @@ def download(folder, latlim, lonlim, timelim, product_name,
                                     search_kwargs, node_filter = None)
 
     ds = sentinelapi.process_sentinel(scenes, variables, process_s3, 
-                                        time_func, "SENTINEL3.nc", bb = bb)
+                                        time_func, f"{product_name}.nc", bb = bb)
 
     # Apply product specific functions.
     for var, funcs in post_processors.items():
@@ -99,11 +115,12 @@ def download(folder, latlim, lonlim, timelim, product_name,
 
 if __name__ == "__main__":
 
-    folder = r"/Users/hmcoerver/On My Mac/sentinel_dl_test"
+    folder = r"/Users/hmcoerver/On My Mac/create_table"
     latlim = [28.9, 29.7]
     lonlim = [30.2, 31.2]
     # timelim = ["2021-07-01", "2021-07-11"]
-    timelim = ["2022-06-01", "2022-06-11"]
+    timelim = ["2022-07-01", "2022-07-03"]
+
     product_name = 'SL_2_LST___'
 
     req_vars = ["lst"]

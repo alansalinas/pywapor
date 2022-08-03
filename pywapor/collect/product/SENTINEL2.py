@@ -8,6 +8,7 @@ from pywapor.general.logger import log
 import pywapor.collect.protocol.sentinelapi as sentinelapi
 import numpy as np
 from pywapor.enhancers.apply_enhancers import apply_enhancer
+from pywapor.general.processing_functions import open_ds
 
 def process_s2(scene_folder, variables):
 
@@ -86,7 +87,17 @@ def default_vars(product_name, req_vars):
     return out
 
 def default_post_processors(product_name, req_vars):
-    return {}
+    
+    post_processors = {
+        "S2MSI2A": {
+            "ndvi": [],
+            "r0": [],
+            },
+    }
+
+    out = {k:v for k,v in post_processors[product_name].items() if k in req_vars}
+
+    return out
 
 def time_func(fn):
     dtime = np.datetime64(dt.strptime(fn.split("_")[2], "%Y%m%dT%H%M%S"))
@@ -97,6 +108,10 @@ def download(folder, latlim, lonlim, timelim, product_name,
                 extra_search_kwargs = {"cloudcoverpercentage": (0, 30)}):
 
     product_folder = os.path.join(folder, "SENTINEL2")
+
+    fn = os.path.join(product_folder, f"{product_name}.nc")
+    if os.path.isfile(fn):
+        return open_ds(fn, "all")
 
     if isinstance(variables, type(None)):
         variables = default_vars(product_name, req_vars)
@@ -129,7 +144,7 @@ def download(folder, latlim, lonlim, timelim, product_name,
     scenes = sentinelapi.download(product_folder, latlim, lonlim, timelim, search_kwargs, node_filter = node_filter)
 
     ds = sentinelapi.process_sentinel(scenes, variables, process_s2, 
-                                        time_func, "SENTINEL2.nc", bb = bb)
+                                        time_func, f"{product_name}.nc", bb = bb)
 
     # Apply product specific functions.
     for var, funcs in post_processors.items():
