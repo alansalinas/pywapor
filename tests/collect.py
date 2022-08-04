@@ -1,3 +1,4 @@
+#%%
 import pywapor
 import inspect
 import datetime
@@ -11,6 +12,12 @@ import numpy as np
 csv_lines = list()
 
 workdir = r"/Users/hmcoerver/On My Mac/create_table"
+
+# Determine output paths.
+md_out = os.path.join(os.path.split(pywapor.__path__[0])[0], "docs", "mds", "data.md")
+csv_out = os.path.join(os.path.split(pywapor.__path__[0])[0], "tests", "products_table.csv")
+
+#%%
 
 timelim1 = [datetime.date(2019, 7, 1), datetime.date(2019, 7, 15)]
 timelim2 = [datetime.date(2019, 7, 1), datetime.date(2019, 7, 5)]
@@ -125,10 +132,6 @@ for source, (mod, timelim) in sources.items():
         print(ds.rio.crs)
         print("")
 
-# Determine output paths.
-md_out = os.path.join(os.path.split(pywapor.__path__[0])[0], "docs", "mds", "data.md")
-csv_out = os.path.join(os.path.split(pywapor.__path__[0])[0], "tests", "products_table.csv")
-
 # Define headers.
 header = ["source", "product", "spatial res.", "temp. res.", "variable", "processors", "inputs"]
 
@@ -139,6 +142,8 @@ with open(csv_out, 'w') as csvfile:
     for row in csv_lines:
         filewriter.writerow(row)
 
+#%%
+
 # Process the csv to markdown for publication in documentation.
 df = pd.read_csv(csv_out, delimiter=";")
 df = df.drop(["processors", "inputs"], axis = 1)
@@ -148,4 +153,5 @@ row = df[df.source == "STATICS"].groupby(["source", "spatial res.", "temp. res."
 df = df[df.source != "STATICS"]
 df = pd.concat([df, row], ignore_index=True).sort_values("source")
 
-df.to_markdown(md_out, index = False)
+df.to_markdown(md_out.replace(".md", ".rst"), tablefmt="grid", index="never")
+# %%

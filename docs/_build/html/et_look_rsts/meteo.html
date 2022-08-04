@@ -7,6 +7,7 @@
   <title>Meteo &mdash; pyWaPOR  documentation</title>
       <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
       <link rel="stylesheet" href="../_static/css/theme.css" type="text/css" />
+      <link rel="stylesheet" href="../_static/css/custom.css" type="text/css" />
   <!--[if lt IE 9]>
     <script src="../_static/js/html5shiv.min.js"></script>
   <![endif]-->
@@ -83,7 +84,7 @@
       <li>Meteo</li>
       <li class="wy-breadcrumbs-aside">
               <!-- User defined Bitbucket URL -->
-              <a href="https://bitbucket.org/cioapps/wapor-et-look/src/master/" class="fa fa-bitbucket"> Edit on Bitbucket</a>
+              <a href="https://bitbucket.org/cioapps/pywapor/src/master/" class="fa fa-bitbucket"> Edit on Bitbucket</a>
       </li>
   </ul>
   <hr/>
@@ -296,7 +297,7 @@ degrees Celcius is equal to 273.15 degrees Kelvin.</p>
 
 <dl class="py function">
 <dt class="sig sig-object py" id="pywapor.et_look_v2.meteo.disaggregate_air_temperature">
-<span class="sig-name descname"><span class="pre">disaggregate_air_temperature</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">t_air_coarse</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">z</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">z_coarse</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">lapse</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">-</span> <span class="pre">0.006</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pywapor.et_look_v2.meteo.disaggregate_air_temperature" title="Permalink to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">disaggregate_air_temperature</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">t_air_coarse</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">z</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">z_coarse</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">lapse</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">-0.006</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pywapor.et_look_v2.meteo.disaggregate_air_temperature" title="Permalink to this definition"></a></dt>
 <dd><p>Disaggregates GEOS or MERRA or another coarse scale air temperature using
 two digital elevation models. One DEM for the target resolution, another
 DEM smoothed from the original air temperature resolution to the target
@@ -346,7 +347,7 @@ temperature is specified in C.</p>
 
 <dl class="py function">
 <dt class="sig sig-object py" id="pywapor.et_look_v2.meteo.disaggregate_air_temperature_daily">
-<span class="sig-name descname"><span class="pre">disaggregate_air_temperature_daily</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">t_air_24_coarse</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">z</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">z_coarse</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">lapse</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">-</span> <span class="pre">0.006</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pywapor.et_look_v2.meteo.disaggregate_air_temperature_daily" title="Permalink to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">disaggregate_air_temperature_daily</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">t_air_24_coarse</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">z</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">z_coarse</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">lapse</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">-0.006</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pywapor.et_look_v2.meteo.disaggregate_air_temperature_daily" title="Permalink to this definition"></a></dt>
 <dd><p>Like <a class="reference internal" href="#pywapor.et_look_v2.meteo.disaggregate_air_temperature" title="pywapor.et_look_v2.meteo.disaggregate_air_temperature"><code class="xref py py-func docutils literal notranslate"><span class="pre">disaggregate_air_temperature()</span></code></a> but as a daily average.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
@@ -381,7 +382,7 @@ temperature is specified in C.</p>
 
 <dl class="py function">
 <dt class="sig sig-object py" id="pywapor.et_look_v2.meteo.disaggregate_air_temperature_inst">
-<span class="sig-name descname"><span class="pre">disaggregate_air_temperature_inst</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">t_air_i_coarse</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">z</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">z_coarse</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">lapse</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">-</span> <span class="pre">0.006</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pywapor.et_look_v2.meteo.disaggregate_air_temperature_inst" title="Permalink to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">disaggregate_air_temperature_inst</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">t_air_i_coarse</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">z</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">z_coarse</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">lapse</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">-0.006</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pywapor.et_look_v2.meteo.disaggregate_air_temperature_inst" title="Permalink to this definition"></a></dt>
 <dd><p>Like <a class="reference internal" href="#pywapor.et_look_v2.meteo.disaggregate_air_temperature" title="pywapor.et_look_v2.meteo.disaggregate_air_temperature"><code class="xref py py-func docutils literal notranslate"><span class="pre">disaggregate_air_temperature()</span></code></a> but as a instantaneous value.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
@@ -416,7 +417,7 @@ temperature is specified in C.</p>
 
 <dl class="py function">
 <dt class="sig sig-object py" id="pywapor.et_look_v2.meteo.disaggregate_dew_point_temperature_inst">
-<span class="sig-name descname"><span class="pre">disaggregate_dew_point_temperature_inst</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">t_dew_coarse_i</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">z</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">z_coarse</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">lapse_dew</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">-</span> <span class="pre">0.002</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pywapor.et_look_v2.meteo.disaggregate_dew_point_temperature_inst" title="Permalink to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">disaggregate_dew_point_temperature_inst</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">t_dew_coarse_i</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">z</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">z_coarse</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">lapse_dew</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">-0.002</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pywapor.et_look_v2.meteo.disaggregate_dew_point_temperature_inst" title="Permalink to this definition"></a></dt>
 <dd><p>Disaggregates geos dew point temperature using lapse rate and difference between
 smoothed coarse scale DEM and fine scale DEM.</p>
 <dl class="field-list simple">
