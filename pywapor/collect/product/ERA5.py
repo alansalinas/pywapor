@@ -19,12 +19,12 @@ def default_vars(product_name, req_vars):
                         },
 
         "reanalysis-era5-single-levels": {
-            '10m_u_component_of_wind':  [{"time": [f"{x:02d}:00" for x in range(24)], "format": "grib", "product_type": "reanalysis"}, "u_10m"],
-            '10m_v_component_of_wind':  [{"time": [f"{x:02d}:00" for x in range(24)], "format": "grib", "product_type": "reanalysis"}, "v_10m"],
-            '2m_dewpoint_temperature':  [{"time": [f"{x:02d}:00" for x in range(24)], "format": "grib", "product_type": "reanalysis"}, "t_dew"],
-            'mean_sea_level_pressure':  [{"time": [f"{x:02d}:00" for x in range(24)], "format": "grib", "product_type": "reanalysis"}, "p_air_0"],
-            'surface_pressure':         [{"time": [f"{x:02d}:00" for x in range(24)], "format": "grib", "product_type": "reanalysis"}, "p_air"],
-            '2m_temperature':           [{"time": [f"{x:02d}:00" for x in range(24)], "format": "grib", "product_type": "reanalysis"}, "t_air"],
+            '10m_u_component_of_wind':  [{"time": [f"{x:02d}:00" for x in range(24)], "format": "netcdf", "product_type": "reanalysis"}, "u_10m"],
+            '10m_v_component_of_wind':  [{"time": [f"{x:02d}:00" for x in range(24)], "format": "netcdf", "product_type": "reanalysis"}, "v_10m"],
+            '2m_dewpoint_temperature':  [{"time": [f"{x:02d}:00" for x in range(24)], "format": "netcdf", "product_type": "reanalysis"}, "t_dew"],
+            'mean_sea_level_pressure':  [{"time": [f"{x:02d}:00" for x in range(24)], "format": "netcdf", "product_type": "reanalysis"}, "p_air_0"],
+            'surface_pressure':         [{"time": [f"{x:02d}:00" for x in range(24)], "format": "netcdf", "product_type": "reanalysis"}, "p_air"],
+            '2m_temperature':           [{"time": [f"{x:02d}:00" for x in range(24)], "format": "netcdf", "product_type": "reanalysis"}, "t_air"],
         }
     }
 
@@ -118,7 +118,7 @@ if __name__ == "__main__":
     folder = r"/Users/hmcoerver/On My Mac/era_test"
     latlim = [28.9, 29.7]
     lonlim = [30.2, 31.2]
-    timelim = ["2021-06-26", "2021-07-11"]
+    timelim = ["2021-06-26", "2021-07-05"]
 
     product_name = "sis-agrometeorological-indicators"
     # product_name = "reanalysis-era5-single-levels"

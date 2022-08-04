@@ -71,14 +71,17 @@ def download(folder, product_name, latlim, lonlim, timelim, variables):
 
         das = list()
 
+        time_offset = {"sis-agrometeorological-indicators": 12,
+                "reanalysis-era5-single-levels": 0}[product_name]
+
         for var in ds.data_vars:
+            # Fix time of relative humidity in agERA5.
             if bool(re.search(r'_[01]\dh', var)):
                 offset = int(re.search(r'_[01]\dh', var).group()[1:-1])
                 da = ds[var].assign_coords({"time": ds[var].time + np.timedelta64(offset, "h")})
-            elif "valid_time" in ds.coords:
-                da = ds[var]
+            # Adjust time to middle of day for daily data.
             else:
-                da = ds[var].assign_coords({"time": ds[var].time + np.timedelta64(12, "h")})
+                da = ds[var].assign_coords({"time": ds[var].time + np.timedelta64(time_offset, "h")})
             das.append(da)
 
         ds = xr.concat(das, dim="time").to_dataset().sortby("time")
