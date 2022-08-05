@@ -5,6 +5,7 @@ from pywapor.general.processing_functions import open_ds
 from pywapor.enhancers.temperature import kelvin_to_celsius
 from functools import partial
 import numpy as np
+from pywapor.enhancers.pressure import pa_to_kpa
 
 def default_vars(product_name, req_vars):
 
@@ -38,9 +39,9 @@ def default_vars(product_name, req_vars):
 
     return out
 
-def pa_to_kpa(ds, var):
-    ds[var] = ds[var] / 1000
-    return ds
+# def pa_to_kpa(ds, var):
+#     ds[var] = ds[var] / 1000
+#     return ds
 
 def default_post_processors(product_name, req_vars):
 
@@ -118,9 +119,10 @@ if __name__ == "__main__":
     post_processors = None
 
     req_vars = [
-                # "t_air", "u2m", "v2m", "qv", 
-                # "wv", 
-                "p_air", "p_air_0"]
+                "t_air", "u2m", "v2m", "qv", 
+                "wv", 
+                "p_air", "p_air_0"
+                ]
 
     ds = download(folder, latlim, lonlim, timelim, product_name, req_vars = req_vars)
     print(ds.rio.crs, ds.rio.grid_mapping)

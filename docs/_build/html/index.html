@@ -7,6 +7,7 @@
   <title>pyWaPOR &mdash; pyWaPOR  documentation</title>
       <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
       <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
+      <link rel="stylesheet" href="_static/css/custom.css" type="text/css" />
   <!--[if lt IE 9]>
     <script src="_static/js/html5shiv.min.js"></script>
   <![endif]-->
@@ -64,7 +65,7 @@
       <li>pyWaPOR</li>
       <li class="wy-breadcrumbs-aside">
               <!-- User defined Bitbucket URL -->
-              <a href="https://bitbucket.org/cioapps/wapor-et-look/src/master/" class="fa fa-bitbucket"> Edit on Bitbucket</a>
+              <a href="https://bitbucket.org/cioapps/pywapor/src/master/" class="fa fa-bitbucket"> Edit on Bitbucket</a>
       </li>
   </ul>
   <hr/>
@@ -100,18 +101,14 @@
 <h1>pyWaPOR<a class="headerlink" href="#pywapor" title="Permalink to this heading"></a></h1>
 <a class="reference external image-reference" href="https://img.shields.io/pypi/dw/pywapor"><img alt="downloads" src="https://img.shields.io/pypi/dw/pywapor" /></a>
 <a class="reference external image-reference" href="https://pypi.org/project/pywapor/"><img alt="version" src="https://img.shields.io/pypi/v/pywapor" /></a>
-<a class="reference external image-reference" href="https://img.shields.io/pypi/pyversions/pywapor"><img alt="python" src="https://img.shields.io/pypi/pyversions/pywapor" /></a>
 <a class="reference external image-reference" href="https://colab.research.google.com/github/bertcoerver/pywapor_notebooks/blob/main/1_introduction.ipynb"><img alt="Open In Colab" src="https://colab.research.google.com/assets/colab-badge.svg" /></a>
 <p>This repository contains a Python implementation of the algorithm used to generate the <a class="reference external" href="http://www.fao.org/in-action/remote-sensing-for-water-productivity/en/">WaPOR</a> <a class="reference external" href="https://wapor.apps.fao.org/home/WAPOR_2/1">datasets</a>. It can be used to calculate evaporation, transpiration and biomass production maps.</p>
 <section id="installation">
 <h2>Installation<a class="headerlink" href="#installation" title="Permalink to this heading"></a></h2>
-<p>Its recommended to install in a clean <a class="reference external" href="https://docs.conda.io/projects/conda/en/latest/user-guide/concepts/environments.html">conda environment</a> and use <a class="reference external" href="https://docs.conda.io/projects/conda/en/latest/user-guide/install/">conda</a> to install GDAL before installing pywapor. Only Python 3.7 and 3.8 are supported.</p>
-<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>conda create -n my_pywapor_env <span class="nv">python</span><span class="o">=</span><span class="m">3</span>.8 pip gdal
+<p>Its recommended to install in a clean <a class="reference external" href="https://docs.conda.io/projects/conda/en/latest/user-guide/concepts/environments.html">conda environment</a> and use <a class="reference external" href="https://docs.conda.io/projects/conda/en/latest/user-guide/install/">conda</a> to install all the important packages from the <code class="docutils literal notranslate"><span class="pre">conda-forge</span></code> channel.</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>conda create -n my_pywapor_env --yes -c conda-forge python pip gdal pydap numpy pandas requests matplotlib netcdf4 pyproj scipy pycurl pyshp joblib bs4 rasterio xarray bottleneck geojson tqdm dask rioxarray pyvis shapely lxml cachetools cdsapi sentinelsat geopy
+
 conda activate my_pywapor_env
-</pre></div>
-</div>
-<p>On machines running Windows also run the following.</p>
-<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>conda install -c conda-forge fiona rasterio pycurl
 </pre></div>
 </div>
 <p>Then use the package manager <a class="reference external" href="https://pip.pypa.io/en/stable/">pip</a> to install pywapor.</p>
@@ -213,13 +210,19 @@ conda activate my_pywapor_env
 <section id="release-notes">
 <h2>Release Notes<a class="headerlink" href="#release-notes" title="Permalink to this heading"></a></h2>
 <p><details open>
+<summary><b>2.6.0 (2022-08-04)</b></summary>
+<ul>
+    <li> New collect functions for VIIRS (Level-1), SENTINEL-2, SENTINEL-3 and (ag)ERA5.</li>
+    <li> pyWaPOR now works with Python versions greater than 3.8.
+</ul>
+</details></p><p><details>
 <summary><b>2.5.0 (2022-06-23)</b></summary>
 <ul>
     <li> Rewritten collect tools.</li>
     <li> The entire workflow now works with netCDF.</li>
     <li>All the netCDF files are formatted to support the <a href = "https://corteva.github.io/rioxarray/stable/getting_started/getting_started.html">rio-acccessor</a>.</li>
-
-<p><details>
+</ul>
+</details></p><p><details>
 <summary><b>2.4.2 (2022-04-26)</b></summary>
 <br>
 <ul>

@@ -13,6 +13,7 @@ import pywapor.collect.protocol.opendap as opendap
 from pywapor.general.processing_functions import open_ds
 from pywapor.general import bitmasks
 import pandas as pd
+import warnings
 
 def fn_func(product_name, tile):
     fn = f"{product_name}_h{tile[0]:02d}v{tile[1]:02d}.nc"
@@ -47,20 +48,28 @@ def expand_time_dim(ds, *args):
     groups = ds.groupby(ds.lst_hour, squeeze = True)
 
     def _expand_hour_dim(x):
-        hour = np.timedelta64(int(x.lst_hour.median().values * 3600), "s")
+        hour = np.timedelta64(int(np.nanmedian(x.lst_hour.values) * 3600), "s")
         x = x.assign_coords({"hour": hour}).expand_dims("hour")
         return x
 
-    ds_expand = groups.map(_expand_hour_dim)
-    ds_expand = ds_expand.stack({"datetime": ("hour","time")})
+    with warnings.catch_warnings():
+        warnings.filterwarnings("ignore", message="Slicing with an out-of-order index")
 
-    new_coords = [time + hour for time, hour in zip(ds_expand.time.values, ds_expand.hour.values)]
+        ds_expand = groups.map(_expand_hour_dim)
 
-    ds_expand = ds_expand.assign_coords({"datetime": new_coords})
-    ds_expand = ds_expand.rename({"datetime": "time"}).sortby("time")
-    ds_expand = ds_expand.drop_vars(["lst_hour"])
-    ds_expand = ds_expand.transpose("time", "y", "x")
-    ds_expand = ds_expand.dropna("time", how="all")
+        ds_expand = ds_expand.stack({"datetime": ("hour","time")})
+
+        new_coords = [time + hour for time, hour in zip(ds_expand.time.values, ds_expand.hour.values)]
+        
+        try: # new versions of xarray require to drop all dimensions of a multi-index
+            ds_expand = ds_expand.drop_vars(["datetime", "hour", "time"])
+        except ValueError: # old versions throw an error when trying to drop sub-dimensions of a multiindex.
+            ds_expand = ds_expand.drop_vars(["datetime"])
+        
+        ds_expand = ds_expand.assign_coords({"datetime": new_coords}).rename({"datetime": "time"}).sortby("time")
+        ds_expand = ds_expand.drop_vars(["lst_hour"])
+        ds_expand = ds_expand.transpose("time", "y", "x")
+        ds_expand = ds_expand.dropna("time", how="all")
 
     return ds_expand
 
@@ -211,24 +220,24 @@ def download(folder, latlim, lonlim, timelim, product_name, req_vars,
                 timedelta = timedelta)
     return ds
 
-# if __name__ == "__main__":
+if __name__ == "__main__":
 
-#     products = [
-#         ('MCD43A3.061', ["r0"]),
-#         ('MOD11A1.061', ["lst"]),
-#         ('MYD11A1.061', ["lst"]),
-#         ('MOD13Q1.061', ["ndvi"]),
-#         ('MYD13Q1.061', ["ndvi"]),
-#     ]
+    products = [
+        # ('MCD43A3.061', ["r0"]),
+        ('MOD11A1.061', ["lst"]),
+        # ('MYD11A1.061', ["lst"]),
+        # ('MOD13Q1.061', ["ndvi"]),
+        # ('MYD13Q1.061', ["ndvi"]),
+    ]
 
-#     folder = r"/Users/hmcoerver/Downloads/pywapor_test"
-#     # latlim = [26.9, 33.7]
-#     # lonlim = [25.2, 37.2]
-#     latlim = [28.9, 29.7]
-#     lonlim = [30.2, 31.2]
-#     timelim = [datetime.date(2020, 7, 1), datetime.date(2020, 7, 11)]
+    folder = r"/Users/hmcoerver/Downloads/pywapor_test"
+    # latlim = [26.9, 33.7]
+    # lonlim = [25.2, 37.2]
+    latlim = [28.9, 29.7]
+    lonlim = [30.2, 31.2]
+    timelim = [datetime.date(2020, 7, 1), datetime.date(2020, 7, 11)]
 
-    # MODIS.
-    # for product_name, req_vars in products:
-    #     ds = download(folder, latlim, lonlim, timelim, product_name, req_vars)
-    #     print(ds.rio.crs, ds.rio.grid_mapping)
+
+    for product_name, req_vars in products:
+        ds = download(folder, latlim, lonlim, timelim, product_name, req_vars)
+        print(ds.rio.crs, ds.rio.grid_mapping)

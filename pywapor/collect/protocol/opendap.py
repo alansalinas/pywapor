@@ -12,7 +12,7 @@ from rasterio.crs import CRS
 from pywapor.general.processing_functions import save_ds, process_ds
 import warnings
 from pywapor.enhancers.apply_enhancers import apply_enhancer
-from pywapor.collect.protocol.requests import download_url, download_urls
+from pywapor.collect.protocol.crawler import download_url, download_urls
 
 def download(folder, product_name, coords, variables, post_processors, 
                 fn_func, url_func, un_pw = None, tiles = None,  
@@ -56,6 +56,9 @@ def download(folder, product_name, coords, variables, post_processors,
 
     if isinstance(timedelta, np.timedelta64):
         ds["time"] = ds["time"] + timedelta
+
+    # Remove unnecessary coordinates.
+    ds = ds.drop_vars([x for x in ds.coords if x not in ["x", "y", "time", "spatial_ref"]])
 
     # Save final output.
     fp = os.path.join(folder, f"{product_name}.nc")

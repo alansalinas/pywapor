@@ -1,4 +1,4 @@
-:bitbucket_url: https://bitbucket.org/cioapps/wapor-et-look/src/master/
+:bitbucket_url: https://bitbucket.org/cioapps/pywapor/src/master/
 
 pywapor.se_root
 ===================

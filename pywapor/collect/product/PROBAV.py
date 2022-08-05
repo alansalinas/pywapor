@@ -7,7 +7,7 @@ from pywapor.general.logger import log
 import re
 from functools import partial
 import requests
-from pywapor.collect.protocol.requests import download_urls, crawl
+from pywapor.collect.protocol.crawler import download_urls, crawl
 import pywapor.general.bitmasks as bm
 import xarray as xr
 from pywapor.enhancers.apply_enhancers import apply_enhancer

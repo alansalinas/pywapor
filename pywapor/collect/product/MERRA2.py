@@ -9,8 +9,9 @@ import os
 import numpy as np
 from functools import partial
 from pywapor.general.processing_functions import open_ds
-from pywapor.collect.protocol.requests import find_paths
+from pywapor.collect.protocol.crawler import find_paths
 from pywapor.enhancers.temperature import kelvin_to_celsius
+from pywapor.enhancers.pressure import pa_to_kpa
 
 def default_vars(product_name, req_vars):
     variables = {
@@ -49,9 +50,9 @@ def default_vars(product_name, req_vars):
     
     return out
 
-def pa_to_kpa(ds, var):
-    ds[var] = ds[var] / 1000
-    return ds
+# def pa_to_kpa(ds, var):
+#     ds[var] = ds[var] / 1000
+#     return ds
 
 def default_post_processors(product_name, req_vars):
 

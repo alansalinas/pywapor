@@ -7,6 +7,7 @@
   <title>Radiation &mdash; pyWaPOR  documentation</title>
       <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
       <link rel="stylesheet" href="../_static/css/theme.css" type="text/css" />
+      <link rel="stylesheet" href="../_static/css/custom.css" type="text/css" />
   <!--[if lt IE 9]>
     <script src="../_static/js/html5shiv.min.js"></script>
   <![endif]-->
@@ -83,7 +84,7 @@
       <li>Radiation</li>
       <li class="wy-breadcrumbs-aside">
               <!-- User defined Bitbucket URL -->
-              <a href="https://bitbucket.org/cioapps/wapor-et-look/src/master/" class="fa fa-bitbucket"> Edit on Bitbucket</a>
+              <a href="https://bitbucket.org/cioapps/pywapor/src/master/" class="fa fa-bitbucket"> Edit on Bitbucket</a>
       </li>
   </ul>
   <hr/>
@@ -232,7 +233,7 @@ lw_offset are being provided as defaults</p>
 
 <dl class="py function">
 <dt class="sig sig-object py" id="pywapor.et_look_v2.radiation.longwave_radiation_fao">
-<span class="sig-name descname"><span class="pre">longwave_radiation_fao</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">t_air_k_24</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">vp_24</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">trans_24</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">vp_slope</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.14</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">vp_offset</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.34</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">lw_slope</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1.35</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">lw_offset</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">-</span> <span class="pre">0.35</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pywapor.et_look_v2.radiation.longwave_radiation_fao" title="Permalink to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">longwave_radiation_fao</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">t_air_k_24</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">vp_24</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">trans_24</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">vp_slope</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.14</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">vp_offset</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.34</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">lw_slope</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1.35</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">lw_offset</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">-0.35</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pywapor.et_look_v2.radiation.longwave_radiation_fao" title="Permalink to this definition"></a></dt>
 <dd><p>Computes the net longwave radiation according to the FAO 56 manual.</p>
 <div class="math notranslate nohighlight">
 \[L^{*}=\sigma\left(T_{a,K}\right)^{4}
@@ -587,7 +588,7 @@ For southern latitudes the phase shift will be <span class="math notranslate noh
 
 <dl class="py function">
 <dt class="sig sig-object py" id="pywapor.et_look_v2.radiation.soil_heat_flux">
-<span class="sig-name descname"><span class="pre">soil_heat_flux</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">g0_bs</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">sf_soil</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">land_mask</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">rn_24_soil</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">trans_24</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ra_24</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">l_net</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">rn_slope</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.92</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">rn_offset</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">-</span> <span class="pre">61.0</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pywapor.et_look_v2.radiation.soil_heat_flux" title="Permalink to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">soil_heat_flux</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">g0_bs</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">sf_soil</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">land_mask</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">rn_24_soil</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">trans_24</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ra_24</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">l_net</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">rn_slope</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.92</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">rn_offset</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">-61.0</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pywapor.et_look_v2.radiation.soil_heat_flux" title="Permalink to this definition"></a></dt>
 <dd><p>Computes the soil heat flux</p>
 <div class="math notranslate nohighlight">
 \[G=s_f \cdot G_{0}\]</div>

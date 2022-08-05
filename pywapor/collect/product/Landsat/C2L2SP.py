@@ -1,23 +1,22 @@
 """Functions to process Landsat 7 and 8 Collection-2 Level-2 scenes into
 NDVI, ALBEDO and LST GeoTIFFs that can be ingested into pywapor.pre_et_look.
 """
-
 import rasterio
 import glob
 import os
 import tarfile
 import json
 import shutil
-from pywapor.general.processing_functions import save_ds
+from pywapor.general.processing_functions import save_ds, transform_bb
 import numpy as np
 import xarray as xr
 from osgeo import gdal
 from datetime import datetime
 from pywapor.general.logger import log
 from pywapor.general import bitmasks
-from pywapor.collect.protocol.requests import download_url
+from pywapor.collect.protocol.crawler import download_url
 
-def main(folder, max_lst_uncertainty = 2.5):
+def main(folder, max_lst_uncertainty = 2.5, final_bb = None):
     """Processes Landsat 7 or 8 Collection-2 Level-2 tar-files into GeoTIFFs
     for NDVI, LST and ALBEDO.
 
@@ -26,6 +25,8 @@ def main(folder, max_lst_uncertainty = 2.5):
     folder : str
         Path to folder containing Landsat 7 or 8 Collection-2 Level-2 
         tar-files.
+    final_bb : list
+        left, bottom, right, top.
 
     Returns
     -------
@@ -39,11 +40,13 @@ def main(folder, max_lst_uncertainty = 2.5):
 
     # Look for tar-files in the input folder.
     all_files = glob.glob(os.path.join(folder, "*.tar"))
-    
+
     # Filter tar-files down to Landsat Level-2 files.
     files = [os.path.split(file)[-1] for file in all_files if "L2SP" in file]
 
     dss = list()
+
+    example_ds = None
 
     # Loop over the tar-files.
     for file in files:
@@ -53,11 +56,11 @@ def main(folder, max_lst_uncertainty = 2.5):
         ls_folder = untar(file, folder)
 
         ## ALBEDO & NDVI ##
-        to_open = ["blue", "red", "green", "nir", "swir1", "swir2"]
+        to_open = ["blue", "red", "green", "nir"]
         
         # Open the data.
         data, mtl, proj, geot = open_data(ls_folder, to_open)
-        
+
         # Make cloud/shadow/quality mask.
         valid = open_mask(ls_folder, mtl, proj, geot)
 
@@ -86,13 +89,11 @@ def main(folder, max_lst_uncertainty = 2.5):
         # Calculate the lst.
         lst = calc_lst(data)
 
-        # Add time dimension to data arrays.
-        lst = lst.expand_dims({"time": 1})
-        albedo = albedo.expand_dims({"time": 1})
-        ndvi = ndvi.expand_dims({"time": 1})
-
         # Merge the three variables into one dataset.
         ds = xr.merge([lst, ndvi, albedo])
+
+        # Add time dimension to data arrays.
+        ds = ds.expand_dims({"time": 1})
 
         # Set the correct time.
         date_str = mtl["IMAGE_ATTRIBUTES"]["DATE_ACQUIRED"]
@@ -100,23 +101,44 @@ def main(folder, max_lst_uncertainty = 2.5):
         datetime_str = date_str + " " + time_str.replace("Z", "")
         ds = ds.assign_coords({"time":[np.datetime64(datetime_str)]})
 
+        target_crs = rasterio.crs.CRS.from_epsg(4326)
+
+        # Clip and pad to bounding-box
+        if isinstance(example_ds, type(None)):
+            if not isinstance(final_bb, type(None)):
+                bb = transform_bb(target_crs, ds.rio.crs, final_bb)
+                ds = ds.rio.clip_box(*bb)
+                ds = ds.rio.pad_box(*bb)
+            ds = save_ds(ds, os.path.join(folder, os.path.splitext(file)[0], "temp.nc")) # NOTE saving because otherwise rio.reproject bugs.
+            ds = ds.rio.reproject(target_crs)
+            example_ds = ds
+        else:
+            ds = ds.rio.reproject_match(example_ds)
+            ds = ds.assign_coords({"x": example_ds.x, "y": example_ds.y})
+
+        # Save to netcdf
+        fp = os.path.join(folder, os.path.splitext(file)[0] + ".nc")
+        ds = save_ds(ds, fp)
+
         dss.append(ds)
 
         # Remove the untarred files and folder.
         shutil.rmtree(ls_folder)
 
-    ds = xr.concat(dss, dim = "time")
-
-    # Reproject if necessary.
-    if ds.rio.crs.to_epsg() != 4326:
-        ds = ds.rio.reproject(rasterio.crs.CRS.from_epsg(4326))
+    ds = xr.merge(dss, combine_attrs = "drop")
 
     fp = os.path.join(folder, "LANDSAT.nc")
 
     if os.path.isfile(fp):
         os.remove(fp)
 
-    ds = save_ds(ds, fp)
+    encoding = {v: {"zlib": True, "dtype": "float32"} for v in list(ds.data_vars)}
+    encoding["time"] = {"dtype": "float64"}
+
+    ds = save_ds(ds, fp, encoding = encoding)
+
+    for x in dss:
+        os.remove(x.encoding["source"])
 
     return ds
 
@@ -162,11 +184,13 @@ def open_mask(ls_folder, mtl, proj, geot):
     pixel_qa_bits = bitmasks.get_pixel_qa_bits(2, ls_number, 2)
     
     # Choose which labels to mask (see keys of 'pixel_qa_bits' for options).
-    if ls_number == 8:
+    if ls_number in [8, 9]:
         pixel_qa_flags = ["dilated_cloud", "cirrus", "cloud", "cloud_shadow", "snow"]
-    elif ls_number == 7:
+    elif ls_number in [4, 5, 7]:
         pixel_qa_flags = ["dilated_cloud", "cloud", "cloud_shadow", "snow"]
-    
+    else:
+        raise ValueError
+
     # Load array into RAM.
     qa_array = qa_data.sel(band="pixel_qa").band_data.values.astype("uint16")
     
@@ -234,10 +258,10 @@ def open_data(ls_folder, to_open):
     data = xr.concat([open_as_xr(fp, name) for name, fp in fps.items()], "band")
 
     # Find valid data range for each file.
-    valid_ranges = valid_range()
+    valid_ranges = valid_range()[ls_number]
 
     # Mask data outside valid range.
-    masked_data = mask_invalid(data, valid_ranges[ls_number])
+    masked_data = mask_invalid(data, valid_ranges)
 
     # Find relevant scales and offset factors for each file.
     scales_xr, offsets_xr = find_scales_offsets(fps, mtl)
@@ -435,18 +459,19 @@ def calc_albedo(data, ls_number = None, weights = None):
         Dataset that has a variable called "ndvi".
     """
 
-    if isinstance(ls_number, type(None)):
-        ls_number = data.attrs["ls_number"]
-
     if isinstance(weights, type(None)):
-        weights = albedo_weight()
+        if isinstance(ls_number, type(None)):
+            ls_number = data.attrs["ls_number"]
+        weights = albedo_weight()[ls_number]
 
-    weights_xr = xr.DataArray(data = list(weights[ls_number].values()), 
-                            coords = {"band": list(weights[ls_number].keys())})
+    offset_band = xr.ones_like(data.isel(band=0)).expand_dims("band").assign_coords({"band": ["offset"]})
+    offset_band = offset_band.where(data.band_data.isel(band=0).notnull())
+    all_data = xr.concat([data, offset_band], "band")
 
-    albedo = data.weighted(weights_xr).mean("band").rename({"band_data": "r0"})
+    weights_xr = xr.DataArray(data = list(weights.values()), 
+                            coords = {"band": list(weights.keys())})
 
-    albedo = albedo.rio.set_crs(data.rio.crs)
+    albedo = (all_data * weights_xr).sum("band", skipna = False).rename({"band_data": "r0"})
 
     return albedo
 
@@ -584,23 +609,36 @@ def albedo_weight():
         Default weights to be applied to the reflectanes in order to calculate
         albedo, for Landsat 7 and 8 Collection-2 Level-2 scenes.
     """
-    weights = {7: {
-                    "blue": 1970,
-                    "green": 1842,
-                    "red": 1547,
-                    "nir": 1044,
-                    "swir1": 225.7,
-                    "swir2": 82.06,
+    weights = {
+                5: {
+                    "blue": 0.116,
+                    "green": 0.010,
+                    "red": 0.364,
+                    "nir": 0.360,
+                    "offset": 0.032,
+                    },
+                7: {
+                    "blue": 0.085,
+                    "green": 0.057,
+                    "red": 0.349,
+                    "nir": 0.359,
+                    "offset": 0.033,
                     },
                 8: {
-                    "blue": 1991,
-                    "green": 1812,
-                    "red": 1549,
-                    "nir": 972.6,
-                    "swir1": 245.0,
-                    "swir2": 79.72,
+                    "blue": 0.079,
+                    "green": 0.083,
+                    "red": 0.334,
+                    "nir": 0.360,
+                    "offset": 0.031,
                     },
-                }
+                9: {
+                    "blue": 0.079,
+                    "green": 0.083,
+                    "red": 0.334,
+                    "nir": 0.360,
+                    "offset": 0.031,
+                    },
+            }
     return weights
 
 def search_path():
@@ -624,7 +662,33 @@ def search_path():
                     "radsat_qa":"*QA_RADSAT.TIF",
                     "therm_qa": "*ST_QA.TIF",
                     },
+                
+                5: {
+                    "blue":     "*SR_B1.TIF",
+                    "green":    "*SR_B2.TIF",
+                    "red":      "*SR_B3.TIF",
+                    "nir":      "*SR_B4.TIF",
+                    "swir1":    "*SR_B5.TIF",
+                    "therm":    "*ST_B6.TIF",
+                    "swir2":    "*SR_B7.TIF",
+                    "pixel_qa": "*QA_PIXEL.TIF",
+                    "radsat_qa":"*QA_RADSAT.TIF",
+                    "therm_qa": "*ST_QA.TIF",
+                    },
+
                 8: {
+                    "blue":     "*SR_B2.TIF",
+                    "green":    "*SR_B3.TIF",
+                    "red":      "*SR_B4.TIF",
+                    "nir":      "*SR_B5.TIF",
+                    "swir1":    "*SR_B6.TIF",
+                    "swir2":    "*SR_B7.TIF",
+                    "therm":    "*ST_B10.TIF",
+                    "pixel_qa": "*QA_PIXEL.TIF",
+                    "radsat_qa":"*QA_RADSAT.TIF",
+                    "therm_qa": "*ST_QA.TIF",
+                    },
+                9: {
                     "blue":     "*SR_B2.TIF",
                     "green":    "*SR_B3.TIF",
                     "red":      "*SR_B4.TIF",
@@ -681,6 +745,10 @@ def valid_range():
             "therm_qa": (0, 32767),
             },
         }
+    valid_sr_range[4] = valid_sr_range[7]
+    valid_sr_range[5] = valid_sr_range[7]
+    valid_sr_range[9] = valid_sr_range[8]
+
     return valid_sr_range
 
 def mask_invalid(ds, valid_range):
@@ -748,7 +816,50 @@ def dl_landsat_test(folder):
 
 if __name__ == "__main__":
 
-    max_lst_uncertainty = 2.5
+    max_lst_uncertainty = 1.0
 
-    folder = r"/Users/hmcoerver/pywapor_notebooks_5/LANDSAT"
+    folder = r"/Users/hmcoerver/On My Mac/ndvi_r0_test"
+
+    latlim = [28.9, 29.7]
+    lonlim = [30.2, 31.2]
+
+    left = lonlim[0]
+    bottom = latlim[0]
+    right = lonlim[1]
+    top = latlim[1]
+
+    final_bb = [left, bottom, right, top]
+
+    # ds = main(folder, max_lst_uncertainty = max_lst_uncertainty, final_bb = final_bb)
+
+# #%%
+
+# import xarray as xr
+# from pywapor.general.processing_functions import save_ds, open_ds
+# import rasterio
+
+
+# latlim = [28.9, 29.7]
+# lonlim = [30.2, 31.2]
+# left = lonlim[0]
+# bottom = latlim[0]
+# right = lonlim[1]
+# top = latlim[1]
+
+# final_bb = [left, bottom, right, top]
+
+# def transform_bb(src_crs, dst_crs, bb):
+#     bb =rasterio.warp.transform_bounds(src_crs, dst_crs, *bb, densify_pts=21)
+#     return bb
+
+# ds = open_ds(r"/Users/hmcoerver/On My Mac/ndvi_r0_test/test_in.nc")
+
+# target_crs = rasterio.crs.CRS.from_epsg(4326)
+
+# bb = transform_bb(target_crs, ds.rio.crs, final_bb)
+
+# ds = ds.rio.clip_box(*bb)
+# ds = ds.rio.pad_box(*bb)
+
+# ds = ds.rio.reproject(target_crs)
 
