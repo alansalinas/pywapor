@@ -2,14 +2,14 @@ from setuptools import setup, find_packages
 
 setup(
     name = 'pywapor',
-    version = '2.5.0',
+    version = '2.6.0',
     url = 'https://www.fao.org/aquastat/py-wapor/',
     author = "FAO",
     author_email = "bert.coerver@fao.org",
     license = "Apache",
     packages = find_packages(include = ['pywapor', 'pywapor.*']),
     include_package_data=True,
-    python_requires='>=3.7, <3.9',
+    python_requires='>=3.7',
     install_requires = [
         'gdal',
         'xarray>=0.20',
@@ -18,15 +18,16 @@ setup(
         'pandas',
         'requests',
         'matplotlib',
-        'netcdf4',
+# NOTE otherwise opendap gives problem in colab, in conda env netcdf=1.6.0 
+# works fine -> https://github.com/Unidata/netcdf4-python/issues/1179
+# Can be removed when the issue is closed.
+        'netcdf4<1.6.0', 
         'pyproj',
         'scipy',
-        'fiona',
         'pycurl',
         'pyshp',
         'joblib',
         'bs4',
-        'paramiko',
         'rasterio',
         'bottleneck>=1.3.1',
         'geojson',
@@ -41,12 +42,13 @@ setup(
         'sentinelsat',
         'shapely',
         'lxml',
-        'cfgrib',
         'geopy',
     ],
     classifiers=[
         "Operating System :: OS Independent",
         "Programming Language :: Python :: 3.7",
         "Programming Language :: Python :: 3.8",
+        "Programming Language :: Python :: 3.9",
+        "Programming Language :: Python :: 3.10",
     ],
 )

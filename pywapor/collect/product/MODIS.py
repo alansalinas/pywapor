@@ -60,9 +60,13 @@ def expand_time_dim(ds, *args):
         ds_expand = ds_expand.stack({"datetime": ("hour","time")})
 
         new_coords = [time + hour for time, hour in zip(ds_expand.time.values, ds_expand.hour.values)]
-
-        ds_expand = ds_expand.drop_vars(["datetime", "time", "hour"]).assign_coords({"datetime": new_coords})
-        ds_expand = ds_expand.rename({"datetime": "time"}).sortby("time")
+        
+        try: # new versions of xarray require to drop all dimensions of a multi-index
+            ds_expand = ds_expand.drop_vars(["datetime", "hour", "time"])
+        except ValueError: # old versions throw an error when trying to drop sub-dimensions of a multiindex.
+            ds_expand = ds_expand.drop_vars(["datetime"])
+        
+        ds_expand = ds_expand.assign_coords({"datetime": new_coords}).rename({"datetime": "time"}).sortby("time")
         ds_expand = ds_expand.drop_vars(["lst_hour"])
         ds_expand = ds_expand.transpose("time", "y", "x")
         ds_expand = ds_expand.dropna("time", how="all")
