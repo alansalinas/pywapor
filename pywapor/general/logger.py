@@ -29,6 +29,8 @@ def adjust_logger(log_write, folder, log_level):
         Set the log level.
     """
     if log_write and not any([isinstance(x, logging.FileHandler) for x in log_settings.handlers]):
+        if not os.path.isdir(folder):
+            os.makedirs(folder)
         handler = logging.FileHandler(filename = os.path.join(folder, "log.txt"))
         formatter = logging.Formatter(fmt='%(levelname)s %(asctime)s: %(message)s')
         handler.setFormatter(formatter)
