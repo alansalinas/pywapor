@@ -5,6 +5,7 @@ import pandas as pd
 import pywapor.collect.accounts as accounts
 from pywapor.general.logger import log
 import re
+import warnings
 from functools import partial
 import requests
 from pywapor.collect.protocol.crawler import download_urls, crawl
@@ -69,7 +70,9 @@ def download(folder, latlim, lonlim, timelim, product_name, req_vars = ["ndvi", 
         log.info(f"--> Merging {len(datasets)} tiles for {date.strftime('%Y-%m-%d')}.")
         bb = (lonlim[0], latlim[0], lonlim[1], latlim[1])
         ds = rioxarray.merge.merge_datasets(datasets)
-        ds = ds.rio.clip_box(*bb) # NOTE using this seperately, because `bounds`-kw for `merge_datasets` bugs.
+        with warnings.catch_warnings():
+            warnings.filterwarnings("ignore", category = FutureWarning)
+            ds = ds.rio.clip_box(*bb) # NOTE using this seperately, because `bounds`-kw for `merge_datasets` bugs.
         dss0.append(ds)
 
     # Merge dates.

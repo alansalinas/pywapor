@@ -4,6 +4,7 @@ NDVI, ALBEDO and LST GeoTIFFs that can be ingested into pywapor.pre_et_look.
 import rasterio
 import glob
 import os
+import warnings
 import tarfile
 import json
 import shutil
@@ -107,7 +108,9 @@ def main(folder, max_lst_uncertainty = 2.5, final_bb = None):
         if isinstance(example_ds, type(None)):
             if not isinstance(final_bb, type(None)):
                 bb = transform_bb(target_crs, ds.rio.crs, final_bb)
-                ds = ds.rio.clip_box(*bb)
+                with warnings.catch_warnings():
+                    warnings.filterwarnings("ignore", category = FutureWarning)
+                    ds = ds.rio.clip_box(*bb)
                 ds = ds.rio.pad_box(*bb)
             ds = save_ds(ds, os.path.join(folder, os.path.splitext(file)[0], "temp.nc")) # NOTE saving because otherwise rio.reproject bugs.
             ds = ds.rio.reproject(target_crs)
