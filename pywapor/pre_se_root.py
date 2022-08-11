@@ -14,14 +14,17 @@ import pywapor.general.pre_defaults as defaults
 from pywapor.general.logger import log, adjust_logger
 
 def rename_meteo(ds, *args):
-    ds = ds.rename_vars({
-                    "t_air": "t_air_i",
-                    "u2m": "u2m_i",
-                    "v2m": "v2m_i",
-                    "qv": "qv_i",
-                    "p_air": "p_air_i",
-                    "wv": "wv_i",
-                    "p_air_0": "p_air_0_i"})
+    renames = {
+                "t_air": "t_air_i",
+                "u2m": "u2m_i",
+                "v2m": "v2m_i",
+                "qv": "qv_i",
+                "p_air": "p_air_i",
+                "wv": "wv_i",
+                "p_air_0": "p_air_0_i"
+            }
+    renames_filtered = {k: v for k,v in renames.items() if k in ds.data_vars}
+    ds = ds.rename_vars(renames_filtered)
     return ds
 
 def add_constants(ds, *args):
@@ -89,42 +92,42 @@ def main(folder, latlim, lonlim, timelim, sources = "level_1", bin_length = "DEK
 
     return ds
 
-if __name__ == "__main__":
+# if __name__ == "__main__":
 
     # from pywapor.se_root import main as se_root
 
-    sources = "level_1"
+    # sources = "level_1"
 
-    enhancers = "default"
+    # enhancers = "default"
 
-    folder = r"/Users/hmcoerver/pywapor_notebooks_2"
-    latlim = [28.9, 29.7]
-    lonlim = [30.2, 31.2]
-    timelim = [datetime.date(2021, 7, 1), datetime.date(2021, 7, 11)]
-    bin_length = "DEKAD"
-    example_source = None
+    # folder = r"/Users/hmcoerver/pywapor_notebooks_2"
+    # latlim = [28.9, 29.7]
+    # lonlim = [30.2, 31.2]
+    # timelim = [datetime.date(2021, 7, 1), datetime.date(2021, 7, 11)]
+    # bin_length = "DEKAD"
+    # example_source = None
 
-    # _ = adjust_logger(True, folder, "INFO")
+    # # _ = adjust_logger(True, folder, "INFO")
 
-    sources = levels.pre_se_root_levels(sources)
+    # sources = levels.pre_se_root_levels(sources)
 
-    sources["ndvi"]["products"] = [
-        {'source': 'MODIS',
-            'product_name': 'MOD13Q1.061',
-            'enhancers': 'default'},
-        {'source': 'MODIS', 
-            'product_name': 'MYD13Q1.061', 
-            'enhancers': 'default'},
-        {'source': 'PROBAV',
-            'product_name': 'S5_TOC_100_m_C1',
-            'enhancers': 'default',
-            'is_example': True}
-    ]
+    # sources["ndvi"]["products"] = [
+    #     {'source': 'MODIS',
+    #         'product_name': 'MOD13Q1.061',
+    #         'enhancers': 'default'},
+    #     {'source': 'MODIS', 
+    #         'product_name': 'MYD13Q1.061', 
+    #         'enhancers': 'default'},
+    #     {'source': 'PROBAV',
+    #         'product_name': 'S5_TOC_100_m_C1',
+    #         'enhancers': 'default',
+    #         'is_example': True}
+    # ]
 
-    # example = levels.find_example(sources)
+    # # example = levels.find_example(sources)
 
-    # print(example)
-    ds = main(folder, latlim, lonlim, timelim, sources, bin_length)
+    # # print(example)
+    # ds = main(folder, latlim, lonlim, timelim, sources, bin_length)
     
     # chunk_size = "20MiB"
     # ds = open_ds(r"/Users/hmcoerver/pywapor_notebooks_2/se_root_in.nc", chunk_size = chunk_size)
