@@ -7,6 +7,7 @@ import os
 import datetime
 import glob
 import tqdm
+from functools import partial
 import geopy.distance
 import xarray as xr
 import pandas as pd
@@ -19,6 +20,7 @@ from pywapor.enhancers.apply_enhancers import apply_enhancer
 from pywapor.general.processing_functions import save_ds, open_ds
 from pywapor.general.curvilinear import create_grid, regrid
 from pywapor.collect.protocol.crawler import download_url, download_urls
+from pywapor.general.logger import log, adjust_logger
 
 def regrid_VNP(workdir, latlim, lonlim, dx_dy = (0.0033, 0.0033)):
 
@@ -194,7 +196,7 @@ def find_VIIRSL1_urls(year_doy_time, product, workdir,
     urls = list()
 
     # Loop over year/doy/times.
-    for year, doy, time in year_doy_time:
+    for year, doy, t in year_doy_time:
 
         # Define url at which to find the json with the exact tile urls.
         url = f"https://ladsweb.modaps.eosdis.nasa.gov/archive/allData/{server_folders[product]}/{product}/{year}/{doy}.json"
@@ -202,11 +204,11 @@ def find_VIIRSL1_urls(year_doy_time, product, workdir,
         # Download the json.
         fp = os.path.join(workdir, f"{product}_{year}{doy}.json")
         if not os.path.isfile(fp):
-            _ = download_url(url, fp)
+            fp = download_url(url, fp)
 
         # Open the json and find the exact url of the required scene.
         all_scenes = [x["name"] for x in json.load(open(fp))]
-        req_scenes = fnmatch.filter(all_scenes, f"{product}.A{year}{doy}.{time}.*.*.nc")
+        req_scenes = fnmatch.filter(all_scenes, f"{product}.A{year}{doy}.{t}.*.*.nc")
 
         # Check if a corrct url is found.
         if len(req_scenes) == 1:
@@ -278,6 +280,43 @@ def check_tiles(year_doy_time, latlim, lonlim, workdir, product = "VNP03IMG"):
 
     return year_doy_time, dropped
 
+def check_geoloc_tile(fp, bb, min_pixels = 100):
+
+    # Open the geolocation data.
+    try: 
+        ds = xr.open_dataset(fp, group = "geolocation_data", chunks = "auto")
+    except OSError as e:
+        if "HDF error" in str(e):
+            log.info(f"--> {os.path.split(fp)[-1]} is corrupted, removing it.")
+            os.remove(fp)
+            return None
+        else:
+            raise e
+
+    # Mask the irrelevant pixels.
+    buffer = 0.2
+    mask = ((ds.latitude >= bb[1] - buffer) &
+            (ds.latitude <= bb[3] + buffer) & 
+            (ds.longitude >= bb[0] - buffer) & 
+            (ds.longitude <= bb[2] + buffer))
+
+    # Check if there is relevant data in this tile.
+    return mask.sum().values > min_pixels
+
+def check_nc(fp, group = "observation_data"):
+
+    try: 
+        _ = xr.open_dataset(fp, group = group, chunks = "auto")
+    except OSError as e:
+        if "HDF error" in str(e):
+            log.info(f"--> {os.path.split(fp)[-1]} is corrupted, removing it.")
+            os.remove(fp)
+            return None
+        else:
+            raise e
+
+    return True
+
 def default_vars(product_name, req_vars):
 
     variables = {
@@ -330,25 +369,31 @@ def download(folder, latlim, lonlim, timelim, product_name, req_vars,
         timelim[0] = dt.strptime(timelim[0], "%Y-%m-%d")
         timelim[1] = dt.strptime(timelim[1], "%Y-%m-%d")
 
+    # Reformat bounding-box.
+    bb = [lonlim[0], latlim[0], lonlim[1], latlim[1]]
+
     # Find SUOMI NPP overpass times.
     year_doy_time = boxtimes(latlim, lonlim, timelim, folder)
 
     # Search for valid urls at overpass times for geolocation files.
     urls = find_VIIRSL1_urls(year_doy_time, "VNP03IMG", folder)
 
-    # Download urls.
+    # Create authentication header.
     token, _ = accounts.get('VIIRSL1')
     headers = {'Authorization': 'Bearer ' + token}
-    _ = download_urls(urls, folder, None, parallel = 3, headers = headers)
 
-    # Check if tiles contain data in AOI.
-    year_doy_time, _ = check_tiles(year_doy_time, latlim, lonlim, folder)
+    # Try to download the geolocation data.
+    checker_function = partial(check_geoloc_tile, bb = bb)
+    relevant_fps = download_urls(urls, folder, headers = headers, checker_function = checker_function)
 
-    # Find urls of the actual data.
-    urls = find_VIIRSL1_urls(year_doy_time, product_name, folder)
+    # Convert the relevant netcdf names to year/doy/time entries.
+    year_doy_time = [[os.path.split(x)[-1][{0:slice(10,14), 1:slice(14,17), 2:slice(18,22)}[y]] for y in range(3)] for x in relevant_fps]
+
+    # Find urls of the actual data for the given year/doy/time.
+    product_urls = find_VIIRSL1_urls(year_doy_time, product_name, folder)
 
     # Download the data product.
-    _ = download_urls(urls, folder, None, parallel = 3, headers = headers)
+    _ =  download_urls(product_urls, folder, headers = headers, checker_function = check_nc)
 
     # Combine geolocations and data in rectilinear grid.
     ds = regrid_VNP(folder, latlim, lonlim, dx_dy = (0.0033, 0.0033))
@@ -366,10 +411,19 @@ def download(folder, latlim, lonlim, timelim, product_name, req_vars,
 if __name__ == "__main__":
 
     folder = "/Users/hmcoerver/On My Mac/viirs_test/"
-    latlim = [28.9, 29.7]
-    lonlim = [30.2, 31.2]
-    timelim = ["2022-06-01", "2022-06-02"]
+    adjust_logger(True, folder, "INFO")
+    # latlim = [28.9, 29.7]
+    # lonlim = [30.2, 31.2]
+    # timelim = ["2022-06-01", "2022-06-02"]
+
+    timelim = [datetime.date(2022, 4, 1), datetime.date(2022, 4, 11)]
+    latlim = [29.4, 29.7]
+    lonlim = [30.7, 31.0]
+
     product_name = "VNP02IMG"
     req_vars = ["bt"]
+
+    variables = None
+    post_processors = None
 
     ds = download(folder, latlim, lonlim, timelim, product_name, req_vars)
