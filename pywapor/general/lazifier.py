@@ -6,7 +6,6 @@ as output is required, pre_et_look doesn't need to download and process all vari
 """
 import types
 import numpy as np
-import inspect
 from pywapor.general.logger import log
 
 def decorate_mod(module, decorator):

@@ -13,7 +13,7 @@ __handler__.setFormatter(__formatter__)
 __handler__.setLevel("INFO")
 log_settings.addHandler(__handler__)
 log = IndentedLoggerAdapter(log_settings)
-logging_redirect_tqdm(loggers = log_settings.handlers)
+# logging_redirect_tqdm(loggers = [log_settings])
 
 def adjust_logger(log_write, folder, log_level):
     """Function to adjust the default logging settings that get initiated by

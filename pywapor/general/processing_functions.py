@@ -3,13 +3,11 @@ from dask.diagnostics import ProgressBar
 import numpy as np
 from pywapor.general.logger import log
 import xarray as xr
-from scipy.interpolate import griddata
 import numpy as np
-from scipy.spatial import cKDTree
-from scipy.interpolate.interpnd import _ndim_coords_from_arrays
 import shutil
 import glob
 import rasterio.warp
+from pywapor.general.performance import performance_check
 
 def process_ds(ds, coords, variables, crs = None):
 
@@ -34,6 +32,7 @@ def process_ds(ds, coords, variables, crs = None):
 
     return ds
 
+@performance_check
 def save_ds(ds, fp, decode_coords = "all", encoding = None, chunks = "auto"):
     """Save a `xr.Dataset` as netcdf.
 

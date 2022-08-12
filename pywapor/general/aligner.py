@@ -75,13 +75,11 @@ def main(dss, sources, example_source, folder, enhancers, example_t_var = "lst")
         if var == example_t_var:
             example_time = ds["time"]
         elif "time" in ds[var].dims:
-            log.info(f"--> Aligning times in `{var}` with `{example_t_var}` ({temporal_interp}).")
-            ds = ds.interpolate_na(dim = "time", method = temporal_interp)
+            ds = ds.interpolate_na(dim = "time", method = temporal_interp).ffill("time").bfill("time")
             ds = ds.interp_like(example_time, method = temporal_interp)
-            ds = ds.ffill("time").bfill("time") # NOTE extrapolate. TODO is this a good idea?
 
         # Save output
-        dss2.append(save_ds(ds, dst_path, decode_coords = "all"))
+        dss2.append(save_ds(ds, dst_path, label = f"Aligning times in `{var}` with `{example_t_var}` ({temporal_interp})."))
 
         for nc in dss1:
             os.remove(nc.encoding["source"])
@@ -99,8 +97,9 @@ def main(dss, sources, example_source, folder, enhancers, example_t_var = "lst")
     if os.path.isfile(final_path):
         final_path = final_path.replace(".nc", "_.nc")
 
-    ds = save_ds(ds, final_path, decode_coords = "all",
-                    chunks = {"time": 1, "x": 2000, "y": 2000})
+    ds = save_ds(ds, final_path, 
+                    chunks = {"time": 1, "x": 2000, "y": 2000}, 
+                    label = f"Creating merged file `{os.path.split(final_path)[-1]}`.")
 
     for nc in dss2:
         os.remove(nc.encoding["source"])

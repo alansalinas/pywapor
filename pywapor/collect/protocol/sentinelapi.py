@@ -10,11 +10,13 @@ from pywapor.general.logger import log, adjust_logger
 import xarray as xr
 import rioxarray.merge
 import tqdm
+import numpy as np
 import warnings
 import rasterio.crs
 import types
 import logging
 from sentinelsat.download import Downloader
+from functools import partial
 
 def download(folder, latlim, lonlim, timelim, search_kwargs, node_filter = None):
 
@@ -24,6 +26,9 @@ def download(folder, latlim, lonlim, timelim, search_kwargs, node_filter = None)
     if isinstance(timelim[0], str):
         timelim[0] = dt.strptime(timelim[0], "%Y-%m-%d")
         timelim[1] = dt.strptime(timelim[1], "%Y-%m-%d")
+    elif isinstance(timelim[0], np.datetime64):
+        timelim = [timelim[0].astype('M8[ms]').astype('O'), 
+                    timelim[1].astype('M8[ms]').astype('O')]
 
     def _progress_bar(self, **kwargs):
         if "checksumming" in kwargs.get("desc", "no_desc"):
@@ -61,6 +66,8 @@ def download(folder, latlim, lonlim, timelim, search_kwargs, node_filter = None)
     if len(exceptions) > 0:
         log.info(f"--> An exception occured, check `log_sentinelapi.txt` for more info.")
  
+    log.info(f"--> Finished downloading {search_kwargs['producttype']} scenes.")
+
     if isinstance(node_filter, type(None)):
         scenes = [x["path"] for x in out.values()]
     else:
@@ -73,7 +80,9 @@ def process_sentinel(scenes, variables, specific_processor, time_func, final_fn,
     example_ds = None
     dss1 = dict()
 
-    for scene_folder in tqdm.tqdm(scenes):
+    log.info(f"Processing {len(scenes)} scenes.").add()
+
+    for i, scene_folder in enumerate(scenes):
         
         folder, fn = os.path.split(scene_folder)
 
@@ -88,8 +97,6 @@ def process_sentinel(scenes, variables, specific_processor, time_func, final_fn,
             else:
                 dss1[dtime] = [ds]
             continue
-
-        log.debug(f"--> Processing `{fn}`.")
 
         if ext == ".zip":
             scene_folder = unpack(fn, folder)
@@ -107,16 +114,19 @@ def process_sentinel(scenes, variables, specific_processor, time_func, final_fn,
 
         # Clip and pad to bounding-box
         if isinstance(example_ds, type(None)):
-            if not isinstance(bb, type(None)):
-                if ds.rio.crs != target_crs:
-                    bb = transform_bb(target_crs, ds.rio.crs, bb)
-                with warnings.catch_warnings():
-                    warnings.filterwarnings("ignore", category = FutureWarning)
-                    ds = ds.rio.clip_box(*bb)
-                ds = ds.rio.pad_box(*bb)
-            ds = save_ds(ds, os.path.join(scene_folder, "temp.nc")) # NOTE saving because otherwise rio.reproject bugs.
-            ds = ds.rio.reproject(target_crs)
-            example_ds = ds
+            example_ds_fp = os.path.join(folder, "example_ds.nc")
+            if os.path.isfile(example_ds_fp):
+                example_ds = open_ds(example_ds_fp)
+            else:
+                if not isinstance(bb, type(None)):
+                    if ds.rio.crs != target_crs:
+                        bb = transform_bb(target_crs, ds.rio.crs, bb)
+                    with warnings.catch_warnings():
+                        warnings.filterwarnings("ignore", category = FutureWarning)
+                        ds = ds.rio.clip_box(*bb)
+                    ds = ds.rio.pad_box(*bb)
+                ds = ds.rio.reproject(target_crs)
+                example_ds = save_ds(ds, example_ds_fp, label = f"Creating example dataset.") # NOTE saving because otherwise rio.reproject bugs.
         else:
             ds = ds.rio.reproject_match(example_ds)
             ds = ds.assign_coords({"x": example_ds.x, "y": example_ds.y})
@@ -126,7 +136,7 @@ def process_sentinel(scenes, variables, specific_processor, time_func, final_fn,
         ds = ds.assign_coords({"time":[dtime]})
 
         # Save to netcdf
-        ds = save_ds(ds, fp)
+        ds = save_ds(ds, fp, label = f"({i+1}/{len(scenes)}) Processing {fn} to netCDF.")
 
         if dtime in dss1.keys():
             dss1[dtime].append(ds)
@@ -152,7 +162,9 @@ def process_sentinel(scenes, variables, specific_processor, time_func, final_fn,
     encoding["time"] = {"dtype": "float64"}
 
     # Save final netcdf.
-    ds = save_ds(ds, fp, encoding = encoding)
+    ds = save_ds(ds, fp, encoding = encoding, label = f"Merging files.")
+
+    log.sub()
 
     # Remove intermediate files.
     for dss0 in dss1.values():
