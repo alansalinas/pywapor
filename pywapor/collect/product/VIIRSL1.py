@@ -85,7 +85,7 @@ def regrid_VNP(workdir, latlim, lonlim, dx_dy = (0.0033, 0.0033)):
 
         # Save intermediate file.
         fp_temp = os.path.join(workdir, "temp.nc")
-        ds = save_ds(ds, fp_temp)
+        ds = save_ds(ds, fp_temp, label = "Creating intermediate file.")
 
         # Create rectolinear grid.
         grid_ds = create_grid(ds, dx_dy[0], dx_dy[1], bb = bb)
@@ -102,7 +102,7 @@ def regrid_VNP(workdir, latlim, lonlim, dx_dy = (0.0033, 0.0033)):
         out = out.expand_dims({"time": 1}).assign_coords({"time": [dt]})
 
         # Save regridded tile.
-        out = save_ds(out, fp)
+        out = save_ds(out, fp, label = f"Regridding to rectolinear grid (VNP_{dt:%Y%j%H%M}.nc).")
         out = out.close()
         dss.append(fp)
 
@@ -404,7 +404,7 @@ def download(folder, latlim, lonlim, timelim, product_name, req_vars,
             ds, label = apply_enhancer(ds, var, func)
             log.info(label)
 
-    ds = save_ds(ds, fn)
+    ds = save_ds(ds, fn, label = "Merging files.")
 
     return ds
 

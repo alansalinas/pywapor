@@ -169,7 +169,7 @@ def download(folder, product_name, latlim, lonlim, timelim, variables):
     ds.attrs = {}
 
     # Save the netcdf.
-    ds = save_ds(ds, fn_final)
+    ds = save_ds(ds, fn_final, label = "Merging files.")
 
     # Remove unpacked zips.
     for subfolder in subfolders:

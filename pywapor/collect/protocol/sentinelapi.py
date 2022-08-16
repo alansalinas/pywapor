@@ -5,18 +5,16 @@ from datetime import datetime as dt
 import tqdm
 import shutil
 import pywapor
-from pywapor.general.processing_functions import save_ds, open_ds, create_wkt, unpack, transform_bb
-from pywapor.general.logger import log, adjust_logger
+from pywapor.general.processing_functions import save_ds, open_ds, create_wkt, unpack, make_example_ds
+from pywapor.general.logger import log
 import xarray as xr
 import rioxarray.merge
 import tqdm
 import numpy as np
-import warnings
 import rasterio.crs
 import types
 import logging
 from sentinelsat.download import Downloader
-from functools import partial
 
 def download(folder, latlim, lonlim, timelim, search_kwargs, node_filter = None):
 
@@ -114,19 +112,7 @@ def process_sentinel(scenes, variables, specific_processor, time_func, final_fn,
 
         # Clip and pad to bounding-box
         if isinstance(example_ds, type(None)):
-            example_ds_fp = os.path.join(folder, "example_ds.nc")
-            if os.path.isfile(example_ds_fp):
-                example_ds = open_ds(example_ds_fp)
-            else:
-                if not isinstance(bb, type(None)):
-                    if ds.rio.crs != target_crs:
-                        bb = transform_bb(target_crs, ds.rio.crs, bb)
-                    with warnings.catch_warnings():
-                        warnings.filterwarnings("ignore", category = FutureWarning)
-                        ds = ds.rio.clip_box(*bb)
-                    ds = ds.rio.pad_box(*bb)
-                ds = ds.rio.reproject(target_crs)
-                example_ds = save_ds(ds, example_ds_fp, label = f"Creating example dataset.") # NOTE saving because otherwise rio.reproject bugs.
+            example_ds = make_example_ds(folder, target_crs)
         else:
             ds = ds.rio.reproject_match(example_ds)
             ds = ds.assign_coords({"x": example_ds.x, "y": example_ds.y})

@@ -67,7 +67,6 @@ def download(folder, latlim, lonlim, timelim, product_name, req_vars = ["ndvi", 
     # Merge tiles.
     dss0 = list()
     for date, datasets in dss.items():
-        log.info(f"--> Merging {len(datasets)} tiles for {date.strftime('%Y-%m-%d')}.")
         bb = (lonlim[0], latlim[0], lonlim[1], latlim[1])
         ds = rioxarray.merge.merge_datasets(datasets)
         with warnings.catch_warnings():
@@ -88,7 +87,7 @@ def download(folder, latlim, lonlim, timelim, product_name, req_vars = ["ndvi", 
 
     ds = ds[req_vars]
 
-    ds = save_ds(ds, os.path.join(folder, f"{product_name}.nc"), decode_coords = "all")
+    ds = save_ds(ds, os.path.join(folder, f"{product_name}.nc"), label = f"Merging files.")
 
     for fp in fps:
         os.remove(fp.replace(".HDF5", ".nc"))
@@ -101,7 +100,6 @@ def open_hdf5_groups(fp, variables, coords):
     if os.path.isfile(nc_fp):
         ds = open_ds(nc_fp, "all")
     else:
-        log.info(f"--> Converting {os.path.split(fp)[-1]} to netcdf.")
         ds = xr.open_dataset(fp, chunks = "auto")
 
         spatial_ref_name = [k for k, v in variables.items() if v[1] == "spatial_ref"][0]
@@ -118,7 +116,7 @@ def open_hdf5_groups(fp, variables, coords):
 
         ds = process_ds(ds, coords, variables)
 
-        ds = save_ds(ds, nc_fp, decode_coords = "all")
+        ds = save_ds(ds, nc_fp, label = f"Converting {os.path.split(fp)[-1]} to netcdf.")
 
     return ds
 

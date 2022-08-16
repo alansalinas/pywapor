@@ -219,9 +219,9 @@ def main(dss, sources, example_source, bins, folder, enhancers,
             if diagnostics:
                 ds[f"{var}_source"] = ds[f"{var}_source"].fillna(255)
                 ds[f"{var}_values"] = ds[var]
-                log.info(f"--> Compositing `{var}` ({composite_type}) (diagnostic).")
+                label_str = f"--> Compositing `{var}` ({composite_type}) (diagnostic)."
             else:
-                log.info(f"--> Compositing `{var}` ({composite_type}).")
+                label_str = f"--> Compositing `{var}` ({composite_type})."
 
             if temporal_interp:
 
@@ -245,7 +245,7 @@ def main(dss, sources, example_source, bins, folder, enhancers,
                 plot_composite(ds, diagnostics, out_folder = os.path.join(folder, "GRAPHS"))
 
         # Save output
-        dss2.append(save_ds(ds, dst_path, decode_coords = "all"))
+        dss2.append(save_ds(ds, dst_path, label = label_str))
 
         for nc in dss1:
             os.remove(nc.encoding["source"])
@@ -268,7 +268,7 @@ def main(dss, sources, example_source, bins, folder, enhancers,
     
     while os.path.isfile(final_path):
         final_path = final_path.replace(".nc", "_.nc")
-    ds = save_ds(ds, final_path, decode_coords = "all")
+    ds = save_ds(ds, final_path, label = "Merging files.")
 
     for nc in dss2:
         os.remove(nc.encoding["source"])

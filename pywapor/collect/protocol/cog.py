@@ -58,7 +58,7 @@ def download(folder, product_name, coords, variables, post_processors, url_func)
             log.info(label)
     
     # Save final output.
-    ds = save_ds(ds, fp, decode_coords = "all")
+    ds = save_ds(ds, fp, label = f"Saving {product_name}.nc")
 
     # Remove the temporary file.
     os.remove(fp.replace(".nc", "_temp.nc"))

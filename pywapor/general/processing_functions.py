@@ -6,6 +6,7 @@ import xarray as xr
 import numpy as np
 import shutil
 import glob
+import warnings
 import rasterio.warp
 from pywapor.general.performance import performance_check
 
@@ -32,6 +33,22 @@ def process_ds(ds, coords, variables, crs = None):
 
     return ds
 
+def make_example_ds(folder, target_crs):
+    example_ds_fp = os.path.join(folder, "example_ds.nc")
+    if os.path.isfile(example_ds_fp):
+        example_ds = open_ds(example_ds_fp)
+    else:
+        if not isinstance(bb, type(None)):
+            if ds.rio.crs != target_crs:
+                bb = transform_bb(target_crs, ds.rio.crs, bb)
+            with warnings.catch_warnings():
+                warnings.filterwarnings("ignore", category = FutureWarning)
+                ds = ds.rio.clip_box(*bb)
+            ds = ds.rio.pad_box(*bb)
+        ds = ds.rio.reproject(target_crs)
+        example_ds = save_ds(ds, example_ds_fp, label = f"Creating example dataset.") # NOTE saving because otherwise rio.reproject bugs.
+    return example_ds
+
 @performance_check
 def save_ds(ds, fp, decode_coords = "all", encoding = None, chunks = "auto"):
     """Save a `xr.Dataset` as netcdf.
@@ -51,7 +68,7 @@ def save_ds(ds, fp, decode_coords = "all", encoding = None, chunks = "auto"):
     xr.Dataset
         The newly created dataset.
     """
-    temp_fp = fp.replace(".nc", "_temp")
+    temp_fp = fp.replace(".nc", "_temp.xx")
 
     folder = os.path.split(fp)[0]
     if not os.path.isdir(folder):
