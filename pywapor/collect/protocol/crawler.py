@@ -50,75 +50,105 @@ def crawl(urls, regex, filter_regex, session, label_filter = None, list_out = Fa
 
     return crawled_urls
 
-def _download_urls(urls, folder, session, fps = None, parallel = 0, headers = None):
+def _download_urls(urls, folder, session, fps = None, parallel = 0, headers = None,
+                    max_tries = 10, wait_sec = 15):
 
     if isinstance(parallel, bool):
         parallel = {True: -1, False: 0}[parallel]
 
     if isinstance(fps, type(None)):
         fps = [os.path.join(folder, os.path.split(url)[-1]) for url in urls]
+    else:
+        assert len(fps) == len(urls)
 
     if parallel:
         backend = "loky"
-        dler = partial(download_url, session = session, headers = headers)
+        dler = partial(download_url, session = session, headers = headers, max_tries = max_tries, wait_sec = wait_sec)
         files = Parallel(n_jobs=parallel, backend = backend)(delayed(dler)(*x) for x in zip(urls, fps))
     else:
         files = list()
         for url, fp in zip(urls, fps):
-            fp_out = download_url(url, fp, session = session, headers = headers)
-            files.append(fp_out)
+            try:
+                fp_out = download_url(url, fp, session = session, headers = headers, max_tries = max_tries, wait_sec = wait_sec)
+                files.append(fp_out)
+            except NameError as e:
+                log.info(f"--> {e}")
 
     return files
 
+def unzip(zipped):
+    new, l = [], []
+    for x in zipped:
+        new.append(x[0])
+        l.append(x[1])
+    return new, l
+
 def update_urls(urls, dled_files, relevant_fps, checker_function = None):
+        
+    if isinstance(urls, zip):
+        urls, l = unzip(urls)
+        fps_given = True
+    else:
+        l = [os.path.split(x)[-1] for x in urls]
+        fps_given = False
+
     for fp in dled_files:
+
         if fp in relevant_fps:
             continue
+
         if isinstance(checker_function, type(None)):
             is_relevant = True
         else:
             is_relevant = checker_function(fp)
-        l = [os.path.split(x)[-1] for x in urls]
-        x = os.path.split(fp)[-1]
+
+        if fps_given:
+            x = fp
+        else:
+            x = os.path.split(fp)[-1]
         url_idx = l.index(x) if x in l else None
+
         if os.path.isfile(fp):
             if not isinstance(url_idx, type(None)):
                 _ = urls.pop(url_idx)
+                _ = l.pop(url_idx)
             if is_relevant:
                 relevant_fps.append(fp)
+
+    if fps_given:
+        urls = zip(urls, l)
+
     return urls, relevant_fps
 
-def download_urls(urls, folder, session = None, fps = None, parallel = 0, headers = None, checker_function = None):
+def download_urls(urls, folder, session = None, fps = None, parallel = 0, 
+                    headers = None, checker_function = None, 
+                    max_tries = 10, wait_sec = 15, meta_max_tries = 2):
     
     relevant_fps = list()
     try_n = 0
-    max_tries = 5
-    url_fns = [os.path.split(x)[-1] for x in urls]
     try_again = True
 
     while try_again:
 
-        try:
-            _ = _download_urls(urls, folder, session, fps = fps, parallel = parallel, headers = headers)
-        except NameError as e:
-            log.info(f"--> {e}")
-        finally:
-            dled_files = glob.glob(os.path.join(folder, "*.nc"))
-            dled_files = [x for x in dled_files if os.path.split(x)[-1] in url_fns]
+        dled_files = _download_urls(urls, folder, session, fps = fps, parallel = False, headers = headers, max_tries = max_tries, wait_sec = wait_sec)
 
-        if not isinstance(checker_function, type(None)) and isinstance(fps, type(None)):
+        if not isinstance(fps, type(None)):
+            urls = zip(urls, fps)
+
+        urls, relevant_fps = update_urls(urls, dled_files, relevant_fps, checker_function = checker_function)
+
+        if not isinstance(fps, type(None)):
+            urls, fps = unzip(urls)
+
+        try_again = len(urls) > 0 and try_n < meta_max_tries-1
+        if try_again:
             try_n += 1
-            urls, relevant_fps = update_urls(urls, dled_files, relevant_fps, checker_function)
-            try_again = len(urls) > 0 and try_n < max_tries
-        else:
-            try_again = False
+            log.info(f"--> Retrying to download {len(urls)} remaining urls.")
 
-    if not isinstance(checker_function, type(None)):
-        if len(urls) > 0:
-            log.warning(f"--> Didn't succeed to download {len(urls)} files.")
-        return relevant_fps
-    else:
-        return dled_files
+    if len(urls) > 0:
+        log.warning(f"--> Didn't succeed to download {len(urls)} files.")
+    return relevant_fps
+
 
 def _download_url(url, fp, session = None, waitbar = True, headers = None):
 
@@ -157,12 +187,11 @@ def _download_url(url, fp, session = None, waitbar = True, headers = None):
 
     return fp
 
-def download_url(url, fp, session = None, waitbar = True, headers = None):
-    max_tries = 10
+def download_url(url, fp, session = None, waitbar = True, headers = None, 
+                    max_tries = 10, wait_sec = 15):
     try_n = 0
-    wait_sec = 15
     succes = False
-    while try_n <= max_tries and not succes:
+    while try_n <= max_tries-1 and not succes:
         if try_n > 0:
             waiter = int((try_n**1.2) * wait_sec)
             log.info(f"--> Trying to download {fp}, attempt {try_n+1} of {max_tries} in {waiter} seconds.")
@@ -180,37 +209,10 @@ def download_url(url, fp, session = None, waitbar = True, headers = None):
             try_n += 1
     
     if not succes:
-        raise NameError("Could not download {url} after {max_tries} attempts.")
+        raise NameError(f"Could not download {url} after {max_tries} attempts.")
 
     return fp
 
 if __name__ == "__main__":
 
-    import numpy as np
-
-    folder = r"/Users/hmcoerver/On My Mac/crawl_test"
-    _ = adjust_logger(True, folder, "INFO")
-
-    hundreds = np.arange(101, 104)
-    twohundreds = np.arange(200, 209)
-    threehundreds = np.arange(300, 309)
-    fourhundreds = np.arange(400, 430)
-    fivehundreds1 = np.arange(500, 512)
-    fivehundreds2 = np.arange(520, 528)
-
-    all = np.concatenate([
-                    # hundreds, 
-                    twohundreds,
-                    threehundreds,
-                    fourhundreds,
-                    fivehundreds1,
-                    fivehundreds2])
-
-    urls = [f"https://httpstat.us/{code}?test_{code}.txt" for code in all]
-
-    folder1 = os.path.join(folder, "test1")
-    if not os.path.isdir(folder1):
-        os.makedirs(folder1)
-    for fn in glob.glob(os.path.join(folder1, "*")):
-        os.remove(fn)
-    out1 = _download_urls(urls, folder1, requests.Session(), fps = None, parallel = 0, headers = None)
+    ...
