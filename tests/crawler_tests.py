@@ -6,7 +6,7 @@ from pywapor.collect.protocol.crawler import _download_url, _download_urls, down
 
 if __name__ == "__main__":
 
-    folder = r"/Users/hmcoerver/On My Mac/crawl_test"
+    folder = r"/Users/hmcoerver/Local/crawl_test"
     _ = adjust_logger(True, folder, "INFO")
 
     url = "https://httpstat.us/200?test_200.txt"

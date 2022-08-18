@@ -7,6 +7,7 @@ import os
 import datetime
 import glob
 import tqdm
+import warnings
 from functools import partial
 import geopy.distance
 import xarray as xr
@@ -45,14 +46,16 @@ def regrid_VNP(workdir, latlim, lonlim, dx_dy = (0.0033, 0.0033)):
     # Create list to store xr.Datasets from a single scene.
     dss = list()
 
+    log.add()
+
     # Loop over the scenes.
-    for dt, (nc02, nc03) in tqdm.tqdm(scenes.items()):
+    for i, (dt, (nc02, nc03)) in enumerate(scenes.items()):
 
         # Define tile output path.
         fp = os.path.join(workdir, f"VNP_{dt:%Y%j%H%M}.nc")
 
         if os.path.isfile(fp):
-            dss.append(fp)
+            dss.append(open_ds(fp))
             continue
 
         # Open the datasets.
@@ -84,8 +87,8 @@ def regrid_VNP(workdir, latlim, lonlim, dx_dy = (0.0033, 0.0033)):
         ds = ds.where(mask, drop = True)
 
         # Save intermediate file.
-        fp_temp = os.path.join(workdir, "temp.nc")
-        ds = save_ds(ds, fp_temp, label = "Creating intermediate file.")
+        fp_temp = os.path.join(workdir, f"VNP_{dt:%Y%j%H%M}_temp.nc")
+        ds = save_ds(ds, fp_temp, label = f"({i+1}/{len(scenes)}) Creating intermediate file.")
 
         # Create rectolinear grid.
         grid_ds = create_grid(ds, dx_dy[0], dx_dy[1], bb = bb)
@@ -95,21 +98,24 @@ def regrid_VNP(workdir, latlim, lonlim, dx_dy = (0.0033, 0.0033)):
 
         # Set some metadata.
         out = out.rio.write_crs(4326)
-        out = out.rio.clip_box(*bb)
+        with warnings.catch_warnings():
+            warnings.filterwarnings("ignore", category = FutureWarning)
+            out = out.rio.clip_box(*bb)
         out.bt.attrs = {k: v for k, v in ds.bt.attrs.items() if k in ["long_name", "units"]}
 
         # Add time dimension.
         out = out.expand_dims({"time": 1}).assign_coords({"time": [dt]})
 
         # Save regridded tile.
-        out = save_ds(out, fp, label = f"Regridding to rectolinear grid (VNP_{dt:%Y%j%H%M}.nc).")
-        out = out.close()
-        dss.append(fp)
+        out = save_ds(out, fp, encoding = "initiate", label = f"({i+1}/{len(scenes)}) Regridding `VNP_{dt:%Y%j%H%M}.nc` to rectolinear grid.")
+
+        dss.append(out)
 
         # Remove intermediate file.
         os.remove(fp_temp)
 
-    dss = [xr.open_dataset(x, chunks = "auto", decode_coords="all") for x in dss]
+    log.sub()
+
     ds = xr.merge(dss)
 
     return ds
@@ -404,13 +410,14 @@ def download(folder, latlim, lonlim, timelim, product_name, req_vars,
             ds, label = apply_enhancer(ds, var, func)
             log.info(label)
 
-    ds = save_ds(ds, fn, label = "Merging files.")
+    ds = save_ds(ds, fn, encoding = "initiate", label = "Merging files.")
 
     return ds
 
 if __name__ == "__main__":
 
-    folder = "/Users/hmcoerver/On My Mac/viirs_test/"
+    folder = "/Users/hmcoerver/Local/viirs_test/"
+    workdir = os.path.join(folder, "VIIRSL1")
     adjust_logger(True, folder, "INFO")
     # latlim = [28.9, 29.7]
     # lonlim = [30.2, 31.2]
