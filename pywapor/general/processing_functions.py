@@ -80,6 +80,10 @@ def save_ds(ds, fp, decode_coords = "all", encoding = None, chunks = "auto", pre
 
     ds = ds.chunk(chunks)
 
+    if "y" in ds.coords:
+        ds = ds.sortby("y", ascending = False)
+        ds = ds.rio.write_transform(ds.rio.transform(recalc=True))
+
     if encoding == "initiate":
         if not isinstance(precision, dict):
             precision = {var: precision for var in ds.data_vars}
@@ -109,18 +113,26 @@ def save_ds(ds, fp, decode_coords = "all", encoding = None, chunks = "auto", pre
 
     return ds
 
-def open_ds(fp, decode_coords = "all", chunks = "auto"):
-    ds = xr.open_dataset(fp, decode_coords = decode_coords, chunks = chunks)
+def open_ds(fp, decode_coords = "all", chunks = "auto", **kwargs):
+    ds = xr.open_dataset(fp, decode_coords = decode_coords, chunks = chunks, **kwargs)
     return ds
 
-def create_dummy_ds(varis, fp = None, shape = (10, 1000, 1000), chunks = (-1, 500, 500), sdate = "2022-02-01", edate = "2022-02-11", precision = 2, min_max = [-1, 1]):
+def create_dummy_ds(varis, fp = None, shape = (10, 1000, 1000), chunks = (-1, 500, 500), 
+                    sdate = "2022-02-01", edate = "2022-02-11", precision = 2, min_max = [-1, 1],
+                    latlim = [20,30], lonlim = [40, 50], data_generator = "random"):
     check = False
     if os.path.isfile(fp):
         os.remove(fp)
     if not check:
         nt, ny, nx = shape
         dates = pd.date_range(sdate, edate, periods = nt)
-        ds = xr.Dataset({k: (["time", "y", "x"], np.random.uniform(size = np.prod(shape), low = min_max[0], high=min_max[1]).reshape(shape)) for k in varis}, coords = {"time": dates, "y": np.linspace(20, 30, ny), "x": np.linspace(40, 50, nx)})
+        if data_generator == "random":
+            data = np.random.uniform(size = np.prod(shape), low = min_max[0], high=min_max[1]).reshape(shape)
+        elif data_generator == "uniform":
+            x,y,t = np.meshgrid(np.linspace(latlim[0], latlim[1], shape[1]), np.linspace(0, len(dates) + 1, len(dates)), np.linspace(lonlim[0],lonlim[1],shape[2]))
+            data = np.sqrt(x**2 + y**2)
+            data = (data - data.min()) * ((min_max[1] - min_max[0]) / (data.max() - data.min())) + min_max[0]
+        ds = xr.Dataset({k: (["time", "y", "x"], data) for k in varis}, coords = {"time": dates, "y": np.linspace(latlim[0], latlim[1], ny), "x": np.linspace(lonlim[0], lonlim[1], nx)})
         ds = ds.rio.write_crs(4326)
         if isinstance(chunks, tuple):
             chunks = {name: size for name, size in zip(["time", "y", "x"], chunks)}

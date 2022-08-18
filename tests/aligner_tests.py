@@ -1,5 +1,6 @@
 import os
 import glob
+import numpy as np
 from pywapor.general import aligner
 from pywapor.general.processing_functions import create_dummy_ds
 from pywapor.general.logger import adjust_logger
@@ -31,4 +32,4 @@ if __name__ == "__main__":
 
     ds = aligner.main(dss, sources, example_source, folder, enhancers, example_t_vars = example_t_vars)
     assert ds.rio.crs.to_epsg() == 4326
-    assert ds.dims == {'x': 500, 'y': 500, 'time': 26}
+    assert np.all([{'x': 500, 'y': 500, 'time': 26}[k] == v for k,v in ds.dims.items()])
