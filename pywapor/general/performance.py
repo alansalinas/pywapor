@@ -3,6 +3,7 @@ import datetime
 from pywapor.general.logger import log, adjust_logger
 import types
 import numpy as np
+import xarray as xr
 
 def format_bytes(size):
     power = 2**10
@@ -27,7 +28,10 @@ def performance_check(func):
         tracemalloc.stop()
         t2 = datetime.datetime.now()
         size, size_label = format_bytes(mem_test[1]-mem_test[0])
-        log.info(f"> peak-memory-usage: {size:.1f}{size_label}, execution-time: {t2-t1}.").sub()
+        log.info(f"> peak-memory-usage: {size:.1f}{size_label}, execution-time: {t2-t1}.")
+        if isinstance(out, xr.Dataset):
+            log.info("> chunksize|dimsize: [" + ", ".join([f"{k}: {v[0]}|{sum(v)}" for k, v in out.chunksizes.items()]) + "]")
+        log.sub()
         return out
     wrapper_func.__module__ = func.__module__
     wrapper_func.__name__ = func.__name__

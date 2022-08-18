@@ -102,7 +102,7 @@ def save_ds(ds, fp, decode_coords = "all", encoding = None, chunks = "auto", pre
             if var in ds.dims:
                 encoding[var] = {"dtype": "float64"}
 
-    with ProgressBar(minimum = 50, dt = 2.0):
+    with ProgressBar(minimum = 90, dt = 2.0):
         ds.to_netcdf(temp_fp, encoding = encoding)
 
     ds = ds.close()

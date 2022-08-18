@@ -101,7 +101,6 @@ def main(dss, sources, example_source, folder, enhancers, example_t_vars = ["lst
         config = sources[var]
         spatial_interp = config["spatial_interp"]
         temporal_interp = config["temporal_interp"]
-        # srcs = [(x["source"], x["product_name"]) for x in config["products"]]
 
         # Align pixels of different products for a single variable together.
         dss_part = [ds[[var]] for ds in dss.values() if var in ds.data_vars]
@@ -109,9 +108,6 @@ def main(dss, sources, example_source, folder, enhancers, example_t_vars = ["lst
 
         # Combine different source_products (along time dimension).
         ds = xr.combine_nested(dss1, concat_dim = "time").chunk({"time": -1}).sortby("time").squeeze()
-
-        # TODO fix this in VIIRSL1
-        ds = ds.drop_duplicates("time", "last").dropna("time", how = "all")
 
         temp_files2 = list()
         if var in example_t_vars:
@@ -163,15 +159,14 @@ def main(dss, sources, example_source, folder, enhancers, example_t_vars = ["lst
 if __name__ == "__main__":
 
     import numpy as np
-    import pandas as pd
-    from pywapor.general.processing_functions import create_dummy_ds
+    import glob
 
-    # dss = {
-    #     ("SENTINEL2", "S2MSI2A"): r"/Users/hmcoerver/Local/test_data/SENTINEL2/S2MSI2A.nc",
-    #     ("SENTINEL3", "SL_2_LST___"): r"/Users/hmcoerver/Local/test_data/SENTINEL3/SL_2_LST___.nc",
-    #     ("VIIRSL1", "VNP02IMG"): r"/Users/hmcoerver/Local/test_data/VIIRSL1/VNP02IMG.nc",
-    # }
-    # example_source = ("SENTINEL2", "S2MSI2A")
+    dss = {
+        ("SENTINEL2", "S2MSI2A"): r"/Users/hmcoerver/Local/test_data/SENTINEL2/S2MSI2A.nc",
+        ("SENTINEL3", "SL_2_LST___"): r"/Users/hmcoerver/Local/test_data/SENTINEL3/SL_2_LST___.nc",
+        # ("VIIRSL1", "VNP02IMG"): r"/Users/hmcoerver/Local/test_data/VIIRSL1/VNP02IMG.nc",
+    }
+    example_source = ("SENTINEL2", "S2MSI2A")
 
     sources = {
             "ndvi": {"spatial_interp": "nearest", "temporal_interp": "linear"},
@@ -179,27 +174,17 @@ if __name__ == "__main__":
             "bt": {"spatial_interp": "nearest", "temporal_interp": "linear"},
                 }
 
-    example_source = ("source1", "productX")
-    folder = r"/Users/hmcoerver/Local/aligner_test"
+    # example_source = ("source1", "productX")
+    folder = r"/Users/hmcoerver/Local/test_data"
     enhancers = list()
-    example_t_vars = ["lst", "bt"]
+    example_t_vars = ["lst"]
 
-    chunkers = [(1, 500, 500), (50, 500, 500), (50, 1000, 1000), (50, 3000, 3000)]
+    chunks = (1, 500, 500)
+
+    for fp in glob.glob(os.path.join(folder, "*.nc")):
+        os.remove(fp)
 
     from pywapor.general.logger import log, adjust_logger
     adjust_logger(True, folder, "INFO")
 
-    for i, chunks in enumerate(chunkers):
-
-        dss = {
-            ("source1", "productX"): create_dummy_ds(["ndvi"], shape = (10, 2500, 2500), sdate = "2022-02-02", edate = "2022-02-13", fp = os.path.join(folder, f"ndvi_in_test_{i}.nc"), chunks = chunks),
-            ("source2", "productY"): create_dummy_ds(["lst"], shape = (23, 500, 500), sdate = "2022-02-01", edate = "2022-02-9", fp = os.path.join(folder, f"lst_in_test_{i}.nc"), min_max = [280, 320], precision=0, chunks = chunks),
-            ("source2", "productZ"): create_dummy_ds(["bt"], shape = (14, 420, 420), sdate = "2022-02-04", edate = "2022-02-15", fp = os.path.join(folder, f"bt_in_test_{i}.nc"), min_max = [290, 330], precision=0, chunks = chunks),
-        }
-
-        log.info("-".join([str(x) for x in list(dss.values())[0][list(list(dss.values())[0].data_vars)[0]].encoding["chunksizes"]]))
-
-        ds = main(dss, sources, example_source, folder, enhancers, example_t_vars = example_t_vars)
-
-        os.remove(os.path.join(folder, "se_root_in.nc"))
-        # os.rename(os.path.join(folder, "log.txt"), os.path.join(folder, f"log_{'-'.join([str(x) for x in chunks])}.txt"))
+    ds = main(dss, sources, example_source, folder, enhancers, example_t_vars = ["lst"])
