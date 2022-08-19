@@ -85,7 +85,10 @@ def main(folder, latlim, lonlim, timelim, sources = "level_1", bin_length = "DEK
 
     bins = compositer.time_bins(timelim, bin_length)
     dss = downloader.collect_sources(folder, sources, latlim, lonlim, [bins[0], bins[-1]])
-    ds = aligner.main(dss, sources, example_source, folder, enhancers)
+
+    example_t_vars = [x for x in ["lst", "bt"] if x in sources.keys()]
+
+    ds = aligner.main(dss, sources, example_source, folder, enhancers, example_t_vars = example_t_vars)
 
     t2 = datetime.datetime.now()
     log.sub().info(f"< PRE_SE_ROOT ({str(t2 - t1)})")

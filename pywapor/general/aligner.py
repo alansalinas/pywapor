@@ -11,6 +11,7 @@ from pywapor.general.logger import log
 import os
 import numpy as np
 import xarray as xr
+from itertools import chain
 from rasterio import CRS
 
 def is_aligned(ds, example_ds):
@@ -89,7 +90,7 @@ def main(dss, sources, example_source, folder, enhancers, example_t_vars = ["lst
     dss2 = list()
 
     # Make inventory of all variables.
-    variables = np.unique([list(ds.data_vars) for ds in dss.values()]).tolist()
+    variables = np.unique(list(chain.from_iterable([ds.data_vars for ds in dss.values()]))).tolist()
     variables = example_t_vars + [x for x in variables if x not in example_t_vars]
 
     # Create variable to store times to interpolate to.
