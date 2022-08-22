@@ -118,9 +118,24 @@ def open_ds(fp, decode_coords = "all", chunks = "auto", **kwargs):
     ds = xr.open_dataset(fp, decode_coords = decode_coords, chunks = chunks, **kwargs)
     return ds
 
+def create_dummy_mask(x, y, sign = None, slope = None, xshift_fact = None, yshift_fact = None):
+    if isinstance(sign, type(None)):
+        sign = np.sign(np.random.random() - 0.5)
+    if isinstance(slope, type(None)):
+        slope = np.random.random()
+    if isinstance(xshift_fact, type(None)):
+        xshift_fact = np.random.random()
+    if isinstance(yshift_fact, type(None)):
+        yshift_fact = np.random.random()
+    slope = sign*(slope * np.ptp(y) / np.ptp(x))
+    yshift = {-1: y.max(), 1: y.min()}[np.sign(slope)]
+    xshift = x.min()
+    mask = (x - (xshift + xshift_fact * np.ptp(x))) * slope + (yshift + sign * yshift_fact * np.ptp(y))
+    return y < mask
+
 def create_dummy_ds(varis, fp = None, shape = (10, 1000, 1000), chunks = (-1, 500, 500), 
                     sdate = "2022-02-01", edate = "2022-02-11", precision = 2, min_max = [-1, 1],
-                    latlim = [20,30], lonlim = [40, 50], data_generator = "random"):
+                    latlim = [20,30], lonlim = [40, 50], data_generator = "random", mask_data = False):
     check = False
     if os.path.isfile(fp):
         os.remove(fp)
@@ -130,9 +145,13 @@ def create_dummy_ds(varis, fp = None, shape = (10, 1000, 1000), chunks = (-1, 50
         if data_generator == "random":
             data = np.random.uniform(size = np.prod(shape), low = min_max[0], high=min_max[1]).reshape(shape)
         elif data_generator == "uniform":
-            x,y,t = np.meshgrid(np.linspace(latlim[0], latlim[1], shape[1]), np.linspace(0, len(dates) + 1, len(dates)), np.linspace(lonlim[0],lonlim[1],shape[2]))
+            y,t,x = np.meshgrid(np.linspace(latlim[0], latlim[1], shape[1]), np.linspace(0, len(dates) + 1, len(dates)), np.linspace(lonlim[0],lonlim[1],shape[2]))
             data = np.sqrt(x**2 + y**2)
             data = (data - data.min()) * ((min_max[1] - min_max[0]) / (data.max() - data.min())) + min_max[0]
+        if mask_data:
+            for i in range(nt):
+                mask = create_dummy_mask(x[0,...], y[0,...])
+                data[i,mask] = np.nan
         ds = xr.Dataset({k: (["time", "y", "x"], data) for k in varis}, coords = {"time": dates, "y": np.linspace(latlim[0], latlim[1], ny), "x": np.linspace(lonlim[0], lonlim[1], nx)})
         ds = ds.rio.write_crs(4326)
         if isinstance(chunks, tuple):

@@ -104,7 +104,7 @@ def process_sentinel(scenes, variables, specific_processor, time_func, final_fn,
             scene_folder = scene_folder
             remove_folder = False
 
-        ds = specific_processor(scene_folder, variables)
+        ds = specific_processor(scene_folder, variables, bb = bb)
 
         target_crs = rasterio.crs.CRS.from_epsg(4326)
 
@@ -114,9 +114,9 @@ def process_sentinel(scenes, variables, specific_processor, time_func, final_fn,
         # Clip and pad to bounding-box
         if isinstance(example_ds, type(None)):
             example_ds = make_example_ds(ds, folder, target_crs, bb = bb)
-        else:
-            ds = ds.rio.reproject_match(example_ds)
-            ds = ds.assign_coords({"x": example_ds.x, "y": example_ds.y})
+
+        ds = ds.rio.reproject_match(example_ds)
+        ds = ds.assign_coords({"x": example_ds.x, "y": example_ds.y})
 
         dtime = time_func(fn)
         ds = ds.expand_dims({"time": 1})

@@ -93,6 +93,7 @@ def reproject_chunk(src_ds, example_ds, dst_path, spatial_interp = "nearest"):
         'transform': example_ds.rio.transform(recalc=True),
         'height': example_ds.y.size,
         'width': example_ds.x.size,
+        'dtype': "float64",
     }
 
     for var in src_ds.data_vars:

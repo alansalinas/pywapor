@@ -39,6 +39,7 @@ if __name__ == "__main__":
                                 precision=0, 
                                 chunks = chunks,
                                 data_generator="uniform",
+                                mask_data = True
                             )
 
     dst_path = os.path.join(folder, f"out_{test}.nc")

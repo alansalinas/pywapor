@@ -9,7 +9,7 @@ import pywapor.collect.protocol.sentinelapi as sentinelapi
 import numpy as np
 from pywapor.general.processing_functions import open_ds
 
-def process_s2(scene_folder, variables):
+def process_s2(scene_folder, variables, **kwargs):
 
     fps = {v[1]: glob.glob(os.path.join(scene_folder, "**", "*" + k), recursive = True)[0] for k, v in variables.items()}
 

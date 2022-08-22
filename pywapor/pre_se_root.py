@@ -6,6 +6,7 @@ from pywapor.collect import downloader
 from pywapor.general.logger import log, adjust_logger
 from pywapor.general import compositer
 from pywapor.general.processing_functions import open_ds, save_ds
+from pywapor.enhancers.temperature import bt_to_lst
 import pywapor.general.levels as levels#import pre_et_look_levels, find_example
 from pywapor.general import aligner
 import datetime
@@ -79,15 +80,17 @@ def main(folder, latlim, lonlim, timelim, sources = "level_1", bin_length = "DEK
         example_source = levels.find_example(sources)
         log.info(f"--> Example dataset is {example_source[0]}.{example_source[1]}.")
 
+    example_t_vars = [x for x in ["lst", "bt"] if x in sources.keys()]
+
     if enhancers == "default":
         enhancers = [rename_meteo,
                     add_constants]
 
+    if "bt" in example_t_vars:
+        enhancers.append(bt_to_lst)
+
     bins = compositer.time_bins(timelim, bin_length)
     dss = downloader.collect_sources(folder, sources, latlim, lonlim, [bins[0], bins[-1]])
-
-    example_t_vars = [x for x in ["lst", "bt"] if x in sources.keys()]
-
     ds = aligner.main(dss, sources, example_source, folder, enhancers, example_t_vars = example_t_vars)
 
     t2 = datetime.datetime.now()
