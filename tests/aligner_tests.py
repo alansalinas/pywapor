@@ -20,8 +20,8 @@ if __name__ == "__main__":
     
     dss = {
         ("source1", "productX"): create_dummy_ds(["ndvi"], shape = (10, 500, 500), sdate = "2022-02-02", edate = "2022-02-13", fp = os.path.join(folder, f"ndvi_in_test_{test}.nc"), chunks = chunks),
-        ("source2", "productY"): create_dummy_ds(["lst"], shape = (16, 100, 100), sdate = "2022-02-01", edate = "2022-02-09", fp = os.path.join(folder, f"lst_in_test_{test}.nc"), min_max = [280, 320], precision=0, chunks = chunks),
-        ("source2", "productZ"): create_dummy_ds(["bt"], shape = (11, 80, 80), sdate = "2022-02-03", edate = "2022-02-14", fp = os.path.join(folder, f"bt_in_test_{test}.nc"), min_max = [290, 330], precision=0, chunks = chunks),
+        ("source2", "productY"): create_dummy_ds(["lst"], shape = (16, 100, 100), sdate = "2022-02-01", edate = "2022-02-09", fp = os.path.join(folder, f"lst_in_test_{test}.nc"), min_max = [280, 320], precision=0, chunks = chunks, mask_data = True),
+        ("source2", "productZ"): create_dummy_ds(["bt"], shape = (11, 80, 80), sdate = "2022-02-03", edate = "2022-02-14", fp = os.path.join(folder, f"bt_in_test_{test}.nc"), min_max = [290, 330], precision=0, chunks = chunks, mask_data = True),
     }
 
     sources = {

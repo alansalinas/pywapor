@@ -148,8 +148,7 @@ def main(dss, sources, example_source, folder, enhancers, example_t_vars = ["lst
     if os.path.isfile(final_path):
         final_path = final_path.replace(".nc", "_.nc")
 
-    encoding = {v: {"zlib": True} for v in ds.data_vars}
-    ds = save_ds(ds, final_path, encoding = encoding,
+    ds = save_ds(ds, final_path, encoding = "initiate",
                     label = f"Creating merged file `{os.path.split(final_path)[-1]}`.")
 
     for nc in temp_files3:

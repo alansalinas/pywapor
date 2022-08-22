@@ -142,10 +142,10 @@ def create_dummy_ds(varis, fp = None, shape = (10, 1000, 1000), chunks = (-1, 50
     if not check:
         nt, ny, nx = shape
         dates = pd.date_range(sdate, edate, periods = nt)
+        y,t,x = np.meshgrid(np.linspace(latlim[0], latlim[1], shape[1]), np.linspace(0, len(dates) + 1, len(dates)), np.linspace(lonlim[0],lonlim[1],shape[2]))
         if data_generator == "random":
             data = np.random.uniform(size = np.prod(shape), low = min_max[0], high=min_max[1]).reshape(shape)
         elif data_generator == "uniform":
-            y,t,x = np.meshgrid(np.linspace(latlim[0], latlim[1], shape[1]), np.linspace(0, len(dates) + 1, len(dates)), np.linspace(lonlim[0],lonlim[1],shape[2]))
             data = np.sqrt(x**2 + y**2)
             data = (data - data.min()) * ((min_max[1] - min_max[0]) / (data.max() - data.min())) + min_max[0]
         if mask_data:
