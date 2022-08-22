@@ -7,6 +7,7 @@ import shutil
 import pywapor
 from pywapor.general.processing_functions import save_ds, open_ds, create_wkt, unpack, make_example_ds
 from pywapor.general.logger import log
+from pywapor.enhancers.apply_enhancers import apply_enhancer
 import xarray as xr
 import rioxarray.merge
 import tqdm
@@ -73,12 +74,12 @@ def download(folder, latlim, lonlim, timelim, search_kwargs, node_filter = None)
     
     return scenes
 
-def process_sentinel(scenes, variables, specific_processor, time_func, final_fn, bb = None):
+def process_sentinel(scenes, variables, specific_processor, time_func, final_fn, post_processors, bb = None):
 
     example_ds = None
     dss1 = dict()
 
-    log.info(f"Processing {len(scenes)} scenes.").add()
+    log.info(f"--> Processing {len(scenes)} scenes.").add()
 
     for i, scene_folder in enumerate(scenes):
         
@@ -112,7 +113,7 @@ def process_sentinel(scenes, variables, specific_processor, time_func, final_fn,
 
         # Clip and pad to bounding-box
         if isinstance(example_ds, type(None)):
-            example_ds = make_example_ds(folder, target_crs)
+            example_ds = make_example_ds(ds, folder, target_crs, bb = bb)
         else:
             ds = ds.rio.reproject_match(example_ds)
             ds = ds.assign_coords({"x": example_ds.x, "y": example_ds.y})
@@ -143,12 +144,19 @@ def process_sentinel(scenes, variables, specific_processor, time_func, final_fn,
     if os.path.isfile(fp):
         os.remove(fp)
 
-    # Define encoding.
-    encoding = {v: {"zlib": True, "dtype": "float32"} for v in list(ds.data_vars)}
-    encoding["time"] = {"dtype": "float64"}
+    # Apply product specific functions.
+    for var, funcs in post_processors.items():
+        for func in funcs:
+            ds, label = apply_enhancer(ds, var, func)
+            log.info(label)
+
+    for var in ds.data_vars:
+        ds[var].attrs = {}
+
+    ds = ds.rio.write_crs(target_crs)
 
     # Save final netcdf.
-    ds = save_ds(ds, fp, encoding = encoding, label = f"Merging files.")
+    ds = save_ds(ds, fp, encoding = "initiate", label = f"Merging files.")
 
     log.sub()
 

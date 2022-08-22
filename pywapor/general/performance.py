@@ -30,7 +30,7 @@ def performance_check(func):
         size, size_label = format_bytes(mem_test[1]-mem_test[0])
         log.info(f"> peak-memory-usage: {size:.1f}{size_label}, execution-time: {t2-t1}.")
         if isinstance(out, xr.Dataset):
-            log.info("> chunksize|dimsize: [" + ", ".join([f"{k}: {v[0]}|{sum(v)}" for k, v in out.chunksizes.items()]) + "]")
+            log.info("> chunksize|dimsize: [" + ", ".join([f"{k}: {v[0]}|{sum(v)}" for k, v in out.unify_chunks().chunksizes.items()]) + "]")
         log.sub()
         return out
     wrapper_func.__module__ = func.__module__

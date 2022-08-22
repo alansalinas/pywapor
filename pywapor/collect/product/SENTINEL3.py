@@ -1,7 +1,6 @@
 import os
 import pywapor.collect.protocol.sentinelapi as sentinelapi
 from pywapor.general.curvilinear import regrid, create_grid
-from pywapor.enhancers.apply_enhancers import apply_enhancer
 from pywapor.general.logger import log
 import glob
 import xarray as xr
@@ -103,13 +102,7 @@ def download(folder, latlim, lonlim, timelim, product_name,
                                     search_kwargs, node_filter = None)
 
     ds = sentinelapi.process_sentinel(scenes, variables, process_s3, 
-                                        time_func, f"{product_name}.nc", bb = bb)
-
-    # Apply product specific functions.
-    for var, funcs in post_processors.items():
-        for func in funcs:
-            ds, label = apply_enhancer(ds, var, func)
-            log.info(label)
+                                        time_func, f"{product_name}.nc", post_processors, bb = bb)
 
     return ds
 

@@ -34,7 +34,7 @@ def process_ds(ds, coords, variables, crs = None):
 
     return ds
 
-def make_example_ds(folder, target_crs):
+def make_example_ds(ds, folder, target_crs, bb = None):
     example_ds_fp = os.path.join(folder, "example_ds.nc")
     if os.path.isfile(example_ds_fp):
         example_ds = open_ds(example_ds_fp)
@@ -81,7 +81,8 @@ def save_ds(ds, fp, decode_coords = "all", encoding = None, chunks = "auto", pre
     ds = ds.chunk(chunks)
 
     if "y" in ds.coords:
-        ds = ds.sortby("y", ascending = False)
+        if len(ds.y.dims) == 1:
+            ds = ds.sortby("y", ascending = False)
         ds = ds.rio.write_transform(ds.rio.transform(recalc=True))
 
     if encoding == "initiate":

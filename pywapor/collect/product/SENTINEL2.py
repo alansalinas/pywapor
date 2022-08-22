@@ -7,7 +7,6 @@ from datetime import datetime as dt
 from pywapor.general.logger import log
 import pywapor.collect.protocol.sentinelapi as sentinelapi
 import numpy as np
-from pywapor.enhancers.apply_enhancers import apply_enhancer
 from pywapor.general.processing_functions import open_ds
 
 def process_s2(scene_folder, variables):
@@ -144,13 +143,7 @@ def download(folder, latlim, lonlim, timelim, product_name,
     scenes = sentinelapi.download(product_folder, latlim, lonlim, timelim, search_kwargs, node_filter = node_filter)
 
     ds = sentinelapi.process_sentinel(scenes, variables, process_s2, 
-                                        time_func, f"{product_name}.nc", bb = bb)
-
-    # Apply product specific functions.
-    for var, funcs in post_processors.items():
-        for func in funcs:
-            ds, label = apply_enhancer(ds, var, func)
-            log.info(label)
+                                        time_func, f"{product_name}.nc", post_processors, bb = bb)
 
     return ds
 
