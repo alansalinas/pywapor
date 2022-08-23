@@ -10,31 +10,6 @@ from pywapor.et_look_v2 import constants as c
 import numpy as np
 import xarray as xr
 
-def mean_temperature_kelvin_daily(t_air_k_min, t_air_k_max):
-    r"""
-    Computes the mean temperature over day and night.
-
-    Parameters
-    ----------
-    t_air_k_min : float
-        maximum air temperature
-        :math:`T_{a,min}`
-        [K]
-    t_air_k_max : float
-        maximum air temperature
-        :math:`T_{a,max}`
-        [K]
-
-    Returns
-    -------
-    t_air_k_24 : float
-        daily air temperature
-        :math:`T_{a,24}`
-        [K]
-
-    """
-    return (t_air_k_max + t_air_k_min) / 2
-
 def mean_temperature_kelvin_daytime(t_air_k_min, t_air_k_max):
     r"""
     Computes the mean temperature over the daily sunshine period.
@@ -60,57 +35,6 @@ def mean_temperature_kelvin_daytime(t_air_k_min, t_air_k_max):
     """
     return 0.25 * t_air_k_min + 0.75 * t_air_k_max
 
-def air_temperature_celcius(t_air_k):
-    r"""
-    Converts air temperature from Kelvin to Celcius, where 0 degrees Celcius
-    is equal to 273.15 degrees Kelvin.
-
-    Parameters
-    ----------
-    t_air_k : float
-        air temperature, 
-        :math:`T_a`
-        [K]
-
-    Returns
-    -------
-    t_air_c : float
-        air temperature, 
-        :math:`T_a`
-        [C]
-
-    Examples
-    --------
-    >>> from ETLook import meteo
-    >>> meteo.air_temperature_celcius(12.5)
-    285.65
-    """
-    return t_air_k - c.zero_celcius
-
-def mean_temperature_kelvin_daytime(t_air_k_min, t_air_k_max):
-    r"""
-    Computes the mean temperature over the daily sunshine period.
-
-    Parameters
-    ----------
-    t_air_k_min : float
-        maximum air temperature
-        :math:`T_{a,min}`
-        [K]
-    t_air_k_max : float
-        maximum air temperature
-        :math:`T_{a,max}`
-        [K]
-
-    Returns
-    -------
-    t_air_k_12 : float
-        daytime air temperature
-        :math:`T_{a,12}`
-        [K]
-
-    """
-    return 0.25 * t_air_k_min + 0.75 * t_air_k_max
 
 def air_temperature_kelvin(t_air):
     r"""
@@ -423,6 +347,93 @@ def vapour_pressure_from_specific_humidity_daily(qv_24, p_air_24):
         [mbar]
     """
     return vapour_pressure_from_specific_humidity(qv_24, p_air_24)
+
+
+def vapour_pressure_from_dewpoint(t_dew):
+    r"""
+    .. math ::
+        e_{a}=6.108\exp\left[\frac{17.27T_{d}}{T_{d}+237.3}\right]
+
+    Parameters
+    ----------
+    t_dew : float
+        dewpoint temperature, 
+        :math:`T_d`
+        [°C]
+
+    Returns
+    -------
+    vp : float
+        vapour pressure, 
+        :math:`e_a`
+        [mbar]
+
+    Examples
+    --------
+    >>> from ETLook import meteo
+    >>> meteo.vapour_pressure_from_dewpoint(20)
+    23.382812709274457
+    """
+
+    return saturated_vapour_pressure(t_dew)
+
+
+def vapour_pressure_from_dewpoint_daily(t_dew_24):
+    r"""
+    .. math ::
+        e_{a}=6.108\exp\left[\frac{17.27T_{d,24}}{T_{d,24}+237.3}\right]
+
+    Parameters
+    ----------
+    t_dew_24 : float
+        dewpoint temperature, 
+        :math:`T_d`
+        [°C]
+
+    Returns
+    -------
+    vp_24 : float
+        vapour pressure, 
+        :math:`e_{a,24}`
+        [mbar]
+
+    Examples
+    --------
+    >>> from ETLook import meteo
+    >>> meteo.vapour_pressure_from_dewpoint_daily(20)
+    23.382812709274457
+    """
+
+    return saturated_vapour_pressure(t_dew_24)
+
+
+def vapour_pressure_from_dewpoint_inst(t_dew_i):
+    r"""
+    .. math ::
+        e_{a,i}=6.108\exp\left[\frac{17.27T_{d,i}}{T_{d,i}+237.3}\right]
+
+    Parameters
+    ----------
+    t_dew_i : float
+        instantaneous dew point temperature, 
+        :math:`T_{dew,i}`
+        [°C]
+
+    Returns
+    -------
+    vp_i : float
+        vapour pressure, 
+        :math:`e_{a,i}`
+        [mbar]
+
+    Examples
+    --------
+    >>> from ETLook import meteo
+    >>> meteo.vapour_pressure_from_dewpoint_inst(20)
+    23.382812709274457
+    """
+
+    return saturated_vapour_pressure(t_dew_i)
 
 
 def saturated_vapour_pressure_minimum(t_air_min_coarse):

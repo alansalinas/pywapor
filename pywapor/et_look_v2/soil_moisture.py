@@ -9,7 +9,7 @@ import numpy as np
 import xarray as xr
 
 
-def wet_bulb_temperature_inst(t_air_i, t_dew_i, p_air_i):
+def wet_bulb_temperature_inst(t_air_i, t_dew_i):
     r"""
     Computes the instantaneous wet bulb temperature.
 
@@ -743,9 +743,9 @@ def monin_obukhov_length_full(h_full, ad_i, u_star_i_full, t_air_k_i):
     return unstable.monin_obukhov_length(h_full, ad_i, u_star_i_full, t_air_k_i)
 
 
-def aerodynamical_resistance_full(u_i, L_full, z0m_full=0.1, disp_full=0.667, z_obs=10):
+def aerodynamical_resistance_forced_convection_full(u_i, L_full, z0m_full=0.1, disp_full=0.667, z_obs=10):
     r"""
-    Computes the aerodynamical resistance for a full canopy.
+    Computes the aerodynamical resistance for a full canopy, Eq A1 from Sanchez.
 
     .. math ::
 
@@ -799,7 +799,7 @@ def aerodynamical_resistance_full(u_i, L_full, z0m_full=0.1, disp_full=0.667, z_
     return res
 
 
-def aerodynamical_resistance_bare(u_i, L_bare, z0m_bare=0.001, disp_bare=0.0, z_obs=10):
+def aerodynamical_resistance_forced_convection_bare(u_i, L_bare, z0m_bare=0.001, disp_bare=0.0, z_obs=10):
     r"""
     Computes the aerodynamical resistance for a dry bare soil.
 
@@ -886,37 +886,6 @@ def wind_speed_soil_inst(u_i, L_bare, z_obs=10):
         (np.log(z0_free / z0_soil))
         / (np.log(z_obs / z0_soil) - psi_m(-z0_free / L_bare))
     )
-
-
-def aerodynamical_resistance_soil(u_i_soil):
-    r"""
-    Computes the aerodynamical resistance of the soil.
-
-    .. math ::
-
-        r_{a,s}=\frac{1}{\left(0.0025 \cdot T_{dif}^{\frac{1}{3}}+0.012 \cdot u_{i,s}\right)}
-
-    where:
-
-    * :math:`T_{dif}` = 10.0
-
-    Parameters
-    ----------
-    u_i_soil : float
-        instantaneous wind speed just above soil surface, 
-        :math:`u_{i,s}`
-        [m s-1]
-
-    Returns
-    -------
-    ras : float
-        aerodynamical resistance, 
-        :math:`r_{a,s}`
-        [sm-1]
-
-    """
-    Tdif = 10.0
-    return 1. / (0.0025 * (Tdif) ** (1. / 3.) + 0.012 * u_i_soil)
 
 
 def maximum_temperature_full(
@@ -1174,3 +1143,182 @@ def soil_moisture_from_maximum_temperature(lst_max, lst, lst_min):
         ratio = np.clip(ratio, 0, 1)
 
     return 1 - ratio
+
+def aerodynamical_resistance_forced_convection_soil(u_i_soil):
+    r"""
+    Computes the aerodynamical resistance of the soil
+
+    Eq A7 from Sanchez.
+
+    .. math ::
+        r_{a,s}=\frac{1}{\left(0.0025T_{dif}^{\frac{1}{3}}+0.012u_{i,s}\right)}
+
+    Parameters
+    ----------
+    u_i_soil : float
+        instantaneous wind speed just above soil surface
+        :math:`u_{i,s}`
+        [m s-1]
+
+    Returns
+    -------
+    ras_forced : float
+        forced aerodynamical resistance
+        :math:`r_{a,s}`
+        [sm-1]
+
+    """
+    Tdif = 10.0
+    return 1. / (0.0025 * (Tdif) ** (1. / 3.) + 0.012 * u_i_soil)
+
+
+def aerodynamical_resistance_free_convection_bare(h_bare, t_air_k_i, ad_i, z0m_bare=0.001):
+    r"""
+    Calculates the aerodynamic resistance in the case of free convection for bare soil.
+
+    Based on equation 15 from:
+    https://journals.ametsoc.org/view/journals/apme/31/9/1520-0450_1992_031_1096_emlst_2_0_co_2.xml
+
+    Parameters
+    ----------
+    h_bare : float
+        sensible heat flux bare soil
+        :math:`H_{bare}`
+        [Wm-2]
+    t_air_k_i : float
+        instantaneous air temperature
+        :math:`T_{a}`
+        [K]
+    ad_i : float
+        instantaneous air density
+        :math:`\rho`
+        [k g m-3]
+    z0m_bare : float
+        surface roughness bare soil
+        :math:`z_{0,m}`
+        [m]
+
+    Returns
+    -------
+    rah_bare_free : float
+        aerodynamic resistance soil
+        :math:`r_{a,a}`
+        [sm-1]
+    """
+
+    # approximation: tpot = tact
+    θ = t_air_k_i
+    z0h_bare = z0m_bare / 7.
+
+    rah_bare_free = 1.00434 / (np.cbrt(z0h_bare/θ) * np.cbrt(h_bare/(ad_i*c.sh)))
+
+    return rah_bare_free
+
+
+def aerodynamical_resistance_free_convection_full(h_full, t_air_k_i, ad_i, z0m_full=0.1):
+    r"""
+    Calculates the aerodynamic resistance in the case of free convection for the canopy.
+
+    Based on equation 15 from:
+    https://journals.ametsoc.org/view/journals/apme/31/9/1520-0450_1992_031_1096_emlst_2_0_co_2.xml
+
+    Parameters
+    ----------
+    h_full : float
+        sensible heat flux full canopy
+        :math:`H_{full}`
+        [Wm-2]
+    t_air_k_i : float
+        instantaneous air temperature
+        :math:`T_{a}`
+        [K]
+    ad_i : float
+        instantaneous air density
+        :math:`\rho`
+        [k g m-3]
+    z0m_full : float
+        surface roughness full canopy
+        :math:`z_{0,m}`
+        [m]
+
+    Returns
+    -------
+    rah_full_free : float
+        aerodynamic resistance canopy
+        :math:`r_{a,c}`
+        [sm-1]
+    """
+
+    # approximation: tpot = tact
+    θ = t_air_k_i
+    z0h_full = z0m_full / 7.
+
+    rah_full_free = 1.00434 / (np.cbrt(z0h_full/θ) * np.cbrt(h_full/(ad_i*c.sh)))
+
+    return rah_full_free
+
+
+def aerodynamical_resistance_bare(raa_forced, ras_forced, rah_bare_free=np.inf):
+    r"""
+    Computes the aerodynamical resistance for a dry bare soil.
+
+    This function takes the minimum of forced and free convection
+
+    Parameters
+    ----------
+    raa_forced : float
+        forced aerodynamical resistance dry surface
+        :math:`r_{a,a}`
+        [sm-1]
+    ras_forced : float
+        forced aerodynamical resistance
+        :math:`r_{a,s}`
+        [sm-1]
+    rah_bare_free : float
+        aerodynamic resistance soil
+        :math:`r_{a,a}`
+        [sm-1]
+
+    Returns
+    -------
+    rah_bare : float
+        aerodynamical resistance bare soil
+        :math:`r_{a,h} bare`
+        [sm-1]
+    """
+
+    # soil forced resistance in series
+    rah_bare = np.minimum(raa_forced + ras_forced, rah_bare_free)
+
+    return rah_bare
+
+
+def aerodynamical_resistance_full(rac_forced, rah_full_free=np.inf):
+    r"""
+    Computes the aerodynamical resistance for a full canopy.
+
+    This function takes the minimum of forced and free convection
+
+    Parameters
+    ----------
+    rac_forced : float
+        forced aerodynamical resistance canopy
+        :math:`r_{a,c}`
+        [sm-1]
+    rah_full_free : float
+        aerodynamic resistance soil
+        :math:`r_{a,a}`
+        [sm-1]
+
+    Returns
+    -------
+    rah_full : float
+        aerodynamical resistance canopy
+        :math:`r_{a,h} canopy`
+        [sm-1]
+
+    """
+
+    rah_full = np.minimum(rac_forced, rah_full_free)
+
+    return rah_full

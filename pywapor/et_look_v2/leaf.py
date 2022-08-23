@@ -81,7 +81,8 @@ def vegetation_cover(ndvi, nd_min=0.125, nd_max=0.8, vc_pow=0.7):
             res[ndvi >= nd_max] = 1
         else:
             res = 1 - ((nd_max - ndvi) / (nd_max - nd_min)) ** vc_pow
-            res = res.clip(0.0, 1.0)
+            res = xr.where(ndvi <= nd_min, 0, res)
+            res = xr.where(ndvi >= nd_max, 1, res)
 
     return res
 

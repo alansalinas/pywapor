@@ -63,6 +63,8 @@ def main(input_data, se_root_version = "v2", export_vars = "default"):
     # Version
     if se_root_version == "v2":
         ETLook = ETLook_v2
+    elif se_root_version == "v3":
+        ETLook = ETLook_v2
     elif se_root_version == "dev":
         ETLook = ETLook_dev
 
@@ -145,9 +147,18 @@ def main(input_data, se_root_version = "v2", export_vars = "default"):
     ds["L_full"] = ETLook.soil_moisture.monin_obukhov_length_full(ds["h_full"], ds["ad_i"], ds["u_star_i_full"], ds["t_air_k_i"])
 
     ds["u_i_soil"] = ETLook.soil_moisture.wind_speed_soil_inst(ds["u_i"], ds["L_bare"], z_obs = ds["z_obs"])
-    ds["ras"] = ETLook.soil_moisture.aerodynamical_resistance_soil(ds["u_i_soil"])
-    ds["raa"] = ETLook.soil_moisture.aerodynamical_resistance_bare(ds["u_i"], ds["L_bare"], z0m_bare = ds["z0m_bare"], disp_bare = ds["disp_bare"], z_obs = ds["z_obs"])
-    ds["rac"] = ETLook.soil_moisture.aerodynamical_resistance_full(ds["u_i"], ds["L_full"], z0m_full = ds["z0m_full"], disp_full = ds["disp_full"], z_obs = ds["z_obs"])
+    
+    ds["ras"] = ETLook.soil_moisture.aerodynamical_resistance_forced_convection_soil(ds["u_i_soil"])
+    ds["raa"] = ETLook.soil_moisture.aerodynamical_resistance_forced_convection_bare(ds["u_i"], ds["L_bare"], z0m_bare = ds["z0m_bare"], disp_bare = ds["disp_bare"], z_obs = ds["z_obs"])
+    ds["rac"] = ETLook.soil_moisture.aerodynamical_resistance_forced_convection_full(ds["u_i"], ds["L_full"], z0m_full = ds["z0m_full"], disp_full = ds["disp_full"], z_obs = ds["z_obs"])
+    
+    if se_root_version == "v3":
+
+        ds["rah_bare_free"] = ETLook.soil_moisture.aerodynamical_resistance_free_convection_bare(ds["h_bare"], ds["t_air_k_i"], ds["ad_i"], z0m_bare = ds["z0m_bare"])
+        ds["rah_full_free"] = ETLook.soil_moisture.aerodynamical_resistance_free_convection_full(ds["h_full"], ds["t_air_k_i"], ds["ad_i"], z0m_full = ds["z0m_full"])
+        
+        ds["raa"] = ETLook.soil_moisture.aerodynamical_resistance_bare(ds["raa"], ds["ras"], rah_bare_free = ds["rah_bare_free"])
+        ds["rac"] = ETLook.soil_moisture.aerodynamical_resistance_full(ds["rac"], rah_full_free = ds["rah_full_free"])
 
     ds["t_max_bare"] = ETLook.soil_moisture.maximum_temperature_bare(ds["ra_hor_clear_i"], ds["emiss_atm_i"], ds["t_air_k_i"], ds["ad_i"], ds["raa"], ds["ras"], ds["r0_bare"])
     ds["t_max_full"] = ETLook.soil_moisture.maximum_temperature_full(ds["ra_hor_clear_i"], ds["emiss_atm_i"], ds["t_air_k_i"], ds["ad_i"], ds["rac"], ds["r0_full"])

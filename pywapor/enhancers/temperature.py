@@ -258,7 +258,7 @@ def bt_to_lst(ds, var, ndvi_s = 0.2, ndvi_v = 0.5, emis_s = 0.97, emis_v = 0.985
         else:
             ds["lst"] = new_lst
 
-    # ds = ds.drop_vars(["bt"])
+    ds = ds.drop_vars(["bt"])
 
     return ds
 

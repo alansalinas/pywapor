@@ -99,14 +99,17 @@ def main(input_data, et_look_version = "v2", export_vars = "default"):
     ds["stress_rad"] = ETLook.stress.stress_radiation(ds["ra_24"])
     ds["p_air_0_24_mbar"] = ETLook.meteo.air_pressure_kpa2mbar(ds["p_air_0_24"])
     ds["p_air_24"] = ETLook.meteo.air_pressure_daily(ds["z"], ds["p_air_0_24_mbar"])
-    ds["vp_24"] = ETLook.meteo.vapour_pressure_from_specific_humidity_daily(ds["qv_24"], ds["p_air_24"])
 
-    ds["svp_24"] = ETLook.meteo.saturated_vapour_pressure(ds["t_air_24"])
-    
-    if et_look_version == "dev":
-        ds["svp_24"] = ETLook.meteo.saturated_vapour_pressure_average(
-                    ETLook.meteo.saturated_vapour_pressure_maximum(ds["t_air_max_24"]),
-                    ETLook.meteo.saturated_vapour_pressure_minimum(ds["t_air_min_24"]))
+    # TODO make combination of `vp_24` when both `qv_24` and `t_dew_24` are provided.
+    ds["vp_24"] = ETLook.meteo.vapour_pressure_from_specific_humidity_daily(ds["qv_24"], ds["p_air_24"])
+    ds["vp_24"] = ETLook.meteo.vapour_pressure_from_dewpoint_daily(ds["t_dew_24"])
+
+    if et_look_version == "v2":
+        ds["svp_24"] = ETLook.meteo.saturated_vapour_pressure(ds["t_air_24"])
+    elif et_look_version == "v3" or et_look_version == "dev":
+        ds["svp_24_min"] = ETLook.meteo.saturated_vapour_pressure_minimum(ds["t_air_min_24"])
+        ds["svp_24_max"] = ETLook.meteo.saturated_vapour_pressure_maximum(ds["t_air_max_24"])
+        ds["svp_24"] = ETLook.meteo.saturated_vapour_pressure_average(ds["svp_24_max"], ds["svp_24_min"])
 
     ds["vpd_24"] = ETLook.meteo.vapour_pressure_deficit_daily(ds["svp_24"], ds["vp_24"])
     ds["stress_vpd"] = ETLook.stress.stress_vpd(ds["vpd_24"], ds["vpd_slope"])
@@ -228,7 +231,6 @@ def main(input_data, et_look_version = "v2", export_vars = "default"):
         ds["t_air_k_min"] = ETLook.meteo.air_temperature_kelvin_daily(ds["t_air_min_24"])
         ds["t_air_k_max"] = ETLook.meteo.air_temperature_kelvin_daily(ds["t_air_max_24"])
 
-        # ds["t_air_k_24"] = ETLook.meteo.mean_temperature_kelvin_daily(ds["t_air_k_min"], ds["t_air_k_max"])
         ds["t_air_k_12"] = ETLook.meteo.mean_temperature_kelvin_daytime(ds["t_air_k_min"], ds["t_air_k_max"])
 
         ds["t_dep"] = ETLook.biomass.temperature_dependency(ds["t_air_k_12"], dh_ap=ds["dh_ap"], d_s=ds["d_s"], dh_dp=ds["dh_dp"])
