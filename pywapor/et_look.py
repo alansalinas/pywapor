@@ -5,7 +5,7 @@ Code to run the ETLook model.
 import os
 import numpy as np
 import pywapor.et_look_dev as ETLook_dev
-import pywapor.et_look_v2 as ETLook_v2
+import pywapor.et_look_v2_v3 as ETLook_v2_v3
 import pywapor.general as g
 import datetime
 from pywapor.general.logger import log, adjust_logger
@@ -52,8 +52,8 @@ def main(input_data, et_look_version = "v2", export_vars = "default"):
     log.info("> ET_LOOK").add()
 
     # Version
-    if et_look_version == "v2":
-        ETLook = ETLook_v2
+    if et_look_version == "v2" or et_look_version == "v3":
+        ETLook = ETLook_v2_v3
     elif et_look_version == "dev":
         ETLook = ETLook_dev
 

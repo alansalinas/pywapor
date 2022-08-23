@@ -1,5 +1,5 @@
 import numpy as np
-from pywapor.et_look_v2 import constants as con
+from pywapor.et_look_v2_v3 import constants as con
 import xarray as xr
 import warnings
 

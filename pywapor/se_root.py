@@ -11,7 +11,7 @@ import datetime
 import pywapor.general as g
 import pywapor.general.processing_functions as PF
 import pywapor.et_look_dev as ETLook_dev
-import pywapor.et_look_v2 as ETLook_v2
+import pywapor.et_look_v2_v3 as ETLook_v2_v3
 from pywapor.general.logger import log, adjust_logger
 from pywapor.general.processing_functions import save_ds, open_ds
 import copy
@@ -61,10 +61,8 @@ def main(input_data, se_root_version = "v2", export_vars = "default"):
     log.info("> SE_ROOT").add()
 
     # Version
-    if se_root_version == "v2":
-        ETLook = ETLook_v2
-    elif se_root_version == "v3":
-        ETLook = ETLook_v2
+    if se_root_version == "v2" or se_root_version == "v3":
+        ETLook = ETLook_v2_v3
     elif se_root_version == "dev":
         ETLook = ETLook_dev
 
