@@ -105,9 +105,8 @@ def main(folder, max_lst_uncertainty = 2.5, final_bb = None):
         # Clip and pad to bounding-box
         if isinstance(example_ds, type(None)):
             example_ds = make_example_ds(ds, os.path.join(folder, os.path.splitext(file)[0]), target_crs, bb = final_bb)
-        else:
-            ds = ds.rio.reproject_match(example_ds)
-            ds = ds.assign_coords({"x": example_ds.x, "y": example_ds.y})
+        ds = ds.rio.reproject_match(example_ds)
+        ds = ds.assign_coords({"x": example_ds.x, "y": example_ds.y})
 
         # Save to netcdf
         fp = os.path.join(folder, os.path.splitext(file)[0] + ".nc")

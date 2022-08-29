@@ -68,12 +68,12 @@ def regrid(grid_ds, input_ds, max_px_dist = 10):
             (input_ds.x >= bb[0] - dx) & 
             (input_ds.x <= bb[2] + dx))
 
-    # Check if there is enough input data for current chunk.
-    if mask.sum().values < 10:
-        return output_ds.unstack()
-
     # Mask irrelevant pixels.
     data = input_ds.where(mask, drop = False)
+
+    # Check if there is enough input data for current chunk.
+    if np.any(np.array([data[x].count().values for x in data.data_vars if x not in ["x", "y"]]) < 10):
+        return output_ds.unstack()
 
     # --heavy-> Transform input data from 2D to 1D and remove empty pixels.
     data_pixel = data.stack({"pixel": input_ds.x.dims}).dropna("pixel")
@@ -126,11 +126,12 @@ def regrid(grid_ds, input_ds, max_px_dist = 10):
 
 if __name__ == "__main__":
 
+    ...
     # Small test.
-    input_ds = xr.tutorial.open_dataset("rasm")
-    input_ds = input_ds.rename_dims({"x": "nx", "y": "ny"}).rename_vars({"xc":"x", "yc": "y"})
+    # input_ds = xr.tutorial.open_dataset("rasm")
+    # input_ds = input_ds.rename_dims({"x": "nx", "y": "ny"}).rename_vars({"xc":"x", "yc": "y"})
 
-    grid_ds = create_grid(input_ds, 1.0, 1.0).chunk({"x":500, "y":500})
+    # grid_ds = create_grid(input_ds, 1.0, 1.0).chunk({"x":500, "y":500})
 
     # with ProgressBar():
     #     out = xr.map_blocks(regrid, grid_ds, (input_ds,), template = grid_ds).compute()

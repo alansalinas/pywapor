@@ -69,7 +69,7 @@ def download(folder, latlim, lonlim, timelim, product_name, req_vars,
     folder = os.path.join(folder, "GEOS5")
     fn = os.path.join(folder, f"{product_name}.nc")
     if os.path.isfile(fn):
-        return open_ds(fn, "all")
+        return open_ds(fn)
 
     spatial_buffer = True
     if spatial_buffer:

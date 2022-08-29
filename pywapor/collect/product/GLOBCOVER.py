@@ -57,9 +57,9 @@ def download(folder, latlim, lonlim, product_name, req_vars = ["lulc"],
     
     folder = os.path.join(folder, "GLOBCOVER")
 
-    fn = os.path.join(folder, f"{product_name}.nc")
-    if os.path.isfile(fn):
-        return open_ds(fn, "all")
+    fp = os.path.join(folder, f"{product_name}.nc")
+    if os.path.isfile(fp):
+        return open_ds(fp)
 
     coords = {"x": ("lon", lonlim), "y": ("lat", latlim)}
 
@@ -72,20 +72,21 @@ def download(folder, latlim, lonlim, product_name, req_vars = ["lulc"],
         default_processors = default_post_processors(product_name, req_vars)
         post_processors = {k: {True: default_processors[k], False: v}[v == "default"] for k,v in post_processors.items()}
 
-    ds = cog.download(folder, product_name, coords, variables, 
-                        post_processors, url_func)
+    ds = cog.download(fp, product_name, coords, variables, 
+                        post_processors, url_func, ndv = 0)
     
     return ds
 
-# if __name__ == "__main__":
+if __name__ == "__main__":
 
-#     product_name = '2009_V2.3_Global'
+    product_name = '2009_V2.3_Global'
 
-#     folder = r"/Users/hmcoerver/Downloads/pywapor_test"
-#     # latlim = [26.9, 33.7]
-#     # lonlim = [25.2, 37.2]
-#     latlim = [28.9, 29.7]
-#     lonlim = [30.2, 31.2]
+    folder = r"/Users/hmcoerver/Local/globcov_test"
+    latlim = [28.9, 29.7]
+    lonlim = [30.2, 31.2]
+    variables = None
+    post_processors = None
+    req_vars = ["lulc", "rs_min", "land_mask"]
 
-#     ds = download(folder, latlim, lonlim, product_name,
-#                 variables = None, post_processors = None)
+    ds = download(folder, latlim, lonlim, product_name, req_vars = req_vars,
+                    variables = variables, post_processors = post_processors)

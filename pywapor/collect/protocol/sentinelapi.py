@@ -114,7 +114,6 @@ def process_sentinel(scenes, variables, specific_processor, time_func, final_fn,
         # Clip and pad to bounding-box
         if isinstance(example_ds, type(None)):
             example_ds = make_example_ds(ds, folder, target_crs, bb = bb)
-
         ds = ds.rio.reproject_match(example_ds)
         ds = ds.assign_coords({"x": example_ds.x, "y": example_ds.y})
 

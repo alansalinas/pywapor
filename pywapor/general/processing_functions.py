@@ -95,6 +95,9 @@ def save_ds(ds, fp, decode_coords = "all", encoding = None, chunks = "auto", pre
                         "dtype": "int32", # determine_dtype(ds[var], -9999, precision.get(var)),
                         "scale_factor": 10**-precision.get(var, 0), 
                         } for var in ds.data_vars}
+        for var in ds.data_vars:
+            if "_FillValue" in ds[var].attrs.keys():
+                _ = ds[var].attrs.pop("_FillValue")
         if "spatial_ref" in ds.coords:
             for var in ds.data_vars:
                 if np.all([spat in ds[var].coords for spat in ["x", "y"]]):
@@ -137,8 +140,9 @@ def create_dummy_ds(varis, fp = None, shape = (10, 1000, 1000), chunks = (-1, 50
                     sdate = "2022-02-01", edate = "2022-02-11", precision = 2, min_max = [-1, 1],
                     latlim = [20,30], lonlim = [40, 50], data_generator = "random", mask_data = False):
     check = False
-    if os.path.isfile(fp):
-        os.remove(fp)
+    if not isinstance(fp, type(None)):
+        if os.path.isfile(fp):
+            os.remove(fp)
     if not check:
         nt, ny, nx = shape
         dates = pd.date_range(sdate, edate, periods = nt)

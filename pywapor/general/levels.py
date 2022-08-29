@@ -280,7 +280,7 @@ def pre_et_look_levels(level = "level_1", bin_length = "DEKAD"):
             "products": [
                 {
                     "source": "STATICS",
-                    "product_name": var,
+                    "product_name": "WaPOR2",
                     "enhancers": "default",
                 },
             ],
@@ -481,7 +481,7 @@ def pre_se_root_levels(level = "level_1"):
             "products": [
                 {
                     "source": "STATICS",
-                    "product_name": var,
+                    "product_name": "WaPORv2",
                     "enhancers": "default",
                 },
             ],
@@ -510,3 +510,13 @@ def pre_se_root_levels(level = "level_1"):
                 "level_2": level_2}
 
     return levels[level]
+
+if __name__ == "__main__":
+
+    et_look_sources_lvl1 = pre_et_look_levels(level = "level_1", bin_length = "DEKAD")
+    et_look_sources_lvl2 = pre_et_look_levels(level = "level_2", bin_length = "DEKAD")
+
+    se_root_sources_lvl1 = pre_se_root_levels(level = "level_1")
+    se_root_sources_lvl2 = pre_se_root_levels(level = "level_1")
+
+    
