@@ -37,7 +37,8 @@ def wet_bulb_temperature_inst(t_air_i, t_dew_i):
 
 def wet_bulb_temperature_inst_new(t_air_i, qv_i, p_air_i):
     r"""
-    Computes the instantaneous wet bulb temperature.
+    Computes the instantaneous wet bulb temperature based on Stull, Roland. "Wet-bulb temperature from relative 
+    humidity and air temperature." Journal of applied meteorology and climatology 50.11 (2011): 2267-2269.
 
     Parameters
     ----------

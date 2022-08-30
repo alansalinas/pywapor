@@ -16,8 +16,8 @@ from pywapor.general.variables import fill_attrs
 from pywapor.enhancers.temperature import lapse_rate as _lapse_rate
 
 def rename_vars(ds, *args):
-    varis = ["p", "ra", "t_air", "t_air_min", "t_air_max", 
-            "u2m", "v2m", "qv", "p_air", "p_air_0", "wv"]
+    varis = ["p", "ra", "t_air", "t_air_min", "t_air_max", "u", "vp",
+            "u2m", "v2m", "qv", "p_air", "p_air_0", "wv", "t_dew"]
     present_vars = [x for x in varis if x in ds.variables]
     ds = ds.rename({k: k + "_24" for k in present_vars})
     return ds
@@ -40,7 +40,7 @@ def add_constants(ds, *args):
     return ds
 
 def main(folder, latlim, lonlim, timelim, sources = "level_1", bin_length = "DEKAD", 
-            enhancers = [lapse_rate], diagnostics = None, example_source = None):
+            enhancers = [lapse_rate], example_source = None):
     """Prepare input data for `et_look`.
 
     Parameters
@@ -98,14 +98,7 @@ def main(folder, latlim, lonlim, timelim, sources = "level_1", bin_length = "DEK
 
     dss = downloader.collect_sources(folder, sources, latlim, lonlim, [bins[0], bins[-1]])
 
-    if diagnostics:
-        t_1 = datetime.datetime.now()
-        log.info("> DIAGNOSTICS").add()
-        ds = compositer.main(dss, sources, example_source, bins, folder, enhancers, diagnostics = diagnostics)
-        t_2 = datetime.datetime.now()
-        log.sub().info(f"< DIAGNOSTICS ({str(t_2 - t_1)})")
-    else:
-        ds = compositer.main(dss, sources, example_source, bins, folder, enhancers, diagnostics = None)
+    ds = compositer.main(dss, sources, example_source, bins, folder, enhancers)
 
     t2 = datetime.datetime.now()
     log.sub().info(f"< PRE_ET_LOOK ({str(t2 - t1)})")
@@ -117,6 +110,8 @@ if __name__ == "__main__":
     enhancers = "default"
     diagnostics = None
     example_source = None
+    bin_length = "DEKAD"
+    enhancers = [lapse_rate]
 
 #     import pywapor
 

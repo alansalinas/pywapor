@@ -185,7 +185,11 @@ def download(folder, latlim, lonlim, timelim, product_name, req_vars,
 
     fn = os.path.join(folder, f"{product_name}.nc")
     if os.path.isfile(fn):
-        return open_ds(fn, "all")
+        ds = open_ds(fn)
+        if np.all([x in ds.data_vars for x in req_vars]):
+            return ds
+        else:
+            ds = ds.close()
 
     if product_name == "MOD13Q1.061" or product_name == "MYD13Q1.061":
         timedelta = np.timedelta64(8, "D")

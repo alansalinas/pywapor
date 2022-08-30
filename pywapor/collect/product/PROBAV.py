@@ -24,7 +24,11 @@ def download(folder, latlim, lonlim, timelim, product_name, req_vars = ["ndvi", 
 
     fn = os.path.join(folder, f"{product_name}.nc")
     if os.path.isfile(fn):
-        return open_ds(fn, "all")
+        ds = open_ds(fn)
+        if np.all([x in ds.data_vars for x in req_vars]):
+            return ds
+        else:
+            ds = ds.close()
 
     dates = pd.date_range(timelim[0], timelim[1], freq="D")
 

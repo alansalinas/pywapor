@@ -3,6 +3,7 @@ from pywapor.collect.protocol import cog
 from pywapor.general.processing_functions import open_ds
 from functools import partial
 from pywapor.enhancers import lulc
+import numpy as np
 
 def default_vars(product_name, req_vars):
     variables = {
@@ -59,7 +60,11 @@ def download(folder, latlim, lonlim, product_name, req_vars = ["lulc"],
 
     fp = os.path.join(folder, f"{product_name}.nc")
     if os.path.isfile(fp):
-        return open_ds(fp)
+        ds = open_ds(fp)
+        if np.all([x in ds.data_vars for x in req_vars]):
+            return ds
+        else:
+            ds = ds.close()
 
     coords = {"x": ("lon", lonlim), "y": ("lat", latlim)}
 

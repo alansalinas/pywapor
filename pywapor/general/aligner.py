@@ -5,52 +5,18 @@ times.
 """
 
 from pywapor.general.processing_functions import save_ds, open_ds
-from pywapor.general.reproject import reproject
+from pywapor.general.reproject import align_pixels
 from pywapor.enhancers.apply_enhancers import apply_enhancer
 from pywapor.general.logger import log
 import os
 import numpy as np
 import xarray as xr
 from itertools import chain
-from rasterio import CRS
+
 
 def is_aligned(ds, example_ds):
     return ds.equals(example_ds)
 
-def get_pixel_sizes(dss):
-    # Check CRSs of datasets.
-    crss = [v.rio.crs.to_epsg() for v in dss]
-    # Count occurence of the different CRSs.
-    uniqs, counts = np.unique(crss, return_counts=True)
-    # Pick the dominant CRS.
-    crs = uniqs[np.argmax(counts)]
-    # Reproject to common CRS.
-    dss = [ds.rio.reproject(CRS.from_epsg(crs)) for ds in dss]
-    return [np.abs(np.prod(v.rio.resolution())) for k, v in dss]
-
-def align_pixels(dss, folder, spatial_interp = "nearest", example_ds = None, fn_append = ""):
-
-    temp_files = list()
-
-    if isinstance(spatial_interp, str):
-        spatial_interp = [spatial_interp] * len(dss)
-    assert len(dss) == len(spatial_interp)
-
-    if len(dss) == 1 and isinstance(example_ds, type(None)):
-        dss1 = [dss[0]]
-    else:
-        if isinstance(example_ds, type(None)):
-            example_ds = dss[np.argmin(get_pixel_sizes(dss))]
-        dss1 = list()
-        for i, (spat_interp, ds_part) in enumerate(zip(spatial_interp, dss)):
-            if not ds_part.equals(example_ds):
-                var_str = "_".join(ds_part.data_vars)
-                dst_path = os.path.join(folder, f"{var_str}_x{i}{fn_append}.nc")
-                ds_part = reproject(ds_part, example_ds, dst_path, spatial_interp = spat_interp)
-                temp_files.append(ds_part.encoding["source"])
-            dss1.append(ds_part)
-
-    return dss1, temp_files
 
 def main(dss, sources, example_source, folder, enhancers, example_t_vars = ["lst"]):
     """Aligns the datetimes in de `dss` xr.Datasets with the datetimes of the 
@@ -90,11 +56,13 @@ def main(dss, sources, example_source, folder, enhancers, example_t_vars = ["lst
     dss2 = list()
 
     # Make inventory of all variables.
-    variables = np.unique(list(chain.from_iterable([ds.data_vars for ds in dss.values()]))).tolist()
+    variables = [x for x in np.unique(list(chain.from_iterable([ds.data_vars for ds in dss.values()]))).tolist() if x in sources.keys()]
     variables = example_t_vars + [x for x in variables if x not in example_t_vars]
 
     # Create variable to store times to interpolate to.
     example_time = None
+
+    temp_files2 = list()
 
     # Loop over the variables
     for var in variables:
@@ -110,7 +78,6 @@ def main(dss, sources, example_source, folder, enhancers, example_t_vars = ["lst
         # Combine different source_products (along time dimension).
         ds = xr.combine_nested(dss1, concat_dim = "time").chunk({"time": -1}).sortby("time").squeeze()
 
-        temp_files2 = list()
         if var in example_t_vars:
             if isinstance(example_time, type(None)):
                 example_time = ds["time"]
@@ -125,6 +92,9 @@ def main(dss, sources, example_source, folder, enhancers, example_t_vars = ["lst
             ds = save_ds(ds, dst_path, encoding = "initiate", label = lbl)
             dss2.append(ds)
             temp_files2.append(ds.encoding["source"])
+        else:
+            # Add time-invariant data as is.
+            dss2.append(ds)
 
         for nc in temp_files1:
             os.remove(nc)
@@ -156,35 +126,35 @@ def main(dss, sources, example_source, folder, enhancers, example_t_vars = ["lst
 
     return ds
 
-if __name__ == "__main__":
+# if __name__ == "__main__":
 
-    import numpy as np
-    import glob
+#     import numpy as np
+#     import glob
 
-    dss = {
-        ("SENTINEL2", "S2MSI2A"): r"/Users/hmcoerver/Local/test_data/SENTINEL2/S2MSI2A.nc",
-        ("SENTINEL3", "SL_2_LST___"): r"/Users/hmcoerver/Local/test_data/SENTINEL3/SL_2_LST___.nc",
-        # ("VIIRSL1", "VNP02IMG"): r"/Users/hmcoerver/Local/test_data/VIIRSL1/VNP02IMG.nc",
-    }
-    example_source = ("SENTINEL2", "S2MSI2A")
+#     dss = {
+#         ("SENTINEL2", "S2MSI2A"): r"/Users/hmcoerver/Local/test_data/SENTINEL2/S2MSI2A.nc",
+#         ("SENTINEL3", "SL_2_LST___"): r"/Users/hmcoerver/Local/test_data/SENTINEL3/SL_2_LST___.nc",
+#         # ("VIIRSL1", "VNP02IMG"): r"/Users/hmcoerver/Local/test_data/VIIRSL1/VNP02IMG.nc",
+#     }
+#     example_source = ("SENTINEL2", "S2MSI2A")
 
-    sources = {
-            "ndvi": {"spatial_interp": "nearest", "temporal_interp": "linear"},
-            "lst": {"spatial_interp": "nearest", "temporal_interp": "linear"},
-            "bt": {"spatial_interp": "nearest", "temporal_interp": "linear"},
-                }
+#     sources = {
+#             "ndvi": {"spatial_interp": "nearest", "temporal_interp": "linear"},
+#             "lst": {"spatial_interp": "nearest", "temporal_interp": "linear"},
+#             "bt": {"spatial_interp": "nearest", "temporal_interp": "linear"},
+#                 }
 
-    # example_source = ("source1", "productX")
-    folder = r"/Users/hmcoerver/Local/test_data"
-    enhancers = list()
-    example_t_vars = ["lst"]
+#     # example_source = ("source1", "productX")
+#     folder = r"/Users/hmcoerver/Local/test_data"
+#     enhancers = list()
+#     example_t_vars = ["lst"]
 
-    chunks = (1, 500, 500)
+#     chunks = (1, 500, 500)
 
-    for fp in glob.glob(os.path.join(folder, "*.nc")):
-        os.remove(fp)
+#     for fp in glob.glob(os.path.join(folder, "*.nc")):
+#         os.remove(fp)
 
-    from pywapor.general.logger import log, adjust_logger
-    adjust_logger(True, folder, "INFO")
+#     from pywapor.general.logger import log, adjust_logger
+#     adjust_logger(True, folder, "INFO")
 
-    ds = main(dss, sources, example_source, folder, enhancers, example_t_vars = ["lst"])
+#     ds = main(dss, sources, example_source, folder, enhancers, example_t_vars = ["lst"])

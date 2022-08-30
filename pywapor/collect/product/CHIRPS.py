@@ -48,9 +48,13 @@ def download(folder, latlim, lonlim, timelim, product_name = "P05", req_vars = [
                 variables = None, post_processors = None):
     folder = os.path.join(folder, "CHIRPS")
 
-    fn = os.path.join(folder, f"{product_name}.nc")
-    if os.path.isfile(fn):
-        return open_ds(fn, "all")
+    fn_final = os.path.join(folder, f"{product_name}.nc")
+    if os.path.isfile(fn_final):
+        ds = open_ds(fn_final)
+        if np.all([x in ds.data_vars for x in req_vars]):
+            return ds
+        else:
+            ds = ds.close()
 
     tiles = [None]
     coords = {"x": ["longitude", lonlim], "y": ["latitude", latlim], "t": ["time", timelim]}

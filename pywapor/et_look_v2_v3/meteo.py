@@ -324,6 +324,40 @@ def vapour_pressure_from_specific_humidity(qv, p_air):
     """
     return (qv * p_air) / c.r_mw
 
+def specific_humidity_from_vapour_pressure(vp, p_air):
+    r"""
+    Computes specific humidity using te vapour pressure :math:`e_a` in [mbar]
+    and surface pressure.
+
+    .. math ::
+
+        e_{a}=\frac{q_{v} \cdot P}{\varepsilon}
+
+    where the following constant is used
+
+    * :math:`\varepsilon` = ratio of molecular weight of water to
+      dry air = 0.622 [-]
+
+
+    Parameters
+    ----------
+    vp : float
+        vapour pressure, 
+        :math:`e_{a}`
+        [mbar]
+    p_air : float
+        air pressure, 
+        :math:`P`
+        [mbar]
+
+    Returns
+    -------
+    qv : float
+        specific humidity, 
+        :math:`q_{v}`
+        [kg/kg]
+    """
+    return (vp * c.r_mw) / p_air
 
 def vapour_pressure_from_specific_humidity_daily(qv_24, p_air_24):
     """Like :func:`vapour_pressure_from_specific_humidity` but as a daily average.

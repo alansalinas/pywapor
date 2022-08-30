@@ -9,14 +9,12 @@ import pandas as pd
 from pywapor.general.logger import log
 import numpy as np
 from pywapor.general.processing_functions import save_ds, open_ds
-from pywapor.general.reproject import reproject
 import os
-from pywapor.post_et_look import plot_composite
+from pywapor.general.reproject import align_pixels
 from pywapor.enhancers.apply_enhancers import apply_enhancer
 import xarray as xr
 import pandas as pd
 import dask
-import warnings
 import types
 import functools
 
@@ -122,8 +120,7 @@ def create_diags_attrs(srcs):
             attr_dict[str(i)] = v[0].__name__
     return attr_dict
 
-def main(dss, sources, example_source, bins, folder, enhancers,
-                diagnostics = None):
+def main(dss, sources, example_source, bins, folder, enhancers, cleanup = True):
     """Create composites for variables contained in the 'xr.Dataset's in 'dss'.
 
     Parameters
@@ -153,18 +150,19 @@ def main(dss, sources, example_source, bins, folder, enhancers,
     xr.Dataset
         Dataset with variables grouped into composites.
     """
-    warnings.filterwarnings("ignore", message="All-NaN slice encountered")
+    # Open unopened netcdf files.
+    dss = {**{k: open_ds(v) for k, v in dss.items() if isinstance(v, str)}, 
+            **{k:v for k,v in dss.items() if not isinstance(v, str)}}
 
     final_path = os.path.join(folder, "et_look_in.nc")
 
-    example_ds = open_ds(dss[example_source], "all")
-
     dss2 = list()
+    temp_files2 = list()
 
     compositers = {
-        "mean": xr.core.groupby.DataArrayGroupBy.mean,
-        "min": xr.core.groupby.DataArrayGroupBy.min,
-        "max": xr.core.groupby.DataArrayGroupBy.max,
+        "mean": xr.DataArray.mean,
+        "min": xr.DataArray.min,
+        "max": xr.DataArray.max,
     }
 
     for var, config in sources.items():
@@ -173,55 +171,22 @@ def main(dss, sources, example_source, bins, folder, enhancers,
         temporal_interp = config["temporal_interp"]
         composite_type = config["composite_type"]
         
-        srcs = list()
-        for x in config["products"]:
-            if isinstance(x["source"], str):
-                srcs.append((x["source"], x["product_name"]))
-            elif isinstance(x["source"], types.FunctionType):
-                srcs.append((x["source"].__name__, x["product_name"]))
-            elif isinstance(x["source"], functools.partial):
-                srcs.append((x["source"].func.__name__, x["product_name"]))
-
-        # Align pixels.
-        dst_path = os.path.join(folder, f"{var}.nc")
-        if diagnostics:
-            dst_path = os.path.join(folder, f"{var}_diags.nc")
-
-        if os.path.isfile(dst_path):
-            dss2.append(open_ds(dst_path, "all"))
-            continue
-
-        dss1 = [reproject(open_ds(dss[src])[[var]], example_ds, dst_path.replace(".nc", f"_x{i}.nc"), spatial_interp = spatial_interp) for i, src in enumerate(srcs)]
-
-        # TODO FIX this at collect-level (i.e. remove weirds coords using `.drop_vars`)! --> MODIS_Grid_16DAY_250m_500m_VI_eos_cf_projection
-        dss1 = [x.drop_vars([y for y in list(x.coords) if y not in ["x", "y", "time", "spatial_ref"]]) for x in dss1]
-
-        if diagnostics:
-            dss1 = diags(diagnostics, dss1, var)
+        # Align pixels of different products for a single variable together.
+        dss_part = [ds[[var]] for ds in dss.values() if var in ds.data_vars]
+        dss1, temp_files1 = align_pixels(dss_part, folder, spatial_interp, fn_append = "_step1")
 
         # Combine different source_products (along time dimension).
-        ds = xr.combine_nested(dss1, concat_dim = "time").sortby("time")
-
-        if ds.time.size == 1:
-            ds = ds.squeeze("time")
-
-        if diagnostics:
-            ds[f"{var}_source"].attrs = create_diags_attrs(srcs)
-            ds.attrs = {"bin_end": str(bins[-1]), "comp_type": str(composite_type)}
+        if np.all(["time" in x[var].dims for x in dss1]):
+            ds = xr.combine_nested(dss1, concat_dim = "time").chunk({"time": -1}).sortby("time").squeeze()
+        elif np.all(["time" not in x[var].dims for x in dss1]):
+            ds = xr.concat(dss1, "stacked").median("stacked")
+            if len(dss1) > 1:
+                log.warning(f"--> Multiple ({len(dss1)}) sources for time-invariant `{var}` found, reducing those with 'median'.")
+        else:
+            ds = xr.combine_nested([x for x in dss1 if "time" in x[var].dims], concat_dim = "time").chunk({"time": -1}).sortby("time").squeeze()
+            log.warning(f"--> Both time-dependent and time-invariant data found for `{var}`, dropping time-invariant data.")
 
         if "time" in ds.dims:
-
-            ds = ds.chunk({"time": -1, "y": "auto", "x": "auto"})
-
-            if temporal_interp:
-                ds = add_times(ds, bins, composite_type = composite_type)
-            
-            if diagnostics:
-                ds[f"{var}_source"] = ds[f"{var}_source"].fillna(255)
-                ds[f"{var}_values"] = ds[var]
-                label_str = f"--> Compositing `{var}` ({composite_type}) (diagnostic)."
-            else:
-                label_str = f"--> Compositing `{var}` ({composite_type})."
 
             if temporal_interp:
 
@@ -233,49 +198,54 @@ def main(dss, sources, example_source, bins, folder, enhancers,
                     groups = ds.groupby(ds["time"])
                     ds = groups.median(dim = "time")
                     ds = ds.chunk({"time": -1, "y": "auto", "x": "auto"})
-                    log.warning(f"--> Multiple `{var}` images for the same date & time found, reducing those with 'median'.")
+                    log.warning(f"--> Multiple `{var}` images for an identical datetime found, reducing those with 'median'.")
 
+                ds = add_times(ds, bins, composite_type = composite_type)
                 ds = ds.interpolate_na(dim="time", method = temporal_interp)
 
             # Make composites.
             ds[var] = compositers[composite_type](ds[var].groupby_bins("time", bins, labels = bins[:-1]))
 
-            if diagnostics:
-                log.info(f"--> Creating graph for `{var}`.")
-                plot_composite(ds, diagnostics, out_folder = os.path.join(folder, "GRAPHS"))
-
         # Save output
-        dss2.append(save_ds(ds, dst_path, label = label_str))
+        dst_path = os.path.join(folder, f"{var}_bin.nc")
+        ds = save_ds(ds, dst_path, label = f"Compositing `{var}` ({composite_type}).")
+        dss2.append(ds)
+        temp_files2.append(ds.encoding["source"])
 
-        for nc in dss1:
-            os.remove(nc.encoding["source"])
+        for nc in temp_files1:
+            if cleanup:
+                os.remove(nc)
 
-    if diagnostics:
-        for nc in dss2:
-            os.remove(nc.encoding["source"])
-        return None
+    # Align all the variables together.
+    example_ds = dss[example_source]
+    spatial_interps = [sources[list(x.data_vars)[0]]["spatial_interp"] for x in dss2]
+    dss3, temp_files3 = align_pixels(dss2, folder, spatial_interps, example_ds, stack_dim = "time_bins", fn_append = "_step2")
 
-    ds = xr.merge(dss2, compat = "override")
+    for nc in temp_files2:
+        if cleanup:
+            os.remove(nc)
+    
+    ds = xr.merge(dss3)
 
     # Apply product specific functions.
     for func in enhancers:
         ds, label = apply_enhancer(ds, var, func)
         log.info(label)
 
-    ds = ds.drop_vars([x for x in ds.coords if (x not in ds.dims) and (x != "spatial_ref")])
-    if "time" in list(ds.variables):
-        ds = ds.drop_vars("time")
-    
     while os.path.isfile(final_path):
         final_path = final_path.replace(".nc", "_.nc")
-    ds = save_ds(ds, final_path, label = "Merging files.")
 
-    for nc in dss2:
-        os.remove(nc.encoding["source"])
+    ds = save_ds(ds, final_path, encoding = "initiate", label = f"Creating merged file `{os.path.split(final_path)[-1]}`.")
+
+    for nc in temp_files3:
+        if cleanup:
+            os.remove(nc)
 
     return ds
 
-# if __name__ == "__main__":
+if __name__ == "__main__":
+
+    cleanup = False
 
 #     import datetime
 

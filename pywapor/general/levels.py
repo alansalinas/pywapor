@@ -267,10 +267,7 @@ def pre_et_look_levels(level = "level_1", bin_length = "DEKAD"):
     }
 
     statics = [
-                'lw_offset', 'lw_slope', 
-                # 'r0_bare', 'r0_full', # NOTE required for se_root
-                'z_oro', 
-                'rn_offset', 'rn_slope', 't_amp_year', 't_opt', 'vpd_slope',
+                'lw_offset', 'lw_slope', 'z_oro', 'rn_offset', 'rn_slope', 't_amp_year', 't_opt', 'vpd_slope',
                 # 'land_mask', 'rs_min', 'z_obst_max' # NOTE generated from lulc
             ]
 
@@ -320,8 +317,130 @@ def pre_et_look_levels(level = "level_1", bin_length = "DEKAD"):
             "spatial_interp": "nearest",
             }
 
-    levels = {"level_1": level_1,
-                "level_2": level_2}
+    level_2_v3 = dict()
+
+    level_2_v3["ndvi"] = {
+
+            "products": [
+                {
+                    "source": "SENTINEL2",
+                    "product_name": "S2MSI2A",
+                    "enhancers": "default",
+                    "is_example": True
+                },
+            ],
+            "composite_type": "mean",
+            "temporal_interp": "linear",
+            "spatial_interp": "nearest",
+            }
+
+    level_2_v3["r0"] = {
+
+            "products": [
+                {
+                    "source": "SENTINEL2",
+                    "product_name": "S2MSI2A",
+                    "enhancers": "default",
+                },
+            ],
+            "composite_type": "mean",
+            "temporal_interp": "linear",
+            "spatial_interp": "nearest",
+            }
+
+    level_2_v3["se_root"] = {
+            "products": [
+                {
+                    "source": se_root_dler,
+                    "product_name": "v3",
+                    "enhancers": "default",
+                },
+            ],
+            "composite_type": "max",
+            "temporal_interp": "linear",
+            "spatial_interp": "bilinear",
+        }
+
+    level_2_v3["p"] = {
+        "products": [
+            {
+                "source": "CHIRPS",
+                "product_name": "P05",
+                "enhancers": "default",
+            },
+        ],
+        "composite_type": "mean",
+        "temporal_interp": "linear",
+        "spatial_interp": "bilinear",
+        }
+
+    level_2_v3["z"] = {
+        "products": [
+            {
+                "source": "COPERNICUS",
+                "product_name": "GLO30",
+                "enhancers": "default",
+            },
+        ],
+        "composite_type": None,
+        "temporal_interp": None,
+        "spatial_interp": "bilinear",
+        }
+
+    for var, composite_type in [("t_air", "mean"), ("t_air_min", "min"), ("t_air_max", "max"), 
+                                # ("t_dew", "mean"), # NOTE ETLook usees t_dew to calc `vp`, but that one is directly available from agERA5.
+                                # ("rh", "mean"), 
+                                ("u", "mean"), ("vp", "mean"), ("ra", "mean")]:
+        level_2_v3[var] = {
+            "products": [
+                {
+                    "source": "ERA5",
+                    "product_name": "sis-agrometeorological-indicators",
+                    "enhancers": "default",
+                },
+            ],
+            "composite_type": composite_type,
+            "temporal_interp": "linear",
+            "spatial_interp": "bilinear",
+            }
+
+    for var in ["p_air", "p_air_0"]:
+        level_2_v3[var] = {
+            "products": [
+                {
+                    "source": "ERA5",
+                    "product_name": 'reanalysis-era5-single-levels',
+                    "enhancers": "default",
+                },
+            ],
+            "composite_type": "mean",
+            "temporal_interp": "linear",
+            "spatial_interp": "bilinear",
+            }
+
+    statics = [
+                'lw_offset', 'lw_slope', 'z_oro', 'rn_offset', 'rn_slope', 't_amp_year', 't_opt', 'vpd_slope',
+                'land_mask', 'rs_min', 'z_obst_max'
+            ]
+
+    for var in statics:
+        level_2_v3[var] = {
+            'products': [
+                {
+                    'source': "STATICS",
+                    'product_name': "WaPOR2",
+                    'enhancers': 'default'
+                },
+            ],
+        'composite_type': None,
+        'temporal_interp': None,
+        'spatial_interp': 'bilinear'}
+    
+    levels = {
+            "level_1": level_1,
+            "level_2": level_2,
+            "level_2_v3": level_2_v3
+                }
 
     return levels[level]
 
@@ -481,7 +600,7 @@ def pre_se_root_levels(level = "level_1"):
             "products": [
                 {
                     "source": "STATICS",
-                    "product_name": "WaPORv2",
+                    "product_name": "WaPOR2",
                     "enhancers": "default",
                 },
             ],
@@ -506,8 +625,61 @@ def pre_se_root_levels(level = "level_1"):
             "spatial_interp": "nearest",
             }
 
-    levels = {"level_1": level_1,
-                "level_2": level_2}
+    level_2_v3 = dict()
+
+    level_2_v3["ndvi"] = {
+        "products": [
+            {
+                "source": "SENTINEL2",
+                "product_name": "S2MSI2A",
+                "enhancers": "default",
+                "is_example": True
+            },
+        ],
+        "temporal_interp": "linear",
+        "spatial_interp": "nearest"}
+
+    level_2_v3['bt'] = {
+        'products': [
+            {
+                'source': 'VIIRSL1',
+                'product_name': 'VNP02IMG',
+                'enhancers': 'default'
+            },
+        ],
+        'temporal_interp': None,
+        'spatial_interp': 'nearest'}
+
+    for var in ["u", "t_dew", "p_air_0", "p_air", "t_air", "wv"]:
+        level_2_v3[var] = {
+            'products': [
+                {
+                    'source': 'ERA5',
+                    'product_name': 'reanalysis-era5-single-levels',
+                    'enhancers': 'default'
+                },
+            ],
+        'temporal_interp': "linear",
+        'spatial_interp': 'bilinear'}
+
+    for var in ["r0_bare", "r0_full"]:
+        level_2_v3[var] = {
+            'products': [
+                {
+                    'source': "STATICS",
+                    'product_name': "WaPOR2",
+                    'enhancers': 'default'
+                },
+            ],
+        'temporal_interp': "linear",
+        'spatial_interp': 'bilinear'}
+
+
+    levels = {
+                "level_1": level_1,
+                "level_2": level_2,
+                "level_2_v3": level_2_v3,
+                }
 
     return levels[level]
 
@@ -515,8 +687,10 @@ if __name__ == "__main__":
 
     et_look_sources_lvl1 = pre_et_look_levels(level = "level_1", bin_length = "DEKAD")
     et_look_sources_lvl2 = pre_et_look_levels(level = "level_2", bin_length = "DEKAD")
+    et_look_sources_lvl2_v3 = pre_et_look_levels(level = "level_2_v3", bin_length = "DEKAD")
 
     se_root_sources_lvl1 = pre_se_root_levels(level = "level_1")
-    se_root_sources_lvl2 = pre_se_root_levels(level = "level_1")
+    se_root_sources_lvl2 = pre_se_root_levels(level = "level_2")
+    se_root_sources_lvl2_v3 = pre_se_root_levels(level = "level_2_v3")
 
     

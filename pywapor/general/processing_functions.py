@@ -41,13 +41,19 @@ def make_example_ds(ds, folder, target_crs, bb = None):
     else:
         if not isinstance(bb, type(None)):
             if ds.rio.crs != target_crs:
-                bb = transform_bb(target_crs, ds.rio.crs, bb)
+                loc_bb = transform_bb(target_crs, ds.rio.crs, bb)
+            else:
+                loc_bb = bb
             with warnings.catch_warnings():
                 warnings.filterwarnings("ignore", category = FutureWarning)
-                ds = ds.rio.clip_box(*bb)
-            ds = ds.rio.pad_box(*bb)
+                ds = ds.rio.clip_box(*loc_bb)
+            ds = ds.rio.pad_box(*loc_bb)
         ds = ds.rio.reproject(target_crs)
-        example_ds = save_ds(ds, example_ds_fp, label = f"Creating example dataset.") # NOTE saving because otherwise rio.reproject bugs.
+        with warnings.catch_warnings():
+            warnings.filterwarnings("ignore", category = UserWarning)
+            ds = ds.rio.clip_box(*bb)
+        ds = ds.drop_vars(list(ds.data_vars))
+        example_ds = save_ds(ds, example_ds_fp, encoding = "initiate", label = f"Creating example dataset.") # NOTE saving because otherwise rio.reproject bugs.
     return example_ds
 
 @performance_check
@@ -94,7 +100,7 @@ def save_ds(ds, fp, decode_coords = "all", encoding = None, chunks = "auto", pre
                         "chunksizes": tuple([v[0] for _, v in ds[var].chunksizes.items()]),
                         "dtype": "int32", # determine_dtype(ds[var], -9999, precision.get(var)),
                         "scale_factor": 10**-precision.get(var, 0), 
-                        } for var in ds.data_vars}
+                        } for var in ds.data_vars if np.all([spat in ds[var].coords for spat in ["x", "y"]])}
         for var in ds.data_vars:
             if "_FillValue" in ds[var].attrs.keys():
                 _ = ds[var].attrs.pop("_FillValue")
@@ -107,7 +113,9 @@ def save_ds(ds, fp, decode_coords = "all", encoding = None, chunks = "auto", pre
                 encoding[var] = {"dtype": "float64"}
 
     with ProgressBar(minimum = 90, dt = 2.0):
-        ds.to_netcdf(temp_fp, encoding = encoding)
+        with warnings.catch_warnings():
+            warnings.filterwarnings("ignore", message="All-NaN slice encountered")
+            ds.to_netcdf(temp_fp, encoding = encoding)
 
     ds = ds.close()
 

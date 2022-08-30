@@ -360,7 +360,11 @@ def download(folder, latlim, lonlim, timelim, product_name, req_vars,
 
     fn = os.path.join(folder, f"{product_name}.nc")
     if os.path.isfile(fn):
-        return open_ds(fn, "all")
+        ds = open_ds(fn)
+        if np.all([x in ds.data_vars for x in req_vars]):
+            return ds
+        else:
+            ds = ds.close()
 
     if isinstance(variables, type(None)):
         variables = default_vars(product_name, req_vars)

@@ -47,9 +47,13 @@ def download_products(mod, products, req_dl_vars, args):
 
     return dss
 
-def test_download(product_name, mod, workdir, timelim, latlim = [29.4, 29.7], lonlim = [30.7, 31.0], empty_folder = True):
+def test_download(product_name, mod, workdir, timelim, latlim = [29.4, 29.7], lonlim = [30.7, 31.0], empty_folder = True, create_subfolder = True):
     
-    folder = os.path.join(workdir, product_name)
+    if create_subfolder:
+        folder = os.path.join(workdir, product_name)
+    else:
+        folder = workdir
+
     if not os.path.isdir(folder):
         os.makedirs(folder)
     if empty_folder:
@@ -91,25 +95,33 @@ def strictly_decreasing(L):
 
 if __name__ == "__main__":
 
-    workdir = r"/Users/hmcoerver/Local/collect_test"
+    workdir = r"/Users/hmcoerver/Local/20220325_20220415_test_data"
+
+    overwrite_timelim = [datetime.date(2022, 3, 25), datetime.date(2022, 4, 15)]
+    # overwrite_timelim = None
 
     sources = {
-        'GEOS5':        [pywapor.collect.product.GEOS5,     [datetime.date(2022, 3, 1), datetime.date(2022, 3, 3)]],
-        'STATICS':      [pywapor.collect.product.STATICS,   None],
-        'MODIS':        [pywapor.collect.product.MODIS,     [datetime.date(2019, 3, 1), datetime.date(2019, 4, 1)]],
-        'MERRA2':       [pywapor.collect.product.MERRA2,    [datetime.date(2022, 3, 1), datetime.date(2022, 3, 3)]],
-        'GLOBCOVER':    [pywapor.collect.product.GLOBCOVER, None],
-        'CHIRPS':       [pywapor.collect.product.CHIRPS,    [datetime.date(2022, 3, 1), datetime.date(2022, 3, 3)]],
-        'SRTM':         [pywapor.collect.product.SRTM,      None],
-        'PROBAV':       [pywapor.collect.product.PROBAV,    [datetime.date(2021, 7, 1), datetime.date(2021, 7, 11)]],
+        # 'GEOS5':        [pywapor.collect.product.GEOS5,     [datetime.date(2022, 3, 1), datetime.date(2022, 3, 3)]],
+        # 'STATICS':      [pywapor.collect.product.STATICS,   None],
+        # 'MODIS':        [pywapor.collect.product.MODIS,     [datetime.date(2019, 3, 1), datetime.date(2019, 4, 1)]],
+        # 'MERRA2':       [pywapor.collect.product.MERRA2,    [datetime.date(2022, 3, 1), datetime.date(2022, 3, 3)]],
+        # 'GLOBCOVER':    [pywapor.collect.product.GLOBCOVER, None],
+        # 'CHIRPS':       [pywapor.collect.product.CHIRPS,    [datetime.date(2022, 3, 1), datetime.date(2022, 3, 3)]],
+        # 'SRTM':         [pywapor.collect.product.SRTM,      None],
+        # 'PROBAV':       [pywapor.collect.product.PROBAV,    [datetime.date(2021, 7, 1), datetime.date(2021, 7, 11)]],
         'ERA5':         [pywapor.collect.product.ERA5,      [datetime.date(2022, 3, 1), datetime.date(2022, 3, 3)]],
-        'SENTINEL2':    [pywapor.collect.product.SENTINEL2, [datetime.date(2022, 3, 1), datetime.date(2022, 3, 9)]],    
-        'SENTINEL3':    [pywapor.collect.product.SENTINEL3, [datetime.date(2022, 3, 1), datetime.date(2022, 3, 3)]],
-        'VIIRSL1':      [pywapor.collect.product.VIIRSL1,   [datetime.date(2022, 3, 1), datetime.date(2022, 3, 3)]]
+        # 'SENTINEL2':    [pywapor.collect.product.SENTINEL2, [datetime.date(2022, 3, 1), datetime.date(2022, 3, 9)]],    
+        # 'SENTINEL3':    [pywapor.collect.product.SENTINEL3, [datetime.date(2022, 3, 1), datetime.date(2022, 3, 3)]],
+        # 'VIIRSL1':      [pywapor.collect.product.VIIRSL1,   [datetime.date(2022, 3, 1), datetime.date(2022, 3, 3)]],
+        # 'COPERNICUS':   [pywapor.collect.product.COPERNICUS, None],
     }
 
     for product_name, (mod, timelim) in sources.items():
-        dss = test_download(product_name, mod, workdir, timelim, latlim = [29.4, 29.7], lonlim = [30.7, 31.0], empty_folder = False)
+        if not isinstance(overwrite_timelim, type(None)):
+            timelim = overwrite_timelim
+        latlim = [29.4, 29.7]
+        lonlim = [30.7, 31.0]
+        dss = test_download(product_name, mod, workdir, timelim, latlim = latlim, lonlim = lonlim, empty_folder = False, create_subfolder = False)
         for ds in dss.values():
             assert ds.rio.crs.to_epsg() == 4326
             assert "spatial_ref" in ds.coords
@@ -119,6 +131,6 @@ if __name__ == "__main__":
                 assert strictly_increasing(ds.time.values)
             assert has_geotransform(ds)
             assert np.all([int(ds[var].notnull().sum().values) > 0 for var in ds.data_vars])
-            for var in ds.data_vars:
-                print(ds[var].encoding)
-                break
+            # for var in ds.data_vars:
+            #     print(product_name, ds[var].encoding)
+            #     break

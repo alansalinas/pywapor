@@ -1,6 +1,7 @@
 import os
 from pywapor.collect.protocol import cog
 from pywapor.general.processing_functions import open_ds
+import numpy as np
 
 def default_vars(product_name, req_vars):
     variables = {
@@ -20,11 +21,11 @@ def default_vars(product_name, req_vars):
                 "Band13": [("lat", "lon"), "z_obst_max"],
                 "crs": [(), "spatial_ref"],
                     },
-        'WaPOR3': {
-                "Band1": [("lat", "lon"), "lw_offset"],
-                "Band2": [("lat", "lon"), "lw_slope"],
-                "crs": [(), "spatial_ref"],
-        }
+        # 'WaPOR3': {
+        #         "Band1": [("lat", "lon"), "lw_offset"],
+        #         "Band2": [("lat", "lon"), "lw_slope"],
+        #         "crs": [(), "spatial_ref"],
+        # }
     }
 
     req_dl_vars = {
@@ -43,10 +44,10 @@ def default_vars(product_name, req_vars):
             "lw_offset": ["Band12", "crs"],
             "z_obst_max": ["Band13", "crs"],
         },
-        "WaPOR3": {
-            "lw_offset": ["Band1", "crs"],
-            "lw_slope": ["Band2", "crs"],
-        },
+        # "WaPOR3": {
+        #     "lw_offset": ["Band1", "crs"],
+        #     "lw_slope": ["Band2", "crs"],
+        # },
     }
 
     out = {val:variables[product_name][val] for sublist in map(req_dl_vars[product_name].get, req_vars) for val in sublist}
@@ -95,7 +96,17 @@ def download(folder, latlim, lonlim, product_name, req_vars,
     
     fp = os.path.join(folder, f"{product_name}.nc")
     if os.path.isfile(fp):
-        return open_ds(fp, "all")
+        ds = open_ds(fp)
+        if np.all([x in ds.data_vars for x in req_vars]):
+            return ds
+        else:
+            ds = ds.close()
+
+    spatial_buffer = True
+    if spatial_buffer:
+        dx = dy = 0.05
+        latlim = [latlim[0] - dy, latlim[1] + dy]
+        lonlim = [lonlim[0] - dx, lonlim[1] + dx]
 
     coords = {"x": ("lon", lonlim), "y": ("lat", latlim)}
 

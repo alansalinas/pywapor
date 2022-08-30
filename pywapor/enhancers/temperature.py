@@ -243,7 +243,7 @@ def local_mean(array, pixel_size, radius, method = 3):
 
     return array_coarse
 
-def bt_to_lst(ds, var, ndvi_s = 0.2, ndvi_v = 0.5, emis_s = 0.97, emis_v = 0.985):
+def bt_to_lst(ds, x, ndvi_s = 0.2, ndvi_v = 0.5, emis_s = 0.97, emis_v = 0.985):
 
     if np.all([var in ds.data_vars for var in ["ndvi", "bt"]]):
 
@@ -258,7 +258,7 @@ def bt_to_lst(ds, var, ndvi_s = 0.2, ndvi_v = 0.5, emis_s = 0.97, emis_v = 0.985
         else:
             ds["lst"] = new_lst
 
-    ds = ds.drop_vars(["bt"])
+        ds = ds.drop_vars(["bt"])
 
     return ds
 

@@ -80,7 +80,11 @@ def download(folder, latlim, lonlim, product_name = "GLO30", req_vars = ["z"],
 
     final_fp = os.path.join(folder, f"{product_name}.nc")
     if os.path.isfile(final_fp):
-        return open_ds(final_fp)
+        ds = open_ds(final_fp)
+        if np.all([x in ds.data_vars for x in req_vars]):
+            return ds
+        else:
+            ds = ds.close()
 
     spatial_buffer = True
     if spatial_buffer:

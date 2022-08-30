@@ -10,6 +10,7 @@ import rasterio.crs
 import itertools
 import copy
 import re
+from pywapor.enhancers.apply_enhancers import apply_enhancer
 from pywapor.general.logger import log, adjust_logger
 import shutil
 from pywapor.general.processing_functions import save_ds
@@ -48,7 +49,7 @@ def split_settings(settings, max_size = 100):
         settings = list(itertools.chain.from_iterable([split_setting(setting, max_size = max_size) for setting in settings]))
     return settings
 
-def download(folder, product_name, latlim, lonlim, timelim, variables):
+def download(folder, product_name, latlim, lonlim, timelim, variables, post_processors):
 
     fn_final = os.path.join(folder, f"{product_name}.nc")
 
@@ -168,6 +169,12 @@ def download(folder, product_name, latlim, lonlim, timelim, variables):
     ds = ds.sortby("x")
     ds.attrs = {}
 
+    # Apply product specific functions.
+    for var, funcs in post_processors.items():
+        for func in funcs:
+            ds, label = apply_enhancer(ds, var, func)
+            log.info(label)
+
     # Save the netcdf.
     ds = save_ds(ds, fn_final, label = "Merging files.")
 
@@ -178,23 +185,23 @@ def download(folder, product_name, latlim, lonlim, timelim, variables):
     
     return ds
 
-if __name__ == "__main__":
+# if __name__ == "__main__":
 
-    folder = r"/Users/hmcoerver/On My Mac/era_test"
-    latlim = [28.9, 29.7]
-    lonlim = [30.2, 31.2]
-    timelim = ["2022-04-01", "2022-04-10"]
+#     folder = r"/Users/hmcoerver/On My Mac/era_test"
+#     latlim = [28.9, 29.7]
+#     lonlim = [30.2, 31.2]
+#     timelim = ["2022-04-01", "2022-04-10"]
 
-    adjust_logger(True, folder, "INFO")
+#     adjust_logger(True, folder, "INFO")
 
-    product_name = "sis-agrometeorological-indicators"
-    # product_name = "reanalysis-era5-single-levels"
+#     product_name = "sis-agrometeorological-indicators"
+#     # product_name = "reanalysis-era5-single-levels"
 
-    req_vars = ["t_air", "t_dew", ]#"rh", "u", "vp", "ra"]
-    # req_vars = ["u_10m", "v_10m", "t_dew", "p_air_0", "p_air", "t_air"]
+#     req_vars = ["t_air", "t_dew", ]#"rh", "u", "vp", "ra"]
+#     # req_vars = ["u_10m", "v_10m", "t_dew", "p_air_0", "p_air", "t_air"]
 
-    variables = pywapor.collect.product.ERA5.default_vars(product_name, req_vars)
+#     variables = pywapor.collect.product.ERA5.default_vars(product_name, req_vars)
 
-    download(folder, product_name, latlim, lonlim, timelim, variables)
+#     download(folder, product_name, latlim, lonlim, timelim, variables)
 
-    _ = log.info("test")
+#     _ = log.info("test")

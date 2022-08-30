@@ -9,11 +9,47 @@ from pywapor.general.logger import log
 from pywapor.general.performance import performance_check
 from pywapor.general.processing_functions import process_ds
 from pywapor.general.processing_functions import open_ds, save_ds
+from rasterio import CRS
 
-def choose_reprojecter(src_ds, max_bytes = 2e9, min_times = 10):
+def get_pixel_sizes(dss):
+    # Check CRSs of datasets.
+    crss = [v.rio.crs.to_epsg() for v in dss]
+    # Count occurence of the different CRSs.
+    uniqs, counts = np.unique(crss, return_counts=True)
+    # Pick the dominant CRS.
+    crs = uniqs[np.argmax(counts)]
+    # Reproject to common CRS.
+    dss = [ds.rio.reproject(CRS.from_epsg(crs)) for ds in dss]
+    return [np.abs(np.prod(v.rio.resolution())) for v in dss]
 
-    if "time" in src_ds.dims:
-        tsize = src_ds.dims["time"]
+def align_pixels(dss, folder, spatial_interp = "nearest", example_ds = None, stack_dim = "time", fn_append = ""):
+
+    temp_files = list()
+
+    if isinstance(spatial_interp, str):
+        spatial_interp = [spatial_interp] * len(dss)
+    assert len(dss) == len(spatial_interp)
+
+    if len(dss) == 1 and isinstance(example_ds, type(None)):
+        dss1 = [dss[0]]
+    else:
+        if isinstance(example_ds, type(None)):
+            example_ds = dss[np.argmin(get_pixel_sizes(dss))]
+        dss1 = list()
+        for i, (spat_interp, ds_part) in enumerate(zip(spatial_interp, dss)):
+            if not ds_part.equals(example_ds):
+                var_str = "_".join(ds_part.data_vars)
+                dst_path = os.path.join(folder, f"{var_str}_x{i}{fn_append}.nc")
+                ds_part = reproject(ds_part, example_ds, dst_path, spatial_interp = spat_interp, stack_dim = stack_dim)
+                temp_files.append(ds_part.encoding["source"])
+            dss1.append(ds_part)
+
+    return dss1, temp_files
+
+def choose_reprojecter(src_ds, max_bytes = 2e9, min_times = 10, stack_dim = "time"):
+
+    if stack_dim in src_ds.dims:
+        tsize = src_ds.dims[stack_dim]
     else:
         tsize = 1
 
@@ -24,7 +60,7 @@ def choose_reprojecter(src_ds, max_bytes = 2e9, min_times = 10):
 
     return reproject
 
-def reproject_bulk(src_ds, example_ds, dst_path, spatial_interp = "nearest"):
+def reproject_bulk(src_ds, example_ds, dst_path, spatial_interp = "nearest", **kwargs):
 
     resampling = {'nearest': 0,
                     'bilinear': 1,
@@ -43,24 +79,24 @@ def reproject_bulk(src_ds, example_ds, dst_path, spatial_interp = "nearest"):
     return ds_match
 
 def reproject(src_ds, example_ds, dst_path, spatial_interp = "nearest", 
-                max_bytes = 2e9, min_times = 10):
+                max_bytes = 2e9, min_times = 10, stack_dim = "time"):
 
     test_ds = [src_ds, example_ds][np.argmax([src_ds.nbytes, example_ds.nbytes])]
 
-    reproj = choose_reprojecter(test_ds, max_bytes = max_bytes, min_times = min_times)
+    reproj = choose_reprojecter(test_ds, max_bytes = max_bytes, min_times = min_times, stack_dim = stack_dim)
 
     if "source" in src_ds.encoding.keys():
         log.info(f"--> Selected `{reproj.__name__}` for reprojection of {os.path.split(src_ds.encoding['source'])[-1]}.").add()
     else:
         log.info(f"--> Selected `{reproj.__name__}` for reprojection.").add()
 
-    ds = reproj(src_ds, example_ds, dst_path, spatial_interp = spatial_interp)
+    ds = reproj(src_ds, example_ds, dst_path, spatial_interp = spatial_interp, stack_dim = stack_dim)
     
     log.sub()
 
     return ds
 
-def reproject_chunk(src_ds, example_ds, dst_path, spatial_interp = "nearest"):
+def reproject_chunk(src_ds, example_ds, dst_path, spatial_interp = "nearest", stack_dim = "time"):
 
     das = list()
     variables = dict()
@@ -110,8 +146,8 @@ def reproject_chunk(src_ds, example_ds, dst_path, spatial_interp = "nearest"):
 
         ds_part = open_ds(part_path, decode_times = False)
 
-        if "time" in src_ds.coords:
-            da = ds_part.to_array("time", name = var).assign_coords({"time": src_ds.time})
+        if stack_dim in src_ds.coords:
+            da = ds_part.to_array(stack_dim, name = var).assign_coords({stack_dim: src_ds[stack_dim]})
         else:
             da = ds_part[var]
 

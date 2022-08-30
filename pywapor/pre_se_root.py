@@ -19,10 +19,12 @@ def rename_meteo(ds, *args):
                 "t_air": "t_air_i",
                 "u2m": "u2m_i",
                 "v2m": "v2m_i",
+                "u": "u_i",
                 "qv": "qv_i",
                 "p_air": "p_air_i",
                 "wv": "wv_i",
-                "p_air_0": "p_air_0_i"
+                "p_air_0": "p_air_0_i",
+                "t_dew": "t_dew_i",
             }
     renames_filtered = {k: v for k,v in renames.items() if k in ds.data_vars}
     ds = ds.rename_vars(renames_filtered)
@@ -31,6 +33,10 @@ def rename_meteo(ds, *args):
 def add_constants(ds, *args):
     # TODO remove, this is duplicate from pywapor.pre_et_look
     ds = ds.assign(defaults.constants_defaults())
+    return ds
+
+def drop_empty_times(ds, x, drop_var = "lst", *args):
+    ds = ds.isel(time = (ds[drop_var].count(dim=["y", "x"]) > 0).values)
     return ds
 
 def main(folder, latlim, lonlim, timelim, sources = "level_1", bin_length = "DEKAD",
@@ -84,10 +90,10 @@ def main(folder, latlim, lonlim, timelim, sources = "level_1", bin_length = "DEK
 
     if enhancers == "default":
         enhancers = [rename_meteo,
-                    add_constants]
-
-    if "bt" in example_t_vars:
-        enhancers.append(bt_to_lst)
+                    add_constants,
+                    bt_to_lst,
+                    drop_empty_times,
+                    ]
 
     bins = compositer.time_bins(timelim, bin_length)
     dss = downloader.collect_sources(folder, sources, latlim, lonlim, [bins[0], bins[-1]])
