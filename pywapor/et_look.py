@@ -96,8 +96,8 @@ def main(input_data, et_look_version = "v2", export_vars = "default"):
     ds["p_air_24"] = ETLook.meteo.air_pressure_daily(ds["z"], ds["p_air_0_24_mbar"])
 
     if ds["vp_24"].dtype == object:
-        # TODO make combination of `vp_24` when both `qv_24` and `t_dew_24` are provided.
         ds["vp_24"] = ETLook.meteo.vapour_pressure_from_specific_humidity_daily(ds["qv_24"], ds["p_air_24"])
+    if ds["vp_24"].dtype == object:
         ds["vp_24"] = ETLook.meteo.vapour_pressure_from_dewpoint_daily(ds["t_dew_24"])
 
     if et_look_version == "v2":
