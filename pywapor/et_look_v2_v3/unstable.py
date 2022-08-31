@@ -1,6 +1,7 @@
 import numpy as np
-from pywapor.et_look_v2 import constants as c
+from pywapor.et_look_v2_v3 import constants as c
 import xarray as xr
+import warnings
 
 def initial_sensible_heat_flux_canopy_daily(rn_24_canopy, t_24_init):
     r"""
@@ -563,17 +564,28 @@ def transpiration(
     epsilon = 10.0
     h_start = h_canopy_24_init
 
-    while (iteration < iter_h) and (np.nanmax(epsilon) > 0.01):
-        iteration += 1
-        ra_canopy_start = ra_canopy(
-            h_start, t_air_k_24, u_star_24_init, ad_24, z0m, disp, u_b_24, z_obs, z_b
-        )
-        t = (ssvp_24 * rn_24_canopy + ad_24 * c.sh * (vpd_24 / ra_canopy_start)) / (
-            ssvp_24 + psy_24 * (1 + r_canopy / ra_canopy_start)
-        )
-        h = rn_24_canopy - t
-        epsilon = abs(h - h_start)
-        h_start = h
+    with warnings.catch_warnings():
+
+        warnings.filterwarnings("ignore", message="invalid value encountered in power")
+        warnings.filterwarnings("ignore", message="invalid value encountered in true_divide")
+        warnings.filterwarnings("ignore", message="invalid value encountered in divide")
+        warnings.filterwarnings("ignore", message="divide by zero encountered in log")
+        warnings.filterwarnings("ignore", message="divide by zero encountered in true_divide")
+        warnings.filterwarnings("ignore", message="divide by zero encountered in divide")
+
+        while (iteration < iter_h) and (np.nanmax(epsilon) > 0.01):
+            iteration += 1
+            
+            ra_canopy_start = ra_canopy(
+                h_start, t_air_k_24, u_star_24_init, ad_24, z0m, disp, u_b_24, z_obs, z_b
+            )
+
+            t = (ssvp_24 * rn_24_canopy + ad_24 * c.sh * (vpd_24 / ra_canopy_start)) / (
+                ssvp_24 + psy_24 * (1 + r_canopy / ra_canopy_start)
+            )
+            h = rn_24_canopy - t
+            epsilon = abs(h - h_start)
+            h_start = h
 
     return t
 
@@ -790,17 +802,27 @@ def evaporation(
     iteration = 0
     epsilon = 10
     h_start = h_soil_24_init
-    while (iteration < iter_h) and (np.nanmax(epsilon) > 0.1):
-        iteration += 1
-        ra_soil_start = ra_soil(
-            h_start, t_air_k_24, u_star_24_soil_init, ad_24, disp, u_b_24, z_obs, z_b
-        )
-        e = (
-            ssvp_24 * (rn_24_soil - g0_24) + ad_24 * c.sh * (vpd_24 / ra_soil_start)
-        ) / (ssvp_24 + psy_24 * (1 + r_soil / ra_soil_start))
-        h = rn_24_soil - g0_24 - e
-        epsilon = abs(h - h_start)
-        h_start = h
+
+    with warnings.catch_warnings():
+
+        warnings.filterwarnings("ignore", message="invalid value encountered in power")
+        warnings.filterwarnings("ignore", message="invalid value encountered in divide")
+        warnings.filterwarnings("ignore", message="invalid value encountered in true_divide")
+        warnings.filterwarnings("ignore", message="divide by zero encountered in log")
+        warnings.filterwarnings("ignore", message="divide by zero encountered in power")
+        warnings.filterwarnings("ignore", message="divide by zero encountered in divide")
+        
+        while (iteration < iter_h) and (np.nanmax(epsilon) > 0.1):
+            iteration += 1
+            ra_soil_start = ra_soil(
+                h_start, t_air_k_24, u_star_24_soil_init, ad_24, disp, u_b_24, z_obs, z_b
+            )
+            e = (
+                ssvp_24 * (rn_24_soil - g0_24) + ad_24 * c.sh * (vpd_24 / ra_soil_start)
+            ) / (ssvp_24 + psy_24 * (1 + r_soil / ra_soil_start))
+            h = rn_24_soil - g0_24 - e
+            epsilon = abs(h - h_start)
+            h_start = h
 
     return e
 

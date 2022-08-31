@@ -561,7 +561,18 @@ def plot_hexbin(ax, arrays, xlabel = "", ylabel = "", title = ""):
     ax.set_ylabel(ylabel)
     ax.set_title(title)
 
+# import geoviews as gv
+# import holoviews as hv
+# hv.extension('bokeh')
 
+# def make_geoview(ds):
+#     da = ds.to_array("variable")
+
+#     gv_ds = gv.Dataset(da, vdims = ["data"])
+
+#     out = gv_ds.to(gv.Image, ["x", "y"]).opts(colorbar = True, width = 500, height = 500)
+
+#     return out
 
 
 # styling[999] = ("P", "orange", 1.0, "-")

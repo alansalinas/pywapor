@@ -10,9 +10,10 @@ log_settings = logging.getLogger(__name__)
 __formatter__ = logging.Formatter(fmt='%(message)s', datefmt = '%Y/%m/%d %H:%M:%S')
 __handler__ = logging.StreamHandler()
 __handler__.setFormatter(__formatter__)
+__handler__.setLevel("INFO")
 log_settings.addHandler(__handler__)
 log = IndentedLoggerAdapter(log_settings)
-logging_redirect_tqdm(loggers = log_settings.handlers)
+# logging_redirect_tqdm(loggers = [log_settings])
 
 def adjust_logger(log_write, folder, log_level):
     """Function to adjust the default logging settings that get initiated by
@@ -28,9 +29,12 @@ def adjust_logger(log_write, folder, log_level):
         Set the log level.
     """
     if log_write and not any([isinstance(x, logging.FileHandler) for x in log_settings.handlers]):
+        if not os.path.isdir(folder):
+            os.makedirs(folder)
         handler = logging.FileHandler(filename = os.path.join(folder, "log.txt"))
         formatter = logging.Formatter(fmt='%(levelname)s %(asctime)s: %(message)s')
         handler.setFormatter(formatter)
+        handler.setLevel("DEBUG")
         log_settings.addHandler(handler)
         logging_redirect_tqdm(loggers = log_settings.handlers)
     log_settings.setLevel(log_level)

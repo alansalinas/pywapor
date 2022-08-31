@@ -7,7 +7,7 @@ import os
 import tarfile
 import json
 import shutil
-from pywapor.general.processing_functions import save_ds, transform_bb
+from pywapor.general.processing_functions import save_ds, make_example_ds
 import numpy as np
 import xarray as xr
 from osgeo import gdal
@@ -51,7 +51,6 @@ def main(folder, max_lst_uncertainty = 2.5, final_bb = None):
     # Loop over the tar-files.
     for file in files:
 
-        log.info(f"--> Processing `{file}`.")
         # Unpack tar-file.
         ls_folder = untar(file, folder)
 
@@ -105,20 +104,13 @@ def main(folder, max_lst_uncertainty = 2.5, final_bb = None):
 
         # Clip and pad to bounding-box
         if isinstance(example_ds, type(None)):
-            if not isinstance(final_bb, type(None)):
-                bb = transform_bb(target_crs, ds.rio.crs, final_bb)
-                ds = ds.rio.clip_box(*bb)
-                ds = ds.rio.pad_box(*bb)
-            ds = save_ds(ds, os.path.join(folder, os.path.splitext(file)[0], "temp.nc")) # NOTE saving because otherwise rio.reproject bugs.
-            ds = ds.rio.reproject(target_crs)
-            example_ds = ds
-        else:
-            ds = ds.rio.reproject_match(example_ds)
-            ds = ds.assign_coords({"x": example_ds.x, "y": example_ds.y})
+            example_ds = make_example_ds(ds, os.path.join(folder, os.path.splitext(file)[0]), target_crs, bb = final_bb)
+        ds = ds.rio.reproject_match(example_ds)
+        ds = ds.assign_coords({"x": example_ds.x, "y": example_ds.y})
 
         # Save to netcdf
         fp = os.path.join(folder, os.path.splitext(file)[0] + ".nc")
-        ds = save_ds(ds, fp)
+        ds = save_ds(ds, fp, label = f"Processing `{file}`.")
 
         dss.append(ds)
 
@@ -135,7 +127,7 @@ def main(folder, max_lst_uncertainty = 2.5, final_bb = None):
     encoding = {v: {"zlib": True, "dtype": "float32"} for v in list(ds.data_vars)}
     encoding["time"] = {"dtype": "float64"}
 
-    ds = save_ds(ds, fp, encoding = encoding)
+    ds = save_ds(ds, fp, encoding = encoding, label = "Merging files.")
 
     for x in dss:
         os.remove(x.encoding["source"])

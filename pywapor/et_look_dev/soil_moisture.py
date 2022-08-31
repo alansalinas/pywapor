@@ -767,7 +767,7 @@ def monin_obukhov_length_full(h_full, ad_i, u_star_i_full, t_air_k_i):
     return unstable.monin_obukhov_length(h_full, ad_i, u_star_i_full, t_air_k_i)
 
 
-def aerodynamical_resistance_full(u_i, L_full, z0m_full=0.1, disp_full=0.667, z_obs=10):
+def aerodynamical_resistance_forced_convection_full(u_i, L_full, z0m_full=0.1, disp_full=0.667, z_obs=10):
     r"""
     Computes the aerodynamical resistance for a full canopy.
 
@@ -833,7 +833,7 @@ def aerodynamical_resistance_full(u_i, L_full, z0m_full=0.1, disp_full=0.667, z_
     return res
 
 
-def aerodynamical_resistance_bare(u_i, L_bare, z0m_bare=0.001, disp_bare=0.0, z_obs=10):
+def aerodynamical_resistance_forced_convection_bare(u_i, L_bare, z0m_bare=0.001, disp_bare=0.0, z_obs=10):
     r"""
     Computes the aerodynamical resistance for a dry bare soil.
 
@@ -939,7 +939,7 @@ def wind_speed_soil_inst(u_i, L_bare, z_obs=10):
     return(res)
 
 
-def aerodynamical_resistance_soil(u_i_soil):
+def aerodynamical_resistance_forced_convection_soil(u_i_soil):
     r"""
     Computes the aerodynamical resistance of the soil
 

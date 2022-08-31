@@ -7,7 +7,11 @@ import numpy as np
 import glob
 import xarray as xr
 import rasterio.crs
+import itertools
+import copy
 import re
+from pywapor.enhancers.apply_enhancers import apply_enhancer
+from pywapor.general.logger import log, adjust_logger
 import shutil
 from pywapor.general.processing_functions import save_ds
 
@@ -20,7 +24,32 @@ def create_time_settings(timelim):
             settings.append({"year": f"{yr}", "month": f"{mnth:02d}", "day": [f"{x:02d}" for x in days]})
     return settings
 
-def download(folder, product_name, latlim, lonlim, timelim, variables):
+def request_size(setting):
+    relevant = ["day", "month", "year", "time", "variable"]
+    size = np.prod([len(setting[selector]) for selector in relevant if isinstance(setting.get(selector), list)])
+    return size
+
+def split_setting(setting, max_size = 100):
+    size = request_size(setting)
+    if size <= max_size:
+        new_settings = [setting]
+    else:
+        new_settings = list()
+        for split_by in ['variable', 'time', 'year', 'month', 'day']:
+            if isinstance(setting.get(split_by), list):
+                for x in setting[split_by]:
+                    new_setting = copy.copy(setting)
+                    new_setting[split_by] = x
+                    new_settings.append(new_setting)
+                break
+    return new_settings
+
+def split_settings(settings, max_size = 100):
+    while np.max([request_size(setting) for setting in settings]) > max_size:
+        settings = list(itertools.chain.from_iterable([split_setting(setting, max_size = max_size) for setting in settings]))
+    return settings
+
+def download(folder, product_name, latlim, lonlim, timelim, variables, post_processors):
 
     fn_final = os.path.join(folder, f"{product_name}.nc")
 
@@ -33,13 +62,38 @@ def download(folder, product_name, latlim, lonlim, timelim, variables):
             settings.append({**t_setting, **extra_settings[0], 
                                 **{"variable": var}, **area_settings})
 
+    # Make sure the the individual request don't exceed the max allowed request size.
+    max_size = {"sis-agrometeorological-indicators": 100}.get(product_name)
+    if isinstance(max_size, int):
+        settings = split_settings(settings, max_size = max_size)
+
     # Load api key.
     url, key = pywapor.collect.accounts.get("ECMWF")
 
+    def info_callback(*args, **kwargs):
+        _ = log.add().debug(*args, **kwargs).sub()
+
+    def warning_callback(*args, **kwargs):
+        _ = log.add().warning(*args, **kwargs).sub()
+
+    def error_callback(*args, **kwargs):
+        _ = log.add().error(*args, **kwargs).sub()
+
+    def debug_callback(*args, **kwargs):
+        _ = log.add().debug(*args, **kwargs).sub()
+
+    _ = log.info("--> Directing CDS logging to file.")
+
     # Connect to server.
-    c = cdsapi.Client(url = url, key = key, verify = True)
-    log_settings = logging.getLogger("cdsapi")
-    log_settings.setLevel(logging.CRITICAL)
+    c = cdsapi.Client(url = url, key = key, verify = True, 
+                        info_callback=info_callback,
+                        warning_callback=warning_callback,
+                        error_callback=error_callback,
+                        debug_callback=debug_callback,
+                        quiet = True
+                        )
+
+    c.progress = True
 
     dss = list()
     subfolders = list()
@@ -88,7 +142,7 @@ def download(folder, product_name, latlim, lonlim, timelim, variables):
 
         renames = {x: variables[setting["variable"]][1] for x in ds.data_vars}
         ds = ds.rename_vars(renames)
-        
+
         dss.append(ds)
 
     # Merge everything together.
@@ -115,26 +169,39 @@ def download(folder, product_name, latlim, lonlim, timelim, variables):
     ds = ds.sortby("x")
     ds.attrs = {}
 
+    # Apply product specific functions.
+    for var, funcs in post_processors.items():
+        for func in funcs:
+            ds, label = apply_enhancer(ds, var, func)
+            log.info(label)
+
     # Save the netcdf.
-    ds = save_ds(ds, fn_final)
+    ds = save_ds(ds, fn_final, label = "Merging files.")
 
     # Remove unpacked zips.
     for subfolder in subfolders:
-        shutil.rmtree(subfolder)
+        if os.path.isdir(subfolder):
+            shutil.rmtree(subfolder)
     
     return ds
 
-if __name__ == "__main__":
+# if __name__ == "__main__":
 
-    folder = r"/Users/hmcoerver/On My Mac/era_test/ERA5"
-    latlim = [28.9, 29.7]
-    lonlim = [30.2, 31.2]
-    timelim = ["2021-06-26", "2021-07-11"]
+#     folder = r"/Users/hmcoerver/On My Mac/era_test"
+#     latlim = [28.9, 29.7]
+#     lonlim = [30.2, 31.2]
+#     timelim = ["2022-04-01", "2022-04-10"]
 
-    # product_name = "sis-agrometeorological-indicators"
-    product_name = "reanalysis-era5-single-levels"
+#     adjust_logger(True, folder, "INFO")
 
-    # req_vars = ["t_air", "t_dew", "rh", "u", "vp", "ra"]
-    req_vars = ["u_10m", "v_10m", "t_dew", "p_air_0", "p_air", "t_air"]
+#     product_name = "sis-agrometeorological-indicators"
+#     # product_name = "reanalysis-era5-single-levels"
 
-    variables = pywapor.collect.product.ERA5.default_vars(product_name, req_vars)
+#     req_vars = ["t_air", "t_dew", ]#"rh", "u", "vp", "ra"]
+#     # req_vars = ["u_10m", "v_10m", "t_dew", "p_air_0", "p_air", "t_air"]
+
+#     variables = pywapor.collect.product.ERA5.default_vars(product_name, req_vars)
+
+#     download(folder, product_name, latlim, lonlim, timelim, variables)
+
+#     _ = log.info("test")

@@ -7,10 +7,9 @@ from datetime import datetime as dt
 from pywapor.general.logger import log
 import pywapor.collect.protocol.sentinelapi as sentinelapi
 import numpy as np
-from pywapor.enhancers.apply_enhancers import apply_enhancer
 from pywapor.general.processing_functions import open_ds
 
-def process_s2(scene_folder, variables):
+def process_s2(scene_folder, variables, **kwargs):
 
     fps = {v[1]: glob.glob(os.path.join(scene_folder, "**", "*" + k), recursive = True)[0] for k, v in variables.items()}
 
@@ -111,7 +110,11 @@ def download(folder, latlim, lonlim, timelim, product_name,
 
     fn = os.path.join(product_folder, f"{product_name}.nc")
     if os.path.isfile(fn):
-        return open_ds(fn, "all")
+        ds = open_ds(fn)
+        if np.all([x in ds.data_vars for x in req_vars]):
+            return ds
+        else:
+            ds = ds.close()
 
     if isinstance(variables, type(None)):
         variables = default_vars(product_name, req_vars)
@@ -144,13 +147,7 @@ def download(folder, latlim, lonlim, timelim, product_name,
     scenes = sentinelapi.download(product_folder, latlim, lonlim, timelim, search_kwargs, node_filter = node_filter)
 
     ds = sentinelapi.process_sentinel(scenes, variables, process_s2, 
-                                        time_func, f"{product_name}.nc", bb = bb)
-
-    # Apply product specific functions.
-    for var, funcs in post_processors.items():
-        for func in funcs:
-            ds, label = apply_enhancer(ds, var, func)
-            log.info(label)
+                                        time_func, f"{product_name}.nc", post_processors, bb = bb)
 
     return ds
 

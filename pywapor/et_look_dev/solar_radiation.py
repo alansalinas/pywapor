@@ -1072,7 +1072,7 @@ def Constants(delta,s,gamma,phi):
 if __name__ == "__main__":
 
     import pandas as pd
-    import pywapor.et_look_v2 as ETLook
+    import pywapor.et_look_v2_v3 as ETLook
 
     ds_fh = "/Users/hmcoerver/pywapor_notebooks/level_1/et_look_input.nc"
 

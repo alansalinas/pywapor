@@ -3,15 +3,53 @@ import rasterio
 from rasterio import shutil as rio_shutil
 from rasterio.vrt import WarpedVRT
 import xarray as xr
+import numpy as np
 import os
 from pywapor.general.logger import log
+from pywapor.general.performance import performance_check
 from pywapor.general.processing_functions import process_ds
 from pywapor.general.processing_functions import open_ds, save_ds
+from rasterio import CRS
 
-def choose_reprojecter(src_ds, max_bytes = 2e9, min_times = 10):
+def get_pixel_sizes(dss):
+    # Check CRSs of datasets.
+    crss = [v.rio.crs.to_epsg() for v in dss]
+    # Count occurence of the different CRSs.
+    uniqs, counts = np.unique(crss, return_counts=True)
+    # Pick the dominant CRS.
+    crs = uniqs[np.argmax(counts)]
+    # Reproject to common CRS.
+    dss = [ds.rio.reproject(CRS.from_epsg(crs)) for ds in dss]
+    return [np.abs(np.prod(v.rio.resolution())) for v in dss]
 
-    if "time" in src_ds.dims:
-        tsize = src_ds.dims["time"]
+def align_pixels(dss, folder, spatial_interp = "nearest", example_ds = None, stack_dim = "time", fn_append = ""):
+
+    temp_files = list()
+
+    if isinstance(spatial_interp, str):
+        spatial_interp = [spatial_interp] * len(dss)
+    assert len(dss) == len(spatial_interp)
+
+    if len(dss) == 1 and isinstance(example_ds, type(None)):
+        dss1 = [dss[0]]
+    else:
+        if isinstance(example_ds, type(None)):
+            example_ds = dss[np.argmin(get_pixel_sizes(dss))]
+        dss1 = list()
+        for i, (spat_interp, ds_part) in enumerate(zip(spatial_interp, dss)):
+            if not ds_part.equals(example_ds):
+                var_str = "_".join(ds_part.data_vars)
+                dst_path = os.path.join(folder, f"{var_str}_x{i}{fn_append}.nc")
+                ds_part = reproject(ds_part, example_ds, dst_path, spatial_interp = spat_interp, stack_dim = stack_dim)
+                temp_files.append(ds_part.encoding["source"])
+            dss1.append(ds_part)
+
+    return dss1, temp_files
+
+def choose_reprojecter(src_ds, max_bytes = 2e9, min_times = 10, stack_dim = "time"):
+
+    if stack_dim in src_ds.dims:
+        tsize = src_ds.dims[stack_dim]
     else:
         tsize = 1
 
@@ -22,7 +60,7 @@ def choose_reprojecter(src_ds, max_bytes = 2e9, min_times = 10):
 
     return reproject
 
-def reproject_bulk(src_ds, example_ds, dst_path, spatial_interp = "nearest"):
+def reproject_bulk(src_ds, example_ds, dst_path, spatial_interp = "nearest", **kwargs):
 
     resampling = {'nearest': 0,
                     'bilinear': 1,
@@ -33,64 +71,83 @@ def reproject_bulk(src_ds, example_ds, dst_path, spatial_interp = "nearest"):
                     'mode': 6}[spatial_interp]
     
     ds_match = src_ds.rio.reproject_match(example_ds, resampling = resampling)
-    ds_match = ds_match.assign_coords({
-                                        "x": example_ds.x,
-                                        "y": example_ds.y,
-                                    })
+    ds_match = ds_match.assign_coords({"x": example_ds.x, "y": example_ds.y})
 
-    ds_match = save_ds(ds_match, dst_path, decode_coords="all")
+    label = f"Applying `reproject_bulk` to {os.path.split(src_ds.encoding['source'])[-1]}:{list(src_ds.data_vars)[0]} ({spatial_interp})."
+    ds_match = save_ds(ds_match, dst_path, encoding = "initiate", label = label)
 
     return ds_match
 
 def reproject(src_ds, example_ds, dst_path, spatial_interp = "nearest", 
-                max_bytes = 2e9, min_times = 10):
-    reproj = choose_reprojecter(src_ds, max_bytes = max_bytes, min_times = min_times)
-    log.info(f"--> Using `{reproj.__name__}` on {os.path.split(src_ds.encoding['source'])[-1]}:{list(src_ds.data_vars)[0]} ({spatial_interp}).")
-    ds = reproj(src_ds, example_ds, dst_path, spatial_interp = spatial_interp)
+                max_bytes = 2e9, min_times = 10, stack_dim = "time"):
+
+    test_ds = [src_ds, example_ds][np.argmax([src_ds.nbytes, example_ds.nbytes])]
+
+    reproj = choose_reprojecter(test_ds, max_bytes = max_bytes, min_times = min_times, stack_dim = stack_dim)
+
+    if "source" in src_ds.encoding.keys():
+        log.info(f"--> Selected `{reproj.__name__}` for reprojection of {os.path.split(src_ds.encoding['source'])[-1]}.").add()
+    else:
+        log.info(f"--> Selected `{reproj.__name__}` for reprojection.").add()
+
+    ds = reproj(src_ds, example_ds, dst_path, spatial_interp = spatial_interp, stack_dim = stack_dim)
+    
+    log.sub()
+
     return ds
 
-def reproject_chunk(src_ds, example_ds, dst_path, spatial_interp = "nearest"):
-
-    src_path = src_ds.encoding["source"]
-
-    # NOTE: not using encoding because it messes up the rioxarray projections
-    # TODO: File bug-report.
-    # encoding = {var: {"dtype": str(src_ds[var].dtype)} for var in src_ds.data_vars}
-
-    resampling = {'nearest': 0,
-                    'bilinear': 1,
-                    'cubic': 2,
-                    'cubic_spline': 3,
-                    'lanczos': 4,
-                    'average': 5,
-                    'mode': 6}[spatial_interp]
-
-    vrt_options = {
-        'resampling': resampling,
-        'crs': example_ds.rio.crs,
-        'transform': example_ds.rio.transform(),
-        'height': example_ds.y.size,
-        'width': example_ds.x.size,
-        'src_crs': src_ds.rio.crs,
-        'src_transform': src_ds.rio.transform(),
-    }
+def reproject_chunk(src_ds, example_ds, dst_path, spatial_interp = "nearest", stack_dim = "time"):
 
     das = list()
     variables = dict()
     ncs = list()
 
+    if not "source" in src_ds.encoding.keys() or not "grid_mapping" in src_ds.encoding.keys():
+        src_path = src_ds.encoding.get("source", dst_path).replace(".nc", "_fixed.nc")
+        new_src_ds = src_ds.sortby("y", ascending = False)
+        new_src_ds = new_src_ds.rio.write_transform(new_src_ds.rio.transform(recalc=True))
+        src_ds = save_ds(new_src_ds, src_path, encoding = "initiate", label = "Correcting src_ds.")
+        ncs.append(src_path)
+    else:
+        src_path = src_ds.encoding["source"]
+
+    resampling = {
+                    'nearest': 0,
+                    'bilinear': 1,
+                    'cubic': 2,
+                    'cubic_spline': 3,
+                    'lanczos': 4,
+                    'average': 5,
+                    'mode': 6
+                }[spatial_interp]
+
+    example_ds = example_ds.sortby("y", ascending=False)
+
+    vrt_options = {
+        'resampling': resampling,
+        'crs': example_ds.rio.crs,
+        'transform': example_ds.rio.transform(recalc=True),
+        'height': example_ds.y.size,
+        'width': example_ds.x.size,
+        'dtype': "float64",
+    }
+
     for var in src_ds.data_vars:
 
         part_path = dst_path.replace(".nc", f"_{var}_temp.nc")
 
-        with rasterio.open(f'netcdf:{src_path}:{var}') as src:
-            with WarpedVRT(src, **vrt_options) as vrt:
-                rio_shutil.copy(vrt, part_path, driver='netcdf')
+        @performance_check
+        def _save_warped_vrt(src_path, var, vrt_options, part_path):
+            with rasterio.open(f'netcdf:{src_path}:{var}') as src:
+                with WarpedVRT(src, **vrt_options) as vrt:
+                    rio_shutil.copy(vrt, part_path, driver='netcdf', creation_options = {"COMPRESS": "DEFLATE"})
 
-        ds_part = xr.open_dataset(part_path, chunks = "auto", decode_coords="all", decode_times = False)
+        _save_warped_vrt(src_path, var, vrt_options, part_path, label = "Warping VRT to netCDF.")
 
-        if "time" in src_ds.coords:
-            da = ds_part.to_array("time", name = var).assign_coords({"time": src_ds.time})
+        ds_part = open_ds(part_path, decode_times = False)
+
+        if stack_dim in src_ds.coords:
+            da = ds_part.to_array(stack_dim, name = var).assign_coords({stack_dim: src_ds[stack_dim]})
         else:
             da = ds_part[var]
 
@@ -104,17 +161,11 @@ def reproject_chunk(src_ds, example_ds, dst_path, spatial_interp = "nearest"):
         ds = ds.assign_coords({"spatial_ref": ds.crs})
 
     ds = ds.drop_vars("crs")
+    ds = process_ds(ds, {"x": ["lon", None], "y": ["lat", None]}, variables)
+    ds = ds.assign_coords({"x": example_ds.x, "y": example_ds.y})
 
-    coords = {"x": ["lon", None], "y": ["lat", None]}
-
-    ds = process_ds(ds, coords, variables)
-
-    ds = ds.assign_coords({
-                            "x": example_ds.x,
-                            "y": example_ds.y,
-                        })
-
-    ds = save_ds(ds, dst_path, decode_coords = "all")#, encoding = encoding)
+    label = f"Saving reprojected data from {os.path.split(src_ds.encoding['source'])[-1]}:{list(src_ds.data_vars)[0]} ({spatial_interp})."
+    ds = save_ds(ds, dst_path, encoding = "initiate", label = label)
 
     for nc in ncs:
         os.remove(nc)
@@ -123,41 +174,10 @@ def reproject_chunk(src_ds, example_ds, dst_path, spatial_interp = "nearest"):
 
 if __name__ == "__main__":
 
-    src_ds = xr.open_dataset(r"/Users/hmcoerver/On My Mac/create_table/MODIS/MCD43A3.061.nc", decode_coords="all")
-    example_ds = xr.open_dataset(r"/Users/hmcoerver/On My Mac/create_table/MODIS/MOD13Q1.061.nc", decode_coords="all")
-    dst_path = r"/Users/hmcoerver/On My Mac/create_table/test.nc"
-    out = reproject_chunk(src_ds, example_ds, dst_path, spatial_interp = "nearest")
+    src_ds = open_ds(r"/Users/hmcoerver/Local/test_data/SENTINEL3/SL_2_LST___.nc")
+    example_ds = open_ds(r"/Users/hmcoerver/Local/test_data/SENTINEL2/S2MSI2A.nc")
+    dst_path = r"/Users/hmcoerver/Local/test_data/output_test.nc"
+    spatial_interp = "nearest"
+    var = "lst"
 
-    # import tracemalloc
-    # import datetime
-    # import glob
-
-    # example_path = r"/Users/hmcoerver/On My Mac/create_table/MODIS/MOD13Q1.061.nc"
-    # example_ds = xr.open_dataset(example_path, decode_coords="all")
-
-    # folder = r"/Users/hmcoerver/On My Mac/create_table/MERRA2"
-    # src_paths = glob.glob(os.path.join(folder, "*.nc"))
-
-    # for src_path in src_paths:
-
-    #     _, fn = os.path.split(src_path)
-    #     dst_path = os.path.join(folder, fn)
-
-    #     reproject = choose_reprojecter(src_path, max_bytes = 2e9, min_times = 10)
-
-    #     print(f"--> Using `{reproject.__name__}` for {fn}.")
-
-    #     t1 = datetime.datetime.now()
-
-    #     dst_path = dst_path.replace(".nc", f"_{reproject.__name__.split('_')[-1]}.nc")
-    #     if os.path.isfile(dst_path):
-    #         dst_path = dst_path.replace(".nc", "_.nc")
-
-    #     tracemalloc.start()
-    #     ds1 = reproject(src_path, example_ds, dst_path)
-    #     mem_test1 = tracemalloc.get_traced_memory()
-    #     print(f"--> Memory usage: {mem_test1[1]-mem_test1[0]}")
-    #     tracemalloc.stop()
-
-    #     t2 = datetime.datetime.now()
-    #     print(f"--> Time: {t2-t1}\n")
+    ds = reproject_chunk(src_ds, example_ds, dst_path, spatial_interp = "nearest")

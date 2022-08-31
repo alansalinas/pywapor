@@ -6,6 +6,10 @@
 # Compiled Java class files
 *.class
 
+*.ipynb_checkpoints
+*__pycache__
+*.pytest_cache
+
 # Compiled Python bytecode
 *.py[cod]
 

@@ -1241,6 +1241,14 @@ def get_var_definitions():
             'long_name': '', 
             'units': '', 
             'definition': ''},
+        "t_dew_i": {
+            'long_name': '', 
+            'units': '', 
+            'definition': ''},
+        "t_dew_24": {
+            'long_name': '', 
+            'units': '', 
+            'definition': ''},
     }
 
     return defs

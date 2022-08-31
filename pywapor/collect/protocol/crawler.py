@@ -1,13 +1,19 @@
-import os 
+import os
 import urllib
 from bs4 import BeautifulSoup
+import warnings
 import urllib
 from joblib import Parallel, delayed
 from functools import partial
 import re
 import numpy as np
 import tqdm
+from requests.exceptions import HTTPError
+import time
+import socket
+import glob
 import requests
+from pywapor.general.logger import log, adjust_logger
 from cachetools import cached, TTLCache
 
 @cached(cache=TTLCache(maxsize=2048, ttl=3600))
@@ -18,7 +24,9 @@ def find_paths(url, regex, node_type = "a", tag = "href", filter = None, session
         file_object = session.get(url, stream = True)
         file_object.raise_for_status()
         f = file_object.content
-    soup = BeautifulSoup(f, "lxml")
+    with warnings.catch_warnings():
+        warnings.filterwarnings("ignore", message="It looks like you're parsing an XML document using an HTML parser.")
+        soup = BeautifulSoup(f, "lxml")
     file_tags = soup.find_all(node_type, {tag: re.compile(regex)})
     if not isinstance(filter, type(None)):
         file_tags = np.unique([filter(tag) for tag in file_tags], axis = 0).tolist()
@@ -45,25 +53,107 @@ def crawl(urls, regex, filter_regex, session, label_filter = None, list_out = Fa
 
     return crawled_urls
 
-def download_urls(urls, folder, session, fps = None, parallel = 0, headers = None):
+def _download_urls(urls, folder, session, fps = None, parallel = 0, headers = None,
+                    max_tries = 10, wait_sec = 15):
 
     if isinstance(parallel, bool):
         parallel = {True: -1, False: 0}[parallel]
 
     if isinstance(fps, type(None)):
         fps = [os.path.join(folder, os.path.split(url)[-1]) for url in urls]
-
-    dler = partial(download_url, session = session, headers = headers)
+    else:
+        assert len(fps) == len(urls)
 
     if parallel:
         backend = "loky"
+        dler = partial(download_url, session = session, headers = headers, max_tries = max_tries, wait_sec = wait_sec)
         files = Parallel(n_jobs=parallel, backend = backend)(delayed(dler)(*x) for x in zip(urls, fps))
     else:
-        files = [dler(*x) for x in zip(urls, fps)]
+        files = list()
+        for url, fp in zip(urls, fps):
+            try:
+                fp_out = download_url(url, fp, session = session, headers = headers, max_tries = max_tries, wait_sec = wait_sec)
+                files.append(fp_out)
+            except NameError as e:
+                log.info(f"--> {e}")
 
     return files
 
-def download_url(url, fp, session = None, waitbar = True, headers = None):
+def unzip(zipped):
+    new, l = [], []
+    for x in zipped:
+        new.append(x[0])
+        l.append(x[1])
+    return new, l
+
+def update_urls(urls, dled_files, relevant_fps, checker_function = None):
+        
+    if isinstance(urls, zip):
+        urls, l = unzip(urls)
+        fps_given = True
+    else:
+        l = [os.path.split(x)[-1] for x in urls]
+        fps_given = False
+
+    for fp in dled_files:
+
+        if fp in relevant_fps:
+            continue
+
+        if isinstance(checker_function, type(None)):
+            is_relevant = True
+        else:
+            is_relevant = checker_function(fp)
+
+        if fps_given:
+            x = fp
+        else:
+            x = os.path.split(fp)[-1]
+        url_idx = l.index(x) if x in l else None
+
+        if os.path.isfile(fp):
+            if not isinstance(url_idx, type(None)):
+                _ = urls.pop(url_idx)
+                _ = l.pop(url_idx)
+            if is_relevant:
+                relevant_fps.append(fp)
+
+    if fps_given:
+        urls = zip(urls, l)
+
+    return urls, relevant_fps
+
+def download_urls(urls, folder, session = None, fps = None, parallel = 0, 
+                    headers = None, checker_function = None, 
+                    max_tries = 10, wait_sec = 15, meta_max_tries = 2):
+    
+    relevant_fps = list()
+    try_n = 0
+    try_again = True
+
+    while try_again:
+
+        dled_files = _download_urls(urls, folder, session, fps = fps, parallel = False, headers = headers, max_tries = max_tries, wait_sec = wait_sec)
+
+        if not isinstance(fps, type(None)):
+            urls = zip(urls, fps)
+
+        urls, relevant_fps = update_urls(urls, dled_files, relevant_fps, checker_function = checker_function)
+
+        if not isinstance(fps, type(None)):
+            urls, fps = unzip(urls)
+
+        try_again = len(urls) > 0 and try_n < meta_max_tries-1
+        if try_again:
+            try_n += 1
+            log.info(f"--> Retrying to download {len(urls)} remaining urls.")
+
+    if len(urls) > 0:
+        log.warning(f"--> Didn't succeed to download {len(urls)} files.")
+    return relevant_fps
+
+
+def _download_url(url, fp, session = None, waitbar = True, headers = None):
 
     if os.path.isfile(fp):
         return fp
@@ -99,3 +189,33 @@ def download_url(url, fp, session = None, waitbar = True, headers = None):
     os.rename(temp_fp, fp)
 
     return fp
+
+def download_url(url, fp, session = None, waitbar = True, headers = None, 
+                    max_tries = 10, wait_sec = 15):
+    try_n = 0
+    succes = False
+    while try_n <= max_tries-1 and not succes:
+        if try_n > 0:
+            waiter = int((try_n**1.2) * wait_sec)
+            log.info(f"--> Trying to download {fp}, attempt {try_n+1} of {max_tries} in {waiter} seconds.")
+            time.sleep(waiter)
+        try:
+            fp = _download_url(url, fp, session = session, waitbar = waitbar, headers = headers)
+            succes = True
+        except socket.timeout as e:
+            log.info(f"--> Server connection timed out.")
+        except HTTPError as e:
+            log.info(f"--> Server error {e}.")
+        else:
+            ...
+        finally:
+            try_n += 1
+    
+    if not succes:
+        raise NameError(f"Could not download {url} after {max_tries} attempts.")
+
+    return fp
+
+if __name__ == "__main__":
+
+    ...

@@ -10,6 +10,7 @@ import pywapor.collect.accounts as accounts
 from shapely.geometry.polygon import Polygon
 from shapely.geometry import shape
 import pywapor.collect.protocol.opendap as opendap
+import numpy as np
 
 def tiles_intersect(latlim, lonlim):
     with open(os.path.join(pywapor.collect.__path__[0], "product/SRTM30_tiles.geojson")) as f:
@@ -70,7 +71,11 @@ def download(folder, latlim, lonlim, product_name = "30M", req_vars = ["z"], var
 
     fn = os.path.join(folder, f"{product_name}.nc")
     if os.path.isfile(fn):
-        return open_ds(fn, "all")
+        ds = open_ds(fn)
+        if np.all([x in ds.data_vars for x in req_vars]):
+            return ds
+        else:
+            ds = ds.close()
 
     spatial_buffer = True
     if spatial_buffer:

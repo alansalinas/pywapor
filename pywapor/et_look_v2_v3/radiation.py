@@ -1,5 +1,5 @@
 import numpy as np
-from pywapor.et_look_v2 import constants as c
+from pywapor.et_look_v2_v3 import constants as c
 import xarray as xr
 
 def interception_wm2(int_mm, lh_24):

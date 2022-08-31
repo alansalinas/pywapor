@@ -535,7 +535,10 @@ def diffuse_irradiance_horizontal_clear(G0, Tl2, h0):
     TnTl2 = -0.015843 + 0.030543 * Tl2 + 0.0003797 * Tl2**2
 
     A1 = 0.26463 - 0.061581 * Tl2 + 0.0031408 * Tl2**2
-    A1 = np.where((A1 * TnTl2) < 0.0022, 0.0022 / TnTl2, A1)
+    if isinstance(A1, xr.DataArray):
+        A1 = xr.where((A1 * TnTl2) < 0.0022, 0.0022 / TnTl2, A1)
+    else:
+        A1 = np.where((A1 * TnTl2) < 0.0022, 0.0022 / TnTl2, A1)
     A2 = 2.04020 + 0.018945 * Tl2 - 0.011161 * Tl2**2
     A3 = -1.3025 + 0.039231 * Tl2 + 0.0085079 * Tl2**2
 

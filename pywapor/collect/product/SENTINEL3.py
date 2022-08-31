@@ -1,7 +1,6 @@
 import os
 import pywapor.collect.protocol.sentinelapi as sentinelapi
 from pywapor.general.curvilinear import regrid, create_grid
-from pywapor.enhancers.apply_enhancers import apply_enhancer
 from pywapor.general.logger import log
 import glob
 import xarray as xr
@@ -46,7 +45,7 @@ def time_func(fn):
     dtime = start_dtime + (end_dtime - start_dtime)/2
     return dtime
 
-def process_s3(scene_folder, variables):
+def process_s3(scene_folder, variables, bb = None, **kwargs):
 
     ncs = [glob.glob(os.path.join(scene_folder, "**", "*" + k), recursive = True)[0] for k in variables.keys()]
 
@@ -60,7 +59,7 @@ def process_s3(scene_folder, variables):
     ds = ds.where(ds.LST_uncertainty < 2.5)
     ds = ds.drop_vars("LST_uncertainty")
 
-    grid_ds = create_grid(ds, 0.01, 0.01)
+    grid_ds = create_grid(ds, 0.01, 0.01, bb = bb)
     ds = regrid(grid_ds, ds)
     ds = ds.rio.write_crs(4326)
 
@@ -76,7 +75,11 @@ def download(folder, latlim, lonlim, timelim, product_name,
 
     fn = os.path.join(product_folder, f"{product_name}.nc")
     if os.path.isfile(fn):
-        return open_ds(fn, "all")
+        ds = open_ds(fn)
+        if np.all([x in ds.data_vars for x in req_vars]):
+            return ds
+        else:
+            ds = ds.close()
 
     if isinstance(variables, type(None)):
         variables = default_vars(product_name, req_vars)
@@ -103,30 +106,26 @@ def download(folder, latlim, lonlim, timelim, product_name,
                                     search_kwargs, node_filter = None)
 
     ds = sentinelapi.process_sentinel(scenes, variables, process_s3, 
-                                        time_func, f"{product_name}.nc", bb = bb)
-
-    # Apply product specific functions.
-    for var, funcs in post_processors.items():
-        for func in funcs:
-            ds, label = apply_enhancer(ds, var, func)
-            log.info(label)
+                                        time_func, f"{product_name}.nc", post_processors, bb = bb)
 
     return ds
 
 if __name__ == "__main__":
 
-    folder = r"/Users/hmcoerver/On My Mac/create_table"
-    latlim = [28.9, 29.7]
-    lonlim = [30.2, 31.2]
-    # timelim = ["2021-07-01", "2021-07-11"]
-    timelim = ["2022-07-01", "2022-07-03"]
+    ...
+    
+    # folder = r"/Users/hmcoerver/On My Mac/create_table"
+    # latlim = [28.9, 29.7]
+    # lonlim = [30.2, 31.2]
+    # # timelim = ["2021-07-01", "2021-07-11"]
+    # timelim = ["2022-07-01", "2022-07-03"]
 
-    product_name = 'SL_2_LST___'
+    # product_name = 'SL_2_LST___'
 
-    req_vars = ["lst"]
-    post_processors = None
-    variables = None
-    extra_search_kwargs = {}
+    # req_vars = ["lst"]
+    # post_processors = None
+    # variables = None
+    # extra_search_kwargs = {}
 
     # ds = download(folder, latlim, lonlim, timelim, product_name, 
     #             req_vars, variables = variables,  post_processors = post_processors)

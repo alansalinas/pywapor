@@ -2,9 +2,11 @@ import os
 from pywapor.collect.protocol import cds
 from pywapor.general.processing_functions import open_ds
 from pywapor.general.logger import log
-from pywapor.enhancers.apply_enhancers import apply_enhancer
 from pywapor.enhancers.pressure import pa_to_kpa
+from pywapor.enhancers.wind import adjust_wind_height, windspeed
 from pywapor.enhancers.temperature import kelvin_to_celsius
+from functools import partial
+import numpy as  np
 
 def default_vars(product_name, req_vars):
 
@@ -19,8 +21,9 @@ def default_vars(product_name, req_vars):
                         },
 
         "reanalysis-era5-single-levels": {
-            '10m_u_component_of_wind':  [{"time": [f"{x:02d}:00" for x in range(24)], "format": "netcdf", "product_type": "reanalysis"}, "u_10m"],
-            '10m_v_component_of_wind':  [{"time": [f"{x:02d}:00" for x in range(24)], "format": "netcdf", "product_type": "reanalysis"}, "v_10m"],
+            'total_column_water_vapour':[{"time": [f"{x:02d}:00" for x in range(24)], "format": "netcdf", "product_type": "reanalysis"}, "wv"],
+            '10m_u_component_of_wind':  [{"time": [f"{x:02d}:00" for x in range(24)], "format": "netcdf", "product_type": "reanalysis"}, "u10m"],
+            '10m_v_component_of_wind':  [{"time": [f"{x:02d}:00" for x in range(24)], "format": "netcdf", "product_type": "reanalysis"}, "v10m"],
             '2m_dewpoint_temperature':  [{"time": [f"{x:02d}:00" for x in range(24)], "format": "netcdf", "product_type": "reanalysis"}, "t_dew"],
             'mean_sea_level_pressure':  [{"time": [f"{x:02d}:00" for x in range(24)], "format": "netcdf", "product_type": "reanalysis"}, "p_air_0"],
             'surface_pressure':         [{"time": [f"{x:02d}:00" for x in range(24)], "format": "netcdf", "product_type": "reanalysis"}, "p_air"],
@@ -31,6 +34,8 @@ def default_vars(product_name, req_vars):
     req_dl_vars = {
         "sis-agrometeorological-indicators": {
             "t_air": ["2m_temperature"],
+            "t_air_max": ["2m_temperature"],
+            "t_air_min": ["2m_temperature"],
             "t_dew": ["2m_dewpoint_temperature"],
             "rh": ["2m_relative_humidity"],
             "u": ["10m_wind_speed"],
@@ -38,12 +43,18 @@ def default_vars(product_name, req_vars):
             "ra": ["solar_radiation_flux"],
         },
         "reanalysis-era5-single-levels": {
-            "u_10m": ['10m_u_component_of_wind'],
-            "v_10m": ['10m_v_component_of_wind'],
+            "wv": ['total_column_water_vapour'],
+            "u10m": ['10m_u_component_of_wind'],
+            "v10m": ['10m_v_component_of_wind'],
+            "u2m": ['10m_u_component_of_wind'],
+            "v2m": ['10m_v_component_of_wind'],
+            "u": ['10m_u_component_of_wind', '10m_v_component_of_wind'],
             "t_dew": ['2m_dewpoint_temperature'],
             "p_air_0": ['mean_sea_level_pressure'],
             "p_air": ['surface_pressure'],
             "t_air": ['2m_temperature'],
+            "t_air_min": ['2m_temperature'],
+            "t_air_max": ['2m_temperature'],
         }
     }
 
@@ -51,25 +62,36 @@ def default_vars(product_name, req_vars):
 
     return out
 
+def jouleperday_to_watt(ds, var):
+    ds[var] = ds[var] / 86400
+    return ds
+
 def default_post_processors(product_name, req_vars):
 
-    # TODO check if all units are correct (!!!)
     post_processors = {
         "sis-agrometeorological-indicators": {
             "t_air": [kelvin_to_celsius],
-            "t_dew": [],
+            "t_air_max": [partial(kelvin_to_celsius, in_var = "t_air", out_var = "t_air_max")],
+            "t_air_min": [partial(kelvin_to_celsius, in_var = "t_air", out_var = "t_air_min")],
+            "t_dew": [kelvin_to_celsius],
             "rh": [],
-            "u": [], # TODO convert 10m to 2m (!!!)
-            "vp": [],
-            "ra": [],
+            "u": [adjust_wind_height],
+            "vp": [], #is already mbar
+            "ra": [jouleperday_to_watt],
         },
         "reanalysis-era5-single-levels": {
-            "u_10m": [], # TODO convert 10m to 2m (!!!)
-            "v_10m": [], # TODO convert 10m to 2m (!!!)
-            "t_dew": [],
+            "wv": [], # is already kg/m2
+            "u10m": [],
+            "v10m": [],
+            "u2m": [adjust_wind_height],
+            "v2m": [adjust_wind_height],
+            "u": [windspeed, adjust_wind_height],
+            "t_dew": [kelvin_to_celsius],
             "p_air_0": [pa_to_kpa],
             "p_air": [pa_to_kpa],
             "t_air": [kelvin_to_celsius],
+            "t_air_max": [partial(kelvin_to_celsius, in_var = "t_air", out_var = "t_air_max")],
+            "t_air_min": [partial(kelvin_to_celsius, in_var = "t_air", out_var = "t_air_min")],
         }
     }
 
@@ -87,7 +109,11 @@ def download(folder, latlim, lonlim, timelim, product_name, req_vars,
 
     fn_final = os.path.join(product_folder, f"{product_name}.nc")
     if os.path.isfile(fn_final):
-        return open_ds(fn_final, "all")
+        ds = open_ds(fn_final)
+        if np.all([x in ds.data_vars for x in req_vars]):
+            return ds
+        else:
+            ds = ds.close()
 
     spatial_buffer = True
     if spatial_buffer:
@@ -103,27 +129,21 @@ def download(folder, latlim, lonlim, timelim, product_name, req_vars,
         default_processors = default_post_processors(product_name, req_vars)
         post_processors = {k: {True: default_processors[k], False: v}[v == "default"] for k,v in post_processors.items()}
 
-    ds = cds.download(product_folder, product_name, latlim, lonlim, timelim, variables)
-
-    # Apply product specific functions.
-    for var, funcs in post_processors.items():
-        for func in funcs:
-            ds, label = apply_enhancer(ds, var, func)
-            log.info(label)
+    ds = cds.download(product_folder, product_name, latlim, lonlim, timelim, variables, post_processors)
 
     return ds
 
 if __name__ == "__main__":
 
-    folder = r"/Users/hmcoerver/On My Mac/era_test"
+    folder = r"/Users/hmcoerver/Local/era_test"
     latlim = [28.9, 29.7]
     lonlim = [30.2, 31.2]
     timelim = ["2021-06-26", "2021-07-05"]
 
-    product_name = "sis-agrometeorological-indicators"
-    # product_name = "reanalysis-era5-single-levels"
-    req_vars = ["t_air", "t_dew", "rh", "u", "vp", "ra"]
-    # req_vars = ["u_10m", "v_10m", "t_dew", "p_air_0", "p_air", "t_air"]
+    # product_name = "sis-agrometeorological-indicators"
+    product_name = "reanalysis-era5-single-levels"
+    # req_vars = ["t_air", "t_dew", "rh", "u"]#, "vp", "ra"]
+    req_vars = ["u"]
 
     variables = None
     post_processors = None

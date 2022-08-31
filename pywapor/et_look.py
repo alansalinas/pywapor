@@ -5,7 +5,7 @@ Code to run the ETLook model.
 import os
 import numpy as np
 import pywapor.et_look_dev as ETLook_dev
-import pywapor.et_look_v2 as ETLook_v2
+import pywapor.et_look_v2_v3 as ETLook_v2_v3
 import pywapor.general as g
 import datetime
 from pywapor.general.logger import log, adjust_logger
@@ -17,7 +17,7 @@ from pywapor.general.processing_functions import save_ds, open_ds
 import copy
 import warnings
 
-def main(input_data, et_look_version = "v2", export_vars = "default"):
+def main(input_data, et_look_version = "v2", export_vars = "default", chunks = {"time_bins": 1, "x": 1000, "y": 1000}):
     """Runs the ETLook model over the provided input data.
 
     Parameters
@@ -37,7 +37,6 @@ def main(input_data, et_look_version = "v2", export_vars = "default"):
     xr.Dataset
         Dataset with variables selected through `export_vars`.
     """
-    chunks = {"time_bins": 1, "x": 2000, "y": 2000}
 
     # Inputs
     if isinstance(input_data, str):
@@ -52,17 +51,12 @@ def main(input_data, et_look_version = "v2", export_vars = "default"):
     log.info("> ET_LOOK").add()
 
     # Version
-    if et_look_version == "v2":
-        ETLook = ETLook_v2
+    if et_look_version == "v2" or et_look_version == "v3":
+        ETLook = ETLook_v2_v3
     elif et_look_version == "dev":
         ETLook = ETLook_dev
 
     log.info(f"--> Running `et_look` ({et_look_version}).")
-
-    warnings.filterwarnings("ignore", message="invalid value encountered in power")
-    warnings.filterwarnings("ignore", message="invalid value encountered in true_divide")
-    warnings.filterwarnings("ignore", message="divide by zero encountered in power")
-    warnings.filterwarnings("ignore", message="divide by zero encountered in true_divide")
 
     # Allow skipping of et_look-functions if not all of its required inputs are
     # available.
@@ -99,14 +93,18 @@ def main(input_data, et_look_version = "v2", export_vars = "default"):
     ds["stress_rad"] = ETLook.stress.stress_radiation(ds["ra_24"])
     ds["p_air_0_24_mbar"] = ETLook.meteo.air_pressure_kpa2mbar(ds["p_air_0_24"])
     ds["p_air_24"] = ETLook.meteo.air_pressure_daily(ds["z"], ds["p_air_0_24_mbar"])
-    ds["vp_24"] = ETLook.meteo.vapour_pressure_from_specific_humidity_daily(ds["qv_24"], ds["p_air_24"])
 
-    ds["svp_24"] = ETLook.meteo.saturated_vapour_pressure(ds["t_air_24"])
-    
-    if et_look_version == "dev":
-        ds["svp_24"] = ETLook.meteo.saturated_vapour_pressure_average(
-                    ETLook.meteo.saturated_vapour_pressure_maximum(ds["t_air_max_24"]),
-                    ETLook.meteo.saturated_vapour_pressure_minimum(ds["t_air_min_24"]))
+    if ds["vp_24"].dtype == object:
+        ds["vp_24"] = ETLook.meteo.vapour_pressure_from_specific_humidity_daily(ds["qv_24"], ds["p_air_24"])
+    if ds["vp_24"].dtype == object:
+        ds["vp_24"] = ETLook.meteo.vapour_pressure_from_dewpoint_daily(ds["t_dew_24"])
+
+    if et_look_version == "v2":
+        ds["svp_24"] = ETLook.meteo.saturated_vapour_pressure(ds["t_air_24"])
+    elif et_look_version == "v3" or et_look_version == "dev":
+        ds["svp_24_min"] = ETLook.meteo.saturated_vapour_pressure_minimum(ds["t_air_min_24"])
+        ds["svp_24_max"] = ETLook.meteo.saturated_vapour_pressure_maximum(ds["t_air_max_24"])
+        ds["svp_24"] = ETLook.meteo.saturated_vapour_pressure_average(ds["svp_24_max"], ds["svp_24_min"])
 
     ds["vpd_24"] = ETLook.meteo.vapour_pressure_deficit_daily(ds["svp_24"], ds["vp_24"])
     ds["stress_vpd"] = ETLook.stress.stress_vpd(ds["vpd_24"], ds["vpd_slope"])
@@ -146,7 +144,8 @@ def main(input_data, et_look_version = "v2", export_vars = "default"):
 
     ds["z_obst"] = ETLook.roughness.obstacle_height(ds["ndvi"], ds["z_obst_max"], ndvi_obs_min = ds["ndvi_obs_min"], ndvi_obs_max = ds["ndvi_obs_max"], obs_fr = ds["obs_fr"])
     ds["z0m"] = ETLook.roughness.roughness_length(ds["lai"], ds["z_oro"], ds["z_obst"], ds["z_obst_max"], ds["land_mask"])
-    ds["u_24"] = ETLook.meteo.wind_speed(ds["u2m_24"], ds["v2m_24"])
+    if ds["u_24"].dtype == object:
+        ds["u_24"] = ETLook.meteo.wind_speed(ds["u2m_24"], ds["v2m_24"])
     ds["ra_canopy_init"] = ETLook.neutral.initial_canopy_aerodynamic_resistance(ds["u_24"], ds["z0m"], z_obs = ds["z_obs"])
 
     # **windspeed blending height daily***********************************************************
@@ -228,7 +227,6 @@ def main(input_data, et_look_version = "v2", export_vars = "default"):
         ds["t_air_k_min"] = ETLook.meteo.air_temperature_kelvin_daily(ds["t_air_min_24"])
         ds["t_air_k_max"] = ETLook.meteo.air_temperature_kelvin_daily(ds["t_air_max_24"])
 
-        # ds["t_air_k_24"] = ETLook.meteo.mean_temperature_kelvin_daily(ds["t_air_k_min"], ds["t_air_k_max"])
         ds["t_air_k_12"] = ETLook.meteo.mean_temperature_kelvin_daytime(ds["t_air_k_min"], ds["t_air_k_max"])
 
         ds["t_dep"] = ETLook.biomass.temperature_dependency(ds["t_air_k_12"], dh_ap=ds["dh_ap"], d_s=ds["d_s"], dh_dp=ds["dh_dp"])
@@ -284,7 +282,16 @@ def main(input_data, et_look_version = "v2", export_vars = "default"):
         fp_out = os.path.join(fp, fn)
         if os.path.isfile(fp_out):
             fp_out = fp_out.replace(".nc", "_.nc")
-        ds = save_ds(ds, fp_out, "all")
+        
+        with warnings.catch_warnings():
+            warnings.filterwarnings("ignore", message="invalid value encountered in power")
+            warnings.filterwarnings("ignore", message="invalid value encountered in true_divide")
+            warnings.filterwarnings("ignore", message="invalid value encountered in divide")
+            warnings.filterwarnings("ignore", message="divide by zero encountered in power")
+            warnings.filterwarnings("ignore", message="divide by zero encountered in true_divide")
+            warnings.filterwarnings("ignore", message="divide by zero encountered in log")
+            warnings.filterwarnings("ignore", message="divide by zero encountered in divide")
+            ds = save_ds(ds, fp_out, encoding = "initiate", chunks = chunks, label = f"Saving output to `{fn}`.")
 
     t2 = datetime.datetime.now()
     log.sub().info(f"< ET_LOOK ({str(t2 - t1)})")
@@ -299,55 +306,8 @@ def check_for_non_chuncked_arrays(ds):
 
 if __name__ == "__main__":
 
-    # project_folder = r"/Volumes/Data/FAO/WaPOR_vs_pyWaPOR/pyWAPOR_v1"
-    # startdate = date = "2021-07-01"
-
-    project_folder = r"/Users/hmcoerver/pywapor_notebooks_2"
-    latlim = [28.9, 29.7]
-    lonlim = [30.2, 31.2]
-    timelim = ["2021-07-01", "2021-07-11"]
-    composite_length = "DEKAD"
-
-    import pywapor
-
+    input_data = r'/Users/hmcoerver/Local/test8/et_look_in_.nc'
     et_look_version = "v2"
     export_vars = "default"
 
-    level = "level_1"
-
-    et_look_sources = pywapor.general.levels.pre_et_look_levels(level)
-
-    et_look_sources["ndvi"]["products"] = [
-        {'source': 'MODIS',
-            'product_name': 'MOD13Q1.061',
-            'enhancers': 'default'},
-        {'source': 'MODIS', 
-            'product_name': 'MYD13Q1.061', 
-            'enhancers': 'default'},
-        {'source': 'PROBAV',
-            'product_name': 'S5_TOC_100_m_C1',
-            'enhancers': 'default',
-            'is_example': True}
-    ]
-
-    et_look_sources["r0"]["products"] = [
-        {'source': 'MODIS',
-            'product_name': 'MCD43A3.061',
-            'enhancers': 'default'},
-        {'source': 'PROBAV',
-            'product_name': 'S5_TOC_100_m_C1',
-            'enhancers': 'default'}
-    ]
-
-    se_root_sources = pywapor.general.levels.pre_se_root_levels(level)
-    se_root_sources["ndvi"]["products"] = et_look_sources["ndvi"]["products"]
-
-    from functools import partial
-    et_look_sources["se_root"]["products"] = [
-        {'source': partial(pywapor.se_root.se_root, sources = se_root_sources),
-            'product_name': 'v2',
-            'enhancers': 'default'},]
-
-    # ds = pywapor.pre_et_look.main(project_folder, latlim, lonlim, timelim, 
-    #                                 sources = et_look_sources,
-    #                                 bin_length = composite_length)
+    out = main(input_data, et_look_version = et_look_version, export_vars = export_vars)

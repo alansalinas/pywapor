@@ -63,7 +63,7 @@ def download(folder, product_name, coords, variables, post_processors,
     # Save final output.
     fp = os.path.join(folder, f"{product_name}.nc")
     ds.attrs = {}
-    ds = save_ds(ds, fp, decode_coords = "all")
+    ds = save_ds(ds, fp, encoding = "initiate", label = "Saving merged data.")
 
     # Remove temporary files.
     for x in fps:
@@ -115,7 +115,7 @@ def download_xarray(url, fp, coords, variables, post_processors,
     online_ds = process_ds(online_ds, coords, variables, crs = data_source_crs)
 
     # Download the data.
-    ds = save_ds(online_ds, fp.replace(".nc", "_temp.nc"), decode_coords="all")
+    ds = save_ds(online_ds, fp.replace(".nc", "_temp.nc"), label = f"Downloading data.")
 
     # Apply product specific functions.
     for var, funcs in post_processors.items():
@@ -127,7 +127,7 @@ def download_xarray(url, fp, coords, variables, post_processors,
         ds["time"] = ds["time"] + timedelta
 
     # Save final output
-    ds = save_ds(ds, fp, decode_coords="all")
+    ds = save_ds(ds, fp, encoding = "initiate", label = "Saving netCDF.")
 
     os.remove(fp.replace(".nc", "_temp.nc"))
 

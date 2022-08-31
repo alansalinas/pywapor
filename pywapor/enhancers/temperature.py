@@ -243,6 +243,25 @@ def local_mean(array, pixel_size, radius, method = 3):
 
     return array_coarse
 
+def bt_to_lst(ds, x, ndvi_s = 0.2, ndvi_v = 0.5, emis_s = 0.97, emis_v = 0.985):
+
+    if np.all([var in ds.data_vars for var in ["ndvi", "bt"]]):
+
+        fvc = ((ds["ndvi"] - ndvi_s) / (ndvi_v - ndvi_s))**2
+        emis = emis_s + (emis_v - emis_s) * fvc
+        emis = xr.where(ds["ndvi"] < ndvi_s, emis_s, emis)
+        emis = xr.where(ds["ndvi"] > ndvi_v, emis_v, emis)
+        new_lst = ds["bt"] / emis
+
+        if np.all([var in ds.data_vars for var in ["lst"]]):
+            ds["lst"] = ds["lst"].fillna(new_lst)
+        else:
+            ds["lst"] = new_lst
+
+        ds = ds.drop_vars(["bt"])
+
+    return ds
+
 # if __name__ == "__main__":
 
 #     import numpy as np

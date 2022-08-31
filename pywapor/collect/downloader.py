@@ -1,6 +1,7 @@
 from pywapor.general.logger import log
 import types
 import functools
+import numpy as np
 
 def collect_sources(folder, sources, latlim, lonlim, timelim, return_fps = True):
     
@@ -9,7 +10,7 @@ def collect_sources(folder, sources, latlim, lonlim, timelim, return_fps = True)
     dss = dict()
 
     for (source, product_name), req_vars in reversed_sources.items():
-
+        
         if isinstance(source, str):
             dl_module = __import__(f"pywapor.collect.product.{source}", 
                                 fromlist=[source])
@@ -25,6 +26,8 @@ def collect_sources(folder, sources, latlim, lonlim, timelim, return_fps = True)
             log.info(f"--> Collecting `{'`, `'.join(req_vars)}` from `{dler.func.__name__}`.")
             source_name = source.func.__name__
 
+        log.add()
+        
         args = {
             "folder": folder,
             "latlim": latlim,
@@ -35,7 +38,14 @@ def collect_sources(folder, sources, latlim, lonlim, timelim, return_fps = True)
             "post_processors": reversed_enhancers[(source, product_name)]
         }
 
-        dss[(source_name, product_name)] = dler(**args)
+        x = dler(**args)
+        if "time" in x.coords:
+            stime = np.datetime_as_string(x.time.values[0], unit = "m")
+            etime = np.datetime_as_string(x.time.values[-1], unit = "m")
+            log.add().info(f"> timesize: {x.time.size} [{stime}, ..., {etime}]").sub()
+        dss[(source_name, product_name)] = x
+
+        log.sub()
 
     if return_fps:
         for key, ds in dss.items():

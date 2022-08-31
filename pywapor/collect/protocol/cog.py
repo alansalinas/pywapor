@@ -6,33 +6,45 @@ import urllib
 from pywapor.enhancers.apply_enhancers import apply_enhancer
 from pywapor.general.logger import log
 
-def download(folder, product_name, coords, variables, post_processors, url_func):
+def download(fp, product_name, coords, variables, post_processors, url_func, 
+                gdal_config_options = {}, waitbar = True, ndv = -9999):
+
+    folder, fn = os.path.split(fp)
 
     # Create folder.
     if not os.path.isdir(folder):
         os.makedirs(folder)
 
-    # Create waitbar.
-    waitbar = tqdm.tqdm(position = 0, total = 100, bar_format='{l_bar}{bar}|', delay = 20)
+    for k, v in gdal_config_options.items():
+        gdal.SetConfigOption(k, v)
 
-    # Define callback function for waitbar progress.
-    def _callback_func(info, *args):
-        waitbar.update(info * 100 - waitbar.n)
-
-    # Define filepath.
-    fp = os.path.join(folder, f"{product_name}.nc")
+    bands = [int(k.replace("Band", "")) for k in variables.keys() if "Band" in k]
 
     # Define bounding-box.
     bb = [coords["x"][1][0], coords["y"][1][1], 
             coords["x"][1][1], coords["y"][1][0]]
 
+    options_dict = {
+            "projWin": bb,
+            "format": "netCDF",
+            "creationOptions": ["COMPRESS=DEFLATE", "FORMAT=NC4"],
+            "noData": ndv,
+            "bandList": bands,
+    }
+
+    if waitbar:
+        # Create waitbar.
+        waitbar = tqdm.tqdm(position = 0, total = 100, bar_format='{l_bar}{bar}|', delay = 20)
+
+        # Define callback function for waitbar progress.
+        def _callback_func(info, *args):
+            waitbar.update(info * 100 - waitbar.n)
+
+        # Add callback to gdal.Translate options.
+        options_dict.update({"callback": _callback_func})
+
     # Set gdal.Translate options.
-    options = gdal.TranslateOptions(
-        projWin = bb,
-        format = "netCDF",
-        creationOptions = ["COMPRESS=DEFLATE", "FORMAT=NC4C"],
-        callback = _callback_func,
-    )
+    options = gdal.TranslateOptions(**options_dict)
 
     # Check if url is local or online path.
     url = url_func(product_name)
@@ -48,7 +60,10 @@ def download(folder, product_name, coords, variables, post_processors, url_func)
     ds = None
 
     # Process the new netCDF.
-    ds = open_ds(fp.replace(".nc", "_temp.nc"), decode_coords = "all")
+    ds = open_ds(fp.replace(".nc", "_temp.nc"))
+
+    ds = ds.rename_vars({k: f"Band{v}" for k,v in zip(list(ds.data_vars), bands)})
+
     ds = process_ds(ds, coords, variables)
 
     # Apply product specific functions.
@@ -56,34 +71,11 @@ def download(folder, product_name, coords, variables, post_processors, url_func)
         for func in funcs:
             ds, label = apply_enhancer(ds, var, func)
             log.info(label)
-    
+
     # Save final output.
-    ds = save_ds(ds, fp, decode_coords = "all")
+    ds = save_ds(ds, fp, encoding = "initiate", label = f"Saving {fn}.")
 
     # Remove the temporary file.
     os.remove(fp.replace(".nc", "_temp.nc"))
 
     return ds
-
-# if __name__ == "__main__":
-
-#     folder = r"/Users/hmcoerver/Downloads/pywapor_test/GLOBCOVER"
-#     product_name = r"GLOBCOVER"
-
-#     latlim = [28.9, 29.7]
-#     lonlim = [30.2, 31.2]
-
-#     coords = {"x": ("lon", lonlim), "y": ("lat", latlim)}
-
-#     variables = {
-#                 "Band1": [("lat", "lon"), "lulc"],
-#                 "crs": [(), "spatial_ref"],
-#                     }
-
-
-#     post_processors = []
-
-#     def url_func(product_name):
-#         return r"http://due.esrin.esa.int/files/GLOBCOVER_L4_200901_200912_V2.3.color.tif"
-
-    # download(folder, product_name, coords, variables, post_processors, url_func)

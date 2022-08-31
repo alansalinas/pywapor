@@ -11,21 +11,23 @@ import datetime
 import pywapor.general as g
 import pywapor.general.processing_functions as PF
 import pywapor.et_look_dev as ETLook_dev
-import pywapor.et_look_v2 as ETLook_v2
+import pywapor.et_look_v2_v3 as ETLook_v2_v3
 from pywapor.general.logger import log, adjust_logger
+from pywapor.enhancers.other import drop_empty_times
 from pywapor.general.processing_functions import save_ds, open_ds
 import copy
 import pywapor.pre_se_root as pre_se_root
 from pywapor.general import levels
 
 def se_root(folder, latlim, lonlim, timelim, sources = "level_1", bin_length = "DEKAD", **kwargs):
+    se_root_version = {True: "v2", False: "v3"}["v3" not in sources]
     if isinstance(sources, str):
         sources = levels.pre_se_root_levels(sources)
     ds_in = pre_se_root.main(folder, latlim, lonlim, timelim, sources, bin_length)
-    ds_out = main(ds_in)
+    ds_out = main(ds_in, se_root_version = se_root_version)
     return ds_out
 
-def main(input_data, se_root_version = "v2", export_vars = "default"):
+def main(input_data, se_root_version = "v2", export_vars = "default", chunks = {"time": 1, "x": 1000, "y": 1000}):
     """Runs the ETLook model over the provided input data.
 
     Parameters
@@ -46,8 +48,6 @@ def main(input_data, se_root_version = "v2", export_vars = "default"):
         lists with paths to geoTIFF files as values, depending on `export_to_tif`.
     """
 
-    chunks = {"time": 1, "x": 2000, "y": 2000}
-
     # Inputs
     if isinstance(input_data, str):
         ds = open_ds(input_data, chunks = chunks)
@@ -61,15 +61,12 @@ def main(input_data, se_root_version = "v2", export_vars = "default"):
     log.info("> SE_ROOT").add()
 
     # Version
-    if se_root_version == "v2":
-        ETLook = ETLook_v2
+    if se_root_version == "v2" or se_root_version == "v3":
+        ETLook = ETLook_v2_v3
     elif se_root_version == "dev":
         ETLook = ETLook_dev
 
     log.info(f"--> Running `se_root` ({se_root_version}).")
-
-    warnings.filterwarnings("ignore", message="invalid value encountered in power")
-    warnings.filterwarnings("ignore", message="invalid value encountered in log")
 
     # Allow skipping of et_look-functions if not all of its required inputs are
     # available.
@@ -103,7 +100,13 @@ def main(input_data, se_root_version = "v2", export_vars = "default"):
     ds["vc"] = ETLook.leaf.vegetation_cover(ds["ndvi"], nd_min = ds["nd_min"], nd_max = ds["nd_max"], vc_pow = ds["vc_pow"])
 
     ds["t_air_k_i"] = ETLook.meteo.air_temperature_kelvin_inst(ds["t_air_i"])
+
     ds["vp_i"] = ETLook.meteo.vapour_pressure_from_specific_humidity_inst(ds["qv_i"], ds["p_air_i"])
+    if ds["vp_i"].dtype == object:
+        ds["vp_i"] = ETLook.meteo.vapour_pressure_from_dewpoint_inst(ds["t_dew_i"])
+
+    ds["qv_i"] = ETLook.meteo.specific_humidity_from_vapour_pressure(ds["vp_i"], ds["p_air_i"])
+    
     ds["ad_moist_i"] = ETLook.meteo.moist_air_density_inst(ds["vp_i"], ds["t_air_k_i"])
     ds["ad_dry_i"] = ETLook.meteo.dry_air_density_inst(ds["p_air_i"], ds["vp_i"], ds["t_air_k_i"])
     ds["ad_i"] = ETLook.meteo.air_density_inst(ds["ad_dry_i"], ds["ad_moist_i"])
@@ -114,9 +117,6 @@ def main(input_data, se_root_version = "v2", export_vars = "default"):
 
     ds["ied"] = ETLook.clear_sky_radiation.inverse_earth_sun_distance(ds["day_angle"])
     ds["h0"] = ETLook.clear_sky_radiation.solar_elevation_angle(ds["lat_rad"], ds["decl"], ds["ha"])
-    
-    # ds["h0"] = ds["h0"].transpose("time", "y", "x").chunk("auto")
-    
     ds["h0ref"] = ETLook.clear_sky_radiation.solar_elevation_angle_refracted(ds["h0"])
     ds["m"] = ETLook.clear_sky_radiation.relative_optical_airmass(ds["p_air_i"], ds["p_air_0_i"], ds["h0ref"])
     ds["rotm"] = ETLook.clear_sky_radiation.rayleigh_optical_thickness(ds["m"])
@@ -130,10 +130,7 @@ def main(input_data, se_root_version = "v2", export_vars = "default"):
     ds["emiss_atm_i"] = ETLook.soil_moisture.atmospheric_emissivity_inst(ds["vp_i"], ds["t_air_k_i"])
 
     ds["rn_bare"] = ETLook.soil_moisture.net_radiation_bare(ds["ra_hor_clear_i"], ds["emiss_atm_i"], ds["t_air_k_i"], ds["lst"], ds["r0_bare"])
-    # ds["rn_bare"] = ds["rn_bare"].transpose("time", "y", "x").chunk("auto")
-
     ds["rn_full"] = ETLook.soil_moisture.net_radiation_full(ds["ra_hor_clear_i"], ds["emiss_atm_i"], ds["t_air_k_i"], ds["lst"], ds["r0_full"])
-    # ds["rn_full"] = ds["rn_full"].transpose("time", "y", "x").chunk("auto")
 
     ds["h_bare"] = ETLook.soil_moisture.sensible_heat_flux_bare(ds["rn_bare"], fraction_h_bare = ds["fraction_h_bare"])
     ds["h_full"] = ETLook.soil_moisture.sensible_heat_flux_full(ds["rn_full"], fraction_h_full = ds["fraction_h_full"])
@@ -145,9 +142,18 @@ def main(input_data, se_root_version = "v2", export_vars = "default"):
     ds["L_full"] = ETLook.soil_moisture.monin_obukhov_length_full(ds["h_full"], ds["ad_i"], ds["u_star_i_full"], ds["t_air_k_i"])
 
     ds["u_i_soil"] = ETLook.soil_moisture.wind_speed_soil_inst(ds["u_i"], ds["L_bare"], z_obs = ds["z_obs"])
-    ds["ras"] = ETLook.soil_moisture.aerodynamical_resistance_soil(ds["u_i_soil"])
-    ds["raa"] = ETLook.soil_moisture.aerodynamical_resistance_bare(ds["u_i"], ds["L_bare"], z0m_bare = ds["z0m_bare"], disp_bare = ds["disp_bare"], z_obs = ds["z_obs"])
-    ds["rac"] = ETLook.soil_moisture.aerodynamical_resistance_full(ds["u_i"], ds["L_full"], z0m_full = ds["z0m_full"], disp_full = ds["disp_full"], z_obs = ds["z_obs"])
+    
+    ds["ras"] = ETLook.soil_moisture.aerodynamical_resistance_forced_convection_soil(ds["u_i_soil"])
+    ds["raa"] = ETLook.soil_moisture.aerodynamical_resistance_forced_convection_bare(ds["u_i"], ds["L_bare"], z0m_bare = ds["z0m_bare"], disp_bare = ds["disp_bare"], z_obs = ds["z_obs"])
+    ds["rac"] = ETLook.soil_moisture.aerodynamical_resistance_forced_convection_full(ds["u_i"], ds["L_full"], z0m_full = ds["z0m_full"], disp_full = ds["disp_full"], z_obs = ds["z_obs"])
+    
+    if se_root_version == "v3":
+
+        ds["rah_bare_free"] = ETLook.soil_moisture.aerodynamical_resistance_free_convection_bare(ds["h_bare"], ds["t_air_k_i"], ds["ad_i"], z0m_bare = ds["z0m_bare"])
+        ds["rah_full_free"] = ETLook.soil_moisture.aerodynamical_resistance_free_convection_full(ds["h_full"], ds["t_air_k_i"], ds["ad_i"], z0m_full = ds["z0m_full"])
+        
+        ds["raa"] = ETLook.soil_moisture.aerodynamical_resistance_bare(ds["raa"], ds["ras"], rah_bare_free = ds["rah_bare_free"])
+        ds["rac"] = ETLook.soil_moisture.aerodynamical_resistance_full(ds["rac"], rah_full_free = ds["rah_full_free"])
 
     ds["t_max_bare"] = ETLook.soil_moisture.maximum_temperature_bare(ds["ra_hor_clear_i"], ds["emiss_atm_i"], ds["t_air_k_i"], ds["ad_i"], ds["raa"], ds["ras"], ds["r0_bare"])
     ds["t_max_full"] = ETLook.soil_moisture.maximum_temperature_full(ds["ra_hor_clear_i"], ds["emiss_atm_i"], ds["t_air_k_i"], ds["ad_i"], ds["rac"], ds["r0_full"])
@@ -155,7 +161,7 @@ def main(input_data, se_root_version = "v2", export_vars = "default"):
     ds["t_wet_i"] = ETLook.soil_moisture.wet_bulb_temperature_inst_new(ds["t_air_i"], ds["qv_i"], ds["p_air_i"])
     ds["lst_max"] = ETLook.soil_moisture.maximum_temperature(ds["t_max_bare"], ds["t_max_full"], ds["vc"])
 
-    if se_root_version == "v2":
+    if se_root_version == "v2" or se_root_version == "v3":
         ds["t_wet_k_i"] = ETLook.meteo.wet_bulb_temperature_kelvin_inst(ds["t_wet_i"])
         ds["lst_min"] = ETLook.soil_moisture.minimum_temperature(ds["t_wet_k_i"], ds["t_air_k_i"], ds["vc"])
     elif se_root_version == "dev":
@@ -169,9 +175,11 @@ def main(input_data, se_root_version = "v2", export_vars = "default"):
         ...
     elif export_vars == "default":
         keep_vars = ['se_root']
+        ds = drop_empty_times(ds, None, drop_vars=keep_vars)
         ds = ds[keep_vars]
     elif isinstance(export_vars, list):
         keep_vars = copy.copy(export_vars)
+        ds = drop_empty_times(ds, None, drop_vars=keep_vars)
         ds = ds[keep_vars]
     else:
         raise ValueError
@@ -186,7 +194,11 @@ def main(input_data, se_root_version = "v2", export_vars = "default"):
         fp_out = os.path.join(fp, fn)
         if os.path.isfile(fp_out):
             fp_out = fp_out.replace(".nc", "_.nc")
-        ds = save_ds(ds, fp_out, decode_coords = "all", chunks = chunks)
+
+        with warnings.catch_warnings():
+            warnings.filterwarnings("ignore", message="invalid value encountered in power")
+            warnings.filterwarnings("ignore", message="invalid value encountered in log")
+            ds = save_ds(ds, fp_out, encoding = "initiate", chunks = chunks, label = f"Saving output to `{fn}`.")
 
     t2 = datetime.datetime.now()
     log.sub().info(f"< SE_ROOT ({str(t2 - t1)})")
@@ -250,34 +262,7 @@ if __name__ == "__main__":
 
     se_root_version = "v2"
     export_vars = "default"
-    export_to_tif = False
+    chunks = {"time": 1, "x": 1000, "y": 1000}
+    # input_data = r"/Users/hmcoerver/Local/20220325_20220415_test_data/se_root_in.nc"
 
-    from pywapor.general.processing_functions import open_ds
-    import pywapor
-
-    
-    # input_data1 = r"/Users/hmcoerver/pywapor_notebooks_1/et_look_in.nc"
-    # test = pywapor.et_look.main(input_data1)
-
-
-    folder = r"/Users/hmcoerver/pywapor_notebooks_1"
-    latlim = [28.9, 29.7]
-    lonlim = [30.2, 31.2]
-    timelim = [datetime.date(2021, 7, 1), datetime.date(2021, 7, 11)]
-    bin_length = "DEKAD"
-    example_source = None
-
-    # input_data = pywapor.pre_se_root.main(folder, latlim, lonlim, timelim, "level_1", bin_length)
-    input_data = xr.open_dataset(r"/Users/hmcoerver/pywapor_notebooks_2/se_root_in.nc", decode_coords="all", chunks = {"time": 1, "x": 2000, "y": 2000})
-    
-    # input_data = input_data[["qv_i", "p_air_i"]]
-
-    out_ds = pywapor.se_root.main(input_data, export_vars = "all")
-
-    # import dask
-    # dask.config.set(**{'array.chunk-size': '10MiB'})
-    # test = out_ds.chunk("auto")
-
-    # fp = r"/Users/hmcoerver/Downloads/pywapor_test/test_1.nc"
-
-    # bla = save_ds(test, fp, "all")
+    # out = main(input_data, se_root_version = se_root_version, export_vars = export_vars)
