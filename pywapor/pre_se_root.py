@@ -3,16 +3,16 @@
 Generates input data for `pywapor.se_root`.
 """
 from pywapor.collect import downloader
-from pywapor.general.logger import log, adjust_logger
 from pywapor.general import compositer
-from pywapor.general.processing_functions import open_ds, save_ds
 from pywapor.enhancers.temperature import bt_to_lst
-import pywapor.general.levels as levels#import pre_et_look_levels, find_example
+from pywapor.enhancers.other import drop_empty_times
+import pywapor.general.levels as levels
 from pywapor.general import aligner
 import datetime
 import os
+import numpy as np
 import pywapor.general.pre_defaults as defaults
-from pywapor.general.logger import log, adjust_logger
+from pywapor.general.logger import log
 
 def rename_meteo(ds, *args):
     renames = {
@@ -33,10 +33,6 @@ def rename_meteo(ds, *args):
 def add_constants(ds, *args):
     # TODO remove, this is duplicate from pywapor.pre_et_look
     ds = ds.assign(defaults.constants_defaults())
-    return ds
-
-def drop_empty_times(ds, x, drop_var = "lst", *args):
-    ds = ds.isel(time = (ds[drop_var].count(dim=["y", "x"]) > 0).values)
     return ds
 
 def main(folder, latlim, lonlim, timelim, sources = "level_1", bin_length = "DEKAD",
@@ -87,6 +83,8 @@ def main(folder, latlim, lonlim, timelim, sources = "level_1", bin_length = "DEK
         log.info(f"--> Example dataset is {example_source[0]}.{example_source[1]}.")
 
     example_t_vars = [x for x in ["lst", "bt"] if x in sources.keys()]
+    example_sources = {k:v for k,v in sources.items() if k in example_t_vars}
+    other_sources = {k:v for k,v in sources.items() if k not in example_t_vars}
 
     if enhancers == "default":
         enhancers = [rename_meteo,
@@ -96,7 +94,14 @@ def main(folder, latlim, lonlim, timelim, sources = "level_1", bin_length = "DEK
                     ]
 
     bins = compositer.time_bins(timelim, bin_length)
-    dss = downloader.collect_sources(folder, sources, latlim, lonlim, [bins[0], bins[-1]])
+    adjusted_timelim = [bins[0], bins[-1]]
+    buffered_timelim = [adjusted_timelim[0] - np.timedelta64(3, "D"), 
+                        adjusted_timelim[1] + np.timedelta64(3, "D")]
+
+    example_dss = downloader.collect_sources(folder, example_sources, latlim, lonlim, adjusted_timelim)
+    other_dss = downloader.collect_sources(folder, other_sources, latlim, lonlim, buffered_timelim)
+    dss= {**example_dss, **other_dss}
+
     ds = aligner.main(dss, sources, example_source, folder, enhancers, example_t_vars = example_t_vars)
 
     t2 = datetime.datetime.now()

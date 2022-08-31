@@ -118,6 +118,10 @@ def main(dss, sources, example_source, folder, enhancers, example_t_vars = ["lst
     if os.path.isfile(final_path):
         final_path = final_path.replace(".nc", "_.nc")
 
+    if ds.time.size == 0:
+        log.warning("--> No valid data created (ds.time.size == 0).")
+        return ds
+
     ds = save_ds(ds, final_path, encoding = "initiate",
                     label = f"Creating merged file `{os.path.split(final_path)[-1]}`.")
 

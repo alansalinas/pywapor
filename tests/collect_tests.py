@@ -95,25 +95,26 @@ def strictly_decreasing(L):
 
 if __name__ == "__main__":
 
-    workdir = r"/Users/hmcoerver/Local/20220325_20220415_test_data"
+    # workdir = r"/Users/hmcoerver/Local/20220325_20220415_test_data"
+    workdir = r"/Users/hmcoerver/Local/collect_tests"
 
-    overwrite_timelim = [datetime.date(2022, 3, 25), datetime.date(2022, 4, 15)]
-    # overwrite_timelim = None
+    # overwrite_timelim = [datetime.date(2022, 3, 25), datetime.date(2022, 4, 15)]
+    overwrite_timelim = None
 
     sources = {
-        # 'GEOS5':        [pywapor.collect.product.GEOS5,     [datetime.date(2022, 3, 1), datetime.date(2022, 3, 3)]],
-        # 'STATICS':      [pywapor.collect.product.STATICS,   None],
-        # 'MODIS':        [pywapor.collect.product.MODIS,     [datetime.date(2019, 3, 1), datetime.date(2019, 4, 1)]],
-        # 'MERRA2':       [pywapor.collect.product.MERRA2,    [datetime.date(2022, 3, 1), datetime.date(2022, 3, 3)]],
-        # 'GLOBCOVER':    [pywapor.collect.product.GLOBCOVER, None],
-        # 'CHIRPS':       [pywapor.collect.product.CHIRPS,    [datetime.date(2022, 3, 1), datetime.date(2022, 3, 3)]],
-        # 'SRTM':         [pywapor.collect.product.SRTM,      None],
-        # 'PROBAV':       [pywapor.collect.product.PROBAV,    [datetime.date(2021, 7, 1), datetime.date(2021, 7, 11)]],
+        'GEOS5':        [pywapor.collect.product.GEOS5,     [datetime.date(2022, 3, 1), datetime.date(2022, 3, 3)]],
+        'STATICS':      [pywapor.collect.product.STATICS,   None],
+        'MODIS':        [pywapor.collect.product.MODIS,     [datetime.date(2019, 3, 1), datetime.date(2019, 4, 1)]],
+        'MERRA2':       [pywapor.collect.product.MERRA2,    [datetime.date(2022, 3, 1), datetime.date(2022, 3, 3)]],
+        'GLOBCOVER':    [pywapor.collect.product.GLOBCOVER, None],
+        'CHIRPS':       [pywapor.collect.product.CHIRPS,    [datetime.date(2022, 3, 1), datetime.date(2022, 3, 3)]],
+        'SRTM':         [pywapor.collect.product.SRTM,      None],
+        'PROBAV':       [pywapor.collect.product.PROBAV,    [datetime.date(2021, 7, 1), datetime.date(2021, 7, 11)]],
         'ERA5':         [pywapor.collect.product.ERA5,      [datetime.date(2022, 3, 1), datetime.date(2022, 3, 3)]],
-        # 'SENTINEL2':    [pywapor.collect.product.SENTINEL2, [datetime.date(2022, 3, 1), datetime.date(2022, 3, 9)]],    
-        # 'SENTINEL3':    [pywapor.collect.product.SENTINEL3, [datetime.date(2022, 3, 1), datetime.date(2022, 3, 3)]],
-        # 'VIIRSL1':      [pywapor.collect.product.VIIRSL1,   [datetime.date(2022, 3, 1), datetime.date(2022, 3, 3)]],
-        # 'COPERNICUS':   [pywapor.collect.product.COPERNICUS, None],
+        'SENTINEL2':    [pywapor.collect.product.SENTINEL2, [datetime.date(2022, 3, 1), datetime.date(2022, 3, 9)]],    
+        'SENTINEL3':    [pywapor.collect.product.SENTINEL3, [datetime.date(2022, 3, 1), datetime.date(2022, 3, 3)]],
+        'VIIRSL1':      [pywapor.collect.product.VIIRSL1,   [datetime.date(2022, 3, 1), datetime.date(2022, 3, 3)]],
+        'COPERNICUS':   [pywapor.collect.product.COPERNICUS, None],
     }
 
     for product_name, (mod, timelim) in sources.items():

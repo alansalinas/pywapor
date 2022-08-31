@@ -21,11 +21,11 @@ def default_vars(product_name, req_vars):
                 "Band13": [("lat", "lon"), "z_obst_max"],
                 "crs": [(), "spatial_ref"],
                     },
-        # 'WaPOR3': {
-        #         "Band1": [("lat", "lon"), "lw_offset"],
-        #         "Band2": [("lat", "lon"), "lw_slope"],
-        #         "crs": [(), "spatial_ref"],
-        # }
+        'WaPOR3': {
+                "Band1": [("lat", "lon"), "lw_offset"],
+                "Band2": [("lat", "lon"), "lw_slope"],
+                "crs": [(), "spatial_ref"],
+        }
     }
 
     req_dl_vars = {
@@ -44,10 +44,10 @@ def default_vars(product_name, req_vars):
             "lw_offset": ["Band12", "crs"],
             "z_obst_max": ["Band13", "crs"],
         },
-        # "WaPOR3": {
-        #     "lw_offset": ["Band1", "crs"],
-        #     "lw_slope": ["Band2", "crs"],
-        # },
+        "WaPOR3": {
+            "lw_offset": ["Band1", "crs"],
+            "lw_slope": ["Band2", "crs"],
+        },
     }
 
     out = {val:variables[product_name][val] for sublist in map(req_dl_vars[product_name].get, req_vars) for val in sublist}

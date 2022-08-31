@@ -71,7 +71,10 @@ def regrid_VNP(workdir, latlim, lonlim, dx_dy = (0.0033, 0.0033)):
         # Chunk and mask invalid pixels.
         ds["bt"] = bt_da.chunk("auto").where((bt_da >= bt_da.valid_min) & 
                                             (bt_da <= bt_da.valid_max) & 
-                                            (bt_da != bt_da._FillValue))
+                                            (bt_da != bt_da._FillValue) &
+                                            (ds1.I05_quality_flags == 0) &
+                                            (ds2.quality_flag == 0)
+        )
 
         # Move `x` and `y` from variables to coordinates
         ds = ds.set_coords(["x", "y"])
@@ -144,6 +147,9 @@ def boxtimes(latlim, lonlim, timelim, folder):
     if isinstance(timelim[0], str):
         timelim[0] = dt.strptime(timelim[0], "%Y-%m-%d")
         timelim[1] = dt.strptime(timelim[1], "%Y-%m-%d")
+    elif isinstance(timelim[0], np.datetime64):
+        timelim[0] = datetime.datetime.utcfromtimestamp(timelim[0].tolist()/1e9).date()
+        timelim[1] = datetime.datetime.utcfromtimestamp(timelim[1].tolist()/1e9).date()
 
     # Expand bb with 1500km (is half of SUOMI NPP swath width).
     ur = (latlim[1], lonlim[1])
@@ -378,6 +384,9 @@ def download(folder, latlim, lonlim, timelim, product_name, req_vars,
     if isinstance(timelim[0], str):
         timelim[0] = dt.strptime(timelim[0], "%Y-%m-%d")
         timelim[1] = dt.strptime(timelim[1], "%Y-%m-%d")
+    elif isinstance(timelim[0], np.datetime64):
+        timelim[0] = datetime.datetime.utcfromtimestamp(timelim[0].tolist()/1e9).date()
+        timelim[1] = datetime.datetime.utcfromtimestamp(timelim[1].tolist()/1e9).date()
 
     # Reformat bounding-box.
     bb = [lonlim[0], latlim[0], lonlim[1], latlim[1]]

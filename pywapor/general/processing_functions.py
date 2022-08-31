@@ -57,7 +57,7 @@ def make_example_ds(ds, folder, target_crs, bb = None):
     return example_ds
 
 @performance_check
-def save_ds(ds, fp, decode_coords = "all", encoding = None, chunks = "auto", precision = 2):
+def save_ds(ds, fp, decode_coords = "all", encoding = None, chunks = "auto", precision = 4):
     """Save a `xr.Dataset` as netcdf.
 
     Parameters

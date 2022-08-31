@@ -13,6 +13,7 @@ import pywapor.general.processing_functions as PF
 import pywapor.et_look_dev as ETLook_dev
 import pywapor.et_look_v2_v3 as ETLook_v2_v3
 from pywapor.general.logger import log, adjust_logger
+from pywapor.enhancers.other import drop_empty_times
 from pywapor.general.processing_functions import save_ds, open_ds
 import copy
 import pywapor.pre_se_root as pre_se_root
@@ -101,7 +102,8 @@ def main(input_data, se_root_version = "v2", export_vars = "default", chunks = {
     ds["t_air_k_i"] = ETLook.meteo.air_temperature_kelvin_inst(ds["t_air_i"])
 
     ds["vp_i"] = ETLook.meteo.vapour_pressure_from_specific_humidity_inst(ds["qv_i"], ds["p_air_i"])
-    ds["vp_i"] = ETLook.meteo.vapour_pressure_from_dewpoint_inst(ds["t_dew_i"])
+    if ds["vp_i"].dtype == object:
+        ds["vp_i"] = ETLook.meteo.vapour_pressure_from_dewpoint_inst(ds["t_dew_i"])
 
     ds["qv_i"] = ETLook.meteo.specific_humidity_from_vapour_pressure(ds["vp_i"], ds["p_air_i"])
     
@@ -173,9 +175,11 @@ def main(input_data, se_root_version = "v2", export_vars = "default", chunks = {
         ...
     elif export_vars == "default":
         keep_vars = ['se_root']
+        ds = drop_empty_times(ds, None, drop_vars=keep_vars)
         ds = ds[keep_vars]
     elif isinstance(export_vars, list):
         keep_vars = copy.copy(export_vars)
+        ds = drop_empty_times(ds, None, drop_vars=keep_vars)
         ds = ds[keep_vars]
     else:
         raise ValueError
@@ -256,8 +260,9 @@ def test_ds(ds, var):
 
 if __name__ == "__main__":
 
-    se_root_version = "v3"
+    se_root_version = "v2"
     export_vars = "default"
-    input_data = r"/Users/hmcoerver/Local/20220325_20220415_test_data/se_root_in.nc"
+    chunks = {"time": 1, "x": 1000, "y": 1000}
+    # input_data = r"/Users/hmcoerver/Local/20220325_20220415_test_data/se_root_in.nc"
 
-    out = main(input_data, se_root_version = se_root_version, export_vars = export_vars)
+    # out = main(input_data, se_root_version = se_root_version, export_vars = export_vars)

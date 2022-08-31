@@ -1,6 +1,7 @@
 import os
 import urllib
 from bs4 import BeautifulSoup
+import warnings
 import urllib
 from joblib import Parallel, delayed
 from functools import partial
@@ -23,7 +24,9 @@ def find_paths(url, regex, node_type = "a", tag = "href", filter = None, session
         file_object = session.get(url, stream = True)
         file_object.raise_for_status()
         f = file_object.content
-    soup = BeautifulSoup(f, "lxml")
+    with warnings.catch_warnings():
+        warnings.filterwarnings("ignore", message="It looks like you're parsing an XML document using an HTML parser.")
+        soup = BeautifulSoup(f, "lxml")
     file_tags = soup.find_all(node_type, {tag: re.compile(regex)})
     if not isinstance(filter, type(None)):
         file_tags = np.unique([filter(tag) for tag in file_tags], axis = 0).tolist()

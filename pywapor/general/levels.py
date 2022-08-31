@@ -418,12 +418,12 @@ def pre_et_look_levels(level = "level_1", bin_length = "DEKAD"):
             "spatial_interp": "bilinear",
             }
 
-    statics = [
-                'lw_offset', 'lw_slope', 'z_oro', 'rn_offset', 'rn_slope', 't_amp_year', 't_opt', 'vpd_slope',
+    statics_v2 = [
+                'z_oro', 'rn_offset', 'rn_slope', 't_amp_year', 't_opt', 'vpd_slope',
                 'land_mask', 'rs_min', 'z_obst_max'
             ]
 
-    for var in statics:
+    for var in statics_v2:
         level_2_v3[var] = {
             'products': [
                 {
@@ -435,7 +435,27 @@ def pre_et_look_levels(level = "level_1", bin_length = "DEKAD"):
         'composite_type': None,
         'temporal_interp': None,
         'spatial_interp': 'bilinear'}
+
+    statics_v3 = [
+                'lw_offset', 'lw_slope'
+            ]
+
+    for var in statics_v3:
+        level_2_v3[var] = {
+            'products': [
+                {
+                    'source': "STATICS",
+                    'product_name': "WaPOR3",
+                    'enhancers': 'default'
+                },
+            ],
+        'composite_type': None,
+        'temporal_interp': None,
+        'spatial_interp': 'bilinear'}
     
+
+
+
     levels = {
             "level_1": level_1,
             "level_2": level_2,
