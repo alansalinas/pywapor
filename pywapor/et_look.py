@@ -287,9 +287,11 @@ def main(input_data, et_look_version = "v2", export_vars = "default"):
         with warnings.catch_warnings():
             warnings.filterwarnings("ignore", message="invalid value encountered in power")
             warnings.filterwarnings("ignore", message="invalid value encountered in true_divide")
+            warnings.filterwarnings("ignore", message="invalid value encountered in divide")
             warnings.filterwarnings("ignore", message="divide by zero encountered in power")
             warnings.filterwarnings("ignore", message="divide by zero encountered in true_divide")
             warnings.filterwarnings("ignore", message="divide by zero encountered in log")
+            warnings.filterwarnings("ignore", message="divide by zero encountered in divide")
             ds = save_ds(ds, fp_out, encoding = "initiate", chunks = chunks, label = f"Saving output to `{fn}`.")
 
     t2 = datetime.datetime.now()
@@ -305,8 +307,8 @@ def check_for_non_chuncked_arrays(ds):
 
 if __name__ == "__main__":
 
-    input_data = r"/Users/hmcoerver/Local/20220325_20220415_test_data/et_look_in_.nc"
-    et_look_version = "v3"
+    input_data = r'/Users/hmcoerver/Local/test8/et_look_in_.nc'
+    et_look_version = "v2"
     export_vars = "default"
 
-    out = main(input_data, et_look_version = "v3", export_vars = "default")
+    out = main(input_data, et_look_version = et_look_version, export_vars = export_vars)

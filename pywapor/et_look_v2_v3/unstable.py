@@ -568,9 +568,11 @@ def transpiration(
 
         warnings.filterwarnings("ignore", message="invalid value encountered in power")
         warnings.filterwarnings("ignore", message="invalid value encountered in true_divide")
+        warnings.filterwarnings("ignore", message="invalid value encountered in divide")
         warnings.filterwarnings("ignore", message="divide by zero encountered in log")
         warnings.filterwarnings("ignore", message="divide by zero encountered in true_divide")
-        
+        warnings.filterwarnings("ignore", message="divide by zero encountered in divide")
+
         while (iteration < iter_h) and (np.nanmax(epsilon) > 0.01):
             iteration += 1
             
@@ -804,9 +806,11 @@ def evaporation(
     with warnings.catch_warnings():
 
         warnings.filterwarnings("ignore", message="invalid value encountered in power")
+        warnings.filterwarnings("ignore", message="invalid value encountered in divide")
         warnings.filterwarnings("ignore", message="invalid value encountered in true_divide")
         warnings.filterwarnings("ignore", message="divide by zero encountered in log")
         warnings.filterwarnings("ignore", message="divide by zero encountered in power")
+        warnings.filterwarnings("ignore", message="divide by zero encountered in divide")
         
         while (iteration < iter_h) and (np.nanmax(epsilon) > 0.1):
             iteration += 1
