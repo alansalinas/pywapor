@@ -17,7 +17,7 @@ from pywapor.general.processing_functions import save_ds, open_ds
 import copy
 import warnings
 
-def main(input_data, et_look_version = "v2", export_vars = "default"):
+def main(input_data, et_look_version = "v2", export_vars = "default", chunks = {"time_bins": 1, "x": 1000, "y": 1000}):
     """Runs the ETLook model over the provided input data.
 
     Parameters
@@ -37,7 +37,6 @@ def main(input_data, et_look_version = "v2", export_vars = "default"):
     xr.Dataset
         Dataset with variables selected through `export_vars`.
     """
-    chunks = {"time_bins": 1, "x": 1000, "y": 1000}
 
     # Inputs
     if isinstance(input_data, str):

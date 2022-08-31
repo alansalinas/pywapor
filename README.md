@@ -113,6 +113,19 @@ For questions, requests or issues with this repository, please contact Bert Coer
 
 ### Release Notes
 
+#### 3.0.0 (2022-08-31)
+<br>
+<ul>
+    <li> Bugfixes. Most noteably, server side errors when downloading data are now handeled better, i.e. collect tools will retry several times when a download fails, but many other smaller issues have been fixed too.</li>
+    <li> Performance improvements, mostly due to fewer reprojections. </li>
+    <li> Better logging. The logs from SENTINEL and ERA5 are now directed to seperate channels and logs now show peak-memory-usage for critical calculation steps.
+    <li> `et_look` and `se_root` now accept a `chunks` keyword to adjust the chunksizes at which the calculations are done. Increase them if you have a lot of RAM available, decrease them for slower calculations but with less memory usage.</li>
+    <li> Support for WaPOR v3 methodology. Choose `et_look_version = "v3"` and `se_root_version = "v3"` when running the respective models (`et_look` and `se_root`).</li>
+    <li> Default configurations for WaPOR v3 input datasets, i.e. choose `sources = "level_2_v3"` when running `pre_et_look` or `pre_se_root`.
+    <li> New collect functions for COPERNICUS DEM. </li>
+    <li> The data structure for STATICS is now consistent with the other products. </li>
+</ul>
+
 #### 2.6.0 (2022-08-04)
 <br>
 <ul>
