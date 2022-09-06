@@ -11,6 +11,12 @@ import rasterio.warp
 import pandas as pd
 from pywapor.general.performance import performance_check
 
+def remove_ds(ds):
+    if "source" in ds.encoding.keys():
+        fp = ds.encoding["source"]
+        ds = ds.close()
+        os.remove(fp)
+
 def process_ds(ds, coords, variables, crs = None):
 
     ds = ds[list(variables.keys())]

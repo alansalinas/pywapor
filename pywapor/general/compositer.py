@@ -8,7 +8,7 @@ import xarray as xr
 import pandas as pd
 from pywapor.general.logger import log
 import numpy as np
-from pywapor.general.processing_functions import save_ds, open_ds
+from pywapor.general.processing_functions import save_ds, open_ds, remove_ds
 import os
 from pywapor.general.reproject import align_pixels
 from pywapor.enhancers.apply_enhancers import apply_enhancer
@@ -212,18 +212,18 @@ def main(dss, sources, example_source, bins, folder, enhancers, cleanup = True):
         dss2.append(ds)
         temp_files2.append(ds.encoding["source"])
 
-        for nc in temp_files1:
+        for nc in dss1:
             if cleanup:
-                os.remove(nc)
+                remove_ds(nc)
 
     # Align all the variables together.
     example_ds = dss[example_source]
     spatial_interps = [sources[list(x.data_vars)[0]]["spatial_interp"] for x in dss2]
     dss3, temp_files3 = align_pixels(dss2, folder, spatial_interps, example_ds, stack_dim = "time_bins", fn_append = "_step2")
 
-    for nc in temp_files2:
+    for nc in dss2:
         if cleanup:
-            os.remove(nc)
+            remove_ds(nc)
     
     ds = xr.merge(dss3)
 
@@ -237,9 +237,9 @@ def main(dss, sources, example_source, bins, folder, enhancers, cleanup = True):
 
     ds = save_ds(ds, final_path, encoding = "initiate", label = f"Creating merged file `{os.path.split(final_path)[-1]}`.")
 
-    for nc in temp_files3:
+    for nc in dss3:
         if cleanup:
-            os.remove(nc)
+            remove_ds(nc)
 
     return ds
 

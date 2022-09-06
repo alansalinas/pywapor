@@ -205,9 +205,8 @@ def create_key():
     if os.path.exists(filehandle):
         os.remove(filehandle)
     
-    f = open(filehandle,"w+")
-    f.write(str(Fernet.generate_key().decode("utf-8")))
-    f.close()
+    with open(filehandle,"w+") as f:
+        f.write(str(Fernet.generate_key().decode("utf-8")))
 
 def vito_account(user_pw = None):
     """Check if the given or stored VITO username/password combination

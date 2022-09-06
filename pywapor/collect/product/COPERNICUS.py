@@ -5,7 +5,7 @@ from itertools import product
 import xarray as xr
 import pywapor
 from pywapor.collect.protocol import cog
-from pywapor.general.processing_functions import open_ds, save_ds
+from pywapor.general.processing_functions import open_ds, save_ds, remove_ds
 from pywapor.enhancers.apply_enhancers import apply_enhancer
 from pywapor.general.logger import log
 
@@ -137,7 +137,7 @@ def download(folder, latlim, lonlim, product_name = "GLO30", req_vars = ["z"],
     ds = save_ds(ds, final_fp, encoding = "initiate", label = f"Saving {product_name}.nc")
 
     for nc in dss:
-        os.remove(nc.encoding["source"])
+        remove_ds(nc)
 
     return ds
 

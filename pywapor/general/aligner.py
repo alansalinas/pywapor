@@ -4,7 +4,7 @@ interpolate various parameters in time to match with land-surface-temperature
 times. 
 """
 
-from pywapor.general.processing_functions import save_ds, open_ds
+from pywapor.general.processing_functions import save_ds, open_ds, remove_ds
 from pywapor.general.reproject import align_pixels
 from pywapor.enhancers.apply_enhancers import apply_enhancer
 from pywapor.general.logger import log
@@ -96,16 +96,16 @@ def main(dss, sources, example_source, folder, enhancers, example_t_vars = ["lst
             # Add time-invariant data as is.
             dss2.append(ds)
 
-        for nc in temp_files1:
-            os.remove(nc)
+        for nc in dss1:
+            remove_ds(nc)
 
     # Align all the variables together.
     example_ds = dss[example_source]
     spatial_interps = [sources[list(x.data_vars)[0]]["spatial_interp"] for x in dss2]
     dss3, temp_files3 = align_pixels(dss2, folder, spatial_interps, example_ds, fn_append = "_step2")
 
-    for nc in temp_files2:
-        os.remove(nc)
+    for nc in dss2:
+        remove_ds(nc)
 
     # Merge everything.
     ds = xr.merge(dss3)
@@ -125,8 +125,8 @@ def main(dss, sources, example_source, folder, enhancers, example_t_vars = ["lst
     ds = save_ds(ds, final_path, encoding = "initiate",
                     label = f"Creating merged file `{os.path.split(final_path)[-1]}`.")
 
-    for nc in temp_files3:
-        os.remove(nc)
+    for nc in dss3:
+        remove_ds(nc)
 
     return ds
 

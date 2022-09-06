@@ -18,7 +18,7 @@ from itertools import chain
 from pywapor.general.logger import log
 from pywapor.collect import accounts
 from pywapor.enhancers.apply_enhancers import apply_enhancer
-from pywapor.general.processing_functions import save_ds, open_ds
+from pywapor.general.processing_functions import save_ds, open_ds, remove_ds
 from pywapor.general.curvilinear import create_grid, regrid
 from pywapor.collect.protocol.crawler import download_url, download_urls
 from pywapor.general.logger import log, adjust_logger
@@ -131,7 +131,7 @@ def regrid_VNP(workdir, latlim, lonlim, dx_dy = (0.0033, 0.0033)):
         dss.append(out)
 
         # Remove intermediate file.
-        os.remove(fp_temp)
+        remove_ds(ds)
 
     log.sub()
 
@@ -187,7 +187,8 @@ def boxtimes(latlim, lonlim, timelim, folder):
     url = base_url + "?&" + "&".join([f"{k}={v}" for k, v in kwargs.items()])
     fp = os.path.join(folder, "boxtimes.json")
     _ = download_url(url, fp)
-    data = json.load(open(fp))
+    with open(fp) as f:
+        data = json.load(f)
 
     # Group to SUOMI NPP 6 minute tiles.
     dates = [datetime.datetime.strptime(x[0], "%Y-%m-%dT%H:%M:%SZ") for x in chain.from_iterable(data["data"]) if x[3] > 40.]

@@ -13,7 +13,7 @@ import pywapor.general.bitmasks as bm
 import xarray as xr
 from pywapor.enhancers.apply_enhancers import apply_enhancer
 import numpy as np
-from pywapor.general.processing_functions import process_ds, save_ds, open_ds
+from pywapor.general.processing_functions import process_ds, save_ds, open_ds, remove_ds
 import datetime
 import rioxarray.merge
 
@@ -93,8 +93,9 @@ def download(folder, latlim, lonlim, timelim, product_name, req_vars = ["ndvi", 
 
     ds = save_ds(ds, os.path.join(folder, f"{product_name}.nc"), label = f"Merging files.")
 
-    for fp in fps:
-        os.remove(fp.replace(".HDF5", ".nc"))
+    for k, v in dss.items():
+        for nc in v:
+            remove_ds(nc)
 
     return ds
 
