@@ -41,7 +41,7 @@ def align_pixels(dss, folder, spatial_interp = "nearest", example_ds = None, sta
                 var_str = "_".join(ds_part.data_vars)
                 dst_path = os.path.join(folder, f"{var_str}_x{i}{fn_append}.nc")
                 ds_part = reproject(ds_part, example_ds, dst_path, spatial_interp = spat_interp, stack_dim = stack_dim)
-                temp_files.append(ds_part.encoding["source"])
+                temp_files.append(ds_part)
             dss1.append(ds_part)
 
     return dss1, temp_files

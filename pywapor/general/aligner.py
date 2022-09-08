@@ -62,7 +62,7 @@ def main(dss, sources, example_source, folder, enhancers, example_t_vars = ["lst
     # Create variable to store times to interpolate to.
     example_time = None
 
-    temp_files2 = list()
+    cleanup = list()
 
     # Loop over the variables
     for var in variables:
@@ -74,6 +74,7 @@ def main(dss, sources, example_source, folder, enhancers, example_t_vars = ["lst
         # Align pixels of different products for a single variable together.
         dss_part = [ds[[var]] for ds in dss.values() if var in ds.data_vars]
         dss1, temp_files1 = align_pixels(dss_part, folder, spatial_interp, fn_append = "_step1")
+        cleanup.append(temp_files1)
 
         # Combine different source_products (along time dimension).
         ds = xr.combine_nested(dss1, concat_dim = "time").chunk({"time": -1}).sortby("time").squeeze()
@@ -91,21 +92,16 @@ def main(dss, sources, example_source, folder, enhancers, example_t_vars = ["lst
             dst_path = os.path.join(folder, f"{var}_i.nc")
             ds = save_ds(ds, dst_path, encoding = "initiate", label = lbl)
             dss2.append(ds)
-            temp_files2.append(ds.encoding["source"])
+            cleanup.append([ds])
         else:
             # Add time-invariant data as is.
             dss2.append(ds)
-
-        for nc in dss1:
-            remove_ds(nc)
 
     # Align all the variables together.
     example_ds = dss[example_source]
     spatial_interps = [sources[list(x.data_vars)[0]]["spatial_interp"] for x in dss2]
     dss3, temp_files3 = align_pixels(dss2, folder, spatial_interps, example_ds, fn_append = "_step2")
-
-    for nc in dss2:
-        remove_ds(nc)
+    cleanup.append(temp_files3)
 
     # Merge everything.
     ds = xr.merge(dss3)
@@ -125,7 +121,7 @@ def main(dss, sources, example_source, folder, enhancers, example_t_vars = ["lst
     ds = save_ds(ds, final_path, encoding = "initiate",
                     label = f"Creating merged file `{os.path.split(final_path)[-1]}`.")
 
-    for nc in dss3:
+    for nc in list(chain.from_iterable(cleanup)):
         remove_ds(nc)
 
     return ds

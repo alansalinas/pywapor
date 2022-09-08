@@ -14,7 +14,9 @@ from pywapor.general.performance import performance_check
 def remove_ds(ds):
     if "source" in ds.encoding.keys():
         fp = ds.encoding["source"]
+        ds = xr.open_dataset(fp)
         ds = ds.close()
+        log.info(f"--> Removing `{fp}`")
         os.remove(fp)
 
 def process_ds(ds, coords, variables, crs = None):

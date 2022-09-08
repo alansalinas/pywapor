@@ -210,9 +210,9 @@ def main(dss, sources, example_source, bins, folder, enhancers, cleanup = True):
         dst_path = os.path.join(folder, f"{var}_bin.nc")
         ds = save_ds(ds, dst_path, label = f"Compositing `{var}` ({composite_type}).")
         dss2.append(ds)
-        temp_files2.append(ds.encoding["source"])
+        temp_files2.append(ds)
 
-        for nc in dss1:
+        for nc in temp_files1:
             if cleanup:
                 remove_ds(nc)
 
@@ -221,7 +221,7 @@ def main(dss, sources, example_source, bins, folder, enhancers, cleanup = True):
     spatial_interps = [sources[list(x.data_vars)[0]]["spatial_interp"] for x in dss2]
     dss3, temp_files3 = align_pixels(dss2, folder, spatial_interps, example_ds, stack_dim = "time_bins", fn_append = "_step2")
 
-    for nc in dss2:
+    for nc in temp_files2:
         if cleanup:
             remove_ds(nc)
     
@@ -237,7 +237,7 @@ def main(dss, sources, example_source, bins, folder, enhancers, cleanup = True):
 
     ds = save_ds(ds, final_path, encoding = "initiate", label = f"Creating merged file `{os.path.split(final_path)[-1]}`.")
 
-    for nc in dss3:
+    for nc in temp_files3:
         if cleanup:
             remove_ds(nc)
 
