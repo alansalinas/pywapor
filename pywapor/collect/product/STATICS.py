@@ -1,6 +1,6 @@
 import os
 from pywapor.collect.protocol import cog
-from pywapor.general.processing_functions import open_ds
+from pywapor.general.processing_functions import open_ds, remove_ds
 import numpy as np
 
 def default_vars(product_name, req_vars):
@@ -100,7 +100,7 @@ def download(folder, latlim, lonlim, product_name, req_vars,
         if np.all([x in ds.data_vars for x in req_vars]):
             return ds
         else:
-            ds = ds.close()
+            remove_ds(ds)
 
     spatial_buffer = True
     if spatial_buffer:

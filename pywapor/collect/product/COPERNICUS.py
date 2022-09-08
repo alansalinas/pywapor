@@ -84,7 +84,7 @@ def download(folder, latlim, lonlim, product_name = "GLO30", req_vars = ["z"],
         if np.all([x in ds.data_vars for x in req_vars]):
             return ds
         else:
-            ds = ds.close()
+            remove_ds(ds)
 
     spatial_buffer = True
     if spatial_buffer:

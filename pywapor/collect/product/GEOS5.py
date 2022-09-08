@@ -1,7 +1,7 @@
 from pywapor.collect.protocol import opendap
 from pywapor.collect.protocol.projections import get_crss
 import os
-from pywapor.general.processing_functions import open_ds
+from pywapor.general.processing_functions import open_ds, remove_ds
 from pywapor.enhancers.temperature import kelvin_to_celsius
 from functools import partial
 import numpy as np
@@ -73,7 +73,7 @@ def download(folder, latlim, lonlim, timelim, product_name, req_vars,
         if np.all([x in ds.data_vars for x in req_vars]):
             return ds
         else:
-            ds = ds.close()
+            remove_ds(ds)
 
     spatial_buffer = True
     if spatial_buffer:

@@ -387,7 +387,7 @@ def download(folder, latlim, lonlim, timelim, product_name, req_vars,
         if np.all([x in ds.data_vars for x in req_vars]):
             return ds
         else:
-            ds = ds.close()
+            remove_ds(ds)
 
     if isinstance(variables, type(None)):
         variables = default_vars(product_name, req_vars)

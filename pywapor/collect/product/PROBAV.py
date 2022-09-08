@@ -28,7 +28,7 @@ def download(folder, latlim, lonlim, timelim, product_name, req_vars = ["ndvi", 
         if np.all([x in ds.data_vars for x in req_vars]):
             return ds
         else:
-            ds = ds.close()
+            remove_ds(ds)
 
     dates = pd.date_range(timelim[0], timelim[1], freq="D")
 

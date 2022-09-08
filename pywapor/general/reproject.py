@@ -8,7 +8,7 @@ import os
 from pywapor.general.logger import log
 from pywapor.general.performance import performance_check
 from pywapor.general.processing_functions import process_ds
-from pywapor.general.processing_functions import open_ds, save_ds
+from pywapor.general.processing_functions import open_ds, save_ds, remove_ds
 from rasterio import CRS
 
 def get_pixel_sizes(dss):
@@ -168,7 +168,7 @@ def reproject_chunk(src_ds, example_ds, dst_path, spatial_interp = "nearest", st
     ds = save_ds(ds, dst_path, encoding = "initiate", label = label)
 
     for nc in ncs:
-        os.remove(nc)
+        remove_ds(nc)
 
     return ds
 

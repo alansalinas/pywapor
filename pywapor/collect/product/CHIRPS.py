@@ -4,7 +4,7 @@ import pywapor.collect.protocol.opendap as opendap
 import pywapor.collect.accounts as accounts
 import os
 import numpy as np
-from pywapor.general.processing_functions import open_ds
+from pywapor.general.processing_functions import open_ds, remove_ds
 
 def default_vars(product_name, req_vars = ["p"]):
     
@@ -54,7 +54,7 @@ def download(folder, latlim, lonlim, timelim, product_name = "P05", req_vars = [
         if np.all([x in ds.data_vars for x in req_vars]):
             return ds
         else:
-            ds = ds.close()
+            remove_ds(ds)
 
     tiles = [None]
     coords = {"x": ["longitude", lonlim], "y": ["latitude", latlim], "t": ["time", timelim]}

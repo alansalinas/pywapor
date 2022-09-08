@@ -5,7 +5,7 @@ import datetime
 import os
 import json
 import pywapor.collect
-from pywapor.general.processing_functions import open_ds
+from pywapor.general.processing_functions import open_ds, remove_ds
 import pywapor.collect.accounts as accounts
 from shapely.geometry.polygon import Polygon
 from shapely.geometry import shape
@@ -75,7 +75,7 @@ def download(folder, latlim, lonlim, product_name = "30M", req_vars = ["z"], var
         if np.all([x in ds.data_vars for x in req_vars]):
             return ds
         else:
-            ds = ds.close()
+            remove_ds(ds)
 
     spatial_buffer = True
     if spatial_buffer:

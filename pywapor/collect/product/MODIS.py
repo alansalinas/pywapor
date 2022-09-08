@@ -10,7 +10,7 @@ from pywapor.general.logger import log
 from shapely.geometry import shape
 from pywapor.collect.protocol.projections import get_crss
 import pywapor.collect.protocol.opendap as opendap
-from pywapor.general.processing_functions import open_ds
+from pywapor.general.processing_functions import open_ds, remove_ds
 from pywapor.general import bitmasks
 import pandas as pd
 import warnings
@@ -189,7 +189,7 @@ def download(folder, latlim, lonlim, timelim, product_name, req_vars,
         if np.all([x in ds.data_vars for x in req_vars]):
             return ds
         else:
-            ds = ds.close()
+            remove_ds(ds)
 
     if product_name == "MOD13Q1.061" or product_name == "MYD13Q1.061":
         timedelta = np.timedelta64(8, "D")
