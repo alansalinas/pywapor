@@ -15,11 +15,13 @@ import glob
 import requests
 from pywapor.general.logger import log, adjust_logger
 from cachetools import cached, TTLCache
+import ssl
 
 @cached(cache=TTLCache(maxsize=2048, ttl=3600))
 def find_paths(url, regex, node_type = "a", tag = "href", filter = None, session = None):
     if isinstance(session, type(None)):
-        f = urllib.request.urlopen(url)
+        context = ssl._create_unverified_context()
+        f = urllib.request.urlopen(url, context = context)
     else:
         file_object = session.get(url, stream = True)
         file_object.raise_for_status()
