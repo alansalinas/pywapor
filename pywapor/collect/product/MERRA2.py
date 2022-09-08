@@ -50,10 +50,6 @@ def default_vars(product_name, req_vars):
     
     return out
 
-# def pa_to_kpa(ds, var):
-#     ds[var] = ds[var] / 1000
-#     return ds
-
 def default_post_processors(product_name, req_vars):
 
     post_processors = {

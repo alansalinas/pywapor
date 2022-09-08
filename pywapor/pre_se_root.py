@@ -58,12 +58,12 @@ def main(folder, latlim, lonlim, timelim, sources = "level_1", bin_length = "DEK
         output, by default "default".
     example_source : tuple, optional
         Which source to use for spatial alignment, overrides product selected
-        through sources, by default None.
+        through `sources`, by default None.
 
     Returns
     -------
     xr.Dataset
-        Dataset with data for `pywapor.se_root`.
+        Dataset with input data for `pywapor.se_root`.
     """
     t1 = datetime.datetime.now()
     log.info("> PRE_SE_ROOT").add()
