@@ -5,13 +5,14 @@ from datetime import datetime as dt
 import tqdm
 import shutil
 import pywapor
-from pywapor.general.processing_functions import save_ds, open_ds, create_wkt, unpack, make_example_ds
+from pywapor.general.processing_functions import save_ds, open_ds, create_wkt, unpack, make_example_ds, remove_ds
 from pywapor.general.logger import log
 from pywapor.enhancers.apply_enhancers import apply_enhancer
 import xarray as xr
 import rioxarray.merge
 import tqdm
 import numpy as np
+import glob
 import rasterio.crs
 import types
 import logging
@@ -74,12 +75,14 @@ def download(folder, latlim, lonlim, timelim, search_kwargs, node_filter = None)
     
     return scenes
 
-def process_sentinel(scenes, variables, specific_processor, time_func, final_fn, post_processors, bb = None):
+def process_sentinel(scenes, variables, source_name, time_func, final_fn, post_processors, bb = None):
 
     example_ds = None
     dss1 = dict()
 
     log.info(f"--> Processing {len(scenes)} scenes.").add()
+
+    target_crs = rasterio.crs.CRS.from_epsg(4326)
 
     for i, scene_folder in enumerate(scenes):
         
@@ -104,9 +107,12 @@ def process_sentinel(scenes, variables, specific_processor, time_func, final_fn,
             scene_folder = scene_folder
             remove_folder = False
 
-        ds = specific_processor(scene_folder, variables, bb = bb)
-
-        target_crs = rasterio.crs.CRS.from_epsg(4326)
+        if source_name == "SENTINEL2":
+            ds = pywapor.collect.product.SENTINEL2.s2_processor(scene_folder, variables)
+        elif source_name == "SENTINEL3":
+            ds = pywapor.collect.product.SENTINEL3.s3_processor(scene_folder, variables, bb = bb)
+        else:
+            raise ValueError
 
         # NOTE: see https://github.com/corteva/rioxarray/issues/545
         ds = ds.sortby("y", ascending = False)
@@ -114,7 +120,9 @@ def process_sentinel(scenes, variables, specific_processor, time_func, final_fn,
         # Clip and pad to bounding-box
         if isinstance(example_ds, type(None)):
             example_ds = make_example_ds(ds, folder, target_crs, bb = bb)
-        ds = ds.rio.reproject_match(example_ds)
+        ds = ds.rio.reproject_match(example_ds).chunk("auto")
+        # NOTE see rioxarray issue here: https://github.com/corteva/rioxarray/issues/570
+        _ = [ds[var].attrs.pop("_FillValue") for var in ds.data_vars if "_FillValue" in ds[var].attrs.keys()]
         ds = ds.assign_coords({"x": example_ds.x, "y": example_ds.y})
 
         dtime = time_func(fn)
@@ -122,7 +130,8 @@ def process_sentinel(scenes, variables, specific_processor, time_func, final_fn,
         ds = ds.assign_coords({"time":[dtime]})
 
         # Save to netcdf
-        ds = save_ds(ds, fp, label = f"({i+1}/{len(scenes)}) Processing {fn} to netCDF.")
+        # encoding = {var: {"zlib": True, "dtype": "int32", "_FillValue": -9999} for var in ds.data_vars}
+        ds = save_ds(ds, fp, encoding = "initiate", precision = 0, label = f"({i+1}/{len(scenes)}) Processing {fn} to netCDF.")
 
         if dtime in dss1.keys():
             dss1[dtime].append(ds)
@@ -143,12 +152,21 @@ def process_sentinel(scenes, variables, specific_processor, time_func, final_fn,
     if os.path.isfile(fp):
         os.remove(fp)
 
-    # Apply product specific functions.
+    # Apply variable specific functions.
+    for vars in variables.values():
+        for func in vars[2]:
+            ds, label = apply_enhancer(ds, vars[1], func)
+            log.info(label)
+    
+    # Apply general product functions.
     for var, funcs in post_processors.items():
         for func in funcs:
             ds, label = apply_enhancer(ds, var, func)
             log.info(label)
 
+    # Remove unrequested variables.
+    ds = ds[list(post_processors.keys())]
+    
     for var in ds.data_vars:
         ds[var].attrs = {}
 
@@ -162,7 +180,7 @@ def process_sentinel(scenes, variables, specific_processor, time_func, final_fn,
     # Remove intermediate files.
     for dss0 in dss1.values():
         for x in dss0:
-            os.remove(x.encoding["source"])
+            remove_ds(x)
 
     return ds
 

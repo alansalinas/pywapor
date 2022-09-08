@@ -2,51 +2,85 @@ import glob
 import os
 import xarray as xr
 import numpy as np
-from pywapor.collect.product.Landsat.C2L2SP import calc_albedo, calc_ndvi, mask_invalid, open_as_xr
 from datetime import datetime as dt
-from pywapor.general.logger import log
+from pywapor.general.logger import log, adjust_logger
 import pywapor.collect.protocol.sentinelapi as sentinelapi
 import numpy as np
-from pywapor.general.processing_functions import open_ds
+from functools import partial
+from pywapor.general.processing_functions import open_ds, remove_ds
 
-def process_s2(scene_folder, variables, **kwargs):
-
-    fps = {v[1]: glob.glob(os.path.join(scene_folder, "**", "*" + k), recursive = True)[0] for k, v in variables.items()}
-
-    ds = xr.concat([open_as_xr(fp, name) for name, fp in fps.items()], "band")
-
-    qa_da = ds.band_data.sel(band = "qa")
-    data = ds.where(ds.band != "qa", drop = True)
-
-    valid_range = {
-            "blue":     (1, 65534), # 0 = NODATA, 65535 = SATURATED
-            "green":    (1, 65534),
-            "red":      (1, 65534),
-            "nir":      (1, 65534),
-            }
-
-    masked_data = mask_invalid(data, valid_range)
-
+def apply_qa(ds, var):
     # 0 SC_NODATA # 1 SC_SATURATED_DEFECTIVE # 2 SC_DARK_FEATURE_SHADOW
     # 3 SC_CLOUD_SHADOW # 4 SC_VEGETATION # 5 SC_NOT_VEGETATED
     # 6 SC_WATER # 7 SC_UNCLASSIFIED # 8 SC_CLOUD_MEDIUM_PROBA
     # 9 SC_CLOUD_HIGH_PROBA # 10 SC_THIN_CIRRUS # 11 SC_SNOW_ICE
-    pixel_qa_flags = [0, 1, 2, 3, 7, 8, 9, 10, 11]
-    keep = np.invert(qa_da.isin(pixel_qa_flags))
-    masked_data = masked_data.where(keep)
+    if "qa" in ds.data_vars:
+        pixel_qa_flags = [0, 1, 2, 3, 7, 8, 9, 10, 11]
+        keep = np.invert(ds["qa"].isin(pixel_qa_flags))
+        ds[var] = ds[var].where(keep)
+    else:
+        log.warning(f"--> Couldn't apply qa, since `qa` doesn't exist in this dataset ({list(ds.data_vars)}).")
+    return ds
 
+def mask_invalid(ds, var, valid_range = (1, 65534)):
+    # 0 = NODATA, 65535 = SATURATED
+    ds[var] = ds[var].where((ds[var] >= valid_range[0]) & (ds[var] <= valid_range[1]))
+    return ds
+
+def scale_data(ds, var):
     scale = 1./10000. # BOA_QUANTIFICATION_VALUE
     offset = -1000 # BOA_ADD_OFFSET
-    scaled_data = (masked_data + offset) * scale
+    ds[var] = (ds[var] + offset) * scale
+    ds[var] = ds[var].where((ds[var] <= 1.00) & (ds[var] >= 0.00))
+    return ds
 
-    scaled_data = scaled_data.where(scaled_data <= 1.00)
-    scaled_data = scaled_data.where(scaled_data >= 0.00)
+def calc_normalized_difference(ds, var, bands = ["nir", "red"]):
+    if np.all([x in ds.data_vars for x in bands]):
+        ds[var] = xr.where(np.isclose(ds[bands[1]], 0), 0, (ds[bands[0]] - ds[bands[1]]) / (ds[bands[0]] + ds[bands[1]]))
+    else:
+        log.warning(f"--> Couldn't calculate `{var}`, `{'` and `'.join([x for x in bands if x not in ds.data_vars])}` is missing.")
+    return ds
 
-    das = list()
+def calc_psri(ds, var):
+    reqs = ["red", "blue", "red_edge_740"]
+    if np.all([x in ds.data_vars for x in reqs]):
+        ds[var] = xr.where(np.isclose(ds["red_edge_740"], 0), 0, (ds["red"] - ds["blue"]) / ds["red_edge_740"])
+    else:
+        log.warning(f"--> Couldn't calculate `{var}`, `{'` and `'.join([x for x in reqs if x not in ds.data_vars])}` is missing.")
+    return ds
 
-    if np.all([x in scaled_data.band.values for x in ["red", "nir"]]):
-        das.append(calc_ndvi(scaled_data))
+def calc_nmdi(ds, var):
+    reqs = ["swir1", "swir2", "nir"]
+    if np.all([x in ds.data_vars for x in reqs]):
+        ds["nominator"] = ds["swir1"] - ds["swir2"]
+        ds = calc_normalized_difference(ds, var, bands = ["nominator", "nir"])
+        ds = ds.drop_vars(["nominator"])
+    else:
+        log.warning(f"--> Couldn't calculate `{var}`, `{'` and `'.join([x for x in reqs if x not in ds.data_vars])}` is missing.")
+    return ds
 
+def calc_bsi(ds, var):
+    reqs = ["nir", "swir1", "red", "blue"]
+    if np.all([x in ds.data_vars for x in reqs]):
+        ds["nominator"] = ds["nir"] + ds["blue"]
+        ds["denominator"] = ds["swir1"] + ds["red"]
+        ds = calc_normalized_difference(ds, var, bands = ["nominator", "denominator"])
+        ds = ds.drop_vars(["nominator", "denominator"])
+    else:
+        log.warning(f"--> Couldn't calculate `{var}`, `{'` and `'.join([x for x in reqs if x not in ds.data_vars])}` is missing.")
+    return ds
+
+def calc_vari_red_egde(ds, var):
+    reqs = ["red_edge_740", "blue", "red"]
+    if np.all([x in ds.data_vars for x in reqs]):
+        n1 = ds["red_edge_740"] - 1.7 * ds["red"] + 0.7 * ds["blue"]
+        n2 = ds["red_edge_740"] + 2.3 * ds["red"] - 1.3 * ds["blue"]
+        ds[var] = xr.where(np.isclose(n2, 0), 0, n1 / n2)
+    else:
+        log.warning(f"--> Couldn't calculate `{var}`, `{'` and `'.join([x for x in reqs if x not in ds.data_vars])}` is missing.")
+    return ds
+
+def calc_r0(ds, var):
     weights = {
         "blue": 0.074,
         "green": 0.083,
@@ -54,30 +88,52 @@ def process_s2(scene_folder, variables, **kwargs):
         "nir": 0.356,
         "offset": 0.033,
     }
-
-    if np.all([x in scaled_data.band.values for x in ["blue", "green", "red", "nir"]]):
-        das.append(calc_albedo(scaled_data, weights = weights))
-
-    ds = xr.merge(das)
-
+    reqs = ["blue", "green", "red", "nir"]
+    if np.all([x in ds.data_vars for x in reqs]):
+        ds["offset"] = xr.ones_like(ds["blue"])
+        weights_da = xr.DataArray(data = list(weights.values()), 
+                                coords = {"band": list(weights.keys())})
+        ds["r0"] = ds[reqs + ["offset"]].to_array("band").weighted(weights_da).sum("band", skipna = False)
+    else:
+        log.warning(f"--> Couldn't calculate `{var}`, `{'` and `'.join([x for x in reqs if x not in ds.data_vars])}` is missing.")
     return ds
 
 def default_vars(product_name, req_vars):
 
     variables = {
         "S2MSI2A": {
-                    "_B02_20m.jp2": [(), "blue"],
-                    "_B03_20m.jp2": [(), "green"],
-                    "_B04_20m.jp2": [(), "red"],
-                    "_B8A_20m.jp2": [(), "nir"],
-                    "_SCL_20m.jp2": [(), "qa"],
+                    "_B02_20m.jp2": [(), "blue", [mask_invalid, apply_qa, scale_data]],
+                    "_B03_20m.jp2": [(), "green", [mask_invalid, apply_qa, scale_data]],
+                    "_B04_20m.jp2": [(), "red", [mask_invalid, apply_qa, scale_data]],
+                    "_B05_20m.jp2": [(), "red_edge_703", [mask_invalid, apply_qa, scale_data]],
+                    "_B06_20m.jp2": [(), "red_edge_740", [mask_invalid, apply_qa, scale_data]],
+                    "_B07_20m.jp2": [(), "red_edge_782", [mask_invalid, apply_qa, scale_data]],
+                    "_B8A_20m.jp2": [(), "nir", [mask_invalid, apply_qa, scale_data]],
+                    "_B11_20m.jp2": [(), "swir1", [mask_invalid, apply_qa, scale_data]],
+                    "_B12_20m.jp2": [(), "swir2", [mask_invalid, apply_qa, scale_data]],
+                    "_SCL_20m.jp2": [(), "qa", []],
                 },
     }
 
     req_dl_vars = {
         "S2MSI2A": {
-            "ndvi": ["_B04_20m.jp2", "_B8A_20m.jp2", "_SCL_20m.jp2"],
-            "r0": ["_B02_20m.jp2", "_B03_20m.jp2", "_B04_20m.jp2", "_B8A_20m.jp2", "_SCL_20m.jp2"],
+            "blue":             ["_B02_20m.jp2", "_SCL_20m.jp2"],
+            "green":            ["_B03_20m.jp2", "_SCL_20m.jp2"],
+            "red":              ["_B04_20m.jp2", "_SCL_20m.jp2"],
+            "red_edge_703":     ["_B05_20m.jp2", "_SCL_20m.jp2"],
+            "red_edge_740":     ["_B06_20m.jp2", "_SCL_20m.jp2"],
+            "red_edge_782":     ["_B07_20m.jp2", "_SCL_20m.jp2"],
+            "nir":              ["_B8A_20m.jp2", "_SCL_20m.jp2"],
+            "swir1":            ["_B11_20m.jp2", "_SCL_20m.jp2"],
+            "swir2":            ["_B12_20m.jp2", "_SCL_20m.jp2"],
+            "qa":               ["_SCL_20m.jp2"],
+            "ndvi":             ["_B04_20m.jp2", "_B8A_20m.jp2", "_SCL_20m.jp2"],
+            "mndwi":            ["_B03_20m.jp2", "_B11_20m.jp2", "_SCL_20m.jp2"],
+            "vari_red_edge":    ["_B06_20m.jp2", "_B02_20m.jp2", "_B04_20m.jp2", "_SCL_20m.jp2"],
+            "nmdi":             ["_B11_20m.jp2", "_B12_20m.jp2", "_B8A_20m.jp2", "_SCL_20m.jp2"],
+            "psri":             ["_B02_20m.jp2", "_B04_20m.jp2", "_B06_20m.jp2", "_SCL_20m.jp2"],
+            "bsi":              ["_B8A_20m.jp2", "_B11_20m.jp2", "_B04_20m.jp2", "_B02_20m.jp2", "_SCL_20m.jp2"],
+            "r0":               ["_B02_20m.jp2", "_B03_20m.jp2", "_B04_20m.jp2", "_B8A_20m.jp2", "_SCL_20m.jp2"],
         },
     }
 
@@ -89,8 +145,23 @@ def default_post_processors(product_name, req_vars):
     
     post_processors = {
         "S2MSI2A": {
-            "ndvi": [],
-            "r0": [],
+            "blue":             [],
+            "green":            [],
+            "red":              [],
+            "red_edge_703":     [],
+            "red_edge_740":     [],
+            "red_edge_782":     [],
+            "nir":              [],
+            "qa":               [],
+            "swir1":            [],
+            "swir2":            [],
+            "psri":             [calc_psri],
+            "ndvi":             [calc_normalized_difference],
+            "nmdi":             [calc_nmdi],
+            "vari_red_edge":    [calc_vari_red_egde],
+            "bsi":              [calc_bsi],
+            "mndwi":            [partial(calc_normalized_difference, bands = ["swir1", "green"])],
+            "r0":               [calc_r0],
             },
     }
 
@@ -101,6 +172,11 @@ def default_post_processors(product_name, req_vars):
 def time_func(fn):
     dtime = np.datetime64(dt.strptime(fn.split("_")[2], "%Y%m%dT%H%M%S"))
     return dtime
+
+def s2_processor(scene_folder, variables):
+    dss = [open_ds(glob.glob(os.path.join(scene_folder, "**", "*" + k), recursive = True)[0], decode_coords=None).isel(band=0).rename({"band_data": v[1]}) for k, v in variables.items()]
+    ds = xr.merge(dss).drop_vars("band")
+    return ds
 
 def download(folder, latlim, lonlim, timelim, product_name, 
                 req_vars, variables = None, post_processors = None, 
@@ -114,7 +190,7 @@ def download(folder, latlim, lonlim, timelim, product_name,
         if np.all([x in ds.data_vars for x in req_vars]):
             return ds
         else:
-            ds = ds.close()
+            remove_ds(ds)
 
     if isinstance(variables, type(None)):
         variables = default_vars(product_name, req_vars)
@@ -146,19 +222,20 @@ def download(folder, latlim, lonlim, timelim, product_name,
 
     scenes = sentinelapi.download(product_folder, latlim, lonlim, timelim, search_kwargs, node_filter = node_filter)
 
-    ds = sentinelapi.process_sentinel(scenes, variables, process_s2, 
-                                        time_func, f"{product_name}.nc", post_processors, bb = bb)
+    ds = sentinelapi.process_sentinel(scenes, variables, "SENTINEL2", time_func, f"{product_name}.nc", post_processors, bb = bb)
 
     return ds
 
 if __name__ == "__main__":
 
-    folder = r"/Users/hmcoerver/On My Mac/sentinel_dl_test"
-    latlim = [28.9, 29.7]
-    lonlim = [30.2, 31.2]
-    timelim = ["2022-06-01", "2022-06-11"]
+    folder = r"/Users/hmcoerver/Local/s2_test"
+    adjust_logger(True, folder, "INFO")
+    timelim = ["2022-03-25", "2022-04-15"]
+    latlim = [29.4, 29.7]
+    lonlim = [30.7, 31.0]
+
     product_name = 'S2MSI2A'
-    req_vars = ["ndvi", "r0"]
+    req_vars = ["mndwi"]
     post_processors = None
     variables = None
     extra_search_kwargs = {"cloudcoverpercentage": (0, 30)}

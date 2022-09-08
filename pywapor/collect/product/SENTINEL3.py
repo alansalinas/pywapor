@@ -1,19 +1,19 @@
 import os
 import pywapor.collect.protocol.sentinelapi as sentinelapi
 from pywapor.general.curvilinear import regrid, create_grid
-from pywapor.general.logger import log
+from pywapor.general.logger import log, adjust_logger
 import glob
 import xarray as xr
 import numpy as np
 from datetime import datetime as dt
-from pywapor.general.processing_functions import open_ds
+from pywapor.general.processing_functions import open_ds, remove_ds
 
 def default_vars(product_name, req_vars):
 
     variables = {
         "SL_2_LST___": {
-                    "LST_in.nc": [(), "lst"],
-                    "geodetic_in.nc": [(), "coords"],
+                    "LST_in.nc": [(), "lst", []],
+                    "geodetic_in.nc": [(), "coords", []],
         }
     }
 
@@ -45,7 +45,7 @@ def time_func(fn):
     dtime = start_dtime + (end_dtime - start_dtime)/2
     return dtime
 
-def process_s3(scene_folder, variables, bb = None, **kwargs):
+def s3_processor(scene_folder, variables, bb = None, **kwargs):
 
     ncs = [glob.glob(os.path.join(scene_folder, "**", "*" + k), recursive = True)[0] for k in variables.keys()]
 
@@ -79,7 +79,7 @@ def download(folder, latlim, lonlim, timelim, product_name,
         if np.all([x in ds.data_vars for x in req_vars]):
             return ds
         else:
-            ds = ds.close()
+            remove_ds(ds)
 
     if isinstance(variables, type(None)):
         variables = default_vars(product_name, req_vars)
@@ -105,29 +105,26 @@ def download(folder, latlim, lonlim, timelim, product_name,
     scenes = sentinelapi.download(product_folder, latlim, lonlim, timelim, 
                                     search_kwargs, node_filter = None)
 
-    ds = sentinelapi.process_sentinel(scenes, variables, process_s3, 
-                                        time_func, f"{product_name}.nc", post_processors, bb = bb)
+    ds = sentinelapi.process_sentinel(scenes, variables, "SENTINEL3", time_func, f"{product_name}.nc", post_processors, bb = bb)
 
     return ds
 
 if __name__ == "__main__":
 
-    ...
-    
-    # folder = r"/Users/hmcoerver/On My Mac/create_table"
-    # latlim = [28.9, 29.7]
-    # lonlim = [30.2, 31.2]
-    # # timelim = ["2021-07-01", "2021-07-11"]
-    # timelim = ["2022-07-01", "2022-07-03"]
+    folder = r"/Users/hmcoerver/Local/s3_test"
+    adjust_logger(True, folder, "INFO")
+    timelim = ["2022-03-25", "2022-04-15"]
+    latlim = [29.4, 29.7]
+    lonlim = [30.7, 31.0]
 
-    # product_name = 'SL_2_LST___'
+    product_name = 'SL_2_LST___'
 
-    # req_vars = ["lst"]
-    # post_processors = None
-    # variables = None
-    # extra_search_kwargs = {}
+    req_vars = ["lst"]
+    post_processors = None
+    variables = None
+    extra_search_kwargs = {}
 
-    # ds = download(folder, latlim, lonlim, timelim, product_name, 
-    #             req_vars, variables = variables,  post_processors = post_processors)
+    ds = download(folder, latlim, lonlim, timelim, product_name, 
+                req_vars, variables = variables,  post_processors = post_processors)
 
 
