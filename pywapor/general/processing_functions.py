@@ -17,14 +17,12 @@ def remove_ds(ds):
             fp = ds.encoding["source"]
             ds = xr.open_dataset(fp)
             ds = ds.close()
-            log.info(f"--> Removing `{fp}`")
             os.remove(fp)
     elif isinstance(ds, str):
         if os.path.isfile(ds):
             fp = ds
             ds = xr.open_dataset(fp)
             ds = ds.close()
-            log.info(f"--> Removing `{fp}`")
             os.remove(fp)        
 
 def process_ds(ds, coords, variables, crs = None):
