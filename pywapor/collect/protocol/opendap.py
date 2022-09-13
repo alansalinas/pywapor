@@ -42,7 +42,7 @@ def download(folder, product_name, coords, variables, post_processors,
         dss = [process_ds(xr.open_dataset(x, decode_coords = "all"), coords, variables, crs = data_source_crs) for x in files]
         ds = rioxarray.merge.merge_datasets(dss)
     else:
-        dss = None
+        dss = files
         ds = process_ds(xr.open_mfdataset(files, decode_coords = "all"), coords, variables, crs = data_source_crs)
 
     # Reproject if necessary.
@@ -58,9 +58,9 @@ def download(folder, product_name, coords, variables, post_processors,
     if isinstance(timedelta, np.timedelta64):
         ds["time"] = ds["time"] + timedelta
 
-    # Remove unnecessary coordinates.
-    ds = ds.drop_vars([x for x in ds.coords if x not in ["x", "y", "time", "spatial_ref"]])
-
+    # Remove unrequested variables.
+    ds = ds[list(post_processors.keys())]
+    
     # Save final output.
     fp = os.path.join(folder, f"{product_name}.nc")
     ds.attrs = {}

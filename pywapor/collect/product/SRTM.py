@@ -10,6 +10,7 @@ import pywapor.collect.accounts as accounts
 from shapely.geometry.polygon import Polygon
 from shapely.geometry import shape
 import pywapor.collect.protocol.opendap as opendap
+from pywapor.enhancers.dem import calc_slope, calc_aspect
 import numpy as np
 
 def tiles_intersect(latlim, lonlim):
@@ -36,6 +37,8 @@ def default_vars(product_name, req_vars = ["z"]):
     req_dl_vars = {
         "30M": {
             "z": ["SRTMGL1_DEM", "crs"],
+            "slope": ["SRTMGL1_DEM", "crs"],
+            "aspect": ["SRTMGL1_DEM", "crs"],
         }
     }
 
@@ -51,6 +54,8 @@ def default_post_processors(product_name, req_vars = ["z"]):
     post_processors = {
         "30M": {
             "z": [],
+            "aspect": [calc_aspect],
+            "slope": [calc_slope],
         }
     }
 
@@ -112,18 +117,19 @@ def download(folder, latlim, lonlim, product_name = "30M", req_vars = ["z"], var
 
 if __name__ == "__main__":
 
-    folder = r"/Users/hmcoerver/Downloads/pywapor_test"
+    folder = r"/Users/hmcoerver/Local/cog2_test"
     # latlim = [26.9, 33.7]
     # lonlim = [25.2, 37.2]
     latlim = [28.9, 29.7]
     lonlim = [30.2, 31.2]
     timelim = [datetime.date(2020, 7, 1), datetime.date(2020, 7, 11)]
+    req_vars = ["z", "aspect"]
 
     # fn = os.path.join(os.path.join(folder, "SRTM"), "30M.nc")
     # if os.path.isfile(fn):
     #     os.remove(fn)
 
-    # SRTM.
-    ds = download(folder, latlim, lonlim)
+    # # SRTM.
+    ds = download(folder, latlim, lonlim, req_vars = req_vars)
     print(ds.rio.crs, ds.rio.grid_mapping)
 

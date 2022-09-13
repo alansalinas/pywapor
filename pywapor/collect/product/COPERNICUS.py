@@ -7,6 +7,7 @@ import pywapor
 from pywapor.collect.protocol import cog
 from pywapor.general.processing_functions import open_ds, save_ds, remove_ds
 from pywapor.enhancers.apply_enhancers import apply_enhancer
+from pywapor.enhancers.dem import calc_slope, calc_aspect
 from pywapor.general.logger import log
 
 def tiles_intersect(latlim, lonlim, product_name):
@@ -48,9 +49,13 @@ def default_vars(product_name, req_vars):
     req_dl_vars = {
         "GLO30": {
             "z": ["Band1", "crs"],
+            "slope": ["Band1", "crs"],
+            "aspect": ["Band1", "crs"],
         },
         "GLO90": {
             "z": ["Band1", "crs"],
+            "slope": ["Band1", "crs"],
+            "aspect": ["Band1", "crs"],
         },
     }
 
@@ -63,9 +68,13 @@ def default_post_processors(product_name, req_vars = ["z"]):
     post_processors = {
         "GLO30": {
             "z": [],
+            "slope": [calc_slope],
+            "aspect": [calc_aspect],
         },
         "GLO90": {
             "z": [],
+            "slope": [calc_slope],
+            "aspect": [calc_aspect],
         },
     }
 
@@ -133,6 +142,9 @@ def download(folder, latlim, lonlim, product_name = "GLO30", req_vars = ["z"],
             ds, label = apply_enhancer(ds, var, func)
             log.info(label)
     
+    # Remove unrequested variables.
+    ds = ds[list(post_processors.keys())]
+    
     # Save final output.
     ds = save_ds(ds, final_fp, encoding = "initiate", label = f"Saving {product_name}.nc")
 
@@ -144,10 +156,10 @@ def download(folder, latlim, lonlim, product_name = "GLO30", req_vars = ["z"],
 if __name__ == "__main__":
 
     folder = r"/Users/hmcoerver/Local/cog_test"
-    product_name = r"GLO30" # r"GLO90" r"GLO30
+    product_name = r"GLO90" # r"GLO90" r"GLO30
     latlim = [28.9, 29.7]
     lonlim = [30.2, 31.2]
-    req_vars = ["z"]
+    req_vars = ["z", "slope", "aspect"]
     variables = None
     post_processors = None
 
