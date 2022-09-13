@@ -22,7 +22,7 @@ pip install pywapor
 
 ### Usage
 
-To run the model for one dekad (from 2021-07-01 to 2021-07-11 in this case) for the Fayoum irrigation scheme in Egypt (but feel free to change the [boundingbox](http://bboxfinder.com) defined by `latlim` and `lonlim`) using mainly MODIS data, run the following code. 
+To run the model for one dekad (from 2021-07-01 to 2021-07-11 in this case) for the Fayoum irrigation scheme in Egypt (but feel free to change the [boundingbox](http://bboxfinder.com) defined by `latlim` and `lonlim`) using mainly MODIS data, run the following code (run `python` in your console to activate Python and `exit()` to deactivate). 
 
 ```python
 import pywapor
@@ -89,18 +89,24 @@ Go [here](https://www.fao.org/aquastat/py-wapor/) for the full pyWaPOR documenta
    </tbody>
 </table>
 
+#### WaPOR v3
+
+<ul>
+<li><a href="https://bitbucket.org/cioapps/wapor-et-look/wiki/Home">WaPOR-ETLook Online Manual (v3)</a></li>
+</ul>
+
 #### WaPOR v2
 
 <ul>
-<li><a href="https://bitbucket.org/cioapps/wapor-et-look/downloads/FRAME_ET_v2_data_manual_finaldraft_v2.2.pdf">WaPOR-ETLook Data Manual (v2)</a></li>
+<li><a href="https://bitbucket.org/cioapps/pywapor/downloads/FRAME_ET_v2_data_manual_finaldraft_v2.2.pdf">WaPOR-ETLook Data Manual (v2)</a></li>
 
-<li><a href="https://bitbucket.org/cioapps/wapor-et-look/downloads/FRAME_NPP_v2_data_manual_finaldraft_v2.2.pdf">WaPOR-Biomass Data Manual (v2)</a></li>
+<li><a href="https://bitbucket.org/cioapps/pywapor/downloads/FRAME_NPP_v2_data_manual_finaldraft_v2.2.pdf">WaPOR-Biomass Data Manual (v2)</a></li>
 </ul>
 
 #### WaPOR v1
 
 <ul>
-<li><a href="https://bitbucket.org/cioapps/wapor-et-look/raw/9ec88e56769f49722c2d1165bb34547f5842b811/Docs/WaPOR_ET_data_manual_finaldraft-v1.2-for-distribution.pdf">WaPOR-ETLook Data Manual (v1)</a></li>
+<li><a href="https://bitbucket.org/cioapps/pywapor/downloads/20190522_V1_WaPOR_v_1_Data_Manual_Evapotranspiration.pdf">WaPOR-ETLook Data Manual (v1)</a></li>
 </ul>
 
 ### Acknowledgments
