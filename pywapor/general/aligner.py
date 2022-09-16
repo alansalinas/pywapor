@@ -45,6 +45,8 @@ def main(dss, sources, example_source, folder, enhancers, example_t_vars = ["lst
     xr.Dataset
         Dataset in which all variables have been interpolated to the same times.
     """
+    chunks = {"time": -1, "y": 500, "x": 500}
+
     # Open unopened netcdf files.
     dss = {**{k: open_ds(v) for k, v in dss.items() if isinstance(v, str)}, 
             **{k:v for k,v in dss.items() if not isinstance(v, str)}}
@@ -90,7 +92,7 @@ def main(dss, sources, example_source, folder, enhancers, example_t_vars = ["lst
             ds = ds.interpolate_na(dim = "time", method = temporal_interp).ffill("time").bfill("time")
             ds = ds.interp_like(example_time, method = temporal_interp)
             dst_path = os.path.join(folder, f"{var}_i.nc")
-            ds = save_ds(ds, dst_path, encoding = "initiate", label = lbl)
+            ds = save_ds(ds, dst_path, chunks = chunks, encoding = "initiate", label = lbl)
             dss2.append(ds)
             cleanup.append([ds])
         else:

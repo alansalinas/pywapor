@@ -36,7 +36,8 @@ def scale_data(ds, var):
 
 def calc_normalized_difference(ds, var, bands = ["nir", "red"]):
     if np.all([x in ds.data_vars for x in bands]):
-        ds[var] = xr.where(np.isclose(ds[bands[1]], 0), 0, (ds[bands[0]] - ds[bands[1]]) / (ds[bands[0]] + ds[bands[1]]))
+        da = (ds[bands[0]] - ds[bands[1]]) / (ds[bands[0]] + ds[bands[1]])
+        ds[var] = da.clip(-1, 1)
     else:
         log.warning(f"--> Couldn't calculate `{var}`, `{'` and `'.join([x for x in bands if x not in ds.data_vars])}` is missing.")
     return ds
@@ -44,7 +45,8 @@ def calc_normalized_difference(ds, var, bands = ["nir", "red"]):
 def calc_psri(ds, var):
     reqs = ["red", "blue", "red_edge_740"]
     if np.all([x in ds.data_vars for x in reqs]):
-        ds[var] = xr.where(np.isclose(ds["red_edge_740"], 0), 0, (ds["red"] - ds["blue"]) / ds["red_edge_740"])
+        da = (ds["red"] - ds["blue"]) / ds["red_edge_740"]
+        ds[var] = da.clip(-1, 1)
     else:
         log.warning(f"--> Couldn't calculate `{var}`, `{'` and `'.join([x for x in reqs if x not in ds.data_vars])}` is missing.")
     return ds
@@ -75,7 +77,8 @@ def calc_vari_red_egde(ds, var):
     if np.all([x in ds.data_vars for x in reqs]):
         n1 = ds["red_edge_740"] - 1.7 * ds["red"] + 0.7 * ds["blue"]
         n2 = ds["red_edge_740"] + 2.3 * ds["red"] - 1.3 * ds["blue"]
-        ds[var] = xr.where(np.isclose(n2, 0), 0, n1 / n2)
+        da = n1 / n2
+        ds[var] = da.clip(-1, 1)
     else:
         log.warning(f"--> Couldn't calculate `{var}`, `{'` and `'.join([x for x in reqs if x not in ds.data_vars])}` is missing.")
     return ds
@@ -101,7 +104,9 @@ def calc_r0(ds, var):
 def default_vars(product_name, req_vars):
 
     variables = {
-        "S2MSI2A": {
+
+        "S2MSI2A_R20m": {
+                    "_B01_20m.jp2": [(), "coastal_aerosol", [mask_invalid, apply_qa, scale_data]],
                     "_B02_20m.jp2": [(), "blue", [mask_invalid, apply_qa, scale_data]],
                     "_B03_20m.jp2": [(), "green", [mask_invalid, apply_qa, scale_data]],
                     "_B04_20m.jp2": [(), "red", [mask_invalid, apply_qa, scale_data]],
@@ -113,10 +118,26 @@ def default_vars(product_name, req_vars):
                     "_B12_20m.jp2": [(), "swir2", [mask_invalid, apply_qa, scale_data]],
                     "_SCL_20m.jp2": [(), "qa", []],
                 },
+        "S2MSI2A_R60m": {
+                    "_B01_60m.jp2": [(), "coastal_aerosol", [mask_invalid, apply_qa, scale_data]],
+                    "_B02_60m.jp2": [(), "blue", [mask_invalid, apply_qa, scale_data]],
+                    "_B03_60m.jp2": [(), "green", [mask_invalid, apply_qa, scale_data]],
+                    "_B04_60m.jp2": [(), "red", [mask_invalid, apply_qa, scale_data]],
+                    "_B05_60m.jp2": [(), "red_edge_703", [mask_invalid, apply_qa, scale_data]],
+                    "_B06_60m.jp2": [(), "red_edge_740", [mask_invalid, apply_qa, scale_data]],
+                    "_B07_60m.jp2": [(), "red_edge_782", [mask_invalid, apply_qa, scale_data]],
+                    "_B8A_60m.jp2": [(), "nir", [mask_invalid, apply_qa, scale_data]],
+                    "_B09_60m.jp2": [(), "narrow_nir", [mask_invalid, apply_qa, scale_data]],
+                    "_B11_60m.jp2": [(), "swir1", [mask_invalid, apply_qa, scale_data]],
+                    "_B12_60m.jp2": [(), "swir2", [mask_invalid, apply_qa, scale_data]],
+                    "_SCL_60m.jp2": [(), "qa", []],
+                },
     }
 
     req_dl_vars = {
-        "S2MSI2A": {
+
+        "S2MSI2A_R20m": {
+            "coastal_aerosol":  ["_B01_20m.jp2", "_SCL_20m.jp2"],
             "blue":             ["_B02_20m.jp2", "_SCL_20m.jp2"],
             "green":            ["_B03_20m.jp2", "_SCL_20m.jp2"],
             "red":              ["_B04_20m.jp2", "_SCL_20m.jp2"],
@@ -135,6 +156,27 @@ def default_vars(product_name, req_vars):
             "bsi":              ["_B8A_20m.jp2", "_B11_20m.jp2", "_B04_20m.jp2", "_B02_20m.jp2", "_SCL_20m.jp2"],
             "r0":               ["_B02_20m.jp2", "_B03_20m.jp2", "_B04_20m.jp2", "_B8A_20m.jp2", "_SCL_20m.jp2"],
         },
+
+        "S2MSI2A_R60m": {
+            "coastal_aerosol":  ["_B01_60m.jp2", "_SCL_60m.jp2"],
+            "blue":             ["_B02_60m.jp2", "_SCL_60m.jp2"],
+            "green":            ["_B03_60m.jp2", "_SCL_60m.jp2"],
+            "red":              ["_B04_60m.jp2", "_SCL_60m.jp2"],
+            "red_edge_703":     ["_B05_60m.jp2", "_SCL_60m.jp2"],
+            "red_edge_740":     ["_B06_60m.jp2", "_SCL_60m.jp2"],
+            "red_edge_782":     ["_B07_60m.jp2", "_SCL_60m.jp2"],
+            "nir":              ["_B8A_60m.jp2", "_SCL_60m.jp2"],
+            "swir1":            ["_B11_60m.jp2", "_SCL_60m.jp2"],
+            "swir2":            ["_B12_60m.jp2", "_SCL_60m.jp2"],
+            "qa":               ["_SCL_60m.jp2"],
+            "ndvi":             ["_B04_60m.jp2", "_B8A_60m.jp2", "_SCL_60m.jp2"],
+            "mndwi":            ["_B03_60m.jp2", "_B11_60m.jp2", "_SCL_60m.jp2"],
+            "vari_red_edge":    ["_B06_60m.jp2", "_B02_60m.jp2", "_B04_60m.jp2", "_SCL_60m.jp2"],
+            "nmdi":             ["_B11_60m.jp2", "_B12_60m.jp2", "_B8A_60m.jp2", "_SCL_60m.jp2"],
+            "psri":             ["_B02_60m.jp2", "_B04_60m.jp2", "_B06_60m.jp2", "_SCL_60m.jp2"],
+            "bsi":              ["_B8A_60m.jp2", "_B11_60m.jp2", "_B04_60m.jp2", "_B02_60m.jp2", "_SCL_60m.jp2"],
+            "r0":               ["_B02_60m.jp2", "_B03_60m.jp2", "_B04_60m.jp2", "_B8A_60m.jp2", "_SCL_60m.jp2"],
+        },
     }
 
     out = {val:variables[product_name][val] for sublist in map(req_dl_vars[product_name].get, req_vars) for val in sublist}
@@ -144,7 +186,29 @@ def default_vars(product_name, req_vars):
 def default_post_processors(product_name, req_vars):
     
     post_processors = {
-        "S2MSI2A": {
+        "S2MSI2A_R20m": {
+            "coastal_aerosol":  [],
+            "blue":             [],
+            "green":            [],
+            "red":              [],
+            "red_edge_703":     [],
+            "red_edge_740":     [],
+            "red_edge_782":     [],
+            "nir":              [],
+            "qa":               [],
+            "swir1":            [],
+            "swir2":            [],
+            "psri":             [calc_psri],
+            "ndvi":             [calc_normalized_difference],
+            "nmdi":             [calc_nmdi],
+            "vari_red_edge":    [calc_vari_red_egde],
+            "bsi":              [calc_bsi],
+            "mndwi":            [partial(calc_normalized_difference, bands = ["swir1", "green"])],
+            "r0":               [calc_r0],
+            },
+
+        "S2MSI2A_R60m": {
+            "coastal_aerosol":  [],
             "blue":             [],
             "green":            [],
             "red":              [],
@@ -209,7 +273,7 @@ def download(folder, latlim, lonlim, timelim, product_name,
 
     search_kwargs = {
                         "platformname": "Sentinel-2",
-                        "producttype": product_name,
+                        "producttype": "S2MSI2A",
                         # "limit": 10,
     }
 
@@ -219,6 +283,7 @@ def download(folder, latlim, lonlim, timelim, product_name,
         fn = os.path.split(node_info["node_path"])[-1]
         to_dl = list(variables.keys())
         return np.any([x in fn for x in to_dl])
+    # node_filter = None
 
     scenes = sentinelapi.download(product_folder, latlim, lonlim, timelim, search_kwargs, node_filter = node_filter)
 
@@ -230,12 +295,12 @@ if __name__ == "__main__":
 
     folder = r"/Users/hmcoerver/Local/s2_test"
     adjust_logger(True, folder, "INFO")
-    timelim = ["2022-03-25", "2022-04-15"]
-    latlim = [29.4, 29.7]
-    lonlim = [30.7, 31.0]
+    timelim = ["2022-03-29", "2022-04-25"]
+    latlim = [28.9, 29.7]
+    lonlim = [30.2, 31.2]
 
-    product_name = 'S2MSI2A'
-    req_vars = ["mndwi"]
+    product_name = 'S2MSI2A_R60m'
+    req_vars = ["mndwi", "psri", "vari_red_edge", "bsi", "nmdi", "green", "nir"]
     post_processors = None
     variables = None
     extra_search_kwargs = {"cloudcoverpercentage": (0, 30)}

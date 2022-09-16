@@ -5,6 +5,7 @@ from datetime import datetime as dt
 import tqdm
 import shutil
 import pywapor
+import warnings
 from pywapor.general.processing_functions import save_ds, open_ds, create_wkt, unpack, make_example_ds, remove_ds
 from pywapor.general.logger import log
 from pywapor.enhancers.apply_enhancers import apply_enhancer
@@ -77,6 +78,8 @@ def download(folder, latlim, lonlim, timelim, search_kwargs, node_filter = None)
 
 def process_sentinel(scenes, variables, source_name, time_func, final_fn, post_processors, bb = None):
 
+    chunks = {"time": 1, "x": 1000, "y": 1000}
+
     example_ds = None
     dss1 = dict()
 
@@ -114,15 +117,24 @@ def process_sentinel(scenes, variables, source_name, time_func, final_fn, post_p
         else:
             raise ValueError
 
+        # Apply variable specific functions.
+        for vars in variables.values():
+            for func in vars[2]:
+                ds, label = apply_enhancer(ds, vars[1], func)
+
         # NOTE: see https://github.com/corteva/rioxarray/issues/545
+        # NOTE: see rioxarray issue here: https://github.com/corteva/rioxarray/issues/570
         ds = ds.sortby("y", ascending = False)
+        _ = [ds[var].rio.write_nodata(np.nan, inplace = True) for var in ds.data_vars]
 
         # Clip and pad to bounding-box
         if isinstance(example_ds, type(None)):
             example_ds = make_example_ds(ds, folder, target_crs, bb = bb)
-        ds = ds.rio.reproject_match(example_ds).chunk("auto")
-        # NOTE see rioxarray issue here: https://github.com/corteva/rioxarray/issues/570
+        ds = ds.rio.reproject_match(example_ds).chunk({k: v for k, v in chunks.items() if k in ["x", "y"]})
+
+        # NOTE: see rioxarray issue here: https://github.com/corteva/rioxarray/issues/570
         _ = [ds[var].attrs.pop("_FillValue") for var in ds.data_vars if "_FillValue" in ds[var].attrs.keys()]
+        
         ds = ds.assign_coords({"x": example_ds.x, "y": example_ds.y})
 
         dtime = time_func(fn)
@@ -130,8 +142,7 @@ def process_sentinel(scenes, variables, source_name, time_func, final_fn, post_p
         ds = ds.assign_coords({"time":[dtime]})
 
         # Save to netcdf
-        # encoding = {var: {"zlib": True, "dtype": "int32", "_FillValue": -9999} for var in ds.data_vars}
-        ds = save_ds(ds, fp, encoding = "initiate", precision = 0, label = f"({i+1}/{len(scenes)}) Processing {fn} to netCDF.")
+        ds = save_ds(ds, fp, chunks = chunks, encoding = "initiate", label = f"({i+1}/{len(scenes)}) Processing {fn} to netCDF.")
 
         if dtime in dss1.keys():
             dss1[dtime].append(ds)
@@ -142,21 +153,15 @@ def process_sentinel(scenes, variables, source_name, time_func, final_fn, post_p
             shutil.rmtree(scene_folder)
 
     # Merge spatially.
-    dss = [rioxarray.merge.merge_datasets(dss0) for dss0 in dss1.values()]
+    dss = [xr.concat(dss0, "stacked").median("stacked") for dss0 in dss1.values()]
 
     # Merge temporally.
-    ds = xr.merge(dss)
+    ds = xr.concat(dss, "time")
 
     # Define output path.
     fp = os.path.join(folder, final_fn)
     if os.path.isfile(fp):
         os.remove(fp)
-
-    # Apply variable specific functions.
-    for vars in variables.values():
-        for func in vars[2]:
-            ds, label = apply_enhancer(ds, vars[1], func)
-            log.info(label)
     
     # Apply general product functions.
     for var, funcs in post_processors.items():
@@ -172,8 +177,12 @@ def process_sentinel(scenes, variables, source_name, time_func, final_fn, post_p
 
     ds = ds.rio.write_crs(target_crs)
 
+    ds = ds.sortby("time")
+
     # Save final netcdf.
-    ds = save_ds(ds, fp, encoding = "initiate", label = f"Merging files.")
+    with warnings.catch_warnings():
+        warnings.filterwarnings("ignore", message="invalid value encountered in true_divide")
+        ds = save_ds(ds, fp, chunks = chunks, encoding = "initiate", label = f"Merging files.")
 
     log.sub()
 
