@@ -8,6 +8,7 @@ import numpy as np
 from osgeo import gdal
 from sklearn import tree, linear_model, ensemble
 import pywapor.enhancers.dms.pyDMS_utils as utils
+from pywapor.general.logger import log
 
 REG_sknn_ann = 0
 REG_sklearn_ann = 1
@@ -235,8 +236,7 @@ class DecisionTreeSharpener(object):
         self.lowResGoodQualityFlags = lowResGoodQualityFlags
 
         if len(self.highResFiles) != len(self.lowResFiles):
-            print("There must be a matching high resolution file for each low resolution file")
-            raise IOError
+            raise IOError("There must be a matching high resolution file for each low resolution file")
 
         if len(self.lowResQualityFiles) == 0 or \
            (len(self.lowResQualityFiles) == 1 and self.lowResQualityFiles[0] == ""):
@@ -245,9 +245,8 @@ class DecisionTreeSharpener(object):
             self.useQuality_LR = True
 
         if self.useQuality_LR and len(self.lowResQualityFiles) != len(self.lowResFiles):
-            print("The number of quality files must be 0 or the same as number of low " +
+            raise IOError("The number of quality files must be 0 or the same as number of low " +
                   "resolution files")
-            raise IOError
 
         self.cvHomogeneityThreshold = cvHomogeneityThreshold
         # If threshold is 0 or negative then it is set automatically such that
@@ -321,8 +320,9 @@ class DecisionTreeSharpener(object):
             else:
                 qualityPix = np.ones(data_LR.shape).astype(bool)
 
-            # Low resolution pixels with NaN value are always of bad quality
-            qualityPix = np.logical_and(qualityPix, ~np.isnan(data_LR))
+            # Low resolution pixels with NaN value or no-data-value are always of bad quality
+            no_data = subsetScene_LR.GetRasterBand(1).GetNoDataValue()
+            qualityPix = np.all([qualityPix, ~np.isnan(data_LR), data_LR != no_data], axis = 0)
 
             # Then resample high res scene to low res pixel size while
             # extracting sub-low-res-pixel homogeneity statistics
@@ -384,7 +384,7 @@ class DecisionTreeSharpener(object):
                     else:
                         self.cvHomogeneityThreshold = np.percentile(resCVWindow[g],
                                                                     self.precentileThreshold)
-                    print('Homogeneity CV threshold: %.2f' % self.cvHomogeneityThreshold)
+                    log.info(f'--> Homogeneity CV threshold: {self.cvHomogeneityThreshold:.2f}')
                 homogenousPix = np.logical_and(resCVWindow < self.cvHomogeneityThreshold,
                                                resCVWindow > 0)
                 goodPix = np.logical_and(homogenousPix, qualityPixWindow)
@@ -403,8 +403,8 @@ class DecisionTreeSharpener(object):
                 if np.prod(data_LR[rows, cols][qualityPixWindow].shape) > 0:
                     percentageUsedPixels = int(float(np.prod(goodData_LR[i].shape)) /
                                                float(np.prod(data_LR[rows, cols][qualityPixWindow].shape)) * 100)
-                    print('Number of training elements for is ' +
-                          str(np.prod(goodData_LR[i].shape)) + ' representing ' +
+                    log.info(f'--> Number of training elements for window {i} is ' +
+                          str(np.prod(goodData_LR[i].shape)) + ', representing ' +
                           str(percentageUsedPixels)+'% of avaiable low-resolution data.')
 
             # Close all files
@@ -585,8 +585,10 @@ class DecisionTreeSharpener(object):
         else:
             scene_HR = gdal.Open(disaggregatedFile)
         scene_LR = gdal.Open(lowResFilename)
-        if lowResQualityFilename is not None:
+        if isinstance(lowResQualityFilename, str):
             quality_LR = gdal.Open(lowResQualityFilename)
+        elif lowResQualityFilename == True:
+            quality_LR = True
         else:
             quality_LR = None
 
@@ -621,8 +623,8 @@ class DecisionTreeSharpener(object):
                                       "MEM",
                                       noDataValue=np.nan)
 
-        print("LR residual bias: "+str(np.nanmean(residual_LR)))
-        print("LR residual RMSD: "+str(np.nanmean(residual_LR**2)**0.5))
+        log.info("--> LR residual bias: "+str(np.nanmean(residual_LR)))
+        log.info("--> LR residual RMSD: "+str(np.nanmean(residual_LR**2)**0.5))
 
         scene_HR = None
         scene_LR = None
@@ -691,7 +693,7 @@ class DecisionTreeSharpener(object):
         # If quality file for the low res scene is provided then mask out all
         # bad quality pixels in the subsetted LR scene. Otherwise assume that all
         # low res pixels are of good quality.
-        if originalSceneQuality is not None:
+        if isinstance(originalSceneQuality, gdal.Dataset):
             subsetQuality_LR = utils.reprojectSubsetLowResScene(downscaledScene,
                                                                 originalSceneQuality,
                                                                 resampleAlg=gdal.GRA_NearestNeighbour)
@@ -699,6 +701,9 @@ class DecisionTreeSharpener(object):
             goodPixMask_LR = np.in1d(goodPixMask_LR.ravel(),
                                      self.lowResGoodQualityFlags).reshape(goodPixMask_LR.shape)
             data_LR[~goodPixMask_LR] = np.nan
+        elif originalSceneQuality == True:
+            nodata = subsetScene_LR.GetRasterBand(1).GetNoDataValue()
+            data_LR[data_LR == nodata] = np.nan
 
         # Then resample high res scene to low res pixel size
         if self.disaggregatingTemperature:

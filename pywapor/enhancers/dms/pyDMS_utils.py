@@ -10,7 +10,7 @@ import scipy.ndimage as ndi
 from numba import njit, stencil
 from osgeo import gdal
 from pyproj import Proj, Transformer
-
+from pywapor.general.logger import log
 
 def openRaster(raster):
     closeOnExit = False
@@ -114,7 +114,7 @@ def saveImg(data, geotransform, proj, outPath, noDataValue=None, fieldNames=[]):
                                 noData=noDataValue, stats=True)
         # If GDAL driers for other formats do not exist then default to GeoTiff
         if out_ds is None:
-            print("Warning: Selected GDAL driver is not supported! Saving as GeoTiff!")
+            log.warning("--> Selected GDAL driver is not supported! Saving as GeoTiff!")
             fileFormat = "GTiff"
             driverOpt = ['COMPRESS=DEFLATE', 'PREDICTOR=1', 'BIGTIFF=IF_SAFER']
             is_netCDF = False
@@ -136,8 +136,6 @@ def saveImg(data, geotransform, proj, outPath, noDataValue=None, fieldNames=[]):
                 ds[field].grid_mapping = grid_mapping
             ds.close()
             ds = gdal.Open('NETCDF:"'+outPath+'":'+fieldNames[0])
-
-    print('Saved ' + outPath)
 
     return ds
 
