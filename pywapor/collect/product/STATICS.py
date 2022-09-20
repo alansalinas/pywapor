@@ -22,8 +22,8 @@ def default_vars(product_name, req_vars):
                 "crs": [(), "spatial_ref"],
                     },
         'WaPOR3': {
-                "Band1": [("lat", "lon"), "lw_offset"],
-                "Band2": [("lat", "lon"), "lw_slope"],
+                "Band2": [("lat", "lon"), "lw_offset"],
+                "Band1": [("lat", "lon"), "lw_slope"],
                 "crs": [(), "spatial_ref"],
         }
     }
@@ -45,8 +45,8 @@ def default_vars(product_name, req_vars):
             "z_obst_max": ["Band13", "crs"],
         },
         "WaPOR3": {
-            "lw_offset": ["Band1", "crs"],
-            "lw_slope": ["Band2", "crs"],
+            "lw_offset": ["Band2", "crs"],
+            "lw_slope": ["Band1", "crs"],
         },
     }
 
