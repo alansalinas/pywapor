@@ -211,11 +211,11 @@ def sharpen(dss, var, folder, make_plots = False, vars_for_sharpening = ['nmdi',
     for x in vars_for_sharpening:
         _ = dss.pop(x)
 
-    # for x in out_fns:
-    #     remove_ds(x)
+    for x in out_fns:
+        remove_ds(x)
     
-    # if 'cos_solar_zangle' in dss.keys() and remove_cos_solar_zangle:
-    #     remove_ds(dss['cos_solar_zangle'])
+    if 'cos_solar_zangle' in dss.keys() and remove_cos_solar_zangle:
+        remove_ds(dss['cos_solar_zangle'])
 
     return dss
 
