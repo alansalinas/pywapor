@@ -324,6 +324,10 @@ class DecisionTreeSharpener(object):
             no_data = subsetScene_LR.GetRasterBand(1).GetNoDataValue()
             qualityPix = np.all([qualityPix, ~np.isnan(data_LR), data_LR != no_data], axis = 0)
 
+            scale_factor = scene_LR.GetRasterBand(1).GetScale()
+            if not isinstance(scale_factor, type(None)) and scale_factor != 0:
+                data_LR = data_LR.astype(float) * scale_factor
+
             # Then resample high res scene to low res pixel size while
             # extracting sub-low-res-pixel homogeneity statistics
             resMean, resStd = utils.resampleHighResToLowRes(scene_HR, subsetScene_LR)
@@ -479,7 +483,7 @@ class DecisionTreeSharpener(object):
         # Temporarly get rid of NaN's
         nanInd = np.isnan(inData)
         inData[nanInd] = 0
-        outWindowData = np.empty((ysize, xsize))*np.nan
+        outWindowData = np.full((ysize, xsize), np.nan)
 
         # Do the downscailing on the moving windows if there are any
         for i, extent in enumerate(self.windowExtents):
@@ -496,7 +500,7 @@ class DecisionTreeSharpener(object):
         if self.reg[-1] is not None:
             outFullData = self._doPredict(inData, self.reg[-1])
         else:
-            outFullData = np.empty((ysize, xsize))*np.nan
+            outFullData =  np.full((ysize, xsize), np.nan)
 
         # Combine the windowed and whole image regressions
         # If there is no windowed regression just use the whole image regression
@@ -585,6 +589,7 @@ class DecisionTreeSharpener(object):
         else:
             scene_HR = gdal.Open(disaggregatedFile)
         scene_LR = gdal.Open(lowResFilename)
+
         if isinstance(lowResQualityFilename, str):
             quality_LR = gdal.Open(lowResQualityFilename)
         elif lowResQualityFilename == True:
@@ -623,8 +628,7 @@ class DecisionTreeSharpener(object):
                                       "MEM",
                                       noDataValue=np.nan)
 
-        log.info("--> LR residual bias: "+str(np.nanmean(residual_LR)))
-        log.info("--> LR residual RMSD: "+str(np.nanmean(residual_LR**2)**0.5))
+        log.info(f"--> Low res. residual bias = {np.nanmean(residual_LR):.3f} and RMSD = {np.nanmean(residual_LR**2)**0.5:.3f}.")
 
         scene_HR = None
         scene_LR = None
@@ -704,6 +708,10 @@ class DecisionTreeSharpener(object):
         elif originalSceneQuality == True:
             nodata = subsetScene_LR.GetRasterBand(1).GetNoDataValue()
             data_LR[data_LR == nodata] = np.nan
+
+        scale_factor = subsetScene_LR.GetRasterBand(1).GetScale()
+        if not isinstance(scale_factor, type(None)) and scale_factor != 0:
+            data_LR *= scale_factor
 
         # Then resample high res scene to low res pixel size
         if self.disaggregatingTemperature:
