@@ -10,6 +10,7 @@ from pywapor.general.performance import performance_check
 from pywapor.general.processing_functions import process_ds
 from pywapor.general.processing_functions import open_ds, save_ds, remove_ds
 from rasterio import CRS
+import warnings
 
 def get_pixel_sizes(dss):
     # Check CRSs of datasets.
@@ -21,6 +22,18 @@ def get_pixel_sizes(dss):
     # Reproject to common CRS.
     dss = [ds.rio.reproject(CRS.from_epsg(crs)) for ds in dss]
     return [np.abs(np.prod(v.rio.resolution())) for v in dss]
+
+def has_geotransform(ds):
+    varis = ds.data_vars
+    for var in varis:
+        with warnings.catch_warnings(record=True) as w:
+            _ = rasterio.open(f"netcdf:{ds.encoding['source']}:{var}")
+            if len(w) > 0:
+                for warning in w:
+                    no_geot = "Dataset has no geotransform, gcps, or rpcs." in str(warning.message)
+                    if no_geot:
+                        return False
+    return True
 
 def align_pixels(dss, folder, spatial_interp = "nearest", example_ds = None, stack_dim = "time", fn_append = ""):
 
@@ -37,14 +50,26 @@ def align_pixels(dss, folder, spatial_interp = "nearest", example_ds = None, sta
             example_ds = dss[np.argmin(get_pixel_sizes(dss))]
         dss1 = list()
         for i, (spat_interp, ds_part) in enumerate(zip(spatial_interp, dss)):
-            if not ds_part.equals(example_ds):
+            if needs_reprojecting(ds_part, example_ds):
                 var_str = "_".join(ds_part.data_vars)
                 dst_path = os.path.join(folder, f"{var_str}_x{i}{fn_append}.nc")
                 ds_part = reproject(ds_part, example_ds, dst_path, spatial_interp = spat_interp, stack_dim = stack_dim)
                 temp_files.append(ds_part)
+            else:
+                ds_part = ds_part.assign_coords({"y": example_ds.y, 
+                                                "x": example_ds.x, 
+                                                "spatial_ref": example_ds.spatial_ref})
             dss1.append(ds_part)
 
     return dss1, temp_files
+
+def needs_reprojecting(ds, example_ds):
+    check_crs = ds.rio.crs == example_ds.rio.crs
+    check_ysize = ds.y.size == example_ds.y.size
+    check_xsize = ds.x.size == example_ds.x.size
+    check_y = bool((ds.y == example_ds.y).all().values)
+    check_x = bool((ds.x == example_ds.x).all().values)
+    return not np.all([check_crs, check_ysize, check_xsize, check_x, check_y])
 
 def choose_reprojecter(src_ds, max_bytes = 2e9, min_times = 10, stack_dim = "time"):
 
@@ -102,7 +127,7 @@ def reproject_chunk(src_ds, example_ds, dst_path, spatial_interp = "nearest", st
     variables = dict()
     ncs = list()
 
-    if not "source" in src_ds.encoding.keys() or not "grid_mapping" in src_ds.encoding.keys():
+    if not "source" in src_ds.encoding.keys() or not has_geotransform(src_ds):
         src_path = src_ds.encoding.get("source", dst_path).replace(".nc", "_fixed.nc")
         new_src_ds = src_ds.sortby("y", ascending = False)
         new_src_ds = new_src_ds.rio.write_transform(new_src_ds.rio.transform(recalc=True))
@@ -172,12 +197,12 @@ def reproject_chunk(src_ds, example_ds, dst_path, spatial_interp = "nearest", st
 
     return ds
 
-if __name__ == "__main__":
+# if __name__ == "__main__":
 
-    src_ds = open_ds(r"/Users/hmcoerver/Local/test_data/SENTINEL3/SL_2_LST___.nc")
-    example_ds = open_ds(r"/Users/hmcoerver/Local/test_data/SENTINEL2/S2MSI2A.nc")
-    dst_path = r"/Users/hmcoerver/Local/test_data/output_test.nc"
-    spatial_interp = "nearest"
-    var = "lst"
+#     src_ds = open_ds(r"/Users/hmcoerver/Local/test_data/SENTINEL3/SL_2_LST___.nc")
+#     example_ds = open_ds(r"/Users/hmcoerver/Local/test_data/SENTINEL2/S2MSI2A.nc")
+#     dst_path = r"/Users/hmcoerver/Local/test_data/output_test.nc"
+#     spatial_interp = "nearest"
+#     var = "lst"
 
-    ds = reproject_chunk(src_ds, example_ds, dst_path, spatial_interp = "nearest")
+#     ds = reproject_chunk(src_ds, example_ds, dst_path, spatial_interp = "nearest")

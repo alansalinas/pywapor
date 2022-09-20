@@ -12,13 +12,14 @@ import os
 import numpy as np
 import xarray as xr
 from itertools import chain
+import pywapor.general.levels as levels
 
 
 def is_aligned(ds, example_ds):
     return ds.equals(example_ds)
 
 
-def main(dss, sources, example_source, folder, enhancers, example_t_vars = ["lst"]):
+def main(dss, sources, folder, general_enhancers, example_t_vars = ["lst"]):
     """Aligns the datetimes in de `dss` xr.Datasets with the datetimes of the 
     dataset with variable `example_t_var`.
 
@@ -29,9 +30,6 @@ def main(dss, sources, example_source, folder, enhancers, example_t_vars = ["lst
         or paths (str) to netcdf files, which will be aligned along the time dimensions.
     sources : dict
         Configuration for each variable and source.
-    example_source : tuple, optional
-        Which source to use for spatial alignment, overrides product selected
-        through sources, by default None.
     folder : str
         Path to folder in which to store (intermediate) data.
     enhancers : list | "default", optional
@@ -55,7 +53,7 @@ def main(dss, sources, example_source, folder, enhancers, example_t_vars = ["lst
     final_path = os.path.join(folder, "se_root_in.nc")
 
     # Make list to store intermediate datasets.
-    dss2 = list()
+    dss2 = dict()
 
     # Make inventory of all variables.
     variables = [x for x in np.unique(list(chain.from_iterable([ds.data_vars for ds in dss.values()]))).tolist() if x in sources.keys()]
@@ -82,38 +80,48 @@ def main(dss, sources, example_source, folder, enhancers, example_t_vars = ["lst
         ds = xr.combine_nested(dss1, concat_dim = "time").chunk({"time": -1}).sortby("time").squeeze()
 
         if var in example_t_vars:
+            if "time" not in ds[var].dims:
+                ds[var] = ds[var].expand_dims("time").transpose("time", "y", "x")
             if isinstance(example_time, type(None)):
                 example_time = ds["time"]
             else:
                 example_time = xr.concat([example_time, ds["time"]], dim = "time").drop_duplicates("time").sortby("time")
-            dss2.append(ds)
+            dss2[var] = ds
         elif "time" in ds[var].dims:
             lbl = f"Aligning times in `{var}` ({ds.time.size}) with `{'` and `'.join(example_t_vars)}` ({example_time.time.size}, {temporal_interp})."
             ds = ds.interpolate_na(dim = "time", method = temporal_interp).ffill("time").bfill("time")
             ds = ds.interp_like(example_time, method = temporal_interp)
             dst_path = os.path.join(folder, f"{var}_i.nc")
             ds = save_ds(ds, dst_path, chunks = chunks, encoding = "initiate", label = lbl)
-            dss2.append(ds)
+            dss2[var] = ds
             cleanup.append([ds])
         else:
             # Add time-invariant data as is.
-            dss2.append(ds)
+            dss2[var] = ds
+
+    # Apply variable specific enhancers
+    variables = levels.find_setting(sources, "variable_enhancers")
+    for var in variables:
+        for func in sources[var]["variable_enhancers"]:
+            dss2 = func(dss2, var, folder)
 
     # Align all the variables together.
-    example_ds = dss[example_source]
-    spatial_interps = [sources[list(x.data_vars)[0]]["spatial_interp"] for x in dss2]
-    dss3, temp_files3 = align_pixels(dss2, folder, spatial_interps, example_ds, fn_append = "_step2")
+    example_source = levels.find_setting(sources, "is_example", max_length = 1)[0]
+    log.info(f"--> Example dataset is {example_source[0]}.{example_source[1]}.")
+    example_ds = dss.get(example_source, None)
+    spatial_interps = [sources[list(x.data_vars)[0]]["spatial_interp"] for x in dss2.values()]
+    dss3, temp_files3 = align_pixels(dss2.values(), folder, spatial_interps, example_ds, fn_append = "_step2")
     cleanup.append(temp_files3)
 
     # Merge everything.
     ds = xr.merge(dss3)
 
-    # Apply product specific functions.
-    for func in enhancers:
-        ds, label = apply_enhancer(ds, var, func)
+    # Apply general enhancers.
+    for func in general_enhancers:
+        ds, label = apply_enhancer(ds, None, func)
         log.info(label)
 
-    if os.path.isfile(final_path):
+    while os.path.isfile(final_path):
         final_path = final_path.replace(".nc", "_.nc")
 
     if ds.time.size == 0:

@@ -182,6 +182,7 @@ def process_sentinel(scenes, variables, source_name, time_func, final_fn, post_p
     # Save final netcdf.
     with warnings.catch_warnings():
         warnings.filterwarnings("ignore", message="invalid value encountered in true_divide")
+        warnings.filterwarnings("ignore", message="divide by zero encountered in true_divide")
         ds = save_ds(ds, fp, chunks = chunks, encoding = "initiate", label = f"Merging files.")
 
     log.sub()

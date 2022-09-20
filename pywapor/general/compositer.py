@@ -6,6 +6,7 @@ import os
 import numpy as np
 import xarray as xr
 import pandas as pd
+from itertools import chain
 from pywapor.general.logger import log
 import numpy as np
 from pywapor.general.processing_functions import save_ds, open_ds, remove_ds
@@ -17,6 +18,7 @@ import pandas as pd
 import dask
 import types
 import functools
+import pywapor.general.levels as levels
 
 dask.config.set(**{'array.slicing.split_large_chunks': True})
 
@@ -120,7 +122,7 @@ def create_diags_attrs(srcs):
             attr_dict[str(i)] = v[0].__name__
     return attr_dict
 
-def main(dss, sources, example_source, bins, folder, enhancers, cleanup = True):
+def main(dss, sources, folder, general_enhancers, bins):
     """Create composites for variables contained in the 'xr.Dataset's in 'dss'.
 
     Parameters
@@ -156,14 +158,15 @@ def main(dss, sources, example_source, bins, folder, enhancers, cleanup = True):
 
     final_path = os.path.join(folder, "et_look_in.nc")
 
-    dss2 = list()
-    temp_files2 = list()
+    dss2 = dict()
 
     compositers = {
         "mean": xr.DataArray.mean,
         "min": xr.DataArray.min,
         "max": xr.DataArray.max,
     }
+
+    cleanup = list()
 
     for var, config in sources.items():
 
@@ -174,6 +177,7 @@ def main(dss, sources, example_source, bins, folder, enhancers, cleanup = True):
         # Align pixels of different products for a single variable together.
         dss_part = [ds[[var]] for ds in dss.values() if var in ds.data_vars]
         dss1, temp_files1 = align_pixels(dss_part, folder, spatial_interp, fn_append = "_step1")
+        cleanup.append(temp_files1)
 
         # Combine different source_products (along time dimension).
         if np.all(["time" in x[var].dims for x in dss1]):
@@ -209,37 +213,44 @@ def main(dss, sources, example_source, bins, folder, enhancers, cleanup = True):
         # Save output
         dst_path = os.path.join(folder, f"{var}_bin.nc")
         ds = save_ds(ds, dst_path, label = f"Compositing `{var}` ({composite_type}).")
-        dss2.append(ds)
-        temp_files2.append(ds)
+        dss2[var] = ds
+        cleanup.append([ds])
 
-        for nc in temp_files1:
-            if cleanup:
-                remove_ds(nc)
+    # Apply variable specific enhancers
+    variables = levels.find_setting(sources, "variable_enhancers")
+    for var in variables:
+        if var in dss2.keys():
+            for func in sources[var]["variable_enhancers"]:
+                dss2[var] = func(dss2, var, folder)
 
     # Align all the variables together.
-    example_ds = dss[example_source]
-    spatial_interps = [sources[list(x.data_vars)[0]]["spatial_interp"] for x in dss2]
-    dss3, temp_files3 = align_pixels(dss2, folder, spatial_interps, example_ds, stack_dim = "time_bins", fn_append = "_step2")
-
-    for nc in temp_files2:
-        if cleanup:
-            remove_ds(nc)
+    example_source = levels.find_setting(sources, "is_example", max_length = 1)[0]
+    log.info(f"--> Example dataset is {example_source[0]}.{example_source[1]}.")
+    example_ds = dss.get(example_source, None)
+    spatial_interps = [sources[list(x.data_vars)[0]]["spatial_interp"] for x in dss2.values()]
+    dss3, temp_files3 = align_pixels(dss2.values(), folder, spatial_interps, example_ds, stack_dim = "time_bins", fn_append = "_step2")
+    cleanup.append(temp_files3)
     
+    # Merge everything
     ds = xr.merge(dss3)
 
-    # Apply product specific functions.
-    for func in enhancers:
-        ds, label = apply_enhancer(ds, var, func)
+    # Apply general enhancers.
+    for func in general_enhancers:
+        ds, label = apply_enhancer(ds, None, func)
         log.info(label)
 
     while os.path.isfile(final_path):
         final_path = final_path.replace(".nc", "_.nc")
 
-    ds = save_ds(ds, final_path, encoding = "initiate", label = f"Creating merged file `{os.path.split(final_path)[-1]}`.")
+    if ds.time.size == 0:
+        log.warning("--> No valid data created (ds.time.size == 0).")
+        return ds
 
-    for nc in temp_files3:
-        if cleanup:
-            remove_ds(nc)
+    ds = save_ds(ds, final_path, encoding = "initiate", 
+                    label = f"Creating merged file `{os.path.split(final_path)[-1]}`.")
+    
+    for nc in list(chain.from_iterable(cleanup)):
+        remove_ds(nc)
 
     return ds
 

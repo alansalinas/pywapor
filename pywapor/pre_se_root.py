@@ -35,8 +35,7 @@ def add_constants(ds, *args):
     ds = ds.assign(defaults.constants_defaults())
     return ds
 
-def main(folder, latlim, lonlim, timelim, sources = "level_1", bin_length = "DEKAD",
-            enhancers = "default", example_source = None, **kwargs):
+def main(folder, latlim, lonlim, timelim, sources = "level_1", bin_length = "DEKAD", enhancers = [], **kwargs):
     """Prepare input data for `se_root`.
 
     Parameters
@@ -78,20 +77,11 @@ def main(folder, latlim, lonlim, timelim, sources = "level_1", bin_length = "DEK
     if isinstance(sources, str):
         sources = levels.pre_se_root_levels(sources)
 
-    if isinstance(example_source, type(None)):
-        example_source = levels.find_example(sources)
-        log.info(f"--> Example dataset is {example_source[0]}.{example_source[1]}.")
-
     example_t_vars = [x for x in ["lst", "bt"] if x in sources.keys()]
     example_sources = {k:v for k,v in sources.items() if k in example_t_vars}
     other_sources = {k:v for k,v in sources.items() if k not in example_t_vars}
 
-    if enhancers == "default":
-        enhancers = [rename_meteo,
-                    add_constants,
-                    bt_to_lst,
-                    drop_empty_times,
-                    ]
+    general_enhancers = enhancers + [rename_meteo, add_constants, bt_to_lst, drop_empty_times]
 
     bins = compositer.time_bins(timelim, bin_length)
     adjusted_timelim = [bins[0], bins[-1]]
@@ -102,7 +92,7 @@ def main(folder, latlim, lonlim, timelim, sources = "level_1", bin_length = "DEK
     other_dss = downloader.collect_sources(folder, other_sources, latlim, lonlim, buffered_timelim)
     dss= {**example_dss, **other_dss}
 
-    ds = aligner.main(dss, sources, example_source, folder, enhancers, example_t_vars = example_t_vars)
+    ds = aligner.main(dss, sources, folder, general_enhancers, example_t_vars = example_t_vars)
 
     t2 = datetime.datetime.now()
     log.sub().info(f"< PRE_SE_ROOT ({str(t2 - t1)})")

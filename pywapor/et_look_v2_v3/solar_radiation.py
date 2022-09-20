@@ -288,7 +288,7 @@ def sunset_hour_angle(lat, decl):
     return np.arccos(-(np.tan(lat) * np.tan(decl)))
 
 
-def hour_angle(sc, dtime, lon=0):
+def hour_angle(sc, dtime, lon = 0):
     r"""
     Computes the hour angle which is zero at noon and -pi at 0:00 am and
     pi at 12:00 pm
@@ -503,10 +503,13 @@ def cosine_solar_zenith_angle(ha, decl, lat, slope=0, aspect=0):
     check = np.sin(decl) * np.sin(lat) + np.cos(decl) * \
         np.cos(lat) * np.cos(ha)
 
-    nans = np.logical_or(np.isnan(csza), np.isnan(check))
-
-    res = np.where(np.logical_and(csza > 0, check >= 0), csza, 0)
-    res[nans] = np.nan
+    if isinstance(csza, xr.DataArray):
+        res = xr.where((csza > 0) & (check >= 0), csza, 0)
+        res = xr.where(csza.notnull() | check.notnull(), res, np.nan)
+    else:
+        nans = np.logical_or(np.isnan(csza), np.isnan(check))
+        res = np.where(np.logical_and(csza > 0, check >= 0), csza, 0)
+        res[nans] = np.nan
 
     return res
 

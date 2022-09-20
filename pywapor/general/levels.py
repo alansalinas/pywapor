@@ -2,20 +2,30 @@ import copy
 import pywapor.se_root as se_root
 from functools import partial
 import types
+from pywapor.general.logger import log
+from pywapor.enhancers.dms.thermal_sharpener import sharpen
 
-def find_example(sources):
-    for x in sources.values():
-        prod = [product for product in x["products"] if "is_example" in product.keys()]
+def find_setting(sources, setting_str, max_length = None):
+    example_sources = list()
+    for var, x in sources.items():
+        prod = [product for product in x["products"] if setting_str in product.keys()]
         if len(prod) >= 1:
             for pro in prod:
-                if pro["is_example"]:
+                if pro[setting_str]:
                     example_source = (pro["source"], pro["product_name"])
                     if isinstance(example_source[0], types.FunctionType):
                         example_source = (example_source[0].__name__, example_source[1])
                     elif isinstance(example_source[0], partial):
                         example_source = (example_source[0].func.__name__, example_source[1])
-                    return example_source
-
+                    if example_source not in example_sources:
+                        example_sources.append(example_source)
+        else:
+            if setting_str in x.keys():
+                example_sources.append(var)
+    if isinstance(max_length, int):
+        if len(example_sources) > max_length:
+            log.warning(f"--> Found more than {max_length} products for `{setting_str}`.")
+    return example_sources
 
 def pre_et_look_levels(level = "level_1", bin_length = "DEKAD"):
 
@@ -324,7 +334,7 @@ def pre_et_look_levels(level = "level_1", bin_length = "DEKAD"):
             "products": [
                 {
                     "source": "SENTINEL2",
-                    "product_name": "S2MSI2A",
+                    "product_name": "S2MSI2A_R60m",
                     "enhancers": "default",
                     "is_example": True
                 },
@@ -339,7 +349,7 @@ def pre_et_look_levels(level = "level_1", bin_length = "DEKAD"):
             "products": [
                 {
                     "source": "SENTINEL2",
-                    "product_name": "S2MSI2A",
+                    "product_name": "S2MSI2A_R60m",
                     "enhancers": "default",
                 },
             ],
@@ -378,7 +388,7 @@ def pre_et_look_levels(level = "level_1", bin_length = "DEKAD"):
         "products": [
             {
                 "source": "COPERNICUS",
-                "product_name": "GLO30",
+                "product_name": "GLO90",
                 "enhancers": "default",
             },
         ],
@@ -651,13 +661,23 @@ def pre_se_root_levels(level = "level_1"):
         "products": [
             {
                 "source": "SENTINEL2",
-                "product_name": "S2MSI2A",
+                "product_name": "S2MSI2A_R60m",
                 "enhancers": "default",
                 "is_example": True
             },
         ],
         "temporal_interp": "linear",
         "spatial_interp": "nearest"}
+
+    for var in ["mndwi", "psri", "vari_red_edge", "bsi", "nmdi", "green", "nir"]:
+        level_2_v3[var] = {
+            'products': [{
+                'source': 'SENTINEL2',
+                'product_name': 'S2MSI2A_R60m',
+                'enhancers': 'default',
+            }],
+        'temporal_interp': 'linear',
+        'spatial_interp': 'nearest'}
 
     level_2_v3['bt'] = {
         'products': [
@@ -667,6 +687,7 @@ def pre_se_root_levels(level = "level_1"):
                 'enhancers': 'default'
             },
         ],
+        'variable_enhancers': [sharpen],
         'temporal_interp': None,
         'spatial_interp': 'nearest'}
 
@@ -680,6 +701,18 @@ def pre_se_root_levels(level = "level_1"):
                 },
             ],
         'temporal_interp': "linear",
+        'spatial_interp': 'bilinear'}
+
+    for var in ["z", "slope", "aspect"]:
+        level_2_v3[var] = {
+            'products': [
+                {
+                    'source': 'COPERNICUS',
+                    'product_name': 'GLO90',
+                    'enhancers': 'default'
+                },
+            ],
+        'temporal_interp': None,
         'spatial_interp': 'bilinear'}
 
     for var in ["r0_bare", "r0_full"]:

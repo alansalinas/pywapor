@@ -39,8 +39,7 @@ def add_constants(ds, *args):
     ds = ds.assign(defaults.constants_defaults())
     return ds
 
-def main(folder, latlim, lonlim, timelim, sources = "level_1", bin_length = "DEKAD", 
-            enhancers = [lapse_rate], example_source = None):
+def main(folder, latlim, lonlim, timelim, sources = "level_1", bin_length = "DEKAD", enhancers = [lapse_rate]):
     """Prepare input data for `et_look`.
 
     Parameters
@@ -87,18 +86,13 @@ def main(folder, latlim, lonlim, timelim, sources = "level_1", bin_length = "DEK
     if isinstance(sources, str):
         sources = levels.pre_et_look_levels(sources)
 
-    if isinstance(example_source, type(None)):
-        example_source = levels.find_example(sources)
-        log.info(f"--> Example dataset is {example_source[0]}.{example_source[1]}.")
-
     bins = compositer.time_bins(timelim, bin_length)
 
-    enhancers = enhancers + [rename_vars, fill_attrs, partial(calc_doys, bins = bins),
-                                add_constants]
+    general_enhancers = enhancers + [rename_vars, fill_attrs, partial(calc_doys, bins = bins), add_constants]
 
     dss = downloader.collect_sources(folder, sources, latlim, lonlim, [bins[0], bins[-1]])
 
-    ds = compositer.main(dss, sources, example_source, bins, folder, enhancers)
+    ds = compositer.main(dss, sources, folder, general_enhancers, bins)
 
     t2 = datetime.datetime.now()
     log.sub().info(f"< PRE_ET_LOOK ({str(t2 - t1)})")

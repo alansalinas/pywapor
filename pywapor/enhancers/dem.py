@@ -4,7 +4,7 @@ import xarray as xr
 from pywapor.general.logger import log
 
 def calc_slope(ds, var):
-    """Calculate the gradient of `var` (which would usually be `z` or elevation).
+    """Calculate the gradient of `z`.
 
     Parameters
     ----------
@@ -28,6 +28,9 @@ def calc_slope(ds, var):
 
         y = temp_ds["z"].differentiate("x")
         x = temp_ds["z"].differentiate("y")
+
+        y = xr.where((y >= -1e-10) & (y <= 1e-10), 0, y)
+        x = xr.where((x >= -1e-10) & (x <= 1e-10), 0, x)
 
         hypot = np.hypot(x,y)
         slope = np.arctan(hypot) * 180.0 / np.pi
@@ -39,7 +42,7 @@ def calc_slope(ds, var):
     return ds
 
 def calc_aspect(ds, var):
-    """Calculate the aspect of `var` (which would usually be `z` or elevation).
+    """Calculate the aspect of `z`.
 
     Parameters
     ----------
@@ -63,6 +66,9 @@ def calc_aspect(ds, var):
 
         y = temp_ds["z"].differentiate("x")
         x = temp_ds["z"].differentiate("y")
+
+        y = xr.where((y >= -1e-10) & (y <= 1e-10), 0, y)
+        x = xr.where((x >= -1e-10) & (x <= 1e-10), 0, x)
 
         aspect = np.arctan2(y/np.nanmean(dlat), -x/np.nanmean(dlon))  * 180.0 / np.pi + 180.0
 
