@@ -5,13 +5,15 @@ from datetime import datetime as dt
 import tqdm
 import shutil
 import pywapor
-from pywapor.general.processing_functions import save_ds, open_ds, create_wkt, unpack, make_example_ds
+import warnings
+from pywapor.general.processing_functions import save_ds, open_ds, create_wkt, unpack, make_example_ds, remove_ds, adjust_timelim_dtype
 from pywapor.general.logger import log
 from pywapor.enhancers.apply_enhancers import apply_enhancer
 import xarray as xr
 import rioxarray.merge
 import tqdm
 import numpy as np
+import glob
 import rasterio.crs
 import types
 import logging
@@ -22,12 +24,7 @@ def download(folder, latlim, lonlim, timelim, search_kwargs, node_filter = None)
     if not os.path.isdir(folder):
         os.makedirs(folder)
 
-    if isinstance(timelim[0], str):
-        timelim[0] = dt.strptime(timelim[0], "%Y-%m-%d")
-        timelim[1] = dt.strptime(timelim[1], "%Y-%m-%d")
-    elif isinstance(timelim[0], np.datetime64):
-        timelim = [timelim[0].astype('M8[ms]').astype('O'), 
-                    timelim[1].astype('M8[ms]').astype('O')]
+    timelim = adjust_timelim_dtype(timelim)
 
     def _progress_bar(self, **kwargs):
         if "checksumming" in kwargs.get("desc", "no_desc"):
@@ -74,12 +71,16 @@ def download(folder, latlim, lonlim, timelim, search_kwargs, node_filter = None)
     
     return scenes
 
-def process_sentinel(scenes, variables, specific_processor, time_func, final_fn, post_processors, bb = None):
+def process_sentinel(scenes, variables, source_name, time_func, final_fn, post_processors, bb = None):
+
+    chunks = {"time": 1, "x": 1000, "y": 1000}
 
     example_ds = None
     dss1 = dict()
 
     log.info(f"--> Processing {len(scenes)} scenes.").add()
+
+    target_crs = rasterio.crs.CRS.from_epsg(4326)
 
     for i, scene_folder in enumerate(scenes):
         
@@ -104,17 +105,31 @@ def process_sentinel(scenes, variables, specific_processor, time_func, final_fn,
             scene_folder = scene_folder
             remove_folder = False
 
-        ds = specific_processor(scene_folder, variables, bb = bb)
+        if source_name == "SENTINEL2":
+            ds = pywapor.collect.product.SENTINEL2.s2_processor(scene_folder, variables)
+        elif source_name == "SENTINEL3":
+            ds = pywapor.collect.product.SENTINEL3.s3_processor(scene_folder, variables, bb = bb)
+        else:
+            raise ValueError
 
-        target_crs = rasterio.crs.CRS.from_epsg(4326)
+        # Apply variable specific functions.
+        for vars in variables.values():
+            for func in vars[2]:
+                ds, label = apply_enhancer(ds, vars[1], func)
 
         # NOTE: see https://github.com/corteva/rioxarray/issues/545
+        # NOTE: see rioxarray issue here: https://github.com/corteva/rioxarray/issues/570
         ds = ds.sortby("y", ascending = False)
+        _ = [ds[var].rio.write_nodata(np.nan, inplace = True) for var in ds.data_vars]
 
         # Clip and pad to bounding-box
         if isinstance(example_ds, type(None)):
             example_ds = make_example_ds(ds, folder, target_crs, bb = bb)
-        ds = ds.rio.reproject_match(example_ds)
+        ds = ds.rio.reproject_match(example_ds).chunk({k: v for k, v in chunks.items() if k in ["x", "y"]})
+
+        # NOTE: see rioxarray issue here: https://github.com/corteva/rioxarray/issues/570
+        _ = [ds[var].attrs.pop("_FillValue") for var in ds.data_vars if "_FillValue" in ds[var].attrs.keys()]
+        
         ds = ds.assign_coords({"x": example_ds.x, "y": example_ds.y})
 
         dtime = time_func(fn)
@@ -122,7 +137,7 @@ def process_sentinel(scenes, variables, specific_processor, time_func, final_fn,
         ds = ds.assign_coords({"time":[dtime]})
 
         # Save to netcdf
-        ds = save_ds(ds, fp, label = f"({i+1}/{len(scenes)}) Processing {fn} to netCDF.")
+        ds = save_ds(ds, fp, chunks = chunks, encoding = "initiate", label = f"({i+1}/{len(scenes)}) Processing {fn} to netCDF.")
 
         if dtime in dss1.keys():
             dss1[dtime].append(ds)
@@ -132,37 +147,45 @@ def process_sentinel(scenes, variables, specific_processor, time_func, final_fn,
         if remove_folder:
             shutil.rmtree(scene_folder)
 
+    log.sub()
+    
     # Merge spatially.
-    dss = [rioxarray.merge.merge_datasets(dss0) for dss0 in dss1.values()]
+    dss = [xr.concat(dss0, "stacked").median("stacked") for dss0 in dss1.values()]
 
     # Merge temporally.
-    ds = xr.merge(dss)
+    ds = xr.concat(dss, "time")
 
     # Define output path.
     fp = os.path.join(folder, final_fn)
     if os.path.isfile(fp):
         os.remove(fp)
-
-    # Apply product specific functions.
+    
+    # Apply general product functions.
     for var, funcs in post_processors.items():
         for func in funcs:
             ds, label = apply_enhancer(ds, var, func)
             log.info(label)
 
+    # Remove unrequested variables.
+    ds = ds[list(post_processors.keys())]
+    
     for var in ds.data_vars:
         ds[var].attrs = {}
 
     ds = ds.rio.write_crs(target_crs)
 
-    # Save final netcdf.
-    ds = save_ds(ds, fp, encoding = "initiate", label = f"Merging files.")
+    ds = ds.sortby("time")
 
-    log.sub()
+    # Save final netcdf.
+    with warnings.catch_warnings():
+        warnings.filterwarnings("ignore", message="invalid value encountered in true_divide")
+        warnings.filterwarnings("ignore", message="divide by zero encountered in true_divide")
+        ds = save_ds(ds, fp, chunks = chunks, encoding = "initiate", label = f"Merging files.")
 
     # Remove intermediate files.
     for dss0 in dss1.values():
         for x in dss0:
-            os.remove(x.encoding["source"])
+            remove_ds(x)
 
     return ds
 

@@ -1,6 +1,6 @@
 import os
 from pywapor.collect.protocol import cds
-from pywapor.general.processing_functions import open_ds
+from pywapor.general.processing_functions import open_ds, remove_ds
 from pywapor.general.logger import log
 from pywapor.enhancers.pressure import pa_to_kpa
 from pywapor.enhancers.wind import adjust_wind_height, windspeed
@@ -111,9 +111,9 @@ def download(folder, latlim, lonlim, timelim, product_name, req_vars,
     if os.path.isfile(fn_final):
         ds = open_ds(fn_final)
         if np.all([x in ds.data_vars for x in req_vars]):
-            return ds
+            return ds[req_vars]
         else:
-            ds = ds.close()
+            remove_ds(ds)
 
     spatial_buffer = True
     if spatial_buffer:

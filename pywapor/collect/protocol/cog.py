@@ -1,6 +1,6 @@
 import os
 import tqdm
-from pywapor.general.processing_functions import save_ds, open_ds, process_ds
+from pywapor.general.processing_functions import save_ds, open_ds, process_ds, remove_ds
 from osgeo import gdal
 import urllib
 from pywapor.enhancers.apply_enhancers import apply_enhancer
@@ -73,9 +73,9 @@ def download(fp, product_name, coords, variables, post_processors, url_func,
             log.info(label)
 
     # Save final output.
-    ds = save_ds(ds, fp, encoding = "initiate", label = f"Saving {fn}.")
+    out = save_ds(ds, fp, encoding = "initiate", label = f"Saving {fn}.")
 
     # Remove the temporary file.
-    os.remove(fp.replace(".nc", "_temp.nc"))
+    remove_ds(ds)
 
-    return ds
+    return out

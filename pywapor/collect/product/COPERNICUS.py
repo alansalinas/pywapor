@@ -5,8 +5,9 @@ from itertools import product
 import xarray as xr
 import pywapor
 from pywapor.collect.protocol import cog
-from pywapor.general.processing_functions import open_ds, save_ds
+from pywapor.general.processing_functions import open_ds, save_ds, remove_ds
 from pywapor.enhancers.apply_enhancers import apply_enhancer
+from pywapor.enhancers.dem import calc_slope, calc_aspect
 from pywapor.general.logger import log
 
 def tiles_intersect(latlim, lonlim, product_name):
@@ -48,9 +49,13 @@ def default_vars(product_name, req_vars):
     req_dl_vars = {
         "GLO30": {
             "z": ["Band1", "crs"],
+            "slope": ["Band1", "crs"],
+            "aspect": ["Band1", "crs"],
         },
         "GLO90": {
             "z": ["Band1", "crs"],
+            "slope": ["Band1", "crs"],
+            "aspect": ["Band1", "crs"],
         },
     }
 
@@ -63,9 +68,13 @@ def default_post_processors(product_name, req_vars = ["z"]):
     post_processors = {
         "GLO30": {
             "z": [],
+            "slope": [calc_slope],
+            "aspect": [calc_aspect],
         },
         "GLO90": {
             "z": [],
+            "slope": [calc_slope],
+            "aspect": [calc_aspect],
         },
     }
 
@@ -78,14 +87,21 @@ def download(folder, latlim, lonlim, product_name = "GLO30", req_vars = ["z"],
 
     folder = os.path.join(folder, "COPERNICUS")
 
+    appending = False
     final_fp = os.path.join(folder, f"{product_name}.nc")
     if os.path.isfile(final_fp):
-        ds = open_ds(final_fp)
-        if np.all([x in ds.data_vars for x in req_vars]):
-            return ds
+        os.rename(final_fp, final_fp.replace(".nc", "_to_be_appended.nc"))
+        existing_ds = open_ds(final_fp.replace(".nc", "_to_be_appended.nc"))
+        if np.all([x in existing_ds.data_vars for x in req_vars]):
+            existing_ds = existing_ds.close()
+            os.rename(final_fp.replace(".nc", "_to_be_appended.nc"), final_fp)
+            existing_ds = open_ds(final_fp)
+            return existing_ds[req_vars]
         else:
-            ds = ds.close()
-
+            appending = True
+            final_fp = os.path.join(folder, f"{product_name}_appendix.nc")
+            req_vars = [x for x in req_vars if x not in existing_ds.data_vars]
+            
     spatial_buffer = True
     if spatial_buffer:
         dx = dy = 0.00027778
@@ -101,7 +117,7 @@ def download(folder, latlim, lonlim, product_name = "GLO30", req_vars = ["z"],
         post_processors = default_post_processors(product_name, req_vars)
     else:
         default_processors = default_post_processors(product_name, req_vars)
-        post_processors = {k: {True: default_processors[k], False: v}[v == "default"] for k,v in post_processors.items()}
+        post_processors = {k: {True: default_processors[k], False: v}[v == "default"] for k,v in post_processors.items() if k in req_vars}
 
     coords = {"x": ("lon", lonlim), "y": ("lat", latlim)}
 
@@ -133,21 +149,33 @@ def download(folder, latlim, lonlim, product_name = "GLO30", req_vars = ["z"],
             ds, label = apply_enhancer(ds, var, func)
             log.info(label)
     
+    # Remove unrequested variables.
+    ds = ds[list(post_processors.keys())]
+    
     # Save final output.
-    ds = save_ds(ds, final_fp, encoding = "initiate", label = f"Saving {product_name}.nc")
+    ds_new = save_ds(ds, final_fp, encoding = "initiate", label = f"Saving {product_name}.nc")
+
+    if appending:
+        ds = xr.merge([ds_new, existing_ds])
+        lbl = f"Appending new variables (`{'`, `'.join(req_vars)}`) to existing file."
+        ds = save_ds(ds, os.path.join(folder, f"{product_name}.nc"), encoding = "initiate", label = lbl)
+        remove_ds(ds_new)
+        remove_ds(existing_ds)
+    else:
+        ds = ds_new
 
     for nc in dss:
-        os.remove(nc.encoding["source"])
+        remove_ds(nc)
 
     return ds
 
 if __name__ == "__main__":
 
     folder = r"/Users/hmcoerver/Local/cog_test"
-    product_name = r"GLO30" # r"GLO90" r"GLO30
+    product_name = r"GLO90" # r"GLO90" r"GLO30
     latlim = [28.9, 29.7]
     lonlim = [30.2, 31.2]
-    req_vars = ["z"]
+    req_vars = ["z", "slope", "aspect"]
     variables = None
     post_processors = None
 

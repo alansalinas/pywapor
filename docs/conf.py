@@ -29,6 +29,7 @@ author = 'FAO'
 # ones.
 extensions = [
     'nbsphinx',
+    'sphinx_copybutton',
     'sphinx.ext.autodoc', 
     # 'sphinx.ext.coverage', 
     'sphinx.ext.napoleon',

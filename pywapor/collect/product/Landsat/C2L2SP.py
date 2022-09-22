@@ -7,7 +7,7 @@ import os
 import tarfile
 import json
 import shutil
-from pywapor.general.processing_functions import save_ds, make_example_ds
+from pywapor.general.processing_functions import save_ds, make_example_ds, remove_ds
 import numpy as np
 import xarray as xr
 from osgeo import gdal
@@ -130,7 +130,7 @@ def main(folder, max_lst_uncertainty = 2.5, final_bb = None):
     ds = save_ds(ds, fp, encoding = encoding, label = "Merging files.")
 
     for x in dss:
-        os.remove(x.encoding["source"])
+        remove_ds(x)
 
     return ds
 

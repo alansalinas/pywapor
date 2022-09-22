@@ -6,17 +6,20 @@ import os
 import numpy as np
 import xarray as xr
 import pandas as pd
+from itertools import chain
 from pywapor.general.logger import log
 import numpy as np
-from pywapor.general.processing_functions import save_ds, open_ds
+from pywapor.general.processing_functions import save_ds, open_ds, remove_ds, adjust_timelim_dtype, log_example_ds
 import os
 from pywapor.general.reproject import align_pixels
 from pywapor.enhancers.apply_enhancers import apply_enhancer
 import xarray as xr
 import pandas as pd
+from datetime import datetime as dt
 import dask
 import types
 import functools
+import pywapor.general.levels as levels
 
 dask.config.set(**{'array.slicing.split_large_chunks': True})
 
@@ -80,6 +83,7 @@ def time_bins(timelim, bin_length):
         List of np.datetime64's which are the boundaries of the groups into
         which the variables will grouped.
     """
+    timelim = adjust_timelim_dtype(timelim)
     sdate = timelim[0]
     edate = timelim[1]
     if bin_length == "DEKAD":
@@ -120,7 +124,7 @@ def create_diags_attrs(srcs):
             attr_dict[str(i)] = v[0].__name__
     return attr_dict
 
-def main(dss, sources, example_source, bins, folder, enhancers, cleanup = True):
+def main(dss, sources, folder, general_enhancers, bins):
     """Create composites for variables contained in the 'xr.Dataset's in 'dss'.
 
     Parameters
@@ -156,8 +160,7 @@ def main(dss, sources, example_source, bins, folder, enhancers, cleanup = True):
 
     final_path = os.path.join(folder, "et_look_in.nc")
 
-    dss2 = list()
-    temp_files2 = list()
+    dss2 = dict()
 
     compositers = {
         "mean": xr.DataArray.mean,
@@ -165,15 +168,22 @@ def main(dss, sources, example_source, bins, folder, enhancers, cleanup = True):
         "max": xr.DataArray.max,
     }
 
-    for var, config in sources.items():
+    cleanup = list()
+
+    log.info(f"--> Compositing {len(sources)} variables.").add()
+
+    for i, (var, config) in enumerate(sources.items()):
 
         spatial_interp = config["spatial_interp"]
         temporal_interp = config["temporal_interp"]
         composite_type = config["composite_type"]
+
+        log.info(f"--> ({i+1}/{len(sources)}) Compositing `{var}` ({composite_type}).").add()
         
         # Align pixels of different products for a single variable together.
         dss_part = [ds[[var]] for ds in dss.values() if var in ds.data_vars]
         dss1, temp_files1 = align_pixels(dss_part, folder, spatial_interp, fn_append = "_step1")
+        cleanup.append(temp_files1)
 
         # Combine different source_products (along time dimension).
         if np.all(["time" in x[var].dims for x in dss1]):
@@ -206,40 +216,53 @@ def main(dss, sources, example_source, bins, folder, enhancers, cleanup = True):
             # Make composites.
             ds[var] = compositers[composite_type](ds[var].groupby_bins("time", bins, labels = bins[:-1]))
 
+            # Drop time coordinates.
+            ds = ds.drop_vars(["time"])
+
         # Save output
         dst_path = os.path.join(folder, f"{var}_bin.nc")
-        ds = save_ds(ds, dst_path, label = f"Compositing `{var}` ({composite_type}).")
-        dss2.append(ds)
-        temp_files2.append(ds.encoding["source"])
+        ds = save_ds(ds, dst_path, label = f"Saving `{var}` composites.")
+        dss2[var] = ds
+        cleanup.append([ds])
+        log.sub()
 
-        for nc in temp_files1:
-            if cleanup:
-                os.remove(nc)
+    log.sub()
+
+    # Apply variable specific enhancers
+    variables = levels.find_setting(sources, "variable_enhancers")
+    for var in variables:
+        if var in dss2.keys():
+            for func in sources[var]["variable_enhancers"]:
+                dss2[var] = func(dss2, var, folder)
 
     # Align all the variables together.
-    example_ds = dss[example_source]
-    spatial_interps = [sources[list(x.data_vars)[0]]["spatial_interp"] for x in dss2]
-    dss3, temp_files3 = align_pixels(dss2, folder, spatial_interps, example_ds, stack_dim = "time_bins", fn_append = "_step2")
-
-    for nc in temp_files2:
-        if cleanup:
-            os.remove(nc)
+    example_source = levels.find_setting(sources, "is_example", max_length = 1, min_length = 1)
+    if len(example_source) == 1:
+        example_ds = dss[example_source[0]]
+        log_example_ds(example_ds)
+    else:
+        log.warning(f"--> No valid example dataset set.")
+        example_ds = None
+    spatial_interps = [sources[list(x.data_vars)[0]]["spatial_interp"] for x in dss2.values()]
+    dss3, temp_files3 = align_pixels(dss2.values(), folder, spatial_interps, example_ds, stack_dim = "time_bins", fn_append = "_step2")
+    cleanup.append(temp_files3)
     
+    # Merge everything
     ds = xr.merge(dss3)
 
-    # Apply product specific functions.
-    for func in enhancers:
-        ds, label = apply_enhancer(ds, var, func)
+    # Apply general enhancers.
+    for func in general_enhancers:
+        ds, label = apply_enhancer(ds, None, func)
         log.info(label)
 
     while os.path.isfile(final_path):
         final_path = final_path.replace(".nc", "_.nc")
 
-    ds = save_ds(ds, final_path, encoding = "initiate", label = f"Creating merged file `{os.path.split(final_path)[-1]}`.")
-
-    for nc in temp_files3:
-        if cleanup:
-            os.remove(nc)
+    ds = save_ds(ds, final_path, encoding = "initiate", 
+                    label = f"Creating merged file `{os.path.split(final_path)[-1]}`.")
+    
+    for nc in list(chain.from_iterable(cleanup)):
+        remove_ds(nc)
 
     return ds
 

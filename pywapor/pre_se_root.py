@@ -35,8 +35,7 @@ def add_constants(ds, *args):
     ds = ds.assign(defaults.constants_defaults())
     return ds
 
-def main(folder, latlim, lonlim, timelim, sources = "level_1", bin_length = "DEKAD",
-            enhancers = "default", example_source = None, **kwargs):
+def main(folder, latlim, lonlim, timelim, sources = "level_1", bin_length = "DEKAD", enhancers = [], **kwargs):
     """Prepare input data for `se_root`.
 
     Parameters
@@ -58,19 +57,15 @@ def main(folder, latlim, lonlim, timelim, sources = "level_1", bin_length = "DEK
         output, by default "default".
     example_source : tuple, optional
         Which source to use for spatial alignment, overrides product selected
-        through sources, by default None.
+        through `sources`, by default None.
 
     Returns
     -------
     xr.Dataset
-        Dataset with data for `pywapor.se_root`.
+        Dataset with input data for `pywapor.se_root`.
     """
     t1 = datetime.datetime.now()
     log.info("> PRE_SE_ROOT").add()
-
-    if isinstance(timelim[0], str):
-        timelim[0] = datetime.datetime.strptime(timelim[0], "%Y-%m-%d")
-        timelim[1] = datetime.datetime.strptime(timelim[1], "%Y-%m-%d")
 
     if not os.path.exists(folder):
         os.makedirs(folder)
@@ -78,44 +73,41 @@ def main(folder, latlim, lonlim, timelim, sources = "level_1", bin_length = "DEK
     if isinstance(sources, str):
         sources = levels.pre_se_root_levels(sources)
 
-    if isinstance(example_source, type(None)):
-        example_source = levels.find_example(sources)
-        log.info(f"--> Example dataset is {example_source[0]}.{example_source[1]}.")
-
     example_t_vars = [x for x in ["lst", "bt"] if x in sources.keys()]
     example_sources = {k:v for k,v in sources.items() if k in example_t_vars}
     other_sources = {k:v for k,v in sources.items() if k not in example_t_vars}
 
-    if enhancers == "default":
-        enhancers = [rename_meteo,
-                    add_constants,
-                    bt_to_lst,
-                    drop_empty_times,
-                    ]
+    general_enhancers = enhancers + [rename_meteo, add_constants, bt_to_lst, drop_empty_times]
 
     bins = compositer.time_bins(timelim, bin_length)
     adjusted_timelim = [bins[0], bins[-1]]
     buffered_timelim = [adjusted_timelim[0] - np.timedelta64(3, "D"), 
                         adjusted_timelim[1] + np.timedelta64(3, "D")]
 
-    example_dss = downloader.collect_sources(folder, example_sources, latlim, lonlim, adjusted_timelim)
-    other_dss = downloader.collect_sources(folder, other_sources, latlim, lonlim, buffered_timelim)
+    example_dss, example_sources = downloader.collect_sources(folder, example_sources, latlim, lonlim, adjusted_timelim, return_fps = False)
+
+    if len(example_dss) == 0:
+        lbl = f"Unable to collect the essential variable(s) (`{'and'.join(example_t_vars)}`) to which the other variables should be aligned."
+        log.error("--> " + lbl)
+        raise ValueError(lbl)
+    
+    other_dss, other_sources = downloader.collect_sources(folder, other_sources, latlim, lonlim, buffered_timelim, return_fps = False)
     dss= {**example_dss, **other_dss}
 
-    ds = aligner.main(dss, sources, example_source, folder, enhancers, example_t_vars = example_t_vars)
+    ds = aligner.main(dss, sources, folder, general_enhancers, example_t_vars = example_t_vars)
 
     t2 = datetime.datetime.now()
     log.sub().info(f"< PRE_SE_ROOT ({str(t2 - t1)})")
 
     return ds
 
-# if __name__ == "__main__":
+if __name__ == "__main__":
 
     # from pywapor.se_root import main as se_root
 
     # sources = "level_1"
 
-    # enhancers = "default"
+    enhancers = []
 
     # folder = r"/Users/hmcoerver/pywapor_notebooks_2"
     # latlim = [28.9, 29.7]

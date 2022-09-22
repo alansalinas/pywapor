@@ -32,7 +32,7 @@ def adjust_logger(log_write, folder, log_level):
         if not os.path.isdir(folder):
             os.makedirs(folder)
         handler = logging.FileHandler(filename = os.path.join(folder, "log.txt"))
-        formatter = logging.Formatter(fmt='%(levelname)s %(asctime)s: %(message)s')
+        formatter = logging.Formatter('{asctime} {levelname:>9s}: {message}', style='{')
         handler.setFormatter(formatter)
         handler.setLevel("DEBUG")
         log_settings.addHandler(handler)

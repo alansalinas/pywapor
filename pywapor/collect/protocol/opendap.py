@@ -9,15 +9,17 @@ from pydap.cas.urs import setup_session
 import urllib.parse
 from pywapor.general.logger import log
 from rasterio.crs import CRS
-from pywapor.general.processing_functions import save_ds, process_ds
+from pywapor.general.processing_functions import save_ds, process_ds, remove_ds
 import warnings
 from pywapor.enhancers.apply_enhancers import apply_enhancer
 from pywapor.collect.protocol.crawler import download_url, download_urls
 
-def download(folder, product_name, coords, variables, post_processors, 
+def download(fp, product_name, coords, variables, post_processors, 
                 fn_func, url_func, un_pw = None, tiles = None,  
                 data_source_crs = None, parallel = False, spatial_tiles = True, 
                 request_dims = True, timedelta = None):
+
+    folder = os.path.split(fp)[0]
 
     # Create selection object.
     selection = create_selection(coords, target_crs = data_source_crs)
@@ -42,6 +44,7 @@ def download(folder, product_name, coords, variables, post_processors,
         dss = [process_ds(xr.open_dataset(x, decode_coords = "all"), coords, variables, crs = data_source_crs) for x in files]
         ds = rioxarray.merge.merge_datasets(dss)
     else:
+        dss = files
         ds = process_ds(xr.open_mfdataset(files, decode_coords = "all"), coords, variables, crs = data_source_crs)
 
     # Reproject if necessary.
@@ -57,17 +60,17 @@ def download(folder, product_name, coords, variables, post_processors,
     if isinstance(timedelta, np.timedelta64):
         ds["time"] = ds["time"] + timedelta
 
-    # Remove unnecessary coordinates.
-    ds = ds.drop_vars([x for x in ds.coords if x not in ["x", "y", "time", "spatial_ref"]])
-
+    # Remove unrequested variables.
+    ds = ds[list(post_processors.keys())]
+    
     # Save final output.
-    fp = os.path.join(folder, f"{product_name}.nc")
     ds.attrs = {}
     ds = save_ds(ds, fp, encoding = "initiate", label = "Saving merged data.")
 
     # Remove temporary files.
-    for x in fps:
-        os.remove(x)
+    if not isinstance(dss, type(None)):
+        for x in dss:
+            remove_ds(x)
 
     return ds
 
@@ -127,11 +130,11 @@ def download_xarray(url, fp, coords, variables, post_processors,
         ds["time"] = ds["time"] + timedelta
 
     # Save final output
-    ds = save_ds(ds, fp, encoding = "initiate", label = "Saving netCDF.")
+    out = save_ds(ds, fp, encoding = "initiate", label = "Saving netCDF.")
 
-    os.remove(fp.replace(".nc", "_temp.nc"))
+    remove_ds(ds)
 
-    return ds
+    return out
 
 def create_selection(coords, ds = None, target_crs = None, 
                         source_crs = CRS.from_epsg(4326)):

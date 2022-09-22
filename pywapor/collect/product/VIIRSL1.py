@@ -6,22 +6,24 @@ import fnmatch
 import os
 import datetime
 import glob
-import tqdm
 import warnings
 from functools import partial
 import geopy.distance
 import xarray as xr
 import pandas as pd
 import numpy as np
+import hashlib
+import json
 from datetime import datetime as dt
 from itertools import chain
 from pywapor.general.logger import log
 from pywapor.collect import accounts
 from pywapor.enhancers.apply_enhancers import apply_enhancer
-from pywapor.general.processing_functions import save_ds, open_ds
+from pywapor.general.processing_functions import save_ds, open_ds, remove_ds, adjust_timelim_dtype
 from pywapor.general.curvilinear import create_grid, regrid
 from pywapor.collect.protocol.crawler import download_url, download_urls
 from pywapor.general.logger import log, adjust_logger
+from pywapor.enhancers.other import drop_empty_times
 
 def regrid_VNP(workdir, latlim, lonlim, dx_dy = (0.0033, 0.0033)):
 
@@ -36,23 +38,25 @@ def regrid_VNP(workdir, latlim, lonlim, dx_dy = (0.0033, 0.0033)):
     for nc02 in ncs02:
         dt_str = ".".join(os.path.split(nc02)[-1].split(".")[1:3])
         ncs03 = glob.glob(os.path.join(workdir, f"VNP03IMG.{dt_str}*.nc"))
-        if len(ncs03) != 1:
+        ncs_cloud = glob.glob(os.path.join(workdir, f"CLDMSK_L2_VIIRS_SNPP.{dt_str}*.nc"))
+        if len(ncs03) != 1 and len(ncs_cloud) != 1:
             continue
         else:
             nc03 = ncs03[0]
-        dt = datetime.datetime.strptime(dt_str, "A%Y%j.%H%M")
-        scenes[dt] = (nc02, nc03)
+            nc_cloud = ncs_cloud[0]
+        dt_obj = dt.strptime(dt_str, "A%Y%j.%H%M")
+        scenes[dt_obj] = (nc02, nc03, nc_cloud)
 
     # Create list to store xr.Datasets from a single scene.
     dss = list()
 
-    log.add()
+    log.info(f"--> Processing {len(scenes)} scenes.").add()
 
     # Loop over the scenes.
-    for i, (dt, (nc02, nc03)) in enumerate(scenes.items()):
+    for i, (dt_obj, (nc02, nc03, nc_cloud)) in enumerate(scenes.items()):
 
         # Define tile output path.
-        fp = os.path.join(workdir, f"VNP_{dt:%Y%j%H%M}.nc")
+        fp = os.path.join(workdir, f"VNP_{dt_obj:%Y%j%H%M}.nc")
 
         if os.path.isfile(fp):
             dss.append(open_ds(fp))
@@ -61,6 +65,13 @@ def regrid_VNP(workdir, latlim, lonlim, dx_dy = (0.0033, 0.0033)):
         # Open the datasets.
         ds1 = xr.open_dataset(nc02, group = "observation_data", decode_cf = False)
         ds2 = xr.open_dataset(nc03, group = "geolocation_data", decode_cf = False, chunks = "auto")
+        ds3 = xr.open_dataset(nc_cloud, group = "geophysical_data", decode_cf = False, chunks = "auto")
+
+        # Create cloud mask. (0=cloudy, 1=probably cloudy, 2=probably clear, 3=confident clear, -1=no result)
+        cmask = ds3.Integer_Cloud_Mask.interp({
+                        "number_of_lines": np.linspace(0-0.25, (ds3.number_of_lines.size-1)+0.25, ds3.number_of_lines.size*2),
+                        "number_of_pixels": np.linspace(0-0.25, (ds3.number_of_pixels.size-1)+0.25, ds3.number_of_pixels.size*2)
+                        }, kwargs = {"fill_value": "extrapolate"}).drop_vars(["number_of_lines", "number_of_pixels"])
 
         # Convert DN to Brightness Temperature using the provided loopup table.
         bt_da = ds1.I05_brightness_temperature_lut.isel(number_of_LUT_values = ds1.I05)
@@ -73,7 +84,8 @@ def regrid_VNP(workdir, latlim, lonlim, dx_dy = (0.0033, 0.0033)):
                                             (bt_da <= bt_da.valid_max) & 
                                             (bt_da != bt_da._FillValue) &
                                             (ds1.I05_quality_flags == 0) &
-                                            (ds2.quality_flag == 0)
+                                            (ds2.quality_flag == 0) &
+                                            (cmask == 3)
         )
 
         # Move `x` and `y` from variables to coordinates
@@ -89,15 +101,20 @@ def regrid_VNP(workdir, latlim, lonlim, dx_dy = (0.0033, 0.0033)):
         # Apply the mask.
         ds = ds.where(mask, drop = True)
 
+        # Stop with scene if no valid data is found inside bb.
+        if ds.bt.count().values == 0:
+            log.warning(f"--> ({i+1}/{len(scenes)}) Skipping scene `{os.path.split(fp)[-1]}`, no valid data found inside bounding-box.")
+            continue
+
         # Save intermediate file.
-        fp_temp = os.path.join(workdir, f"VNP_{dt:%Y%j%H%M}_temp.nc")
+        fp_temp = os.path.join(workdir, f"VNP_{dt_obj:%Y%j%H%M}_temp.nc")
         ds = save_ds(ds, fp_temp, label = f"({i+1}/{len(scenes)}) Creating intermediate file.")
 
         # Create rectolinear grid.
         grid_ds = create_grid(ds, dx_dy[0], dx_dy[1], bb = bb)
 
         # Regrid from curvilinear to rectolinear grid.
-        out = regrid(grid_ds, ds)
+        out = regrid(grid_ds, ds, max_px_dist = 3)
 
         # Set some metadata.
         out = out.rio.write_crs(4326)
@@ -107,15 +124,15 @@ def regrid_VNP(workdir, latlim, lonlim, dx_dy = (0.0033, 0.0033)):
         out.bt.attrs = {k: v for k, v in ds.bt.attrs.items() if k in ["long_name", "units"]}
 
         # Add time dimension.
-        out = out.expand_dims({"time": 1}).assign_coords({"time": [dt]})
+        out = out.expand_dims({"time": 1}).assign_coords({"time": [dt_obj]})
 
         # Save regridded tile.
-        out = save_ds(out, fp, encoding = "initiate", label = f"({i+1}/{len(scenes)}) Regridding `VNP_{dt:%Y%j%H%M}.nc` to rectolinear grid.")
+        out = save_ds(out, fp, encoding = "initiate", label = f"({i+1}/{len(scenes)}) Regridding `VNP_{dt_obj:%Y%j%H%M}.nc` to rectolinear grid.")
 
         dss.append(out)
 
         # Remove intermediate file.
-        os.remove(fp_temp)
+        remove_ds(ds)
 
     log.sub()
 
@@ -144,12 +161,7 @@ def boxtimes(latlim, lonlim, timelim, folder):
     """
 
     # Convert to datetime object if necessary
-    if isinstance(timelim[0], str):
-        timelim[0] = dt.strptime(timelim[0], "%Y-%m-%d")
-        timelim[1] = dt.strptime(timelim[1], "%Y-%m-%d")
-    elif isinstance(timelim[0], np.datetime64):
-        timelim[0] = datetime.datetime.utcfromtimestamp(timelim[0].tolist()/1e9).date()
-        timelim[1] = datetime.datetime.utcfromtimestamp(timelim[1].tolist()/1e9).date()
+    timelim = adjust_timelim_dtype(timelim)
 
     # Expand bb with 1500km (is half of SUOMI NPP swath width).
     ur = (latlim[1], lonlim[1])
@@ -166,19 +178,23 @@ def boxtimes(latlim, lonlim, timelim, folder):
         "ll" : f"{int(np.floor(very_ll.latitude))},{int(np.floor(very_ll.longitude))}",
     }
 
+    # Create a hash for the search kwargs to create a filename for this specific search, allowing
+    # to reuse the file later if a similar search is made.
+    search_hash = hashlib.sha1(json.dumps(kwargs, sort_keys=True).encode()).hexdigest()
+
     # Search boxtimes.
     base_url = "https://sips.ssec.wisc.edu/orbnav/api/v1/boxtimes.json"
     url = base_url + "?&" + "&".join([f"{k}={v}" for k, v in kwargs.items()])
-    fp = os.path.join(folder, "boxtimes.json")
+    fp = os.path.join(folder, f"boxtimes_{search_hash}.json")
     _ = download_url(url, fp)
-    data = json.load(open(fp))
+    with open(fp) as f:
+        data = json.load(f)
 
     # Group to SUOMI NPP 6 minute tiles.
-    dates = [datetime.datetime.strptime(x[0], "%Y-%m-%dT%H:%M:%SZ") for x in chain.from_iterable(data["data"]) if x[3] > 40.]
+    dates = [dt.strptime(x[0], "%Y-%m-%dT%H:%M:%SZ") for x in chain.from_iterable(data["data"]) if x[3] > 40.]
     df = pd.DataFrame({"date": dates}).set_index("date")
     count = df.groupby(pd.Grouper(freq = "6min")).apply(lambda x: len(x))
     to_dl = count[count >= 1].index.values
-    os.remove(fp)
 
     # Create list with relevant year/doy/times tuples.
     year_doy_time = [[pd.to_datetime(x).strftime("%Y"), pd.to_datetime(x).strftime("%j"), pd.to_datetime(x).strftime("%H%M")] for x in to_dl]
@@ -186,7 +202,7 @@ def boxtimes(latlim, lonlim, timelim, folder):
     return year_doy_time
 
 def find_VIIRSL1_urls(year_doy_time, product, workdir, 
-                        server_folders = {"VNP02IMG": 5110, "VNP03IMG": 5200}):
+                        server_folders = {"VNP02IMG": 5110, "VNP03IMG": 5200, "CLDMSK_L2_VIIRS_SNPP": 5110}):
     """Given a list of year/doy/time tuples returns the exact urls for that
     datetime. Also check if the linked file already exists in workdir, in which
     case the url is omitted from the returned list.
@@ -349,7 +365,7 @@ def default_post_processors(product_name, req_vars = None):
 
     post_processors = {
         "VNP02IMG": {
-            "bt": []
+            "bt": [partial(drop_empty_times, drop_vars = ["bt"])]
             },
     }
 
@@ -364,13 +380,20 @@ def download(folder, latlim, lonlim, timelim, product_name, req_vars,
     if not os.path.exists(folder):
         os.makedirs(folder)
 
+    appending = False
     fn = os.path.join(folder, f"{product_name}.nc")
     if os.path.isfile(fn):
-        ds = open_ds(fn)
-        if np.all([x in ds.data_vars for x in req_vars]):
-            return ds
+        os.rename(fn, fn.replace(".nc", "_to_be_appended.nc"))
+        existing_ds = open_ds(fn.replace(".nc", "_to_be_appended.nc"))
+        if np.all([x in existing_ds.data_vars for x in req_vars]):
+            existing_ds = existing_ds.close()
+            os.rename(fn.replace(".nc", "_to_be_appended.nc"), fn)
+            existing_ds = open_ds(fn)
+            return existing_ds[req_vars]
         else:
-            ds = ds.close()
+            appending = True
+            fn = os.path.join(folder, f"{product_name}_appendix.nc")
+            req_vars = [x for x in req_vars if x not in existing_ds.data_vars]
 
     if isinstance(variables, type(None)):
         variables = default_vars(product_name, req_vars)
@@ -379,14 +402,7 @@ def download(folder, latlim, lonlim, timelim, product_name, req_vars,
         post_processors = default_post_processors(product_name, req_vars)
     else:
         default_processors = default_post_processors(product_name, req_vars)
-        post_processors = {k: {True: default_processors[k], False: v}[v == "default"] for k,v in post_processors.items()}
-
-    if isinstance(timelim[0], str):
-        timelim[0] = dt.strptime(timelim[0], "%Y-%m-%d")
-        timelim[1] = dt.strptime(timelim[1], "%Y-%m-%d")
-    elif isinstance(timelim[0], np.datetime64):
-        timelim[0] = datetime.datetime.utcfromtimestamp(timelim[0].tolist()/1e9).date()
-        timelim[1] = datetime.datetime.utcfromtimestamp(timelim[1].tolist()/1e9).date()
+        post_processors = {k: {True: default_processors[k], False: v}[v == "default"] for k,v in post_processors.items() if k in req_vars}
 
     # Reformat bounding-box.
     bb = [lonlim[0], latlim[0], lonlim[1], latlim[1]]
@@ -405,12 +421,22 @@ def download(folder, latlim, lonlim, timelim, product_name, req_vars,
     checker_function = partial(check_geoloc_tile, bb = bb)
     relevant_fps = download_urls(urls, folder, headers = headers, checker_function = checker_function)
 
+    # Check relevance of files that were already downloaded.
+    fns = [os.path.split(x)[-1] for x in glob.glob(os.path.join(folder, "VNP03IMG*.nc"))]
+    for fp in [os.path.join(folder, x) for x in fns if x not in [os.path.split(x)[-1] for x in urls]]:
+        if check_geoloc_tile(fp, bb):
+            relevant_fps.append(fp)
+
     # Convert the relevant netcdf names to year/doy/time entries.
     year_doy_time = [[os.path.split(x)[-1][{0:slice(10,14), 1:slice(14,17), 2:slice(18,22)}[y]] for y in range(3)] for x in relevant_fps]
 
+    # Find urls of the cloudmask for the given year/doy/time.
+    cloud_urls = find_VIIRSL1_urls(year_doy_time, "CLDMSK_L2_VIIRS_SNPP", folder)
+    # Download the cloudmasks.
+    _ =  download_urls(cloud_urls, folder, headers = headers, checker_function = partial(check_nc, group = "geophysical_data"))
+
     # Find urls of the actual data for the given year/doy/time.
     product_urls = find_VIIRSL1_urls(year_doy_time, product_name, folder)
-
     # Download the data product.
     _ =  download_urls(product_urls, folder, headers = headers, checker_function = check_nc)
 
@@ -423,20 +449,28 @@ def download(folder, latlim, lonlim, timelim, product_name, req_vars,
             ds, label = apply_enhancer(ds, var, func)
             log.info(label)
 
-    ds = save_ds(ds, fn, encoding = "initiate", label = "Merging files.")
+    ds_new = save_ds(ds, fn, encoding = "initiate", label = "Merging files.")
+
+    if appending:
+        ds = xr.merge([ds_new, existing_ds])
+        lbl = f"Appending new variables (`{'`, `'.join(req_vars)}`) to existing file."
+        ds = save_ds(ds, os.path.join(folder, f"{product_name}.nc"), encoding = "initiate", label = lbl)
+        remove_ds(ds_new)
+        remove_ds(existing_ds)
+    else:
+        ds = ds_new
 
     return ds
 
 if __name__ == "__main__":
 
-    folder = "/Users/hmcoerver/Local/viirs_test/"
-    workdir = os.path.join(folder, "VIIRSL1")
+    folder = "/Users/hmcoerver/Local/20220325_20220415_test_data"
     adjust_logger(True, folder, "INFO")
     # latlim = [28.9, 29.7]
     # lonlim = [30.2, 31.2]
     # timelim = ["2022-06-01", "2022-06-02"]
 
-    timelim = [datetime.date(2022, 4, 1), datetime.date(2022, 4, 11)]
+    timelim = [datetime.date(2022, 3, 25), datetime.date(2022, 4, 15)]
     latlim = [29.4, 29.7]
     lonlim = [30.7, 31.0]
 

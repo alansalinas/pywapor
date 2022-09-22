@@ -9,7 +9,7 @@ This repository contains a Python implementation of the algorithm used to genera
 Its recommended to install in a clean [conda environment](https://docs.conda.io/projects/conda/en/latest/user-guide/concepts/environments.html) and use [conda](https://docs.conda.io/projects/conda/en/latest/user-guide/install/) to install all the important packages from the `conda-forge` channel.
 
 ```bash
-conda create -n my_pywapor_env --yes -c conda-forge python pip gdal pydap numpy pandas requests matplotlib pyproj scipy pycurl pyshp joblib bs4 rasterio xarray bottleneck geojson tqdm dask rioxarray pyvis shapely lxml cachetools cdsapi sentinelsat geopy 
+conda create -n my_pywapor_env --yes -c conda-forge python pip gdal pydap numpy pandas requests matplotlib pyproj scipy pycurl pyshp joblib bs4 rasterio xarray bottleneck geojson tqdm dask rioxarray pyvis shapely lxml cachetools cdsapi sentinelsat geopy numba
 
 conda activate my_pywapor_env
 ```
@@ -22,7 +22,7 @@ pip install pywapor
 
 #### Usage
 
-To run the model for one dekad (from 2021-07-01 to 2021-07-11 in this case) for the Fayoum irrigation scheme in Egypt (but feel free to change the [boundingbox](http://bboxfinder.com) defined by `latlim` and `lonlim`) using mainly MODIS data, run the following code. 
+To run the model for one dekad (from 2021-07-01 to 2021-07-11 in this case) for the Fayoum irrigation scheme in Egypt (but feel free to change the [boundingbox](http://bboxfinder.com) defined by `latlim` and `lonlim`) using mainly MODIS data, run the following code  (run `python` in your console to activate Python and `exit()` to deactivate). 
 
 ```python
 import pywapor
@@ -91,20 +91,25 @@ Check out the documentation and the notebooks below to learn more!
 </details></p>
 
 <p><details>
-<summary><b>WaPOR v2</b></summary>
-
+<summary><b>WaPOR v3</b></summary>
 <ul>
-<li><a href="https://bitbucket.org/cioapps/wapor-et-look/downloads/FRAME_ET_v2_data_manual_finaldraft_v2.2.pdf">WaPOR-ETLook Data Manual (v2)</a></li>
+<li><a href="https://bitbucket.org/cioapps/wapor-et-look/wiki/Home">WaPOR-ETLook Online Manual (v3)</a></li>
+</ul>
+</details></p>
 
-<li><a href="https://bitbucket.org/cioapps/wapor-et-look/downloads/FRAME_NPP_v2_data_manual_finaldraft_v2.2.pdf">WaPOR-Biomass Data Manual (v2)</a></li>
+<p><details>
+<summary><b>WaPOR v2</b></summary>
+<ul>
+<li><a href="https://bitbucket.org/cioapps/pywapor/downloads/FRAME_ET_v2_data_manual_finaldraft_v2.2.pdf">WaPOR-ETLook Data Manual (v2)</a></li>
+
+<li><a href="https://bitbucket.org/cioapps/pywapor/downloads/FRAME_NPP_v2_data_manual_finaldraft_v2.2.pdf">WaPOR-Biomass Data Manual (v2)</a></li>
 </ul>
 </details></p>
 
 <p><details>
 <summary><b>WaPOR v1</b></summary>
-
 <ul>
-<li><a href="https://bitbucket.org/cioapps/wapor-et-look/raw/9ec88e56769f49722c2d1165bb34547f5842b811/Docs/WaPOR_ET_data_manual_finaldraft-v1.2-for-distribution.pdf">WaPOR-ETLook Data Manual (v1)</a></li>
+<li><a href="https://bitbucket.org/cioapps/pywapor/downloads/20190522_V1_WaPOR_v_1_Data_Manual_Evapotranspiration.pdf">WaPOR-ETLook Data Manual (v1)</a></li>
 </ul>
 </details></p>
 
@@ -119,6 +124,17 @@ For questions, requests or issues with this repository, please contact Bert Coer
 #### Release Notes
 
 <p><details open>
+<summary><b>3.1.0 (2022-09-22)</b></summary>
+<ul>
+    <li> Added a thermal sharpening algorithm (<a href = https://github.com/radosuav/pyDMS>pyDMS</a>) to increase LST resolution.</li>
+    <li> Now, when after several failed attempts to download a variable, the code will continue processing other variables. </li>
+    <li> Improved cloud-masking for VIIRSL1. </li>
+    <li> Bugfixes (including several Windows specific ones). </li>
+    <li> More information in the log. </li>
+</ul>
+</details></p>
+
+<p><details>
 <summary><b>3.0.0 (2022-08-31)</b></summary>
 <ul>
     <li> Bugfixes. Most noteably, server side errors when downloading data are now handeled better, i.e. collect tools will retry several times when a download fails, but many other smaller issues have been fixed too.</li>

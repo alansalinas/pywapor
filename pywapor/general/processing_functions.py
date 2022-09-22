@@ -6,10 +6,43 @@ import xarray as xr
 import numpy as np
 import shutil
 import glob
+from datetime import datetime as dt
 import warnings
 import rasterio.warp
 import pandas as pd
 from pywapor.general.performance import performance_check
+
+def log_example_ds(example_ds):
+    if "source" in example_ds.encoding.keys():
+        log.info(f"--> Using `{os.path.split(example_ds.encoding['source'])[-1]}` as reprojecting example.").add()
+    else:
+        log.info(f"--> Using variable `{list(example_ds.data_vars)[0]}` as reprojecting example.").add()
+    shape = example_ds.y.size, example_ds.x.size
+    res = example_ds.rio.resolution()
+    log.info(f"> shape: {shape}, res: {abs(res[0]):.4f}° x {abs(res[1]):.4f}°.").sub()
+
+def adjust_timelim_dtype(timelim):
+    if isinstance(timelim[0], str):
+        timelim[0] = dt.strptime(timelim[0], "%Y-%m-%d")
+        timelim[1] = dt.strptime(timelim[1], "%Y-%m-%d")
+    elif isinstance(timelim[0], np.datetime64):
+        timelim[0] = dt.utcfromtimestamp(timelim[0].tolist()/1e9).date()
+        timelim[1] = dt.utcfromtimestamp(timelim[1].tolist()/1e9).date()
+    return timelim
+
+def remove_ds(ds):
+    if isinstance(ds, xr.Dataset):
+        if "source" in ds.encoding.keys():
+            fp = ds.encoding["source"]
+            ds = xr.open_dataset(fp)
+            ds = ds.close()
+            os.remove(fp)
+    elif isinstance(ds, str):
+        if os.path.isfile(ds):
+            fp = ds
+            ds = xr.open_dataset(fp)
+            ds = ds.close()
+            os.remove(fp)        
 
 def process_ds(ds, coords, variables, crs = None):
 

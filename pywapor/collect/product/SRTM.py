@@ -5,11 +5,13 @@ import datetime
 import os
 import json
 import pywapor.collect
-from pywapor.general.processing_functions import open_ds
+import xarray as xr
+from pywapor.general.processing_functions import open_ds, remove_ds, save_ds
 import pywapor.collect.accounts as accounts
 from shapely.geometry.polygon import Polygon
 from shapely.geometry import shape
 import pywapor.collect.protocol.opendap as opendap
+from pywapor.enhancers.dem import calc_slope, calc_aspect
 import numpy as np
 
 def tiles_intersect(latlim, lonlim):
@@ -36,6 +38,8 @@ def default_vars(product_name, req_vars = ["z"]):
     req_dl_vars = {
         "30M": {
             "z": ["SRTMGL1_DEM", "crs"],
+            "slope": ["SRTMGL1_DEM", "crs"],
+            "aspect": ["SRTMGL1_DEM", "crs"],
         }
     }
 
@@ -51,6 +55,8 @@ def default_post_processors(product_name, req_vars = ["z"]):
     post_processors = {
         "30M": {
             "z": [],
+            "aspect": [calc_aspect],
+            "slope": [calc_slope],
         }
     }
 
@@ -69,13 +75,20 @@ def url_func(product_name, tile):
 def download(folder, latlim, lonlim, product_name = "30M", req_vars = ["z"], variables = None, post_processors = None, **kwargs):
     folder = os.path.join(folder, "SRTM")
 
+    appending = False
     fn = os.path.join(folder, f"{product_name}.nc")
     if os.path.isfile(fn):
-        ds = open_ds(fn)
-        if np.all([x in ds.data_vars for x in req_vars]):
-            return ds
+        os.rename(fn, fn.replace(".nc", "_to_be_appended.nc"))
+        existing_ds = open_ds(fn.replace(".nc", "_to_be_appended.nc"))
+        if np.all([x in existing_ds.data_vars for x in req_vars]):
+            existing_ds = existing_ds.close()
+            os.rename(fn.replace(".nc", "_to_be_appended.nc"), fn)
+            existing_ds = open_ds(fn)
+            return existing_ds[req_vars]
         else:
-            ds = ds.close()
+            appending = True
+            fn = os.path.join(folder, f"{product_name}_appendix.nc")
+            req_vars = [x for x in req_vars if x not in existing_ds.data_vars]
 
     spatial_buffer = True
     if spatial_buffer:
@@ -95,7 +108,7 @@ def download(folder, latlim, lonlim, product_name = "30M", req_vars = ["z"], var
         post_processors = default_post_processors(product_name, req_vars)
     else:
         default_processors = default_post_processors(product_name, req_vars)
-        post_processors = {k: {True: default_processors[k], False: v}[v == "default"] for k,v in post_processors.items()}
+        post_processors = {k: {True: default_processors[k], False: v}[v == "default"] for k,v in post_processors.items() if k in req_vars}
 
     data_source_crs = None
     parallel = False
@@ -103,27 +116,37 @@ def download(folder, latlim, lonlim, product_name = "30M", req_vars = ["z"], var
     un_pw = accounts.get("NASA")
     request_dims = True
 
-    ds = opendap.download(folder, product_name, coords, 
+    ds_new = opendap.download(fn, product_name, coords, 
                 variables, post_processors, fn_func, url_func, un_pw = un_pw, 
                 tiles = tiles, data_source_crs = data_source_crs, parallel = parallel, 
                 spatial_tiles = spatial_tiles, request_dims = request_dims)
+
+    if appending:
+        ds = xr.merge([ds_new, existing_ds])
+        lbl = f"Appending new variables (`{'`, `'.join(req_vars)}`) to existing file."
+        ds = save_ds(ds, os.path.join(folder, f"{product_name}.nc"), encoding = "initiate", label = lbl)
+        remove_ds(ds_new)
+        remove_ds(existing_ds)
+    else:
+        ds = ds_new
 
     return ds
 
 if __name__ == "__main__":
 
-    folder = r"/Users/hmcoerver/Downloads/pywapor_test"
+    folder = r"/Users/hmcoerver/Local/cog2_test"
     # latlim = [26.9, 33.7]
     # lonlim = [25.2, 37.2]
     latlim = [28.9, 29.7]
     lonlim = [30.2, 31.2]
     timelim = [datetime.date(2020, 7, 1), datetime.date(2020, 7, 11)]
+    req_vars = ["z", "aspect"]
 
     # fn = os.path.join(os.path.join(folder, "SRTM"), "30M.nc")
     # if os.path.isfile(fn):
     #     os.remove(fn)
 
-    # SRTM.
-    ds = download(folder, latlim, lonlim)
+    # # SRTM.
+    ds = download(folder, latlim, lonlim, req_vars = req_vars)
     print(ds.rio.crs, ds.rio.grid_mapping)
 

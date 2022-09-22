@@ -1,19 +1,19 @@
 import os
 import pywapor.collect.protocol.sentinelapi as sentinelapi
 from pywapor.general.curvilinear import regrid, create_grid
-from pywapor.general.logger import log
+from pywapor.general.logger import log, adjust_logger
 import glob
 import xarray as xr
 import numpy as np
 from datetime import datetime as dt
-from pywapor.general.processing_functions import open_ds
+from pywapor.general.processing_functions import open_ds, remove_ds, save_ds
 
 def default_vars(product_name, req_vars):
 
     variables = {
         "SL_2_LST___": {
-                    "LST_in.nc": [(), "lst"],
-                    "geodetic_in.nc": [(), "coords"],
+                    "LST_in.nc": [(), "lst", []],
+                    "geodetic_in.nc": [(), "coords", []],
         }
     }
 
@@ -45,7 +45,7 @@ def time_func(fn):
     dtime = start_dtime + (end_dtime - start_dtime)/2
     return dtime
 
-def process_s3(scene_folder, variables, bb = None, **kwargs):
+def s3_processor(scene_folder, variables, bb = None, **kwargs):
 
     ncs = [glob.glob(os.path.join(scene_folder, "**", "*" + k), recursive = True)[0] for k in variables.keys()]
 
@@ -73,13 +73,20 @@ def download(folder, latlim, lonlim, timelim, product_name,
     
     product_folder = os.path.join(folder, "SENTINEL3")
 
+    appending = False
     fn = os.path.join(product_folder, f"{product_name}.nc")
     if os.path.isfile(fn):
-        ds = open_ds(fn)
-        if np.all([x in ds.data_vars for x in req_vars]):
-            return ds
+        os.rename(fn, fn.replace(".nc", "_to_be_appended.nc"))
+        existing_ds = open_ds(fn.replace(".nc", "_to_be_appended.nc"))
+        if np.all([x in existing_ds.data_vars for x in req_vars]):
+            existing_ds = existing_ds.close()
+            os.rename(fn.replace(".nc", "_to_be_appended.nc"), fn)
+            existing_ds = open_ds(fn)
+            return existing_ds[req_vars]
         else:
-            ds = ds.close()
+            appending = True
+            fn = os.path.join(product_folder, f"{product_name}_appendix.nc")
+            req_vars = [x for x in req_vars if x not in existing_ds.data_vars]
 
     if isinstance(variables, type(None)):
         variables = default_vars(product_name, req_vars)
@@ -88,7 +95,7 @@ def download(folder, latlim, lonlim, timelim, product_name,
         post_processors = default_post_processors(product_name, req_vars)
     else:
         default_processors = default_post_processors(product_name, req_vars)
-        post_processors = {k: {True: default_processors[k], False: v}[v == "default"] for k,v in post_processors.items()}
+        post_processors = {k: {True: default_processors[k], False: v}[v == "default"] for k,v in post_processors.items() if k in req_vars}
 
     bb = [lonlim[0], latlim[0], lonlim[1], latlim[1]]
 
@@ -105,29 +112,35 @@ def download(folder, latlim, lonlim, timelim, product_name,
     scenes = sentinelapi.download(product_folder, latlim, lonlim, timelim, 
                                     search_kwargs, node_filter = None)
 
-    ds = sentinelapi.process_sentinel(scenes, variables, process_s3, 
-                                        time_func, f"{product_name}.nc", post_processors, bb = bb)
+    ds_new = sentinelapi.process_sentinel(scenes, variables, "SENTINEL3", time_func, os.path.split(fn)[-1], post_processors, bb = bb)
+
+    if appending:
+        ds = xr.merge([ds_new, existing_ds])
+        lbl = f"Appending new variables (`{'`, `'.join(req_vars)}`) to existing file."
+        ds = save_ds(ds, os.path.join(product_folder, f"{product_name}.nc"), encoding = "initiate", label = lbl)
+        remove_ds(ds_new)
+        remove_ds(existing_ds)
+    else:
+        ds = ds_new
 
     return ds
 
 if __name__ == "__main__":
 
-    ...
-    
-    # folder = r"/Users/hmcoerver/On My Mac/create_table"
-    # latlim = [28.9, 29.7]
-    # lonlim = [30.2, 31.2]
-    # # timelim = ["2021-07-01", "2021-07-11"]
-    # timelim = ["2022-07-01", "2022-07-03"]
+    folder = r"/Users/hmcoerver/Local/s3_test"
+    adjust_logger(True, folder, "INFO")
+    timelim = ["2022-03-25", "2022-04-15"]
+    latlim = [29.4, 29.7]
+    lonlim = [30.7, 31.0]
 
-    # product_name = 'SL_2_LST___'
+    product_name = 'SL_2_LST___'
 
-    # req_vars = ["lst"]
-    # post_processors = None
-    # variables = None
-    # extra_search_kwargs = {}
+    req_vars = ["lst"]
+    post_processors = None
+    variables = None
+    extra_search_kwargs = {}
 
-    # ds = download(folder, latlim, lonlim, timelim, product_name, 
-    #             req_vars, variables = variables,  post_processors = post_processors)
+    ds = download(folder, latlim, lonlim, timelim, product_name, 
+                req_vars, variables = variables,  post_processors = post_processors)
 
 
