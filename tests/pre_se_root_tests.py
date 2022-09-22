@@ -34,6 +34,7 @@ if __name__ == "__main__":
     lonlim = [30.7, 31.0]
     timelim = [datetime.date(2022, 4, 1), datetime.date(2022, 4, 11)]
     adjust_logger(True, folder, "INFO")
+    bin_length = "DEKAD"
     ds = pywapor.pre_se_root.main(folder, latlim, lonlim, timelim, sources)
     assert ds.rio.crs.to_epsg() == 4326
     assert "bt" not in ds.data_vars
@@ -48,12 +49,14 @@ if __name__ == "__main__":
 
     folder = r"/Users/hmcoerver/Local/test2"
     adjust_logger(True, folder, "INFO")
-    timelim = [datetime.date(2022, 4, 1), datetime.date(2022, 4, 3)]
+    timelim = [datetime.date(2022, 4, 1), datetime.date(2022, 4, 15)]
     latlim = [29.4, 29.6]
     lonlim = [30.7, 30.9]
     sources = "level_2_v3"
+    bin_length = 3
+    enhancers = []
     input_data = pywapor.pre_se_root.main(folder, latlim, lonlim, timelim, 
-                                            sources, bin_length = 3)
+                                            sources, bin_length = bin_length)
     assert input_data.rio.crs.to_epsg() == 4326
     assert np.all([x in input_data.data_vars for x in ["ndvi", "p_air_i", "p_air_0_i", "r0_bare", "r0_full", "t_air_i", "t_dew_i", "u_i", "wv_i", "lst"]])
     assert input_data.ndvi.min().values >= -1.
@@ -83,6 +86,8 @@ if __name__ == "__main__":
     latlim = [29.4, 29.6]
     lonlim = [30.7, 30.9]
     sources = "level_1"
+    enhancers = []
+    bin_length = "DEKAD"
     input_data = pywapor.pre_se_root.main(folder, latlim, lonlim, timelim, sources)
     assert input_data.rio.crs.to_epsg() == 4326
     assert np.all([x in input_data.data_vars for x in ["ndvi", "lst"]])
@@ -102,8 +107,8 @@ if __name__ == "__main__":
     assert ds.se_root.min().values >= 0.
     assert ds.se_root.max().values <= 1.
 
-    ####
-    ####
+    # ####
+    # ####
 
     folder = r"/Users/hmcoerver/Local/test4"
     adjust_logger(True, folder, "INFO")

@@ -9,7 +9,7 @@ if __name__ == "__main__":
 
     sources = dict()
     sources["ndvi"] = {'products': [{'source': 'SENTINEL2',
-        'product_name': 'S2MSI2A',
+        'product_name': 'S2MSI2A_R60m',
         'enhancers': 'default',
         'is_example': True}],
     'temporal_interp': 'linear',
@@ -17,7 +17,7 @@ if __name__ == "__main__":
     'composite_type': 'mean'}
 
     sources["r0"] = {'products': [{'source': 'SENTINEL2',
-        'product_name': 'S2MSI2A',
+        'product_name': 'S2MSI2A_R60mXX',
         'enhancers': 'default'}],
     'temporal_interp': 'linear',
     'spatial_interp': 'nearest',
@@ -35,6 +35,7 @@ if __name__ == "__main__":
     lonlim = [30.7, 31.0]
     timelim = [datetime.date(2022, 4, 1), datetime.date(2022, 4, 11)]
     adjust_logger(True, folder, "INFO")
+    bin_length = "DEKAD"
     ds = pywapor.pre_et_look.main(folder, latlim, lonlim, timelim, sources)
     assert ds.rio.crs.to_epsg() == 4326
     assert "ndvi" in ds.data_vars
@@ -52,8 +53,9 @@ if __name__ == "__main__":
     latlim = [29.4, 29.6]
     lonlim = [30.7, 30.9]
     sources = "level_2_v3"
+    bin_length = 4
     input_data = pywapor.pre_et_look.main(folder, latlim, lonlim, timelim, 
-                                            sources, bin_length = 4)
+                                            sources, bin_length = bin_length)
     assert input_data.rio.crs.to_epsg() == 4326
     assert np.all([x in input_data.data_vars for x in ["ndvi", "r0", "se_root"]])
     assert input_data.ndvi.min().values >= -1.
@@ -104,8 +106,8 @@ if __name__ == "__main__":
     latlim = [29.4, 29.6]
     lonlim = [30.7, 30.9]
     sources = "level_2"
-    input_data = pywapor.pre_et_look.main(folder, latlim, lonlim, timelim, 
-                                            sources)
+    bin_length = "DEKAD"
+    input_data = pywapor.pre_et_look.main(folder, latlim, lonlim, timelim, sources)
     assert input_data.rio.crs.to_epsg() == 4326
     assert np.all([x in input_data.data_vars for x in ["ndvi", "r0", "se_root"]])
     assert input_data.ndvi.min().values >= -1.
