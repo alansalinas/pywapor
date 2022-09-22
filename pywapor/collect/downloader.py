@@ -53,7 +53,7 @@ def collect_sources(folder, sources, latlim, lonlim, timelim, return_fps = True)
                     log.warning(f"--> Looks like you installed `netcdf4` incorrectly, see {info_url} for more info.")
 
                 if attempts[(source, product_name)] < max_attempts - 1:
-                    log.info(f"--> Collect attempt {attempts[(source, product_name)] + 1} of {max_attempts} for `{source_name}.{product_name}` failed, trying again after other sources have been collected. ({type(e).__name__}: {e}).")
+                    log.warning(f"--> Collect attempt {attempts[(source, product_name)] + 1} of {max_attempts} for `{source_name}.{product_name}` failed, trying again after other sources have been collected. ({type(e).__name__}: {e}).")
                 else:
                     log.warning(f"--> Collect attempt {attempts[(source, product_name)] + 1} of {max_attempts} for `{source_name}.{product_name}` failed, giving up now, see full traceback below for more info. ({type(e).__name__}: {e}).")
                     log.exception("")

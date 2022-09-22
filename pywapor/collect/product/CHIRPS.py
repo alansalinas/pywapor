@@ -49,6 +49,7 @@ def download(folder, latlim, lonlim, timelim, product_name = "P05", req_vars = [
                 variables = None, post_processors = None):
     folder = os.path.join(folder, "CHIRPS")
 
+    appending = False
     fn = os.path.join(folder, f"{product_name}.nc")
     if os.path.isfile(fn):
         os.rename(fn, fn.replace(".nc", "_to_be_appended.nc"))
