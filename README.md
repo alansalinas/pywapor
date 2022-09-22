@@ -9,7 +9,7 @@ This repository contains a Python implementation of the algorithm used to genera
 Its recommended to install in a clean [conda environment](https://docs.conda.io/projects/conda/en/latest/user-guide/concepts/environments.html) and use [conda](https://docs.conda.io/projects/conda/en/latest/user-guide/install/) to install all the important packages from the `conda-forge` channel.
 
 ```bash
-conda create -n my_pywapor_env --yes -c conda-forge python pip gdal pydap numpy pandas requests matplotlib pyproj scipy pycurl pyshp joblib bs4 rasterio xarray bottleneck geojson tqdm dask rioxarray pyvis shapely lxml cachetools cdsapi sentinelsat geopy 
+conda create -n my_pywapor_env --yes -c conda-forge python pip gdal pydap numpy pandas requests matplotlib pyproj scipy pycurl pyshp joblib bs4 rasterio xarray bottleneck geojson tqdm dask rioxarray pyvis shapely lxml cachetools cdsapi sentinelsat geopy numba
 
 conda activate my_pywapor_env
 ```
@@ -118,6 +118,16 @@ The code in the pywapor.et_look_v2 module of this repository, containing all cor
 For questions, requests or issues with this repository, please contact Bert Coerver at [bert.coerver@fao.org](mailto:bert.coerver@fao.org) or the WaPOR team at [wapor@fao.org](mailto:wapor@fao.org).
 
 ### Release Notes
+
+#### 3.1.0 (2022-09-22)
+<br>
+<ul>
+    <li> Added a thermal sharpening algorithm (<a href = https://github.com/radosuav/pyDMS>pyDMS</a>) to increase LST resolution.</li>
+    <li> Now, when after several failed attempts to download a variable, the code will continue processing other variables. </li>
+    <li> Improved cloud-masking for VIRRSL1. </li>
+    <li> Bugfixes (including several Windows specific ones). </li>
+    <li> More information in the log. </li>
+</ul>
 
 #### 3.0.0 (2022-08-31)
 <br>
