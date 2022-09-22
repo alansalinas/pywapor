@@ -4,7 +4,7 @@ interpolate various parameters in time to match with land-surface-temperature
 times. 
 """
 
-from pywapor.general.processing_functions import save_ds, open_ds, remove_ds
+from pywapor.general.processing_functions import save_ds, open_ds, remove_ds, log_example_ds
 from pywapor.general.reproject import align_pixels
 from pywapor.enhancers.apply_enhancers import apply_enhancer
 from pywapor.general.logger import log
@@ -106,9 +106,13 @@ def main(dss, sources, folder, general_enhancers, example_t_vars = ["lst"]):
             dss2 = func(dss2, var, folder)
 
     # Align all the variables together.
-    example_source = levels.find_setting(sources, "is_example", max_length = 1)[0]
-    log.info(f"--> Example dataset is {example_source[0]}.{example_source[1]}.")
-    example_ds = dss.get(example_source, None)
+    example_source = levels.find_setting(sources, "is_example", max_length = 1, min_length = 1)
+    if len(example_source) == 1:
+        example_ds = dss[example_source[0]]
+        log_example_ds(example_ds)
+    else:
+        log.warning(f"--> No valid example dataset set.")
+        example_ds = None
     spatial_interps = [sources[list(x.data_vars)[0]]["spatial_interp"] for x in dss2.values()]
     dss3, temp_files3 = align_pixels(dss2.values(), folder, spatial_interps, example_ds, fn_append = "_step2")
     cleanup.append(temp_files3)

@@ -6,7 +6,7 @@ import tqdm
 import shutil
 import pywapor
 import warnings
-from pywapor.general.processing_functions import save_ds, open_ds, create_wkt, unpack, make_example_ds, remove_ds
+from pywapor.general.processing_functions import save_ds, open_ds, create_wkt, unpack, make_example_ds, remove_ds, adjust_timelim_dtype
 from pywapor.general.logger import log
 from pywapor.enhancers.apply_enhancers import apply_enhancer
 import xarray as xr
@@ -24,12 +24,7 @@ def download(folder, latlim, lonlim, timelim, search_kwargs, node_filter = None)
     if not os.path.isdir(folder):
         os.makedirs(folder)
 
-    if isinstance(timelim[0], str):
-        timelim[0] = dt.strptime(timelim[0], "%Y-%m-%d")
-        timelim[1] = dt.strptime(timelim[1], "%Y-%m-%d")
-    elif isinstance(timelim[0], np.datetime64):
-        timelim = [timelim[0].astype('M8[ms]').astype('O'), 
-                    timelim[1].astype('M8[ms]').astype('O')]
+    timelim = adjust_timelim_dtype(timelim)
 
     def _progress_bar(self, **kwargs):
         if "checksumming" in kwargs.get("desc", "no_desc"):
@@ -152,6 +147,8 @@ def process_sentinel(scenes, variables, source_name, time_func, final_fn, post_p
         if remove_folder:
             shutil.rmtree(scene_folder)
 
+    log.sub()
+    
     # Merge spatially.
     dss = [xr.concat(dss0, "stacked").median("stacked") for dss0 in dss1.values()]
 
@@ -184,8 +181,6 @@ def process_sentinel(scenes, variables, source_name, time_func, final_fn, post_p
         warnings.filterwarnings("ignore", message="invalid value encountered in true_divide")
         warnings.filterwarnings("ignore", message="divide by zero encountered in true_divide")
         ds = save_ds(ds, fp, chunks = chunks, encoding = "initiate", label = f"Merging files.")
-
-    log.sub()
 
     # Remove intermediate files.
     for dss0 in dss1.values():

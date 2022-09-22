@@ -79,18 +79,14 @@ def main(folder, latlim, lonlim, timelim, sources = "level_1", bin_length = "DEK
     t1 = datetime.datetime.now()
     log.info("> PRE_ET_LOOK").add()
 
-    if isinstance(timelim[0], str):
-        timelim[0] = datetime.datetime.strptime(timelim[0], "%Y-%m-%d")
-        timelim[1] = datetime.datetime.strptime(timelim[1], "%Y-%m-%d")
-
     if isinstance(sources, str):
-        sources = levels.pre_et_look_levels(sources)
+        sources = levels.pre_et_look_levels(sources, bin_length = bin_length)
 
     bins = compositer.time_bins(timelim, bin_length)
 
     general_enhancers = enhancers + [rename_vars, fill_attrs, partial(calc_doys, bins = bins), add_constants]
 
-    dss = downloader.collect_sources(folder, sources, latlim, lonlim, [bins[0], bins[-1]])
+    dss, sources = downloader.collect_sources(folder, sources, latlim, lonlim, [bins[0], bins[-1]], return_fps=False)
 
     ds = compositer.main(dss, sources, folder, general_enhancers, bins)
 
@@ -101,10 +97,10 @@ def main(folder, latlim, lonlim, timelim, sources = "level_1", bin_length = "DEK
 
 if __name__ == "__main__":
 
-    enhancers = "default"
-    diagnostics = None
-    example_source = None
-    bin_length = "DEKAD"
+#     enhancers = "default"
+#     diagnostics = None
+#     example_source = None
+#     bin_length = "DEKAD"
     enhancers = [lapse_rate]
 
 #     import pywapor

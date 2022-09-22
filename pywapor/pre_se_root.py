@@ -67,10 +67,6 @@ def main(folder, latlim, lonlim, timelim, sources = "level_1", bin_length = "DEK
     t1 = datetime.datetime.now()
     log.info("> PRE_SE_ROOT").add()
 
-    if isinstance(timelim[0], str):
-        timelim[0] = datetime.datetime.strptime(timelim[0], "%Y-%m-%d")
-        timelim[1] = datetime.datetime.strptime(timelim[1], "%Y-%m-%d")
-
     if not os.path.exists(folder):
         os.makedirs(folder)
 
@@ -88,8 +84,14 @@ def main(folder, latlim, lonlim, timelim, sources = "level_1", bin_length = "DEK
     buffered_timelim = [adjusted_timelim[0] - np.timedelta64(3, "D"), 
                         adjusted_timelim[1] + np.timedelta64(3, "D")]
 
-    example_dss = downloader.collect_sources(folder, example_sources, latlim, lonlim, adjusted_timelim)
-    other_dss = downloader.collect_sources(folder, other_sources, latlim, lonlim, buffered_timelim)
+    example_dss, example_sources = downloader.collect_sources(folder, example_sources, latlim, lonlim, adjusted_timelim, return_fps = False)
+
+    if len(example_dss) == 0:
+        lbl = f"Unable to collect the essential variable(s) (`{'and'.join(example_t_vars)}`) to which the other variables should be aligned."
+        log.error("--> " + lbl)
+        raise ValueError(lbl)
+    
+    other_dss, other_sources = downloader.collect_sources(folder, other_sources, latlim, lonlim, buffered_timelim, return_fps = False)
     dss= {**example_dss, **other_dss}
 
     ds = aligner.main(dss, sources, folder, general_enhancers, example_t_vars = example_t_vars)
@@ -99,13 +101,13 @@ def main(folder, latlim, lonlim, timelim, sources = "level_1", bin_length = "DEK
 
     return ds
 
-# if __name__ == "__main__":
+if __name__ == "__main__":
 
     # from pywapor.se_root import main as se_root
 
     # sources = "level_1"
 
-    # enhancers = "default"
+    enhancers = []
 
     # folder = r"/Users/hmcoerver/pywapor_notebooks_2"
     # latlim = [28.9, 29.7]

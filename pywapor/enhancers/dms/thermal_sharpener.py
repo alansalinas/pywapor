@@ -117,10 +117,10 @@ def plot_sharpening(lr_fn, hr_fn, var, workdir):
         os.makedirs(workdir)
 
     fig, axs = plt.subplots(1,2, figsize=(10,6), dpi=300, sharex=True, sharey=True)
+    
     # NOTE https://github.com/corteva/rioxarray/issues/580
     lr = xr.open_dataset(lr_fn).isel(band=0).band_data
     hr = xr.open_dataset(hr_fn).Band1
-
     lr_clipped = lr.rio.clip_box(*hr.rio.bounds()) * 0.0001
 
     lr_clipped.plot(ax = axs[0], add_colorbar=False, vmin = 280, vmax = 320)
@@ -191,6 +191,12 @@ def sharpen(dss, var, folder, make_plots = False, vars_for_sharpening = ['nmdi',
 
         out_fns.append(fp_out)
 
+        try:
+            os.remove(highResFilename)
+            os.remove(lowResFilename)
+        except PermissionError as e:
+            ... # NOTE windows...
+
     log.sub()
 
     ds = xr.open_mfdataset(out_fns, preprocess = preprocess, decode_coords = "all")
@@ -208,14 +214,15 @@ def sharpen(dss, var, folder, make_plots = False, vars_for_sharpening = ['nmdi',
 
     dss[var] = ds
 
-    for x in vars_for_sharpening:
-        _ = dss.pop(x)
-
     for x in out_fns:
         remove_ds(x)
     
     if 'cos_solar_zangle' in dss.keys() and remove_cos_solar_zangle:
         remove_ds(dss['cos_solar_zangle'])
+
+    for x in vars_for_sharpening:
+        if x in dss.keys():
+            _ = dss.pop(x)
 
     return dss
 

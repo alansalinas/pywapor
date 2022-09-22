@@ -8,8 +8,8 @@ import os
 from pywapor.general.logger import log
 from pywapor.general.performance import performance_check
 from pywapor.general.processing_functions import process_ds
-from pywapor.general.processing_functions import open_ds, save_ds, remove_ds
-from rasterio import CRS
+from pywapor.general.processing_functions import open_ds, save_ds, remove_ds, log_example_ds
+import rasterio
 import warnings
 
 def get_pixel_sizes(dss):
@@ -20,11 +20,20 @@ def get_pixel_sizes(dss):
     # Pick the dominant CRS.
     crs = uniqs[np.argmax(counts)]
     # Reproject to common CRS.
-    dss = [ds.rio.reproject(CRS.from_epsg(crs)) for ds in dss]
-    return [np.abs(np.prod(v.rio.resolution())) for v in dss]
+    dss2 = [(ds, ds.rio.reproject(rasterio.CRS.from_epsg(crs))) for ds in dss]
+    return {np.abs(np.prod(ds2.rio.resolution())): ds for ds, ds2 in dss2}
+
+def has_changed(ds):
+    if "source" in ds.encoding.keys():
+        changed = not ds.equals(open_ds(ds.encoding["source"]))
+    else:
+        changed = True
+    return changed
 
 def has_geotransform(ds):
     varis = ds.data_vars
+    if not "source" in ds.encoding.keys():
+        return False
     for var in varis:
         with warnings.catch_warnings(record=True) as w:
             _ = rasterio.open(f"netcdf:{ds.encoding['source']}:{var}")
@@ -47,7 +56,8 @@ def align_pixels(dss, folder, spatial_interp = "nearest", example_ds = None, sta
         dss1 = [dss[0]]
     else:
         if isinstance(example_ds, type(None)):
-            example_ds = dss[np.argmin(get_pixel_sizes(dss))]
+            example_ds = min(get_pixel_sizes(dss).items(), key=lambda x: x[0])[1]
+            log_example_ds(example_ds)
         dss1 = list()
         for i, (spat_interp, ds_part) in enumerate(zip(spatial_interp, dss)):
             if needs_reprojecting(ds_part, example_ds):
@@ -127,7 +137,7 @@ def reproject_chunk(src_ds, example_ds, dst_path, spatial_interp = "nearest", st
     variables = dict()
     ncs = list()
 
-    if not "source" in src_ds.encoding.keys() or not has_geotransform(src_ds):
+    if has_changed(src_ds) or not has_geotransform(src_ds):
         src_path = src_ds.encoding.get("source", dst_path).replace(".nc", "_fixed.nc")
         new_src_ds = src_ds.sortby("y", ascending = False)
         new_src_ds = new_src_ds.rio.write_transform(new_src_ds.rio.transform(recalc=True))
@@ -163,7 +173,7 @@ def reproject_chunk(src_ds, example_ds, dst_path, spatial_interp = "nearest", st
 
         @performance_check
         def _save_warped_vrt(src_path, var, vrt_options, part_path):
-            with rasterio.open(f'netcdf:{src_path}:{var}') as src:
+            with rasterio.open(f'NETCDF:{src_path}:{var}') as src:
                 with WarpedVRT(src, **vrt_options) as vrt:
                     rio_shutil.copy(vrt, part_path, driver='netcdf', creation_options = {"COMPRESS": "DEFLATE"})
 

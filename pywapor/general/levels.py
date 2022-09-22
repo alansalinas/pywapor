@@ -2,10 +2,11 @@ import copy
 import pywapor.se_root as se_root
 from functools import partial
 import types
+import numpy as np
 from pywapor.general.logger import log
 from pywapor.enhancers.dms.thermal_sharpener import sharpen
 
-def find_setting(sources, setting_str, max_length = None):
+def find_setting(sources, setting_str, max_length = np.inf, min_length = 0):
     example_sources = list()
     for var, x in sources.items():
         prod = [product for product in x["products"] if setting_str in product.keys()]
@@ -22,9 +23,10 @@ def find_setting(sources, setting_str, max_length = None):
         else:
             if setting_str in x.keys():
                 example_sources.append(var)
-    if isinstance(max_length, int):
-        if len(example_sources) > max_length:
+    if len(example_sources) > max_length:
             log.warning(f"--> Found more than {max_length} products for `{setting_str}`.")
+    if len(example_sources) > max_length or len(example_sources) < min_length:
+        log.warning(f"--> Didn't find any products for `{setting_str}`.")
     return example_sources
 
 def pre_et_look_levels(level = "level_1", bin_length = "DEKAD"):

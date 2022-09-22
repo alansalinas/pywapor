@@ -274,7 +274,7 @@ def main(input_data, et_look_version = "v2", export_vars = "default", chunks = {
         raise ValueError
 
     if len(ds.data_vars) == 0:
-        log.info("--> No data to export, try adjusting `export_vars`.")
+        log.info("--> No data to export, try adjusting `export_vars` or make sure to provide required inputs.")
         ds = None
     else:
         ds = ds.transpose("time_bins", "y", "x") # set dimension order the same for all vars.
