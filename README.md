@@ -124,7 +124,7 @@ For questions, requests or issues with this repository, please contact Bert Coer
 <ul>
     <li> Added a thermal sharpening algorithm (<a href = https://github.com/radosuav/pyDMS>pyDMS</a>) to increase LST resolution.</li>
     <li> Now, when after several failed attempts to download a variable, the code will continue processing other variables. </li>
-    <li> Improved cloud-masking for VIRRSL1. </li>
+    <li> Improved cloud-masking for VIIRSL1. </li>
     <li> Bugfixes (including several Windows specific ones). </li>
     <li> More information in the log. </li>
 </ul>
