@@ -14,10 +14,12 @@ import warnings
 from pywapor.enhancers.apply_enhancers import apply_enhancer
 from pywapor.collect.protocol.crawler import download_url, download_urls
 
-def download(folder, product_name, coords, variables, post_processors, 
+def download(fp, product_name, coords, variables, post_processors, 
                 fn_func, url_func, un_pw = None, tiles = None,  
                 data_source_crs = None, parallel = False, spatial_tiles = True, 
                 request_dims = True, timedelta = None):
+
+    folder = os.path.split(fp)[0]
 
     # Create selection object.
     selection = create_selection(coords, target_crs = data_source_crs)
@@ -62,7 +64,6 @@ def download(folder, product_name, coords, variables, post_processors,
     ds = ds[list(post_processors.keys())]
     
     # Save final output.
-    fp = os.path.join(folder, f"{product_name}.nc")
     ds.attrs = {}
     ds = save_ds(ds, fp, encoding = "initiate", label = "Saving merged data.")
 

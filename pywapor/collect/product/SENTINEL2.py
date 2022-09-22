@@ -7,7 +7,7 @@ from pywapor.general.logger import log, adjust_logger
 import pywapor.collect.protocol.sentinelapi as sentinelapi
 import numpy as np
 from functools import partial
-from pywapor.general.processing_functions import open_ds, remove_ds
+from pywapor.general.processing_functions import open_ds, remove_ds, save_ds
 
 def apply_qa(ds, var):
     # 0 SC_NODATA # 1 SC_SATURATED_DEFECTIVE # 2 SC_DARK_FEATURE_SHADOW
@@ -248,14 +248,21 @@ def download(folder, latlim, lonlim, timelim, product_name,
 
     product_folder = os.path.join(folder, "SENTINEL2")
 
+    appending = False
     fn = os.path.join(product_folder, f"{product_name}.nc")
     if os.path.isfile(fn):
-        ds = open_ds(fn)
-        if np.all([x in ds.data_vars for x in req_vars]):
-            return ds
+        os.rename(fn, fn.replace(".nc", "_to_be_appended.nc"))
+        existing_ds = open_ds(fn.replace(".nc", "_to_be_appended.nc"))
+        if np.all([x in existing_ds.data_vars for x in req_vars]):
+            existing_ds = existing_ds.close()
+            os.rename(fn.replace(".nc", "_to_be_appended.nc"), fn)
+            existing_ds = open_ds(fn)
+            return existing_ds[req_vars]
         else:
-            remove_ds(ds)
-
+            appending = True
+            fn = os.path.join(product_folder, f"{product_name}_appendix.nc")
+            req_vars = [x for x in req_vars if x not in existing_ds.data_vars]
+            
     if isinstance(variables, type(None)):
         variables = default_vars(product_name, req_vars)
 
@@ -263,11 +270,7 @@ def download(folder, latlim, lonlim, timelim, product_name,
         post_processors = default_post_processors(product_name, req_vars)
     else:
         default_processors = default_post_processors(product_name, req_vars)
-        post_processors = {k: {True: default_processors[k], False: v}[v == "default"] for k,v in post_processors.items()}
-
-    if isinstance(timelim[0], str):
-        timelim[0] = dt.strptime(timelim[0], "%Y-%m-%d")
-        timelim[1] = dt.strptime(timelim[1], "%Y-%m-%d")
+        post_processors = {k: {True: default_processors[k], False: v}[v == "default"] for k,v in post_processors.items() if k in req_vars}
 
     bb = [lonlim[0], latlim[0], lonlim[1], latlim[1]]
 
@@ -287,25 +290,34 @@ def download(folder, latlim, lonlim, timelim, product_name,
 
     scenes = sentinelapi.download(product_folder, latlim, lonlim, timelim, search_kwargs, node_filter = node_filter)
 
-    ds = sentinelapi.process_sentinel(scenes, variables, "SENTINEL2", time_func, f"{product_name}.nc", post_processors, bb = bb)
+    ds_new = sentinelapi.process_sentinel(scenes, variables, "SENTINEL2", time_func, os.path.split(fn)[-1], post_processors, bb = bb)
+
+    if appending:
+        ds = xr.merge([ds_new, existing_ds])
+        lbl = f"Appending new variables (`{'`, `'.join(req_vars)}`) to existing file."
+        ds = save_ds(ds, os.path.join(product_folder, f"{product_name}.nc"), encoding = "initiate", label = lbl)
+        remove_ds(ds_new)
+        remove_ds(existing_ds)
+    else:
+        ds = ds_new
 
     return ds
 
-if __name__ == "__main__":
+# if __name__ == "__main__":
 
-    folder = r"/Users/hmcoerver/Local/s2_test"
-    adjust_logger(True, folder, "INFO")
-    timelim = ["2022-03-29", "2022-04-25"]
-    latlim = [28.9, 29.7]
-    lonlim = [30.2, 31.2]
+#     folder = r"/Users/hmcoerver/Local/s2_test"
+#     adjust_logger(True, folder, "INFO")
+#     timelim = ["2022-03-29", "2022-04-25"]
+#     latlim = [28.9, 29.7]
+#     lonlim = [30.2, 31.2]
 
-    product_name = 'S2MSI2A_R60m'
-    req_vars = ["mndwi", "psri", "vari_red_edge", "bsi", "nmdi", "green", "nir"]
-    post_processors = None
-    variables = None
-    extra_search_kwargs = {"cloudcoverpercentage": (0, 30)}
+#     product_name = 'S2MSI2A_R60m'
+#     req_vars = ["mndwi", "psri", "vari_red_edge", "bsi", "nmdi", "green", "nir"]
+#     post_processors = None
+#     variables = None
+#     extra_search_kwargs = {"cloudcoverpercentage": (0, 30)}
 
-    ds = download(folder, latlim, lonlim, timelim, product_name, req_vars, 
-                variables = None,  post_processors = None,
-                extra_search_kwargs = extra_search_kwargs
-                 )
+#     ds = download(folder, latlim, lonlim, timelim, product_name, req_vars, 
+#                 variables = None,  post_processors = None,
+#                 extra_search_kwargs = extra_search_kwargs
+#                  )

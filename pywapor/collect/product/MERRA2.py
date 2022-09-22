@@ -8,7 +8,8 @@ import fnmatch
 import os
 import numpy as np
 from functools import partial
-from pywapor.general.processing_functions import open_ds, remove_ds
+import xarray as xr
+from pywapor.general.processing_functions import open_ds, remove_ds, save_ds
 from pywapor.collect.protocol.crawler import find_paths
 from pywapor.enhancers.temperature import kelvin_to_celsius
 from pywapor.enhancers.pressure import pa_to_kpa
@@ -102,13 +103,20 @@ def download(folder, latlim, lonlim, timelim, product_name, req_vars,
                 variables = None, post_processors = None):
     
     folder = os.path.join(folder, "MERRA2")
+    appending = False
     fn = os.path.join(folder, f"{product_name}.nc")
     if os.path.isfile(fn):
-        ds = open_ds(fn)
-        if np.all([x in ds.data_vars for x in req_vars]):
-            return ds
+        os.rename(fn, fn.replace(".nc", "_to_be_appended.nc"))
+        existing_ds = open_ds(fn.replace(".nc", "_to_be_appended.nc"))
+        if np.all([x in existing_ds.data_vars for x in req_vars]):
+            existing_ds = existing_ds.close()
+            os.rename(fn.replace(".nc", "_to_be_appended.nc"), fn)
+            existing_ds = open_ds(fn)
+            return existing_ds[req_vars]
         else:
-            remove_ds(ds)
+            appending = True
+            fn = os.path.join(folder, f"{product_name}_appendix.nc")
+            req_vars = [x for x in req_vars if x not in existing_ds.data_vars]
 
     spatial_buffer = True
     if spatial_buffer:
@@ -124,7 +132,7 @@ def download(folder, latlim, lonlim, timelim, product_name, req_vars,
         post_processors = default_post_processors(product_name, req_vars)
     else:
         default_processors = default_post_processors(product_name, req_vars)
-        post_processors = {k: {True: default_processors[k], False: v}[v == "default"] for k,v in post_processors.items()}
+        post_processors = {k: {True: default_processors[k], False: v}[v == "default"] for k,v in post_processors.items() if k in req_vars}
 
     timedelta = np.timedelta64(30, "m")
     data_source_crs = get_crss("WGS84")
@@ -133,11 +141,21 @@ def download(folder, latlim, lonlim, timelim, product_name, req_vars,
     un_pw = accounts.get("NASA")
     request_dims = True
 
-    ds = opendap.download(folder, product_name, coords, 
+    ds_new = opendap.download(fn, product_name, coords, 
                 variables, post_processors, fn_func, url_func, un_pw = un_pw, 
                 tiles = tiles, data_source_crs = data_source_crs, parallel = parallel, 
                 spatial_tiles = spatial_tiles, request_dims = request_dims,
                 timedelta = timedelta)
+
+    if appending:
+        ds = xr.merge([ds_new, existing_ds])
+        lbl = f"Appending new variables (`{'`, `'.join(req_vars)}`) to existing file."
+        ds = save_ds(ds, os.path.join(folder, f"{product_name}.nc"), encoding = "initiate", label = lbl)
+        remove_ds(ds_new)
+        remove_ds(existing_ds)
+    else:
+        ds = ds_new
+
     return ds
 
 

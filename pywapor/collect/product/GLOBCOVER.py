@@ -1,6 +1,7 @@
 import os
 from pywapor.collect.protocol import cog
-from pywapor.general.processing_functions import open_ds, remove_ds
+from pywapor.general.processing_functions import open_ds, remove_ds, save_ds
+import xarray as xr
 from functools import partial
 from pywapor.enhancers import lulc
 import numpy as np
@@ -58,13 +59,20 @@ def download(folder, latlim, lonlim, product_name, req_vars = ["lulc"],
     
     folder = os.path.join(folder, "GLOBCOVER")
 
-    fp = os.path.join(folder, f"{product_name}.nc")
-    if os.path.isfile(fp):
-        ds = open_ds(fp)
-        if np.all([x in ds.data_vars for x in req_vars]):
-            return ds
+    appending = False
+    fn = os.path.join(folder, f"{product_name}.nc")
+    if os.path.isfile(fn):
+        os.rename(fn, fn.replace(".nc", "_to_be_appended.nc"))
+        existing_ds = open_ds(fn.replace(".nc", "_to_be_appended.nc"))
+        if np.all([x in existing_ds.data_vars for x in req_vars]):
+            existing_ds = existing_ds.close()
+            os.rename(fn.replace(".nc", "_to_be_appended.nc"), fn)
+            existing_ds = open_ds(fn)
+            return existing_ds[req_vars]
         else:
-            remove_ds(ds)
+            appending = True
+            fn = os.path.join(folder, f"{product_name}_appendix.nc")
+            req_vars = [x for x in req_vars if x not in existing_ds.data_vars]
 
     coords = {"x": ("lon", lonlim), "y": ("lat", latlim)}
 
@@ -75,11 +83,20 @@ def download(folder, latlim, lonlim, product_name, req_vars = ["lulc"],
         post_processors = default_post_processors(product_name, req_vars)
     else:
         default_processors = default_post_processors(product_name, req_vars)
-        post_processors = {k: {True: default_processors[k], False: v}[v == "default"] for k,v in post_processors.items()}
+        post_processors = {k: {True: default_processors[k], False: v}[v == "default"] for k,v in post_processors.items() if k in req_vars}
 
-    ds = cog.download(fp, product_name, coords, variables, 
+    ds_new = cog.download(fn, product_name, coords, variables, 
                         post_processors, url_func, ndv = 0)
-    
+
+    if appending:
+        ds = xr.merge([ds_new, existing_ds])
+        lbl = f"Appending new variables (`{'`, `'.join(req_vars)}`) to existing file."
+        ds = save_ds(ds, os.path.join(folder, f"{product_name}.nc"), encoding = "initiate", label = lbl)
+        remove_ds(ds_new)
+        remove_ds(existing_ds)
+    else:
+        ds = ds_new
+
     return ds
 
 if __name__ == "__main__":

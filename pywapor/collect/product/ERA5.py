@@ -111,7 +111,7 @@ def download(folder, latlim, lonlim, timelim, product_name, req_vars,
     if os.path.isfile(fn_final):
         ds = open_ds(fn_final)
         if np.all([x in ds.data_vars for x in req_vars]):
-            return ds
+            return ds[req_vars]
         else:
             remove_ds(ds)
 

@@ -22,13 +22,20 @@ def download(folder, latlim, lonlim, timelim, product_name, req_vars = ["ndvi", 
 
     folder = os.path.join(folder, "PROBAV")
 
+    appending = False
     fn = os.path.join(folder, f"{product_name}.nc")
     if os.path.isfile(fn):
-        ds = open_ds(fn)
-        if np.all([x in ds.data_vars for x in req_vars]):
-            return ds
+        os.rename(fn, fn.replace(".nc", "_to_be_appended.nc"))
+        existing_ds = open_ds(fn.replace(".nc", "_to_be_appended.nc"))
+        if np.all([x in existing_ds.data_vars for x in req_vars]):
+            existing_ds = existing_ds.close()
+            os.rename(fn.replace(".nc", "_to_be_appended.nc"), fn)
+            existing_ds = open_ds(fn)
+            return existing_ds[req_vars]
         else:
-            remove_ds(ds)
+            appending = True
+            fn = os.path.join(folder, f"{product_name}_appendix.nc")
+            req_vars = [x for x in req_vars if x not in existing_ds.data_vars]
 
     dates = pd.date_range(timelim[0], timelim[1], freq="D")
 
@@ -41,7 +48,7 @@ def download(folder, latlim, lonlim, timelim, product_name, req_vars = ["ndvi", 
         post_processors = default_post_processors(product_name, req_vars)
     else:
         default_processors = default_post_processors(product_name, req_vars)
-        post_processors = {k: {True: default_processors[k], False: v}[v == "default"] for k,v in post_processors.items()}
+        post_processors = {k: {True: default_processors[k], False: v}[v == "default"] for k,v in post_processors.items() if k in req_vars}
 
     coords = {"x": ["lon", None], "y": ["lat", None]}
 
@@ -91,7 +98,16 @@ def download(folder, latlim, lonlim, timelim, product_name, req_vars = ["ndvi", 
 
     ds = ds[req_vars]
 
-    ds = save_ds(ds, os.path.join(folder, f"{product_name}.nc"), label = f"Merging files.")
+    ds_new = save_ds(ds, fn, label = f"Merging files.")
+
+    if appending:
+        ds = xr.merge([ds_new, existing_ds])
+        lbl = f"Appending new variables (`{'`, `'.join(req_vars)}`) to existing file."
+        ds = save_ds(ds, os.path.join(folder, f"{product_name}.nc"), encoding = "initiate", label = lbl)
+        remove_ds(ds_new)
+        remove_ds(existing_ds)
+    else:
+        ds = ds_new
 
     for k, v in dss.items():
         for nc in v:
