@@ -177,7 +177,7 @@ def download_urls(urls, folder, session = None, fps = None, parallel = 0,
     session : request.Session, optional
         Session to use, by default None.
     fps : list, optional
-        Filepaths to store each URL, should be same length as `urls`, ignores `folder, by default None.
+        Filepaths to store each URL, should be same length as `urls`, ignores `folder`, by default None.
     parallel : int, optional
         Download URLs in parallel (currently not implemented), by default 0.
     headers : dict, optional

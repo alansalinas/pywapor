@@ -130,7 +130,7 @@ class DecisionTreeRegressorWithLinearLeafRegression(tree.DecisionTreeRegressor):
 
 class DecisionTreeSharpener(object):
     ''' Decision tree based sharpening (disaggregation) of low-resolution
-    images using high-resolution images. The implementation is mostly based on [Gao2012].
+    images using high-resolution images. The implementation is mostly based on :footcite:t:`gao2012`, 2012.
 
     Decision tree based regressor is trained with high-resolution data resampled to
     low resolution and low-resolution data and then applied
@@ -138,12 +138,12 @@ class DecisionTreeSharpener(object):
     of the low-resolution data.
 
     The implementation includes selecting training data based on homogeneity
-    statistics and using the homogeneity as weight factor ([Gao2012], section 2.2),
+    statistics and using the homogeneity as weight factor (:footcite:t:`gao2012`, 2012, section 2.2),
     performing linear regression with samples located within each regression
-    tree leaf node ([Gao2012], section 2.1), using an ensemble of regression trees
-    ([Gao2012], section 2.1), performing local (moving window) and global regression and
-    combining them based on residuals ([Gao2012] section 2.3) and performing residual
-    analysis and bias correction ([Gao2012], section 2.4)
+    tree leaf node (:footcite:t:`gao2012`, 2012, section 2.1), using an ensemble of regression trees
+    (:footcite:t:`gao2012`, 2012, section 2.1), performing local (moving window) and global regression and
+    combining them based on residuals (:footcite:t:`gao2012`, 2012, section 2.3) and performing residual
+    analysis and bias correction (:footcite:t:`gao2012`, 2012, section 2.4)
 
 
     Parameters
@@ -210,12 +210,6 @@ class DecisionTreeSharpener(object):
     -------
     None
 
-
-    References
-    ----------
-    .. [Gao2012] Gao, F., Kustas, W. P., & Anderson, M. C. (2012). A Data
-       Mining Approach for Sharpening Thermal Satellite Imagery over Land.
-       Remote Sensing, 4(11), 3287–3319. https://doi.org/10.3390/rs4113287
     '''
     def __init__(self,
                  highResFiles,
@@ -453,8 +447,8 @@ class DecisionTreeSharpener(object):
             high-resolution input file. If local regressions
             were trained and low-resolution filename is given then the local
             and global regressions will be combined based on residual values of
-            the different regressions to the low-resolution image (see [Gao2012]
-            2.3). If local regressions were trained and low-resolution
+            the different regressions to the low-resolution image (see :footcite:t:`gao2012`, 2012,
+            section 2.3). If local regressions were trained and low-resolution
             filename is not given then only the local regressions will be used.
 
 
@@ -551,7 +545,7 @@ class DecisionTreeSharpener(object):
     def residualAnalysis(self, disaggregatedFile, lowResFilename, lowResQualityFilename=None,
                          doCorrection=True):
         ''' Perform residual analysis and (optional) correction on the
-        disaggregated file (see [Gao2012] 2.4).
+        disaggregated file (see :footcite:t:`gao2012`, 2012, section 2.4).
 
         Parameters
         ----------

@@ -150,7 +150,7 @@ def trim_sources(reversed_sources, sources):
     Raises
     ------
     ValueError
-        Each `var` must contain unique `source.product`s.
+        Each `var` must contain unique `source.product`.
     """
     for product, varis in reversed_sources.items():
         for var in varis:

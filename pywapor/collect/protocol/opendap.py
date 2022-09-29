@@ -18,7 +18,7 @@ def download(fp, product_name, coords, variables, post_processors,
                 fn_func, url_func, un_pw = None, tiles = None,  
                 data_source_crs = None, parallel = False, spatial_tiles = True, 
                 request_dims = True, timedelta = None):
-    """_summary_
+    """Download data from a OPENDaP server.
 
     Parameters
     ----------
