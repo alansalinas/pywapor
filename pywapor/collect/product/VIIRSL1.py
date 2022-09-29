@@ -26,6 +26,25 @@ from pywapor.general.logger import log, adjust_logger
 from pywapor.enhancers.other import drop_empty_times
 
 def regrid_VNP(workdir, latlim, lonlim, dx_dy = (0.0033, 0.0033)):
+    """Process VIIRS images from curvilinear to rectolinear grid, applies cloud masks, quality masks 
+    and convert data to Brightness Temperature.
+
+    Parameters
+    ----------
+    workdir : str
+        Folder to search for scenes.
+    latlim : list
+        Latitude limits of area of interest.
+    lonlim : list
+        Longitude limits of area of interest.
+    dx_dy : tuple, optional
+        Output pixel size, by default (0.0033, 0.0033).
+
+    Returns
+    -------
+    xr.Dataset
+        Output dataset.
+    """
 
     # Reformat bounding-box.
     bb = [lonlim[0], latlim[0], lonlim[1], latlim[1]]
@@ -214,11 +233,15 @@ def find_VIIRSL1_urls(year_doy_time, product, workdir,
         the bb during the day (night is filtered out).
     product : str
         Name of the product to search.
+    workdir : str
+        Path to folder in which to store data.
+    server_folder : dict
+        Which server side folder to use per product, by default {"VNP02IMG": 5110, "VNP03IMG": 5200, "CLDMSK_L2_VIIRS_SNPP": 5110}.
 
     Returns
     -------
     list
-        Urls linking to the product.
+        URLs linking to the product.
     """
     # Make empty url list.
     urls = list()
@@ -309,6 +332,22 @@ def check_tiles(year_doy_time, latlim, lonlim, workdir, product = "VNP03IMG"):
     return year_doy_time, dropped
 
 def check_geoloc_tile(fp, bb, min_pixels = 100):
+    """Checks if there is relevant data in the dataset.
+
+    Parameters
+    ----------
+    fp : str
+        Path to input file.
+    bb : list
+        Boundingbox, [xmin, ymin, xmax, ymax].
+    min_pixels : int, optional
+        Threshold value, by default 100.
+
+    Returns
+    -------
+    bool
+        True if there are more than `min_pixels` inside the `bb`.
+    """
 
     # Open the geolocation data.
     try: 
@@ -346,6 +385,22 @@ def check_nc(fp, group = "observation_data"):
     return True
 
 def default_vars(product_name, req_vars):
+    """Given a `product_name` and a list of requested variables, returns a dictionary
+    with metadata on which exact layers need to be requested from the server, how they should
+    be renamed, and how their dimensions are defined.
+
+    Parameters
+    ----------
+    product_name : str
+        Name of the product.
+    req_vars : list
+        List of variables to be collected.
+
+    Returns
+    -------
+    dict
+        Metadata on which exact layers need to be requested from the server.
+    """
 
     variables = {
         "VNP02IMG": {"bt": {(), "bt"}},
@@ -362,7 +417,22 @@ def default_vars(product_name, req_vars):
     return out
 
 def default_post_processors(product_name, req_vars = None):
+    """Given a `product_name` and a list of requested variables, returns a dictionary with a 
+    list of functions per variable that should be applied after having collected the data
+    from a server.
 
+    Parameters
+    ----------
+    product_name : str
+        Name of the product.
+    req_vars : list
+        List of variables to be collected.
+
+    Returns
+    -------
+    dict
+        Functions per variable that should be applied to the variable.
+    """
     post_processors = {
         "VNP02IMG": {
             "bt": [partial(drop_empty_times, drop_vars = ["bt"])]
@@ -375,7 +445,32 @@ def default_post_processors(product_name, req_vars = None):
 
 def download(folder, latlim, lonlim, timelim, product_name, req_vars,
                 variables = None, post_processors = None):
+    """Download MODIS data and store it in a single netCDF file.
 
+    Parameters
+    ----------
+    folder : str
+        Path to folder in which to store results.
+    latlim : list
+        Latitude limits of area of interest.
+    lonlim : list
+        Longitude limits of area of interest.
+    timelim : list
+        Period for which to prepare data.
+    product_name : str
+        Name of the product to download.
+    req_vars : list
+        Which variables to download for the selected product.
+    variables : dict, optional
+        Metadata on which exact layers need to be requested from the server, by default None.
+    post_processors : dict, optional
+        Functions per variable that should be applied to the variable, by default None.
+
+    Returns
+    -------
+    xr.Dataset
+        Downloaded data.
+    """
     folder = os.path.join(folder, "VIIRSL1")
     if not os.path.exists(folder):
         os.makedirs(folder)

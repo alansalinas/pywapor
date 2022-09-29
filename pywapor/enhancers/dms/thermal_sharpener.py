@@ -13,10 +13,8 @@ import pywapor
 from pywapor.general.performance import performance_check
 from mpl_toolkits.axes_grid1 import make_axes_locatable
 
-
 def gdal_stop_warnings_and_raise_errors():
-    """https://gis.stackexchange.com/questions/43404/how-to-detect-a-gdal-ogr-warning/68042
-    """
+    # https://gis.stackexchange.com/questions/43404/how-to-detect-a-gdal-ogr-warning/68042
     class GdalErrorHandler(object):
         def __init__(self):
             self.err_level=gdal.CE_None
@@ -34,6 +32,22 @@ def gdal_stop_warnings_and_raise_errors():
 gdal_stop_warnings_and_raise_errors()
 
 def highres_inputs(workdir, temporal_hr_input_data, static_hr_input_data):
+    """Create VRT files with all highres inputs per datetime.
+
+    Parameters
+    ----------
+    workdir : str
+        Folder in which to store the VRT files.
+    temporal_hr_input_data : list
+        Paths to the input highres data.
+    static_hr_input_data : list
+        Paths to static highres data.
+
+    Returns
+    -------
+    list
+        Paths to VRT files.
+    """
 
     if not os.path.exists(workdir):
         os.makedirs(workdir)
@@ -85,6 +99,20 @@ def highres_inputs(workdir, temporal_hr_input_data, static_hr_input_data):
     return fps
 
 def lowres_inputs(workdir, temporal_lr_input_data):
+    """Create VRT files with all lowres inputs per datetime.
+
+    Parameters
+    ----------
+    workdir : str
+        Folder in which to store the VRT files.
+    temporal_hr_input_data : list
+        Paths to the input lowres data.
+
+    Returns
+    -------
+    list
+        Paths to VRT files.
+    """
 
     if not os.path.exists(workdir):
         os.makedirs(workdir)
@@ -107,11 +135,37 @@ def lowres_inputs(workdir, temporal_lr_input_data):
     return fps
 
 def preprocess(ds):
+    """Adds a time dimension to `ds`. Used internally by `sharpen` when calling `xr.open_mfdataset` to create
+    a stacking dimension.
+
+    Parameters
+    ----------
+    ds : xr.Dataset
+        Input dataset.
+
+    Returns
+    -------
+    xr.Dataset
+        Dataset with added time dimension.
+    """
     dt = datetime.datetime.strptime(os.path.split(ds.encoding["source"])[-1], "highres_output_%Y%m%d_%H%M%S.nc")
     ds["Band1"] = ds["Band1"].expand_dims({"time": 1}).assign_coords({"time": [dt]})
     return ds
 
 def plot_sharpening(lr_fn, hr_fn, var, workdir):
+    """Create a plot of a sharpened image.
+
+    Parameters
+    ----------
+    lr_fn : str
+        Path to lowres file.
+    hr_fn : str
+        Path to highres file.
+    var : str
+        Name of var.
+    workdir : str
+        Path to folder in which to save graphs.
+    """
 
     if not os.path.exists(workdir):
         os.makedirs(workdir)
@@ -146,6 +200,26 @@ def plot_sharpening(lr_fn, hr_fn, var, workdir):
 
 def sharpen(dss, var, folder, make_plots = False, vars_for_sharpening = ['nmdi', 'bsi', 'mndwi', 'cos_solar_zangle',
                 'vari_red_edge', 'psri', 'nir', 'green', 'z', 'aspect', 'slope']):
+    """Thermal sharpen datasets.
+
+    Parameters
+    ----------
+    dss : dict
+        Keys are variable names, values are xr.Datasets which contain the lowres and highres input data.
+    var : str
+        Variable name of the lowres input data (usually `lst`).
+    folder : str
+        Path to folder in which to store (intermediate) files.
+    make_plots : bool, optional
+        Whether or not to create plots, by default False.
+    vars_for_sharpening : list, optional
+        Variables to use as sharpening features, by default ['nmdi', 'bsi', 'mndwi', 'cos_solar_zangle', 'vari_red_edge', 'psri', 'nir', 'green', 'z', 'aspect', 'slope'].
+
+    Returns
+    -------
+    dict
+        Keys are variable names, values are (sharpened) datasets.
+    """
 
     if 'cos_solar_zangle' in vars_for_sharpening and not 'cos_solar_zangle' in dss.keys():
         dss = get_cos_solar_zangle(dss, "bt", folder)
@@ -228,6 +302,20 @@ def sharpen(dss, var, folder, make_plots = False, vars_for_sharpening = ['nmdi',
 
 @performance_check
 def thermal_sharpen(highres_fn, lowres_fn):
+    """Sharpen a single lowres file using a single highres file (in which each band contains one feature).
+
+    Parameters
+    ----------
+    highres_fn : str
+        Path to highres input.
+    lowres_fn : str
+        Path to lowres input.
+
+    Returns
+    -------
+    tuple
+        `gdal.Dataset`s of the residual and the corrected image.
+    """
 
     commonOpts = {
                 "highResFiles":                     [highres_fn],
@@ -255,6 +343,22 @@ def thermal_sharpen(highres_fn, lowres_fn):
     return residualImage, correctedImage
 
 def get_cos_solar_zangle(dss, var, folder):
+    """Calculate the cosine solar zenith angle.
+
+    Parameters
+    ----------
+    dss : dict
+        Keys are variables, values are datasets.
+    var : str
+        Variable from which the time is used to calculate `cos_solar_zangle` at.
+    folder : str
+        Path to folder to store files.
+
+    Returns
+    -------
+    dict
+        Keys are variables, values are datasets.
+    """
     reqs = ["slope", "aspect", var]
     checks = [(x in dss.keys()) and (x in dss[x].data_vars) for x in reqs]
     if np.all(checks):

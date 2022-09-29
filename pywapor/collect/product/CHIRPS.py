@@ -8,6 +8,22 @@ import numpy as np
 from pywapor.general.processing_functions import open_ds, remove_ds, save_ds
 
 def default_vars(product_name, req_vars = ["p"]):
+    """Given a `product_name` and a list of requested variables, returns a dictionary
+    with metadata on which exact layers need to be requested from the server, how they should
+    be renamed, and how their dimensions are defined.
+
+    Parameters
+    ----------
+    product_name : str
+        Name of the product.
+    req_vars : list, optional
+        List of variables to be collected, by default ["p"].
+
+    Returns
+    -------
+    dict
+        Metadata on which exact layers need to be requested from the server.
+    """
     
     variables =  {
         "P05": {
@@ -26,6 +42,22 @@ def default_vars(product_name, req_vars = ["p"]):
     return out
 
 def default_post_processors(product_name, req_vars = ["p"]):
+    """Given a `product_name` and a list of requested variables, returns a dictionary with a 
+    list of functions per variable that should be applied after having collected the data
+    from a server.
+
+    Parameters
+    ----------
+    product_name : str
+        Name of the product.
+    req_vars : list, optional
+        List of variables to be collected, by default ["p"].
+
+    Returns
+    -------
+    dict
+        Functions per variable that should be applied to the variable.
+    """
 
     post_processors = {
         "P05": {
@@ -38,15 +70,69 @@ def default_post_processors(product_name, req_vars = ["p"]):
     return out
 
 def fn_func(product_name, tile):
+    """Returns a filename for the `product_name`.
+
+    Parameters
+    ----------
+    product_name : str
+        Name of the product.
+    tile : None
+        Not used.
+
+    Returns
+    -------
+    str
+        Filename.
+    """
     fn = f"{product_name}_temp.nc"
     return fn
 
 def url_func(product_name, tile):
+    """Returns a url at which to collect CHIRPS data.
+
+    Parameters
+    ----------
+    product_name : None
+        Not used.
+    tile : None
+        Not used.
+
+    Returns
+    -------
+    str
+        The url.
+    """
     url = "https://coastwatch.pfeg.noaa.gov/erddap/griddap/chirps20GlobalDailyP05.nc?"
     return url
 
 def download(folder, latlim, lonlim, timelim, product_name = "P05", req_vars = ["p"],
                 variables = None, post_processors = None):
+    """Download CHIRPS data and store it in a single netCDF file.
+
+    Parameters
+    ----------
+    folder : str
+        Path to folder in which to store results.
+    latlim : list
+        Latitude limits of area of interest.
+    lonlim : list
+        Longitude limits of area of interest.
+    timelim : list
+        Period for which to prepare data.
+    product_name : str, optional
+        Name of the product to download, by default "P05".
+    req_vars : list, optional
+        Which variables to download for the selected product, by default ["p"].
+    variables : dict, optional
+        Metadata on which exact layers need to be requested from the server, by default None.
+    post_processors : dict, optional
+        Functions per variable that should be applied to the variable, by default None.
+
+    Returns
+    -------
+    xr.Dataset
+        Downloaded data.
+    """
     folder = os.path.join(folder, "CHIRPS")
 
     appending = False

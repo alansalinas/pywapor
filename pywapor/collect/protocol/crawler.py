@@ -19,6 +19,28 @@ import ssl
 
 @cached(cache=TTLCache(maxsize=2048, ttl=3600))
 def find_paths(url, regex, node_type = "a", tag = "href", filter = None, session = None):
+    """Search for node an tag values on a webpage.
+
+    Parameters
+    ----------
+    url : str
+        URL of page to search.
+    regex : str
+        Regex to filter data.
+    node_type : str, optional
+        Node type to search for, by default "a".
+    tag : str, optional
+        Tage within `node` to search for, by default "href".
+    filter : function, optional
+        Function applied to each tag found, by default None.
+    session : requests.Session, optional
+        session to use to open `url`, by default None.
+
+    Returns
+    -------
+    np.ndarray
+        Array with all tags found.
+    """
     if isinstance(session, type(None)):
         context = ssl._create_unverified_context()
         f = urllib.request.urlopen(url, context = context)
@@ -35,6 +57,22 @@ def find_paths(url, regex, node_type = "a", tag = "href", filter = None, session
     return file_tags
 
 def crawl(urls, regex, filter_regex, session, label_filter = None, list_out = False):
+    """Search for tags on multiple pages.
+
+    Parameters
+    ----------
+    urls : dict
+        Values are urls to search.
+    regex : str
+        Regex to filter data.
+    session : requests.Session
+        session to use to open `url`.
+
+    Returns
+    -------
+    dict
+        URLs found.
+    """
 
     def _filter(tag):
         url = tag["href"]
@@ -128,6 +166,36 @@ def update_urls(urls, dled_files, relevant_fps, checker_function = None):
 def download_urls(urls, folder, session = None, fps = None, parallel = 0, 
                     headers = None, checker_function = None, 
                     max_tries = 10, wait_sec = 15, meta_max_tries = 2):
+    """Download URLs to a folder.
+
+    Parameters
+    ----------
+    urls : list
+        URLs to download.
+    folder : str
+        Path to folder in which to download.
+    session : request.Session, optional
+        Session to use, by default None.
+    fps : list, optional
+        Filepaths to store each URL, should be same length as `urls`, ignores `folder`, by default None.
+    parallel : int, optional
+        Download URLs in parallel (currently not implemented), by default 0.
+    headers : dict, optional
+        Headers to include with requests, by default None.
+    checker_function : function, optional
+        Function to apply to downloaded files to see if they are valid, by default None.
+    max_tries : int, optional
+        Max number of tries to download a single file (in case of server side errors), by default 10.
+    wait_sec : int, optional
+        How many seconds to wait between retries, by default 15.
+    meta_max_tries : int, optional
+        Max number of tries to download all URLs before giving up, by default 2.
+
+    Returns
+    -------
+    list
+        Paths to downloaded files.
+    """
     
     relevant_fps = list()
     try_n = 0
@@ -194,6 +262,35 @@ def _download_url(url, fp, session = None, waitbar = True, headers = None):
 
 def download_url(url, fp, session = None, waitbar = True, headers = None, 
                     max_tries = 10, wait_sec = 15):
+    """Download a URL to a file.
+
+    Parameters
+    ----------
+    url : str
+        URL to download.
+    fp : str
+        Path to file to download into.
+    session : requests.Session, optional
+        Session to use, by default None.
+    waitbar : bool, optional
+        Display a download progress bar, by default True.
+    headers : dict, optional
+        Headers to include with requests, by default None.
+    max_tries : int, optional
+        Max number of tries to download a single file (in case of server side errors), by default 10.
+    wait_sec : int, optional
+        How many seconds to wait between retries, by default 15.
+
+    Returns
+    -------
+    str
+        Path to downloaded file.
+
+    Raises
+    ------
+    NameError
+        Raised when `max_tries` is exceeeded.
+    """
     try_n = 0
     succes = False
     while try_n <= max_tries-1 and not succes:

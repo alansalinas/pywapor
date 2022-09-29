@@ -124,10 +124,11 @@ def main(folder, max_lst_uncertainty = 2.5, final_bb = None):
     if os.path.isfile(fp):
         os.remove(fp)
 
-    encoding = {v: {"zlib": True, "dtype": "float32"} for v in list(ds.data_vars)}
-    encoding["time"] = {"dtype": "float64"}
-
-    ds = save_ds(ds, fp, encoding = encoding, label = "Merging files.")
+    # encoding = {v: {"zlib": True, "dtype": "float32"} for v in list(ds.data_vars)}
+    # encoding["time"] = {"dtype": "float64"}
+    ds = ds.rio.write_crs(target_crs)
+    
+    ds = save_ds(ds, fp, encoding = "initiate", label = "Merging files.")
 
     for x in dss:
         remove_ds(x)

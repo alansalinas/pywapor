@@ -10,6 +10,20 @@ from functools import partial
 from pywapor.general.processing_functions import open_ds, remove_ds, save_ds
 
 def apply_qa(ds, var):
+    """Mask SENTINEL2 data using a qa variable.
+
+    Parameters
+    ----------
+    ds : xr.Dataset
+        Input data, should contain `"qa"` and `var` as variables.
+    var : str
+        Variable name in `ds` to be masked.
+
+    Returns
+    -------
+    xr.Dataset
+        Masked dataset.
+    """
     # 0 SC_NODATA # 1 SC_SATURATED_DEFECTIVE # 2 SC_DARK_FEATURE_SHADOW
     # 3 SC_CLOUD_SHADOW # 4 SC_VEGETATION # 5 SC_NOT_VEGETATED
     # 6 SC_WATER # 7 SC_UNCLASSIFIED # 8 SC_CLOUD_MEDIUM_PROBA
@@ -23,11 +37,41 @@ def apply_qa(ds, var):
     return ds
 
 def mask_invalid(ds, var, valid_range = (1, 65534)):
+    """Mask invalid data.
+
+    Parameters
+    ----------
+    ds : xr.Dataset
+        Input data.
+    var : str
+        Variable to mask.
+    valid_range : tuple, optional
+        Range of valid values in `var`, by default (1, 65534).
+
+    Returns
+    -------
+    xr.Dataset
+        Masked data.
+    """
     # 0 = NODATA, 65535 = SATURATED
     ds[var] = ds[var].where((ds[var] >= valid_range[0]) & (ds[var] <= valid_range[1]))
     return ds
 
 def scale_data(ds, var):
+    """Apply a scale and offset factor to `ds`.
+
+    Parameters
+    ----------
+    ds : xr.Dataset
+        Input dataset.
+    var : str
+        Variable to scale and offset.
+
+    Returns
+    -------
+    xr.Dataset
+        Output data.
+    """
     scale = 1./10000. # BOA_QUANTIFICATION_VALUE
     offset = -1000 # BOA_ADD_OFFSET
     ds[var] = (ds[var] + offset) * scale
@@ -35,6 +79,22 @@ def scale_data(ds, var):
     return ds
 
 def calc_normalized_difference(ds, var, bands = ["nir", "red"]):
+    """Calculate the normalized difference of two bands.
+
+    Parameters
+    ----------
+    ds : xr.Dataset
+        Input data.
+    var : str
+        Name of the variable in which to store the normalized difference.
+    bands : list, optional
+        The two bands to use to calculate the norm. difference, by default ["nir", "red"].
+
+    Returns
+    -------
+    xr.Dataset
+        Output data.
+    """
     if np.all([x in ds.data_vars for x in bands]):
         da = (ds[bands[0]] - ds[bands[1]]) / (ds[bands[0]] + ds[bands[1]])
         ds[var] = da.clip(-1, 1)
@@ -43,6 +103,20 @@ def calc_normalized_difference(ds, var, bands = ["nir", "red"]):
     return ds
 
 def calc_psri(ds, var):
+    """Calculate the PSRI as ("red" - "blue)/"red_edge_740".
+
+    Parameters
+    ----------
+    ds : xr.Dataset
+        Input data.
+    var : str
+        Name of the variable in which to store the normalized difference.
+
+    Returns
+    -------
+    xr.Dataset
+        Output data.
+    """
     reqs = ["red", "blue", "red_edge_740"]
     if np.all([x in ds.data_vars for x in reqs]):
         da = (ds["red"] - ds["blue"]) / ds["red_edge_740"]
@@ -52,6 +126,20 @@ def calc_psri(ds, var):
     return ds
 
 def calc_nmdi(ds, var):
+    """Calculate the NMDI.
+
+    Parameters
+    ----------
+    ds : xr.Dataset
+        Input data.
+    var : str
+        Name of the variable in which to store the normalized difference.
+
+    Returns
+    -------
+    xr.Dataset
+        Output data.
+    """
     reqs = ["swir1", "swir2", "nir"]
     if np.all([x in ds.data_vars for x in reqs]):
         ds["nominator"] = ds["swir1"] - ds["swir2"]
@@ -62,6 +150,20 @@ def calc_nmdi(ds, var):
     return ds
 
 def calc_bsi(ds, var):
+    """Calculate the BSI.
+
+    Parameters
+    ----------
+    ds : xr.Dataset
+        Input data.
+    var : str
+        Name of the variable in which to store the normalized difference.
+
+    Returns
+    -------
+    xr.Dataset
+        Output data.
+    """
     reqs = ["nir", "swir1", "red", "blue"]
     if np.all([x in ds.data_vars for x in reqs]):
         ds["nominator"] = ds["nir"] + ds["blue"]
@@ -73,6 +175,20 @@ def calc_bsi(ds, var):
     return ds
 
 def calc_vari_red_egde(ds, var):
+    """Calculate the VARI_RED_EDGE.
+
+    Parameters
+    ----------
+    ds : xr.Dataset
+        Input data.
+    var : str
+        Name of the variable in which to store the normalized difference.
+
+    Returns
+    -------
+    xr.Dataset
+        Output data.
+    """
     reqs = ["red_edge_740", "blue", "red"]
     if np.all([x in ds.data_vars for x in reqs]):
         n1 = ds["red_edge_740"] - 1.7 * ds["red"] + 0.7 * ds["blue"]
@@ -84,6 +200,20 @@ def calc_vari_red_egde(ds, var):
     return ds
 
 def calc_r0(ds, var):
+    """Calculate the Albedo.
+
+    Parameters
+    ----------
+    ds : xr.Dataset
+        Input data.
+    var : str
+        Name of the variable in which to store the normalized difference.
+
+    Returns
+    -------
+    xr.Dataset
+        Output data.
+    """
     weights = {
         "blue": 0.074,
         "green": 0.083,
@@ -102,6 +232,22 @@ def calc_r0(ds, var):
     return ds
 
 def default_vars(product_name, req_vars):
+    """Given a `product_name` and a list of requested variables, returns a dictionary
+    with metadata on which exact layers need to be requested from the server, how they should
+    be renamed, and how their dimensions are defined.
+
+    Parameters
+    ----------
+    product_name : str
+        Name of the product.
+    req_vars : list
+        List of variables to be collected.
+
+    Returns
+    -------
+    dict
+        Metadata on which exact layers need to be requested from the server.
+    """
 
     variables = {
 
@@ -184,6 +330,22 @@ def default_vars(product_name, req_vars):
     return out
 
 def default_post_processors(product_name, req_vars):
+    """Given a `product_name` and a list of requested variables, returns a dictionary with a 
+    list of functions per variable that should be applied after having collected the data
+    from a server.
+
+    Parameters
+    ----------
+    product_name : str
+        Name of the product.
+    req_vars : list
+        List of variables to be collected.
+
+    Returns
+    -------
+    dict
+        Functions per variable that should be applied to the variable.
+    """
     
     post_processors = {
         "S2MSI2A_R20m": {
@@ -234,6 +396,18 @@ def default_post_processors(product_name, req_vars):
     return out
 
 def time_func(fn):
+    """Return a np.datetime64 given a filename.
+
+    Parameters
+    ----------
+    fn : str
+        Filename.
+
+    Returns
+    -------
+    np.datetime64
+        Date as described in the filename.
+    """
     dtime = np.datetime64(dt.strptime(fn.split("_")[2], "%Y%m%dT%H%M%S"))
     return dtime
 
@@ -245,6 +419,34 @@ def s2_processor(scene_folder, variables):
 def download(folder, latlim, lonlim, timelim, product_name, 
                 req_vars, variables = None, post_processors = None, 
                 extra_search_kwargs = {"cloudcoverpercentage": (0, 30)}):
+    """Download SENTINEL2 data and store it in a single netCDF file.
+
+    Parameters
+    ----------
+    folder : str
+        Path to folder in which to store results.
+    latlim : list
+        Latitude limits of area of interest.
+    lonlim : list
+        Longitude limits of area of interest.
+    timelim : list
+        Period for which to prepare data.
+    product_name : str
+        Name of the product to download.
+    req_vars : list
+        Which variables to download for the selected product.
+    variables : dict, optional
+        Metadata on which exact layers need to be requested from the server, by default None.
+    post_processors : dict, optional
+        Functions per variable that should be applied to the variable, by default None.
+    extra_search_kwargs : dict
+        Extra search kwargs passed to SentinelAPI, by default {"cloudcoverpercentage": (0, 30)}.
+
+    Returns
+    -------
+    xr.Dataset
+        Downloaded data.
+    """
 
     product_folder = os.path.join(folder, "SENTINEL2")
 

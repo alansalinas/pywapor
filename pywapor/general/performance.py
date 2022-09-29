@@ -6,6 +6,18 @@ import numpy as np
 import xarray as xr
 
 def format_bytes(size):
+    """Convert bytes to KB, MB, GB or TB.
+
+    Parameters
+    ----------
+    size : int
+        Total bytes.
+
+    Returns
+    -------
+    tuple
+        Converted size and label.
+    """
     power = 2**10
     n = 0
     power_labels = {0: '', 1: 'K', 2: 'M', 3: 'G', 4: 'T'}
@@ -15,6 +27,18 @@ def format_bytes(size):
     return size, power_labels[n]+'B'
 
 def performance_check(func):
+    """Add memory usage and elapsed time logger to a function.
+
+    Parameters
+    ----------
+    func : function
+        Function to monitor
+
+    Returns
+    -------
+    function
+        Function with added logging and a new `label` keyword argument.
+    """
     def wrapper_func(*args, **kwargs):
         if "label" in kwargs.keys():
             label = kwargs.pop("label")
@@ -39,6 +63,15 @@ def performance_check(func):
     return wrapper_func
 
 def decorate_function(obj, decorator):
+    """Apply a decorator to a function if it hasn't already been decorated by this function.
+
+    Parameters
+    ----------
+    obj : function
+        Function to be decorated.
+    decorator : function
+        Decorator function.
+    """
     module = obj.__module__
     name = obj.__name__
     if isinstance(obj, types.FunctionType) and not hasattr(obj, 'decorated'):

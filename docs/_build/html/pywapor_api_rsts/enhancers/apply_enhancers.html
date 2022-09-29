@@ -7,6 +7,7 @@
   <title>apply_enhancers &mdash; pyWaPOR  documentation</title>
       <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
       <link rel="stylesheet" href="../../_static/css/theme.css" type="text/css" />
+      <link rel="stylesheet" href="../../_static/copybutton.css" type="text/css" />
       <link rel="stylesheet" href="../../_static/css/custom.css" type="text/css" />
   <!--[if lt IE 9]>
     <script src="../../_static/js/html5shiv.min.js"></script>
@@ -17,11 +18,14 @@
         <script src="../../_static/underscore.js"></script>
         <script src="../../_static/_sphinx_javascript_frameworks_compat.js"></script>
         <script src="../../_static/doctools.js"></script>
+        <script src="../../_static/sphinx_highlight.js"></script>
+        <script src="../../_static/clipboard.min.js"></script>
+        <script src="../../_static/copybutton.js"></script>
         <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
     <script src="../../_static/js/theme.js"></script>
     <link rel="index" title="Index" href="../../genindex.html" />
     <link rel="search" title="Search" href="../../search.html" />
-    <link rel="next" title="pywapor.general" href="../general.html" />
+    <link rel="next" title="other" href="other.html" />
     <link rel="prev" title="temperature" href="temperature.html" /> 
 </head>
 
@@ -54,10 +58,18 @@
 <li class="toctree-l3"><a class="reference internal" href="gap_fill.html">gap_fill</a></li>
 <li class="toctree-l3"><a class="reference internal" href="lulc.html">lulc</a></li>
 <li class="toctree-l3"><a class="reference internal" href="temperature.html">temperature</a></li>
-<li class="toctree-l3 current"><a class="current reference internal" href="#">apply_enhancers</a></li>
+<li class="toctree-l3 current"><a class="current reference internal" href="#">apply_enhancers</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#pywapor.enhancers.apply_enhancers.apply_enhancer"><code class="docutils literal notranslate"><span class="pre">apply_enhancer()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="other.html">other</a></li>
+<li class="toctree-l3"><a class="reference internal" href="pressure.html">pressure</a></li>
+<li class="toctree-l3"><a class="reference internal" href="wind.html">wind</a></li>
+<li class="toctree-l3"><a class="reference internal" href="dms.html">dms</a></li>
 </ul>
 </li>
 <li class="toctree-l2"><a class="reference internal" href="../general.html">pywapor.general</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../collect.html">pywapor.collect</a></li>
 </ul>
 </li>
 <li class="toctree-l1"><a class="reference internal" href="../../_etlook.html">ETLook</a></li>
@@ -119,8 +131,8 @@
 <span id="apply-enhancers"></span><h1>apply_enhancers<a class="headerlink" href="#module-pywapor.enhancers.apply_enhancers" title="Permalink to this heading"></a></h1>
 <dl class="py function">
 <dt class="sig sig-object py" id="pywapor.enhancers.apply_enhancers.apply_enhancer">
-<span class="sig-name descname"><span class="pre">apply_enhancer</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">ds</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">variable</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">enhancer</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">source</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">log_it</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pywapor.enhancers.apply_enhancers.apply_enhancer" title="Permalink to this definition"></a></dt>
-<dd><p>_summary_</p>
+<span class="sig-name descname"><span class="pre">apply_enhancer</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">ds</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">variable</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">enhancer</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pywapor.enhancers.apply_enhancers.apply_enhancer" title="Permalink to this definition"></a></dt>
+<dd><p>Apple a function to a (variable in a) dataset.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><ul class="simple">
@@ -128,16 +140,13 @@
 <li><p><strong>variable</strong> (<em>str</em>) – Variable name to enhance.</p></li>
 <li><p><strong>enhancer</strong> (<em>function</em>) – Function to be applied to <cite>variable</cite> inside <cite>ds</cite>. Should take <cite>ds</cite> as
 first argument and <cite>variable</cite> as second.</p></li>
-<li><p><strong>source</strong> (<em>str</em><em>, </em><em>optional</em>) – Specifies the source of the data inside <cite>ds</cite> for logging purposes, by default None.</p></li>
-<li><p><strong>log_it</strong> (<em>bool</em><em>, </em><em>optional</em>) – Create a label to log or not, by default True.</p></li>
 </ul>
 </dd>
 <dt class="field-even">Returns</dt>
-<dd class="field-even"><p><ul class="simple">
-<li><p><em>xr.Dataset</em> – The enhanced dataset.</p></li>
-<li><p><em>str</em> – The label to log when calculating the dataset.</p></li>
-</ul>
-</p>
+<dd class="field-even"><p>The enhanced dataset and the label to log when calculating the dataset.</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>tuple</p>
 </dd>
 </dl>
 </dd></dl>
@@ -149,7 +158,7 @@ first argument and <cite>variable</cite> as second.</p></li>
           </div>
           <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
         <a href="temperature.html" class="btn btn-neutral float-left" title="temperature" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
-        <a href="../general.html" class="btn btn-neutral float-right" title="pywapor.general" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+        <a href="other.html" class="btn btn-neutral float-right" title="other" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
     </div>
 
   <hr/>

@@ -68,7 +68,7 @@ def etlook_decorator(func):
             x.attrs["et_look_module"] = group
             return x
         else:
-            log.info(f"--> Insufficient data found for `{func.__name__}`.")
+            log.warning(f"--> Insufficient data found for `{func.__name__}`.")
     wrapper_func.__module__ = func.__module__
     wrapper_func.__name__ = func.__name__
     setattr(wrapper_func, "decorated", True)

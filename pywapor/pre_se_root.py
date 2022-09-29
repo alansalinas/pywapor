@@ -15,6 +15,18 @@ import pywapor.general.pre_defaults as defaults
 from pywapor.general.logger import log
 
 def rename_meteo(ds, *args):
+    """Rename some variables in a dataset.
+
+    Parameters
+    ----------
+    ds : xr.Dataset
+        Input dataset whose variables will be renamed.
+
+    Returns
+    -------
+    xr.Dataset
+        Dataset with renamed variables.
+    """
     renames = {
                 "t_air": "t_air_i",
                 "u2m": "u2m_i",
@@ -31,7 +43,18 @@ def rename_meteo(ds, *args):
     return ds
 
 def add_constants(ds, *args):
-    # TODO remove, this is duplicate from pywapor.pre_et_look
+    """Adds default dimensionless constants to a dataset.
+
+    Parameters
+    ----------
+    ds : xr.Dataset
+        Dataset to which the constants will be added.
+
+    Returns
+    -------
+    xr.Dataset
+        Dataset with extra variables.
+    """
     ds = ds.assign(defaults.constants_defaults())
     return ds
 

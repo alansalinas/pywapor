@@ -20,6 +20,28 @@ import logging
 from sentinelsat.download import Downloader
 
 def download(folder, latlim, lonlim, timelim, search_kwargs, node_filter = None):
+    """Download data using the SentinelSAT API.
+
+    Parameters
+    ----------
+    folder : str
+        Path to folder in which to download data.
+    latlim : list
+        Latitude limits of area of interest.
+    lonlim : list
+        Longitude limits of area of interest.
+    timelim : list
+        Period for which to prepare data.
+    search_kwargs : dict
+        Extra search kwargs.
+    node_filter : function, optional
+        Function to filter files inside a node, by default None.
+
+    Returns
+    -------
+    list
+        Paths to downloaded nodes.
+    """
 
     if not os.path.isdir(folder):
         os.makedirs(folder)
@@ -72,6 +94,35 @@ def download(folder, latlim, lonlim, timelim, search_kwargs, node_filter = None)
     return scenes
 
 def process_sentinel(scenes, variables, source_name, time_func, final_fn, post_processors, bb = None):
+    """Process downloaded Sentinel scenes into netCDFs.
+
+    Parameters
+    ----------
+    scenes : list
+        Paths to downloaded nodes.
+    variables : dict
+        Keys are variable names, values are additional settings.
+    source_name : "SENTINEL2" | "SENTINEL3"
+        Whether the data comes from S2 or S3.
+    time_func : function
+        Function that parses a np.datetime64 from a filename.
+    final_fn : str
+        Path to the file in which to store all the combined data.
+    post_processors : dict
+        Functions to apply when the data has been processed.
+    bb : list, optional
+        Boundingbox to clip to, [xmin, ymin, xmax, ymax], by default None.
+
+    Returns
+    -------
+    xr.Dataset
+        Ouput data.
+
+    Raises
+    ------
+    ValueError
+        Invalid value for `source_name`.
+    """
 
     chunks = {"time": 1, "x": 1000, "y": 1000}
 

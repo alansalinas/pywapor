@@ -15,10 +15,6 @@ from itertools import chain
 import pywapor.general.levels as levels
 
 
-def is_aligned(ds, example_ds):
-    return ds.equals(example_ds)
-
-
 def main(dss, sources, folder, general_enhancers, example_t_vars = ["lst"]):
     """Aligns the datetimes in de `dss` xr.Datasets with the datetimes of the 
     dataset with variable `example_t_var`.
@@ -32,11 +28,11 @@ def main(dss, sources, folder, general_enhancers, example_t_vars = ["lst"]):
         Configuration for each variable and source.
     folder : str
         Path to folder in which to store (intermediate) data.
-    enhancers : list | "default", optional
+    general_enhancers : list
         Functions to apply to the xr.Dataset before creating the final
         output, by default "default".
-    example_t_var : str, optional
-        Which variable to align the other datasets to in the time dimension, by default "lst".
+    example_t_var : list, optional
+        Which variables to align the other datasets to in the time dimension, by default ["lst"].
 
     Returns
     -------

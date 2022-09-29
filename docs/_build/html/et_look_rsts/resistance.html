@@ -7,6 +7,7 @@
   <title>Resistance &mdash; pyWaPOR  documentation</title>
       <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
       <link rel="stylesheet" href="../_static/css/theme.css" type="text/css" />
+      <link rel="stylesheet" href="../_static/copybutton.css" type="text/css" />
       <link rel="stylesheet" href="../_static/css/custom.css" type="text/css" />
   <!--[if lt IE 9]>
     <script src="../_static/js/html5shiv.min.js"></script>
@@ -17,6 +18,9 @@
         <script src="../_static/underscore.js"></script>
         <script src="../_static/_sphinx_javascript_frameworks_compat.js"></script>
         <script src="../_static/doctools.js"></script>
+        <script src="../_static/sphinx_highlight.js"></script>
+        <script src="../_static/clipboard.min.js"></script>
+        <script src="../_static/copybutton.js"></script>
         <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
         <script>window.MathJax = {"tex": {"inlineMath": [["$", "$"], ["\\(", "\\)"]], "processEscapes": true}, "options": {"ignoreHtmlClass": "tex2jax_ignore|mathjax_ignore|document", "processHtmlClass": "tex2jax_process|mathjax_process|math|output_area"}}</script>
         <script defer="defer" src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
@@ -55,7 +59,12 @@
 <li class="toctree-l2"><a class="reference internal" href="meteo.html">Meteo</a></li>
 <li class="toctree-l2"><a class="reference internal" href="neutral.html">Neutral</a></li>
 <li class="toctree-l2"><a class="reference internal" href="radiation.html">Radiation</a></li>
-<li class="toctree-l2 current"><a class="current reference internal" href="#">Resistance</a></li>
+<li class="toctree-l2 current"><a class="current reference internal" href="#">Resistance</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#pywapor.et_look_v2_v3.resistance.atmospheric_canopy_resistance"><code class="docutils literal notranslate"><span class="pre">atmospheric_canopy_resistance()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#pywapor.et_look_v2_v3.resistance.canopy_resistance"><code class="docutils literal notranslate"><span class="pre">canopy_resistance()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#pywapor.et_look_v2_v3.resistance.soil_resistance"><code class="docutils literal notranslate"><span class="pre">soil_resistance()</span></code></a></li>
+</ul>
+</li>
 <li class="toctree-l2"><a class="reference internal" href="roughness.html">Roughness</a></li>
 <li class="toctree-l2"><a class="reference internal" href="solar_radiation.html">Solar Radiation</a></li>
 <li class="toctree-l2"><a class="reference internal" href="stress.html">Stress</a></li>
@@ -116,11 +125,11 @@
     text-align: unset;
 }
 </style>
-<section id="module-pywapor.et_look_v2.resistance">
-<span id="resistance"></span><h1>Resistance<a class="headerlink" href="#module-pywapor.et_look_v2.resistance" title="Permalink to this heading"></a></h1>
+<section id="module-pywapor.et_look_v2_v3.resistance">
+<span id="resistance"></span><h1>Resistance<a class="headerlink" href="#module-pywapor.et_look_v2_v3.resistance" title="Permalink to this heading"></a></h1>
 <dl class="py function">
-<dt class="sig sig-object py" id="pywapor.et_look_v2.resistance.atmospheric_canopy_resistance">
-<span class="sig-name descname"><span class="pre">atmospheric_canopy_resistance</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">lai_eff</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">stress_rad</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">stress_vpd</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">stress_temp</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">rs_min</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">70</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">rcan_max</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1000000.0</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pywapor.et_look_v2.resistance.atmospheric_canopy_resistance" title="Permalink to this definition"></a></dt>
+<dt class="sig sig-object py" id="pywapor.et_look_v2_v3.resistance.atmospheric_canopy_resistance">
+<span class="sig-name descname"><span class="pre">atmospheric_canopy_resistance</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">lai_eff</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">stress_rad</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">stress_vpd</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">stress_temp</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">rs_min</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">70</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">rcan_max</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1000000.0</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pywapor.et_look_v2_v3.resistance.atmospheric_canopy_resistance" title="Permalink to this definition"></a></dt>
 <dd><p>Computes canopy resistance excluding soil moisture stress.</p>
 <div class="math notranslate nohighlight">
 \[r_{canopy,0}=\left(\frac{r_{s,min}}{I_{lai, eff}}\right)\cdot
@@ -166,8 +175,8 @@
 </dd></dl>
 
 <dl class="py function">
-<dt class="sig sig-object py" id="pywapor.et_look_v2.resistance.canopy_resistance">
-<span class="sig-name descname"><span class="pre">canopy_resistance</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">r_canopy_0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">stress_moist</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">rcan_max</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1000000.0</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pywapor.et_look_v2.resistance.canopy_resistance" title="Permalink to this definition"></a></dt>
+<dt class="sig sig-object py" id="pywapor.et_look_v2_v3.resistance.canopy_resistance">
+<span class="sig-name descname"><span class="pre">canopy_resistance</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">r_canopy_0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">stress_moist</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">rcan_max</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1000000.0</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pywapor.et_look_v2_v3.resistance.canopy_resistance" title="Permalink to this definition"></a></dt>
 <dd><p>Computes canopy resistance.</p>
 <div class="math notranslate nohighlight">
 \[r_{canopy}=\frac{r_{canopy,0}}{S_{m}}\]</div>
@@ -203,8 +212,8 @@
 </dd></dl>
 
 <dl class="py function">
-<dt class="sig sig-object py" id="pywapor.et_look_v2.resistance.soil_resistance">
-<span class="sig-name descname"><span class="pre">soil_resistance</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">se_top</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">land_mask</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">r_soil_pow</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">-2.1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">r_soil_min</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">800</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pywapor.et_look_v2.resistance.soil_resistance" title="Permalink to this definition"></a></dt>
+<dt class="sig sig-object py" id="pywapor.et_look_v2_v3.resistance.soil_resistance">
+<span class="sig-name descname"><span class="pre">soil_resistance</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">se_top</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">land_mask</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">r_soil_pow</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">-2.1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">r_soil_min</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">800</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pywapor.et_look_v2_v3.resistance.soil_resistance" title="Permalink to this definition"></a></dt>
 <dd><p>Computes soil resistance.</p>
 <div class="math notranslate nohighlight">
 \[r_{soil}=r_{soil, min}\cdot \left(S_{e,top}\right)^{a}\]</div>

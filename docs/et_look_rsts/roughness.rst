@@ -3,7 +3,7 @@
 Roughness
 =============
 
-.. automodule:: pywapor.et_look_v2.roughness
+.. automodule:: pywapor.et_look_v2_v3.roughness
    :members:
 
 .. footbibliography::

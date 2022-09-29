@@ -8,6 +8,34 @@ from pywapor.general.logger import log
 
 def download(fp, product_name, coords, variables, post_processors, url_func, 
                 gdal_config_options = {}, waitbar = True, ndv = -9999):
+    """Download data from a Cloud Optimized Geotiff hosted on a remote server.
+
+    Parameters
+    ----------
+    fp : str
+        Path to file in which to download.
+    product_name : str
+        Name of product.
+    coords : dict
+        Coordinate names and boundaries.
+    variables : dict
+        Keys are variable names, values are additional settings.
+    post_processors : dict
+        Processors to apply to specific variables.
+    url_func : function
+        Function that takes `product_name` as input and return a url.
+    gdal_config_options : dict, optional
+        Additional options passed to `gdal.SetConfigOption`, by default {}.
+    waitbar : bool, optional
+        Show a download progress bar or not, by default True.
+    ndv : int, optional
+        No data value to use in new file, by default -9999.
+
+    Returns
+    -------
+    xr.Dataset
+        Dataset with the downloaded data.
+    """
 
     folder, fn = os.path.split(fp)
 

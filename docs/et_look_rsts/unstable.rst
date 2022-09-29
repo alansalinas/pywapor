@@ -3,7 +3,7 @@
 Unstable
 =============
 
-.. automodule:: pywapor.et_look_v2.unstable
+.. automodule:: pywapor.et_look_v2_v3.unstable
    :members:
 
 .. footbibliography::

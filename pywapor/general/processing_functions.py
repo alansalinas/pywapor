@@ -13,6 +13,13 @@ import pandas as pd
 from pywapor.general.performance import performance_check
 
 def log_example_ds(example_ds):
+    """Writes some metadata about a `example_ds` to the logger.
+
+    Parameters
+    ----------
+    example_ds : xr.Dataset
+        Dataset for which to log information.
+    """
     if "source" in example_ds.encoding.keys():
         log.info(f"--> Using `{os.path.split(example_ds.encoding['source'])[-1]}` as reprojecting example.").add()
     else:
@@ -22,6 +29,18 @@ def log_example_ds(example_ds):
     log.info(f"> shape: {shape}, res: {abs(res[0]):.4f}° x {abs(res[1]):.4f}°.").sub()
 
 def adjust_timelim_dtype(timelim):
+    """Convert different time formats to `datetime.datetime`.
+
+    Parameters
+    ----------
+    timelim : list
+        List defining a period.
+
+    Returns
+    -------
+    list
+        List defining a period using `datetime.datetime` objects.
+    """
     if isinstance(timelim[0], str):
         timelim[0] = dt.strptime(timelim[0], "%Y-%m-%d")
         timelim[1] = dt.strptime(timelim[1], "%Y-%m-%d")
@@ -31,6 +50,14 @@ def adjust_timelim_dtype(timelim):
     return timelim
 
 def remove_ds(ds):
+    """Delete a dataset-file from disk, assuring it's closed properly before doing so.
+
+    Parameters
+    ----------
+    ds : xr.Dataset | str
+        Either a `xr.Dataset` (in which case its `source` as defined in the `encoding` attribute will be used)
+        or a `str` in which case it must be a path to a file.
+    """
     if isinstance(ds, xr.Dataset):
         if "source" in ds.encoding.keys():
             fp = ds.encoding["source"]
@@ -45,6 +72,24 @@ def remove_ds(ds):
             os.remove(fp)        
 
 def process_ds(ds, coords, variables, crs = None):
+    """Apply some rioxarray related transformations to a dataset.
+
+    Parameters
+    ----------
+    ds : xr.Dataset
+        Dataset to be processed.
+    coords : dict
+        Dictionary describing the names of the spatial coordinates.
+    variables : list
+        List of variables to keep.
+    crs : rasterio.CRS.crs, optional
+        Coordinate reference system to assign (no reprojection is done), by default None.
+
+    Returns
+    -------
+    xr.Dataset
+        Dataset with some attributes corrected.
+    """
 
     ds = ds[list(variables.keys())]
 
@@ -68,6 +113,24 @@ def process_ds(ds, coords, variables, crs = None):
     return ds
 
 def make_example_ds(ds, folder, target_crs, bb = None):
+    """Make an dataset suitable to use as an example for matching with other datasets.
+
+    Parameters
+    ----------
+    ds : xr.Dataset
+        Input dataset.
+    folder : str
+        Path to folder in which to save the `example_ds`.
+    target_crs : rasterio.CRS.crs
+        Coordinate reference system of the `example_ds`.
+    bb : list, optional
+        Boundingbox of the `example_ds` ([xmin, ymin, xmax, ymax]), by default None.
+
+    Returns
+    -------
+    xr.Dataset
+        Example dataset.
+    """
     example_ds_fp = os.path.join(folder, "example_ds.nc")
     if os.path.isfile(example_ds_fp):
         example_ds = open_ds(example_ds_fp)
@@ -82,9 +145,10 @@ def make_example_ds(ds, folder, target_crs, bb = None):
                 ds = ds.rio.clip_box(*loc_bb)
             ds = ds.rio.pad_box(*loc_bb)
         ds = ds.rio.reproject(target_crs)
-        with warnings.catch_warnings():
-            warnings.filterwarnings("ignore", category = UserWarning)
-            ds = ds.rio.clip_box(*bb)
+        if not isinstance(bb, type(None)):
+            with warnings.catch_warnings():
+                warnings.filterwarnings("ignore", category = UserWarning)
+                ds = ds.rio.clip_box(*bb)
         ds = ds.drop_vars(list(ds.data_vars))
         example_ds = save_ds(ds, example_ds_fp, encoding = "initiate", label = f"Creating example dataset.") # NOTE saving because otherwise rio.reproject bugs.
     return example_ds
@@ -101,7 +165,13 @@ def save_ds(ds, fp, decode_coords = "all", encoding = None, chunks = "auto", pre
         Path to file to create.
     decode_coords : str, optional
         Controls which variables are set as coordinate variables when
-        reopening the dataset, by default None.
+        reopening the dataset, by default `"all"`.
+    encoding : "initiate" | dict | None, optional
+        Apply an encoding to the saved dataset. "initiate" will create a encoding on-the-fly, by default None.
+    chunks : "auto" | dict
+        Define the chunks with which to perform any pending calculations, by default "auto".
+    precision : int | dict, optional
+        How many decimals to store for each variable, only used when `encoding` is `"initiate"`, by default 4.
 
     Returns
     -------
@@ -113,6 +183,11 @@ def save_ds(ds, fp, decode_coords = "all", encoding = None, chunks = "auto", pre
     folder = os.path.split(fp)[0]
     if not os.path.isdir(folder):
         os.makedirs(folder)
+
+    valid_coords = ["x", "y", "spatial_ref", "time", "time_bins"]
+    for coord in ds.coords.values():
+        if coord.name not in valid_coords:
+            ds = ds.drop_vars([coord.name])
 
     if isinstance(chunks, dict):
         chunks = {dim: v for dim, v in chunks.items() if dim in ds.dims}
@@ -145,7 +220,7 @@ def save_ds(ds, fp, decode_coords = "all", encoding = None, chunks = "auto", pre
             if var in ds.dims:
                 encoding[var] = {"dtype": "float64"}
 
-    with ProgressBar(minimum = 90, dt = 2.0):
+    with ProgressBar(minimum = 90*10, dt = 2.0):
         with warnings.catch_warnings():
             warnings.filterwarnings("ignore", message="All-NaN slice encountered")
             ds.to_netcdf(temp_fp, encoding = encoding)
@@ -159,6 +234,22 @@ def save_ds(ds, fp, decode_coords = "all", encoding = None, chunks = "auto", pre
     return ds
 
 def open_ds(fp, decode_coords = "all", chunks = "auto", **kwargs):
+    """Open a file using xarray.
+
+    Parameters
+    ----------
+    fp : str
+        Path to file.
+    decode_coords : str, optional
+        Whether or not to decode coordinates, by default "all".
+    chunks : str | dict, optional
+        Chunks to use, by default "auto".
+
+    Returns
+    -------
+    xr.Dataset
+        Opened file.
+    """
     ds = xr.open_dataset(fp, decode_coords = decode_coords, chunks = chunks, **kwargs)
     return ds
 
@@ -240,6 +331,22 @@ def unpack(file, folder):
     return folder
 
 def transform_bb(src_crs, dst_crs, bb):
+    """Transforms coordinates from one CRS to another.
+
+    Parameters
+    ----------
+    src_crs : rasterio.CRS.crs
+        Source CRS.
+    dst_crs : rasterio.CRS.crs
+        Target CRS.
+    bb : list
+        Coordinates to be transformed.
+
+    Returns
+    -------
+    list
+        Transformed coordinates.
+    """
     bb =rasterio.warp.transform_bounds(src_crs, dst_crs, *bb, densify_pts=21)
     return bb
 
@@ -255,13 +362,13 @@ def calc_dlat_dlon(geo_out, size_X, size_Y, lat_lon = None):
         Number of pixels in x-direction.
     size_Y: int
         Number of pixels in y-direction.
+    lat_lon : tuple, optional
+        Tuple with two rasters, one for latitudes, another for longitudes, by default None.
 
     Returns
     -------
-    np.ndarray
-        Size of every pixel in the y-direction in meters.
-    dlon: array
-        Size of every pixel in the x-direction in meters.
+    tuple
+        Tuple with two arrays with teh size of each pixel in the x and y direction in meters.
     """
     if isinstance(lat_lon, type(None)):
         # Create the lat/lon rasters

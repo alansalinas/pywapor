@@ -11,6 +11,23 @@ from pywapor.enhancers.dem import calc_slope, calc_aspect
 from pywapor.general.logger import log
 
 def tiles_intersect(latlim, lonlim, product_name):
+    """Creates a list of server-side filenames for tiles that intersect with `latlim` and
+    `lonlim` for the selected product. 
+
+    Parameters
+    ----------
+    latlim : list
+        Latitude limits of area of interest.
+    lonlim : list
+        Longitude limits of area of interest.
+    product_name : str
+        Name of the product to download.
+
+    Returns
+    -------
+    list
+        Server-side filenames for tiles.
+    """
     with open(os.path.join(pywapor.collect.__path__[0], f"product/{product_name}.txt")) as src:
         all_tiles = src.read().split("\n")
     we_tiles = np.arange(np.floor(lonlim[0]), np.ceil(lonlim[1]), 1).astype(int).tolist()
@@ -27,6 +44,20 @@ def tiles_intersect(latlim, lonlim, product_name):
     return dl_tiles
 
 def url_func(product_name, fn):
+    """Returns a url at which to collect COPERNICUS data.
+
+    Parameters
+    ----------
+    product_name : str
+        Name of the product to download.
+    fn : str
+        Name of the server-side filename to download.
+
+    Returns
+    -------
+    str
+        The url.
+    """
     url = {
             "GLO30": f"/vsis3/copernicus-dem-30m/{fn}/{fn}.tif",
             "GLO90": f"/vsis3/copernicus-dem-90m/{fn}/{fn}.tif",
@@ -34,6 +65,22 @@ def url_func(product_name, fn):
     return url
 
 def default_vars(product_name, req_vars):
+    """Given a `product_name` and a list of requested variables, returns a dictionary
+    with metadata on which exact layers need to be requested from the server, how they should
+    be renamed, and how their dimensions are defined.
+
+    Parameters
+    ----------
+    product_name : str
+        Name of the product.
+    req_vars : list
+        List of variables to be collected.
+
+    Returns
+    -------
+    dict
+        Metadata on which exact layers need to be requested from the server.
+    """
 
     variables = {
         "GLO30": {
@@ -64,7 +111,23 @@ def default_vars(product_name, req_vars):
     return out
 
 def default_post_processors(product_name, req_vars = ["z"]):
-    
+    """Given a `product_name` and a list of requested variables, returns a dictionary with a 
+    list of functions per variable that should be applied after having collected the data
+    from a server.
+
+    Parameters
+    ----------
+    product_name : str
+        Name of the product.
+    req_vars : list, optional
+        List of variables to be collected, by default ["z"].
+
+    Returns
+    -------
+    dict
+        Functions per variable that should be applied to the variable.
+    """
+
     post_processors = {
         "GLO30": {
             "z": [],
@@ -84,6 +147,32 @@ def default_post_processors(product_name, req_vars = ["z"]):
 
 def download(folder, latlim, lonlim, product_name = "GLO30", req_vars = ["z"],
                 variables = None, post_processors = None, **kwargs):
+    """Download COPERNICUS data and store it in a single netCDF file.
+
+    Parameters
+    ----------
+    folder : str
+        Path to folder in which to store results.
+    latlim : list
+        Latitude limits of area of interest.
+    lonlim : list
+        Longitude limits of area of interest.
+    timelim : list
+        Period for which to prepare data.
+    product_name : str, optional
+        Name of the product to download, by default "GLO30".
+    req_vars : list, optional
+        Which variables to download for the selected product, by default ["z"].
+    variables : dict, optional
+        Metadata on which exact layers need to be requested from the server, by default None.
+    post_processors : dict, optional
+        Functions per variable that should be applied to the variable, by default None.
+
+    Returns
+    -------
+    xr.Dataset
+        Downloaded data.
+    """
 
     folder = os.path.join(folder, "COPERNICUS")
 

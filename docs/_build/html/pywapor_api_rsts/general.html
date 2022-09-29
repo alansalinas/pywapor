@@ -7,6 +7,7 @@
   <title>pywapor.general &mdash; pyWaPOR  documentation</title>
       <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
       <link rel="stylesheet" href="../_static/css/theme.css" type="text/css" />
+      <link rel="stylesheet" href="../_static/copybutton.css" type="text/css" />
       <link rel="stylesheet" href="../_static/css/custom.css" type="text/css" />
   <!--[if lt IE 9]>
     <script src="../_static/js/html5shiv.min.js"></script>
@@ -17,12 +18,15 @@
         <script src="../_static/underscore.js"></script>
         <script src="../_static/_sphinx_javascript_frameworks_compat.js"></script>
         <script src="../_static/doctools.js"></script>
+        <script src="../_static/sphinx_highlight.js"></script>
+        <script src="../_static/clipboard.min.js"></script>
+        <script src="../_static/copybutton.js"></script>
         <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
     <script src="../_static/js/theme.js"></script>
     <link rel="index" title="Index" href="../genindex.html" />
     <link rel="search" title="Search" href="../search.html" />
     <link rel="next" title="compositer" href="general/compositer.html" />
-    <link rel="prev" title="apply_enhancers" href="enhancers/apply_enhancers.html" /> 
+    <link rel="prev" title="thermal_sharpener" href="enhancers/dms/thermal_sharpener.html" /> 
 </head>
 
 <body class="wy-body-for-nav"> 
@@ -60,6 +64,7 @@
 <li class="toctree-l3"><a class="reference internal" href="general/network.html">network</a></li>
 </ul>
 </li>
+<li class="toctree-l2"><a class="reference internal" href="collect.html">pywapor.collect</a></li>
 </ul>
 </li>
 <li class="toctree-l1"><a class="reference internal" href="../_etlook.html">ETLook</a></li>
@@ -120,13 +125,51 @@
 <h1>pywapor.general<a class="headerlink" href="#pywapor-general" title="Permalink to this heading"></a></h1>
 <div class="toctree-wrapper compound">
 <ul>
-<li class="toctree-l1"><a class="reference internal" href="general/compositer.html">compositer</a></li>
-<li class="toctree-l1"><a class="reference internal" href="general/logger.html">logger</a></li>
-<li class="toctree-l1"><a class="reference internal" href="general/pre_defaults.html">pre_defaults</a></li>
-<li class="toctree-l1"><a class="reference internal" href="general/processing_functions.html">processing_functions</a></li>
-<li class="toctree-l1"><a class="reference internal" href="general/variables.html">variables</a></li>
-<li class="toctree-l1"><a class="reference internal" href="general/lazifier.html">lazifier</a></li>
-<li class="toctree-l1"><a class="reference internal" href="general/network.html">network</a></li>
+<li class="toctree-l1"><a class="reference internal" href="general/compositer.html">compositer</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="general/compositer.html#pywapor.general.compositer.add_times"><code class="docutils literal notranslate"><span class="pre">add_times()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="general/compositer.html#pywapor.general.compositer.time_bins"><code class="docutils literal notranslate"><span class="pre">time_bins()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="general/compositer.html#pywapor.general.compositer.main"><code class="docutils literal notranslate"><span class="pre">main()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="general/logger.html">logger</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="general/logger.html#pywapor.general.logger.adjust_logger"><code class="docutils literal notranslate"><span class="pre">adjust_logger()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="general/pre_defaults.html">pre_defaults</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="general/pre_defaults.html#pywapor.general.pre_defaults.constants_defaults"><code class="docutils literal notranslate"><span class="pre">constants_defaults()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="general/processing_functions.html">processing_functions</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="general/processing_functions.html#pywapor.general.processing_functions.log_example_ds"><code class="docutils literal notranslate"><span class="pre">log_example_ds()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="general/processing_functions.html#pywapor.general.processing_functions.adjust_timelim_dtype"><code class="docutils literal notranslate"><span class="pre">adjust_timelim_dtype()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="general/processing_functions.html#pywapor.general.processing_functions.remove_ds"><code class="docutils literal notranslate"><span class="pre">remove_ds()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="general/processing_functions.html#pywapor.general.processing_functions.process_ds"><code class="docutils literal notranslate"><span class="pre">process_ds()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="general/processing_functions.html#pywapor.general.processing_functions.make_example_ds"><code class="docutils literal notranslate"><span class="pre">make_example_ds()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="general/processing_functions.html#pywapor.general.processing_functions.open_ds"><code class="docutils literal notranslate"><span class="pre">open_ds()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="general/processing_functions.html#pywapor.general.processing_functions.transform_bb"><code class="docutils literal notranslate"><span class="pre">transform_bb()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="general/processing_functions.html#pywapor.general.processing_functions.calc_dlat_dlon"><code class="docutils literal notranslate"><span class="pre">calc_dlat_dlon()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="general/variables.html">variables</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="general/variables.html#pywapor.general.variables.get_source_level_selections"><code class="docutils literal notranslate"><span class="pre">get_source_level_selections()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="general/variables.html#pywapor.general.variables.fill_attrs"><code class="docutils literal notranslate"><span class="pre">fill_attrs()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="general/variables.html#pywapor.general.variables.initiate_ds"><code class="docutils literal notranslate"><span class="pre">initiate_ds()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="general/variables.html#pywapor.general.variables.fill_source_data_attr"><code class="docutils literal notranslate"><span class="pre">fill_source_data_attr()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="general/variables.html#pywapor.general.variables.get_var_definitions"><code class="docutils literal notranslate"><span class="pre">get_var_definitions()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="general/lazifier.html">lazifier</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="general/lazifier.html#pywapor.general.lazifier.decorate_mod"><code class="docutils literal notranslate"><span class="pre">decorate_mod()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="general/lazifier.html#pywapor.general.lazifier.decorate_submods"><code class="docutils literal notranslate"><span class="pre">decorate_submods()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="general/lazifier.html#pywapor.general.lazifier.etlook_decorator"><code class="docutils literal notranslate"><span class="pre">etlook_decorator()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="general/network.html">network</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="general/network.html#pywapor.general.network.make_node"><code class="docutils literal notranslate"><span class="pre">make_node()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="general/network.html#pywapor.general.network.create_network"><code class="docutils literal notranslate"><span class="pre">create_network()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="general/network.html#pywapor.general.network.network_colors"><code class="docutils literal notranslate"><span class="pre">network_colors()</span></code></a></li>
+</ul>
+</li>
 </ul>
 </div>
 </section>
@@ -135,7 +178,7 @@
            </div>
           </div>
           <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
-        <a href="enhancers/apply_enhancers.html" class="btn btn-neutral float-left" title="apply_enhancers" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="enhancers/dms/thermal_sharpener.html" class="btn btn-neutral float-left" title="thermal_sharpener" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
         <a href="general/compositer.html" class="btn btn-neutral float-right" title="compositer" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
     </div>
 

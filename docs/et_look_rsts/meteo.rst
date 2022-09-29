@@ -3,7 +3,7 @@
 Meteo
 =============
 
-.. automodule:: pywapor.et_look_v2.meteo
+.. automodule:: pywapor.et_look_v2_v3.meteo
    :members:
 
 .. footbibliography::

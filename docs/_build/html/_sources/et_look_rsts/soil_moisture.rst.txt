@@ -3,7 +3,7 @@
 Soil Moisture
 =============
 
-.. automodule:: pywapor.et_look_v2.soil_moisture
+.. automodule:: pywapor.et_look_v2_v3.soil_moisture
    :members:
 
 .. footbibliography::

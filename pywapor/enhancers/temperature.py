@@ -7,6 +7,22 @@ import xarray as xr
 from pywapor.general.logger import log
 
 def template(ds, var, out_var = None):
+    """Example enhancer function.
+
+    Parameters
+    ----------
+    ds : xr.Dataset
+        Input dataset.
+    var : str
+        Variable to adjust.
+    out_var : str, optional
+        variable to store new variable, by default None.
+
+    Returns
+    -------
+    xr.Dataset
+        Output dataset.
+    """
 
     new_data = ds[var]
 
@@ -26,6 +42,8 @@ def kelvin_to_celsius(ds, var, in_var = None, out_var = None):
         Dataset containing `var`.
     var : str
         Variable name.
+    in_var : str, optional
+        Overwrites `var`, by default None.
     out_var : str, optional
         Instead of overwriting `var`, store the new data in `out_var`, 
         by default None.
@@ -244,6 +262,28 @@ def local_mean(array, pixel_size, radius, method = 3):
     return array_coarse
 
 def bt_to_lst(ds, x, ndvi_s = 0.2, ndvi_v = 0.5, emis_s = 0.97, emis_v = 0.985):
+    """Convert brightness temperature to land surface temperature according to Sobrino et al (2008).
+
+    Parameters
+    ----------
+    ds : xr.Dataset
+        Input.
+    x : None
+        Not used.
+    ndvi_s : float, optional
+        Threshold value, by default 0.2
+    ndvi_v : float, optional
+        Threshold value, by default 0.5
+    emis_s : float, optional
+        Threshold value, by default 0.97
+    emis_v : float, optional
+        Threshold value, by default 0.985
+
+    Returns
+    -------
+    xr.Dataset
+        Dataset in which `bt` has been replaced with `lst`.
+    """
 
     if np.all([var in ds.data_vars for var in ["ndvi", "bt"]]):
 

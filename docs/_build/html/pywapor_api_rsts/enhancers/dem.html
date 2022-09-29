@@ -7,6 +7,7 @@
   <title>dem &mdash; pyWaPOR  documentation</title>
       <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
       <link rel="stylesheet" href="../../_static/css/theme.css" type="text/css" />
+      <link rel="stylesheet" href="../../_static/copybutton.css" type="text/css" />
       <link rel="stylesheet" href="../../_static/css/custom.css" type="text/css" />
   <!--[if lt IE 9]>
     <script src="../../_static/js/html5shiv.min.js"></script>
@@ -17,6 +18,9 @@
         <script src="../../_static/underscore.js"></script>
         <script src="../../_static/_sphinx_javascript_frameworks_compat.js"></script>
         <script src="../../_static/doctools.js"></script>
+        <script src="../../_static/sphinx_highlight.js"></script>
+        <script src="../../_static/clipboard.min.js"></script>
+        <script src="../../_static/copybutton.js"></script>
         <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
     <script src="../../_static/js/theme.js"></script>
     <link rel="index" title="Index" href="../../genindex.html" />
@@ -50,14 +54,23 @@
 <li class="toctree-l2"><a class="reference internal" href="../pre_se_root.html">pywapor.pre_se_root</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../se_root.html">pywapor.se_root</a></li>
 <li class="toctree-l2 current"><a class="reference internal" href="../enhancers.html">pywapor.enhancers</a><ul class="current">
-<li class="toctree-l3 current"><a class="current reference internal" href="#">dem</a></li>
+<li class="toctree-l3 current"><a class="current reference internal" href="#">dem</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#pywapor.enhancers.dem.calc_slope"><code class="docutils literal notranslate"><span class="pre">calc_slope()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#pywapor.enhancers.dem.calc_aspect"><code class="docutils literal notranslate"><span class="pre">calc_aspect()</span></code></a></li>
+</ul>
+</li>
 <li class="toctree-l3"><a class="reference internal" href="gap_fill.html">gap_fill</a></li>
 <li class="toctree-l3"><a class="reference internal" href="lulc.html">lulc</a></li>
 <li class="toctree-l3"><a class="reference internal" href="temperature.html">temperature</a></li>
 <li class="toctree-l3"><a class="reference internal" href="apply_enhancers.html">apply_enhancers</a></li>
+<li class="toctree-l3"><a class="reference internal" href="other.html">other</a></li>
+<li class="toctree-l3"><a class="reference internal" href="pressure.html">pressure</a></li>
+<li class="toctree-l3"><a class="reference internal" href="wind.html">wind</a></li>
+<li class="toctree-l3"><a class="reference internal" href="dms.html">dms</a></li>
 </ul>
 </li>
 <li class="toctree-l2"><a class="reference internal" href="../general.html">pywapor.general</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../collect.html">pywapor.collect</a></li>
 </ul>
 </li>
 <li class="toctree-l1"><a class="reference internal" href="../../_etlook.html">ETLook</a></li>
@@ -118,15 +131,14 @@
 <section id="module-pywapor.enhancers.dem">
 <span id="dem"></span><h1>dem<a class="headerlink" href="#module-pywapor.enhancers.dem" title="Permalink to this heading"></a></h1>
 <dl class="py function">
-<dt class="sig sig-object py" id="pywapor.enhancers.dem.to_slope">
-<span class="sig-name descname"><span class="pre">to_slope</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">ds</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">var</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">out_var</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pywapor.enhancers.dem.to_slope" title="Permalink to this definition"></a></dt>
-<dd><p>Calculate the gradient of <cite>var</cite> (which would usually be <cite>z</cite> or elevation).</p>
+<dt class="sig sig-object py" id="pywapor.enhancers.dem.calc_slope">
+<span class="sig-name descname"><span class="pre">calc_slope</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">ds</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">var</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pywapor.enhancers.dem.calc_slope" title="Permalink to this definition"></a></dt>
+<dd><p>Calculate the gradient of <cite>z</cite>.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>ds</strong> (<em>xr.Dataset</em>) – Dataset containing var.</p></li>
 <li><p><strong>var</strong> (<em>str</em>) – Variable name.</p></li>
-<li><p><strong>out_var</strong> (<em>str</em><em>, </em><em>optional</em>) – New variable name in case <cite>var</cite> should not be overwritten, by default None.</p></li>
 </ul>
 </dd>
 <dt class="field-even">Returns</dt>
@@ -139,57 +151,14 @@
 </dd></dl>
 
 <dl class="py function">
-<dt class="sig sig-object py" id="pywapor.enhancers.dem.to_aspect">
-<span class="sig-name descname"><span class="pre">to_aspect</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">ds</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">var</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">out_var</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pywapor.enhancers.dem.to_aspect" title="Permalink to this definition"></a></dt>
-<dd><p>Calculate the aspect of <cite>var</cite> (which would usually be <cite>z</cite> or elevation).</p>
+<dt class="sig sig-object py" id="pywapor.enhancers.dem.calc_aspect">
+<span class="sig-name descname"><span class="pre">calc_aspect</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">ds</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">var</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pywapor.enhancers.dem.calc_aspect" title="Permalink to this definition"></a></dt>
+<dd><p>Calculate the aspect of <cite>z</cite>.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>ds</strong> (<em>xr.Dataset</em>) – Dataset containing var.</p></li>
 <li><p><strong>var</strong> (<em>str</em>) – Variable name.</p></li>
-<li><p><strong>out_var</strong> (<em>str</em><em>, </em><em>optional</em>) – New variable name in case <cite>var</cite> should not be overwritten, by default None.</p></li>
-</ul>
-</dd>
-<dt class="field-even">Returns</dt>
-<dd class="field-even"><p>Enhanced dataset.</p>
-</dd>
-<dt class="field-odd">Return type</dt>
-<dd class="field-odd"><p>xr.Dataset</p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py function">
-<dt class="sig sig-object py" id="pywapor.enhancers.dem.to_lat">
-<span class="sig-name descname"><span class="pre">to_lat</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">ds</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">var</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">out_var</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pywapor.enhancers.dem.to_lat" title="Permalink to this definition"></a></dt>
-<dd><p>Calculate the latitude in degrees of every pixel.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
-<dd class="field-odd"><ul class="simple">
-<li><p><strong>ds</strong> (<em>xr.Dataset</em>) – Dataset containing var.</p></li>
-<li><p><strong>var</strong> (<em>str</em>) – Variable name.</p></li>
-<li><p><strong>out_var</strong> (<em>str</em><em>, </em><em>optional</em>) – New variable name in case <cite>var</cite> should not be overwritten, by default None.</p></li>
-</ul>
-</dd>
-<dt class="field-even">Returns</dt>
-<dd class="field-even"><p>Enhanced dataset.</p>
-</dd>
-<dt class="field-odd">Return type</dt>
-<dd class="field-odd"><p>xr.Dataset</p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py function">
-<dt class="sig sig-object py" id="pywapor.enhancers.dem.to_lon">
-<span class="sig-name descname"><span class="pre">to_lon</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">ds</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">var</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">out_var</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pywapor.enhancers.dem.to_lon" title="Permalink to this definition"></a></dt>
-<dd><p>Calculate the longitude in degrees of every pixel.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
-<dd class="field-odd"><ul class="simple">
-<li><p><strong>ds</strong> (<em>xr.Dataset</em>) – Dataset containing var.</p></li>
-<li><p><strong>var</strong> (<em>str</em>) – Variable name.</p></li>
-<li><p><strong>out_var</strong> (<em>str</em><em>, </em><em>optional</em>) – New variable name in case <cite>var</cite> should not be overwritten, by default None.</p></li>
 </ul>
 </dd>
 <dt class="field-even">Returns</dt>

@@ -3,7 +3,7 @@
 Stress
 =============
 
-.. automodule:: pywapor.et_look_v2.stress
+.. automodule:: pywapor.et_look_v2_v3.stress
    :members:
 
 .. footbibliography::

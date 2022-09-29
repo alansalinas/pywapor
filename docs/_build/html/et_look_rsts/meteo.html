@@ -7,6 +7,7 @@
   <title>Meteo &mdash; pyWaPOR  documentation</title>
       <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
       <link rel="stylesheet" href="../_static/css/theme.css" type="text/css" />
+      <link rel="stylesheet" href="../_static/copybutton.css" type="text/css" />
       <link rel="stylesheet" href="../_static/css/custom.css" type="text/css" />
   <!--[if lt IE 9]>
     <script src="../_static/js/html5shiv.min.js"></script>
@@ -17,6 +18,9 @@
         <script src="../_static/underscore.js"></script>
         <script src="../_static/_sphinx_javascript_frameworks_compat.js"></script>
         <script src="../_static/doctools.js"></script>
+        <script src="../_static/sphinx_highlight.js"></script>
+        <script src="../_static/clipboard.min.js"></script>
+        <script src="../_static/copybutton.js"></script>
         <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
         <script>window.MathJax = {"tex": {"inlineMath": [["$", "$"], ["\\(", "\\)"]], "processEscapes": true}, "options": {"ignoreHtmlClass": "tex2jax_ignore|mathjax_ignore|document", "processHtmlClass": "tex2jax_process|mathjax_process|math|output_area"}}</script>
         <script defer="defer" src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
@@ -52,7 +56,56 @@
 <li class="toctree-l2"><a class="reference internal" href="soil_moisture.html">Soil Moisture</a></li>
 <li class="toctree-l2"><a class="reference internal" href="evapotranspiration.html">Evapotranspiration</a></li>
 <li class="toctree-l2"><a class="reference internal" href="leaf.html">Leaf</a></li>
-<li class="toctree-l2 current"><a class="current reference internal" href="#">Meteo</a></li>
+<li class="toctree-l2 current"><a class="current reference internal" href="#">Meteo</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#pywapor.et_look_v2_v3.meteo.mean_temperature_kelvin_daytime"><code class="docutils literal notranslate"><span class="pre">mean_temperature_kelvin_daytime()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#pywapor.et_look_v2_v3.meteo.air_temperature_kelvin"><code class="docutils literal notranslate"><span class="pre">air_temperature_kelvin()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#pywapor.et_look_v2_v3.meteo.air_temperature_kelvin_daily"><code class="docutils literal notranslate"><span class="pre">air_temperature_kelvin_daily()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#pywapor.et_look_v2_v3.meteo.air_temperature_kelvin_inst"><code class="docutils literal notranslate"><span class="pre">air_temperature_kelvin_inst()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#pywapor.et_look_v2_v3.meteo.wet_bulb_temperature_kelvin_inst"><code class="docutils literal notranslate"><span class="pre">wet_bulb_temperature_kelvin_inst()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#pywapor.et_look_v2_v3.meteo.disaggregate_air_temperature"><code class="docutils literal notranslate"><span class="pre">disaggregate_air_temperature()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#pywapor.et_look_v2_v3.meteo.disaggregate_air_temperature_daily"><code class="docutils literal notranslate"><span class="pre">disaggregate_air_temperature_daily()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#pywapor.et_look_v2_v3.meteo.disaggregate_air_temperature_inst"><code class="docutils literal notranslate"><span class="pre">disaggregate_air_temperature_inst()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#pywapor.et_look_v2_v3.meteo.disaggregate_dew_point_temperature_inst"><code class="docutils literal notranslate"><span class="pre">disaggregate_dew_point_temperature_inst()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#pywapor.et_look_v2_v3.meteo.vapour_pressure_from_specific_humidity"><code class="docutils literal notranslate"><span class="pre">vapour_pressure_from_specific_humidity()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#pywapor.et_look_v2_v3.meteo.specific_humidity_from_vapour_pressure"><code class="docutils literal notranslate"><span class="pre">specific_humidity_from_vapour_pressure()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#pywapor.et_look_v2_v3.meteo.vapour_pressure_from_specific_humidity_daily"><code class="docutils literal notranslate"><span class="pre">vapour_pressure_from_specific_humidity_daily()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#pywapor.et_look_v2_v3.meteo.vapour_pressure_from_dewpoint"><code class="docutils literal notranslate"><span class="pre">vapour_pressure_from_dewpoint()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#pywapor.et_look_v2_v3.meteo.vapour_pressure_from_dewpoint_daily"><code class="docutils literal notranslate"><span class="pre">vapour_pressure_from_dewpoint_daily()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#pywapor.et_look_v2_v3.meteo.vapour_pressure_from_dewpoint_inst"><code class="docutils literal notranslate"><span class="pre">vapour_pressure_from_dewpoint_inst()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#pywapor.et_look_v2_v3.meteo.saturated_vapour_pressure_minimum"><code class="docutils literal notranslate"><span class="pre">saturated_vapour_pressure_minimum()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#pywapor.et_look_v2_v3.meteo.saturated_vapour_pressure_maximum"><code class="docutils literal notranslate"><span class="pre">saturated_vapour_pressure_maximum()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#pywapor.et_look_v2_v3.meteo.saturated_vapour_pressure_average"><code class="docutils literal notranslate"><span class="pre">saturated_vapour_pressure_average()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#pywapor.et_look_v2_v3.meteo.vapour_pressure_from_specific_humidity_inst"><code class="docutils literal notranslate"><span class="pre">vapour_pressure_from_specific_humidity_inst()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#pywapor.et_look_v2_v3.meteo.saturated_vapour_pressure"><code class="docutils literal notranslate"><span class="pre">saturated_vapour_pressure()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#pywapor.et_look_v2_v3.meteo.saturated_vapour_pressure_daily"><code class="docutils literal notranslate"><span class="pre">saturated_vapour_pressure_daily()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#pywapor.et_look_v2_v3.meteo.saturated_vapour_pressure_inst"><code class="docutils literal notranslate"><span class="pre">saturated_vapour_pressure_inst()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#pywapor.et_look_v2_v3.meteo.vapour_pressure"><code class="docutils literal notranslate"><span class="pre">vapour_pressure()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#pywapor.et_look_v2_v3.meteo.slope_saturated_vapour_pressure"><code class="docutils literal notranslate"><span class="pre">slope_saturated_vapour_pressure()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#pywapor.et_look_v2_v3.meteo.slope_saturated_vapour_pressure_daily"><code class="docutils literal notranslate"><span class="pre">slope_saturated_vapour_pressure_daily()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#pywapor.et_look_v2_v3.meteo.slope_saturated_vapour_pressure_inst"><code class="docutils literal notranslate"><span class="pre">slope_saturated_vapour_pressure_inst()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#pywapor.et_look_v2_v3.meteo.vapour_pressure_deficit"><code class="docutils literal notranslate"><span class="pre">vapour_pressure_deficit()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#pywapor.et_look_v2_v3.meteo.vapour_pressure_deficit_daily"><code class="docutils literal notranslate"><span class="pre">vapour_pressure_deficit_daily()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#pywapor.et_look_v2_v3.meteo.air_pressure"><code class="docutils literal notranslate"><span class="pre">air_pressure()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#pywapor.et_look_v2_v3.meteo.air_pressure_daily"><code class="docutils literal notranslate"><span class="pre">air_pressure_daily()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#pywapor.et_look_v2_v3.meteo.dry_air_density"><code class="docutils literal notranslate"><span class="pre">dry_air_density()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#pywapor.et_look_v2_v3.meteo.dry_air_density_daily"><code class="docutils literal notranslate"><span class="pre">dry_air_density_daily()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#pywapor.et_look_v2_v3.meteo.dry_air_density_inst"><code class="docutils literal notranslate"><span class="pre">dry_air_density_inst()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#pywapor.et_look_v2_v3.meteo.moist_air_density"><code class="docutils literal notranslate"><span class="pre">moist_air_density()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#pywapor.et_look_v2_v3.meteo.moist_air_density_daily"><code class="docutils literal notranslate"><span class="pre">moist_air_density_daily()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#pywapor.et_look_v2_v3.meteo.moist_air_density_inst"><code class="docutils literal notranslate"><span class="pre">moist_air_density_inst()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#pywapor.et_look_v2_v3.meteo.air_density"><code class="docutils literal notranslate"><span class="pre">air_density()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#pywapor.et_look_v2_v3.meteo.air_density_daily"><code class="docutils literal notranslate"><span class="pre">air_density_daily()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#pywapor.et_look_v2_v3.meteo.air_density_inst"><code class="docutils literal notranslate"><span class="pre">air_density_inst()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#pywapor.et_look_v2_v3.meteo.latent_heat"><code class="docutils literal notranslate"><span class="pre">latent_heat()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#pywapor.et_look_v2_v3.meteo.latent_heat_daily"><code class="docutils literal notranslate"><span class="pre">latent_heat_daily()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#pywapor.et_look_v2_v3.meteo.psychrometric_constant"><code class="docutils literal notranslate"><span class="pre">psychrometric_constant()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#pywapor.et_look_v2_v3.meteo.psychrometric_constant_daily"><code class="docutils literal notranslate"><span class="pre">psychrometric_constant_daily()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#pywapor.et_look_v2_v3.meteo.wind_speed_blending_height"><code class="docutils literal notranslate"><span class="pre">wind_speed_blending_height()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#pywapor.et_look_v2_v3.meteo.wind_speed_blending_height_daily"><code class="docutils literal notranslate"><span class="pre">wind_speed_blending_height_daily()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#pywapor.et_look_v2_v3.meteo.wind_speed"><code class="docutils literal notranslate"><span class="pre">wind_speed()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#pywapor.et_look_v2_v3.meteo.air_pressure_kpa2mbar"><code class="docutils literal notranslate"><span class="pre">air_pressure_kpa2mbar()</span></code></a></li>
+</ul>
+</li>
 <li class="toctree-l2"><a class="reference internal" href="neutral.html">Neutral</a></li>
 <li class="toctree-l2"><a class="reference internal" href="radiation.html">Radiation</a></li>
 <li class="toctree-l2"><a class="reference internal" href="resistance.html">Resistance</a></li>
@@ -116,70 +169,16 @@
     text-align: unset;
 }
 </style>
-<section id="module-pywapor.et_look_v2.meteo">
-<span id="meteo"></span><h1>Meteo<a class="headerlink" href="#module-pywapor.et_look_v2.meteo" title="Permalink to this heading"></a></h1>
+<section id="module-pywapor.et_look_v2_v3.meteo">
+<span id="meteo"></span><h1>Meteo<a class="headerlink" href="#module-pywapor.et_look_v2_v3.meteo" title="Permalink to this heading"></a></h1>
 <p>The meteo module contains all functions related to meteorological
 variables. All meteorological functions can be calculated on a daily
 or instantaneous basis. Base functions are available also. The daily
 functions have a ‘daily’ extension, instantaneous functions have a ‘inst’
 extension.</p>
 <dl class="py function">
-<dt class="sig sig-object py" id="pywapor.et_look_v2.meteo.mean_temperature_kelvin_daily">
-<span class="sig-name descname"><span class="pre">mean_temperature_kelvin_daily</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">t_air_k_min</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">t_air_k_max</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pywapor.et_look_v2.meteo.mean_temperature_kelvin_daily" title="Permalink to this definition"></a></dt>
-<dd><p>Computes the mean temperature over day and night.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
-<dd class="field-odd"><ul class="simple">
-<li><p><strong>t_air_k_min</strong> (<em>float</em>) – maximum air temperature
-<span class="math notranslate nohighlight">\(T_{a,min}\)</span>
-[K]</p></li>
-<li><p><strong>t_air_k_max</strong> (<em>float</em>) – maximum air temperature
-<span class="math notranslate nohighlight">\(T_{a,max}\)</span>
-[K]</p></li>
-</ul>
-</dd>
-<dt class="field-even">Returns</dt>
-<dd class="field-even"><p><strong>t_air_k_24</strong> – daily air temperature
-<span class="math notranslate nohighlight">\(T_{a,24}\)</span>
-[K]</p>
-</dd>
-<dt class="field-odd">Return type</dt>
-<dd class="field-odd"><p>float</p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py function">
-<dt class="sig sig-object py" id="pywapor.et_look_v2.meteo.air_temperature_celcius">
-<span class="sig-name descname"><span class="pre">air_temperature_celcius</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">t_air_k</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pywapor.et_look_v2.meteo.air_temperature_celcius" title="Permalink to this definition"></a></dt>
-<dd><p>Converts air temperature from Kelvin to Celcius, where 0 degrees Celcius
-is equal to 273.15 degrees Kelvin.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
-<dd class="field-odd"><p><strong>t_air_k</strong> (<em>float</em>) – air temperature,
-<span class="math notranslate nohighlight">\(T_a\)</span>
-[K]</p>
-</dd>
-<dt class="field-even">Returns</dt>
-<dd class="field-even"><p><strong>t_air_c</strong> – air temperature,
-<span class="math notranslate nohighlight">\(T_a\)</span>
-[C]</p>
-</dd>
-<dt class="field-odd">Return type</dt>
-<dd class="field-odd"><p>float</p>
-</dd>
-</dl>
-<p class="rubric">Examples</p>
-<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">ETLook</span> <span class="kn">import</span> <span class="n">meteo</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">meteo</span><span class="o">.</span><span class="n">air_temperature_celcius</span><span class="p">(</span><span class="mf">12.5</span><span class="p">)</span>
-<span class="go">285.65</span>
-</pre></div>
-</div>
-</dd></dl>
-
-<dl class="py function">
-<dt class="sig sig-object py" id="pywapor.et_look_v2.meteo.mean_temperature_kelvin_daytime">
-<span class="sig-name descname"><span class="pre">mean_temperature_kelvin_daytime</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">t_air_k_min</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">t_air_k_max</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pywapor.et_look_v2.meteo.mean_temperature_kelvin_daytime" title="Permalink to this definition"></a></dt>
+<dt class="sig sig-object py" id="pywapor.et_look_v2_v3.meteo.mean_temperature_kelvin_daytime">
+<span class="sig-name descname"><span class="pre">mean_temperature_kelvin_daytime</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">t_air_k_min</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">t_air_k_max</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pywapor.et_look_v2_v3.meteo.mean_temperature_kelvin_daytime" title="Permalink to this definition"></a></dt>
 <dd><p>Computes the mean temperature over the daily sunshine period.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
@@ -204,8 +203,8 @@ is equal to 273.15 degrees Kelvin.</p>
 </dd></dl>
 
 <dl class="py function">
-<dt class="sig sig-object py" id="pywapor.et_look_v2.meteo.air_temperature_kelvin">
-<span class="sig-name descname"><span class="pre">air_temperature_kelvin</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">t_air</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pywapor.et_look_v2.meteo.air_temperature_kelvin" title="Permalink to this definition"></a></dt>
+<dt class="sig sig-object py" id="pywapor.et_look_v2_v3.meteo.air_temperature_kelvin">
+<span class="sig-name descname"><span class="pre">air_temperature_kelvin</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">t_air</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pywapor.et_look_v2_v3.meteo.air_temperature_kelvin" title="Permalink to this definition"></a></dt>
 <dd><p>Converts air temperature from Celcius to Kelvin, where 0 degrees Celcius
 is equal to 273.15 degrees Kelvin.</p>
 <dl class="field-list simple">
@@ -232,9 +231,9 @@ is equal to 273.15 degrees Kelvin.</p>
 </dd></dl>
 
 <dl class="py function">
-<dt class="sig sig-object py" id="pywapor.et_look_v2.meteo.air_temperature_kelvin_daily">
-<span class="sig-name descname"><span class="pre">air_temperature_kelvin_daily</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">t_air_24</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pywapor.et_look_v2.meteo.air_temperature_kelvin_daily" title="Permalink to this definition"></a></dt>
-<dd><p>Like <a class="reference internal" href="#pywapor.et_look_v2.meteo.air_temperature_kelvin" title="pywapor.et_look_v2.meteo.air_temperature_kelvin"><code class="xref py py-func docutils literal notranslate"><span class="pre">air_temperature_kelvin()</span></code></a> but as a daily average.</p>
+<dt class="sig sig-object py" id="pywapor.et_look_v2_v3.meteo.air_temperature_kelvin_daily">
+<span class="sig-name descname"><span class="pre">air_temperature_kelvin_daily</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">t_air_24</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pywapor.et_look_v2_v3.meteo.air_temperature_kelvin_daily" title="Permalink to this definition"></a></dt>
+<dd><p>Like <a class="reference internal" href="#pywapor.et_look_v2_v3.meteo.air_temperature_kelvin" title="pywapor.et_look_v2_v3.meteo.air_temperature_kelvin"><code class="xref py py-func docutils literal notranslate"><span class="pre">air_temperature_kelvin()</span></code></a> but as a daily average.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><p><strong>t_air_24</strong> (<em>float</em>) – daily air temperature,
@@ -253,9 +252,9 @@ is equal to 273.15 degrees Kelvin.</p>
 </dd></dl>
 
 <dl class="py function">
-<dt class="sig sig-object py" id="pywapor.et_look_v2.meteo.air_temperature_kelvin_inst">
-<span class="sig-name descname"><span class="pre">air_temperature_kelvin_inst</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">t_air_i</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pywapor.et_look_v2.meteo.air_temperature_kelvin_inst" title="Permalink to this definition"></a></dt>
-<dd><p>Like <a class="reference internal" href="#pywapor.et_look_v2.meteo.air_temperature_kelvin" title="pywapor.et_look_v2.meteo.air_temperature_kelvin"><code class="xref py py-func docutils literal notranslate"><span class="pre">air_temperature_kelvin()</span></code></a> but as an instantaneous value.</p>
+<dt class="sig sig-object py" id="pywapor.et_look_v2_v3.meteo.air_temperature_kelvin_inst">
+<span class="sig-name descname"><span class="pre">air_temperature_kelvin_inst</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">t_air_i</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pywapor.et_look_v2_v3.meteo.air_temperature_kelvin_inst" title="Permalink to this definition"></a></dt>
+<dd><p>Like <a class="reference internal" href="#pywapor.et_look_v2_v3.meteo.air_temperature_kelvin" title="pywapor.et_look_v2_v3.meteo.air_temperature_kelvin"><code class="xref py py-func docutils literal notranslate"><span class="pre">air_temperature_kelvin()</span></code></a> but as an instantaneous value.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><p><strong>t_air_i</strong> (<em>float</em>) – instantaneous air temperature,
@@ -274,8 +273,8 @@ is equal to 273.15 degrees Kelvin.</p>
 </dd></dl>
 
 <dl class="py function">
-<dt class="sig sig-object py" id="pywapor.et_look_v2.meteo.wet_bulb_temperature_kelvin_inst">
-<span class="sig-name descname"><span class="pre">wet_bulb_temperature_kelvin_inst</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">t_wet_i</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pywapor.et_look_v2.meteo.wet_bulb_temperature_kelvin_inst" title="Permalink to this definition"></a></dt>
+<dt class="sig sig-object py" id="pywapor.et_look_v2_v3.meteo.wet_bulb_temperature_kelvin_inst">
+<span class="sig-name descname"><span class="pre">wet_bulb_temperature_kelvin_inst</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">t_wet_i</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pywapor.et_look_v2_v3.meteo.wet_bulb_temperature_kelvin_inst" title="Permalink to this definition"></a></dt>
 <dd><p>Converts wet bulb temperature from Celcius to Kelvin, where 0
 degrees Celcius is equal to 273.15 degrees Kelvin.</p>
 <dl class="field-list simple">
@@ -296,8 +295,8 @@ degrees Celcius is equal to 273.15 degrees Kelvin.</p>
 </dd></dl>
 
 <dl class="py function">
-<dt class="sig sig-object py" id="pywapor.et_look_v2.meteo.disaggregate_air_temperature">
-<span class="sig-name descname"><span class="pre">disaggregate_air_temperature</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">t_air_coarse</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">z</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">z_coarse</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">lapse</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">-0.006</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pywapor.et_look_v2.meteo.disaggregate_air_temperature" title="Permalink to this definition"></a></dt>
+<dt class="sig sig-object py" id="pywapor.et_look_v2_v3.meteo.disaggregate_air_temperature">
+<span class="sig-name descname"><span class="pre">disaggregate_air_temperature</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">t_air_coarse</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">z</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">z_coarse</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">lapse</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">-0.006</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pywapor.et_look_v2_v3.meteo.disaggregate_air_temperature" title="Permalink to this definition"></a></dt>
 <dd><p>Disaggregates GEOS or MERRA or another coarse scale air temperature using
 two digital elevation models. One DEM for the target resolution, another
 DEM smoothed from the original air temperature resolution to the target
@@ -346,9 +345,9 @@ temperature is specified in C.</p>
 </dd></dl>
 
 <dl class="py function">
-<dt class="sig sig-object py" id="pywapor.et_look_v2.meteo.disaggregate_air_temperature_daily">
-<span class="sig-name descname"><span class="pre">disaggregate_air_temperature_daily</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">t_air_24_coarse</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">z</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">z_coarse</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">lapse</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">-0.006</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pywapor.et_look_v2.meteo.disaggregate_air_temperature_daily" title="Permalink to this definition"></a></dt>
-<dd><p>Like <a class="reference internal" href="#pywapor.et_look_v2.meteo.disaggregate_air_temperature" title="pywapor.et_look_v2.meteo.disaggregate_air_temperature"><code class="xref py py-func docutils literal notranslate"><span class="pre">disaggregate_air_temperature()</span></code></a> but as a daily average.</p>
+<dt class="sig sig-object py" id="pywapor.et_look_v2_v3.meteo.disaggregate_air_temperature_daily">
+<span class="sig-name descname"><span class="pre">disaggregate_air_temperature_daily</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">t_air_24_coarse</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">z</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">z_coarse</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">lapse</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">-0.006</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pywapor.et_look_v2_v3.meteo.disaggregate_air_temperature_daily" title="Permalink to this definition"></a></dt>
+<dd><p>Like <a class="reference internal" href="#pywapor.et_look_v2_v3.meteo.disaggregate_air_temperature" title="pywapor.et_look_v2_v3.meteo.disaggregate_air_temperature"><code class="xref py py-func docutils literal notranslate"><span class="pre">disaggregate_air_temperature()</span></code></a> but as a daily average.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><ul class="simple">
@@ -381,9 +380,9 @@ temperature is specified in C.</p>
 </dd></dl>
 
 <dl class="py function">
-<dt class="sig sig-object py" id="pywapor.et_look_v2.meteo.disaggregate_air_temperature_inst">
-<span class="sig-name descname"><span class="pre">disaggregate_air_temperature_inst</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">t_air_i_coarse</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">z</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">z_coarse</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">lapse</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">-0.006</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pywapor.et_look_v2.meteo.disaggregate_air_temperature_inst" title="Permalink to this definition"></a></dt>
-<dd><p>Like <a class="reference internal" href="#pywapor.et_look_v2.meteo.disaggregate_air_temperature" title="pywapor.et_look_v2.meteo.disaggregate_air_temperature"><code class="xref py py-func docutils literal notranslate"><span class="pre">disaggregate_air_temperature()</span></code></a> but as a instantaneous value.</p>
+<dt class="sig sig-object py" id="pywapor.et_look_v2_v3.meteo.disaggregate_air_temperature_inst">
+<span class="sig-name descname"><span class="pre">disaggregate_air_temperature_inst</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">t_air_i_coarse</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">z</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">z_coarse</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">lapse</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">-0.006</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pywapor.et_look_v2_v3.meteo.disaggregate_air_temperature_inst" title="Permalink to this definition"></a></dt>
+<dd><p>Like <a class="reference internal" href="#pywapor.et_look_v2_v3.meteo.disaggregate_air_temperature" title="pywapor.et_look_v2_v3.meteo.disaggregate_air_temperature"><code class="xref py py-func docutils literal notranslate"><span class="pre">disaggregate_air_temperature()</span></code></a> but as a instantaneous value.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><ul class="simple">
@@ -416,8 +415,8 @@ temperature is specified in C.</p>
 </dd></dl>
 
 <dl class="py function">
-<dt class="sig sig-object py" id="pywapor.et_look_v2.meteo.disaggregate_dew_point_temperature_inst">
-<span class="sig-name descname"><span class="pre">disaggregate_dew_point_temperature_inst</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">t_dew_coarse_i</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">z</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">z_coarse</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">lapse_dew</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">-0.002</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pywapor.et_look_v2.meteo.disaggregate_dew_point_temperature_inst" title="Permalink to this definition"></a></dt>
+<dt class="sig sig-object py" id="pywapor.et_look_v2_v3.meteo.disaggregate_dew_point_temperature_inst">
+<span class="sig-name descname"><span class="pre">disaggregate_dew_point_temperature_inst</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">t_dew_coarse_i</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">z</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">z_coarse</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">lapse_dew</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">-0.002</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pywapor.et_look_v2_v3.meteo.disaggregate_dew_point_temperature_inst" title="Permalink to this definition"></a></dt>
 <dd><p>Disaggregates geos dew point temperature using lapse rate and difference between
 smoothed coarse scale DEM and fine scale DEM.</p>
 <dl class="field-list simple">
@@ -449,8 +448,8 @@ smoothed coarse scale DEM and fine scale DEM.</p>
 </dd></dl>
 
 <dl class="py function">
-<dt class="sig sig-object py" id="pywapor.et_look_v2.meteo.vapour_pressure_from_specific_humidity">
-<span class="sig-name descname"><span class="pre">vapour_pressure_from_specific_humidity</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">qv</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">p_air</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pywapor.et_look_v2.meteo.vapour_pressure_from_specific_humidity" title="Permalink to this definition"></a></dt>
+<dt class="sig sig-object py" id="pywapor.et_look_v2_v3.meteo.vapour_pressure_from_specific_humidity">
+<span class="sig-name descname"><span class="pre">vapour_pressure_from_specific_humidity</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">qv</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">p_air</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pywapor.et_look_v2_v3.meteo.vapour_pressure_from_specific_humidity" title="Permalink to this definition"></a></dt>
 <dd><p>Computes the vapour pressure <span class="math notranslate nohighlight">\(e_a\)</span> in [mbar] using specific humidity
 and surface pressure.</p>
 <div class="math notranslate nohighlight">
@@ -483,9 +482,43 @@ dry air = 0.622 [-]</p></li>
 </dd></dl>
 
 <dl class="py function">
-<dt class="sig sig-object py" id="pywapor.et_look_v2.meteo.vapour_pressure_from_specific_humidity_daily">
-<span class="sig-name descname"><span class="pre">vapour_pressure_from_specific_humidity_daily</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">qv_24</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">p_air_24</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pywapor.et_look_v2.meteo.vapour_pressure_from_specific_humidity_daily" title="Permalink to this definition"></a></dt>
-<dd><p>Like <a class="reference internal" href="#pywapor.et_look_v2.meteo.vapour_pressure_from_specific_humidity" title="pywapor.et_look_v2.meteo.vapour_pressure_from_specific_humidity"><code class="xref py py-func docutils literal notranslate"><span class="pre">vapour_pressure_from_specific_humidity()</span></code></a> but as a daily average.</p>
+<dt class="sig sig-object py" id="pywapor.et_look_v2_v3.meteo.specific_humidity_from_vapour_pressure">
+<span class="sig-name descname"><span class="pre">specific_humidity_from_vapour_pressure</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">vp</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">p_air</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pywapor.et_look_v2_v3.meteo.specific_humidity_from_vapour_pressure" title="Permalink to this definition"></a></dt>
+<dd><p>Computes specific humidity using te vapour pressure <span class="math notranslate nohighlight">\(e_a\)</span> in [mbar]
+and surface pressure.</p>
+<div class="math notranslate nohighlight">
+\[e_{a}=\frac{q_{v} \cdot P}{\varepsilon}\]</div>
+<p>where the following constant is used</p>
+<ul class="simple">
+<li><p><span class="math notranslate nohighlight">\(\varepsilon\)</span> = ratio of molecular weight of water to
+dry air = 0.622 [-]</p></li>
+</ul>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>vp</strong> (<em>float</em>) – vapour pressure,
+<span class="math notranslate nohighlight">\(e_{a}\)</span>
+[mbar]</p></li>
+<li><p><strong>p_air</strong> (<em>float</em>) – air pressure,
+<span class="math notranslate nohighlight">\(P\)</span>
+[mbar]</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p><strong>qv</strong> – specific humidity,
+<span class="math notranslate nohighlight">\(q_{v}\)</span>
+[kg/kg]</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>float</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="pywapor.et_look_v2_v3.meteo.vapour_pressure_from_specific_humidity_daily">
+<span class="sig-name descname"><span class="pre">vapour_pressure_from_specific_humidity_daily</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">qv_24</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">p_air_24</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pywapor.et_look_v2_v3.meteo.vapour_pressure_from_specific_humidity_daily" title="Permalink to this definition"></a></dt>
+<dd><p>Like <a class="reference internal" href="#pywapor.et_look_v2_v3.meteo.vapour_pressure_from_specific_humidity" title="pywapor.et_look_v2_v3.meteo.vapour_pressure_from_specific_humidity"><code class="xref py py-func docutils literal notranslate"><span class="pre">vapour_pressure_from_specific_humidity()</span></code></a> but as a daily average.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><ul class="simple">
@@ -509,9 +542,93 @@ dry air = 0.622 [-]</p></li>
 </dd></dl>
 
 <dl class="py function">
-<dt class="sig sig-object py" id="pywapor.et_look_v2.meteo.saturated_vapour_pressure_minimum">
-<span class="sig-name descname"><span class="pre">saturated_vapour_pressure_minimum</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">t_air_min_coarse</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pywapor.et_look_v2.meteo.saturated_vapour_pressure_minimum" title="Permalink to this definition"></a></dt>
-<dd><p>Like <a class="reference internal" href="#pywapor.et_look_v2.meteo.saturated_vapour_pressure" title="pywapor.et_look_v2.meteo.saturated_vapour_pressure"><code class="xref py py-func docutils literal notranslate"><span class="pre">saturated_vapour_pressure()</span></code></a> but based on daily minimum air temperature. This
+<dt class="sig sig-object py" id="pywapor.et_look_v2_v3.meteo.vapour_pressure_from_dewpoint">
+<span class="sig-name descname"><span class="pre">vapour_pressure_from_dewpoint</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">t_dew</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pywapor.et_look_v2_v3.meteo.vapour_pressure_from_dewpoint" title="Permalink to this definition"></a></dt>
+<dd><div class="math notranslate nohighlight">
+\[e_{a}=6.108\exp\left[\frac{17.27T_{d}}{T_{d}+237.3}\right]\]</div>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>t_dew</strong> (<em>float</em>) – dewpoint temperature,
+<span class="math notranslate nohighlight">\(T_d\)</span>
+[°C]</p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p><strong>vp</strong> – vapour pressure,
+<span class="math notranslate nohighlight">\(e_a\)</span>
+[mbar]</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>float</p>
+</dd>
+</dl>
+<p class="rubric">Examples</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">ETLook</span> <span class="kn">import</span> <span class="n">meteo</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">meteo</span><span class="o">.</span><span class="n">vapour_pressure_from_dewpoint</span><span class="p">(</span><span class="mi">20</span><span class="p">)</span>
+<span class="go">23.382812709274457</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="pywapor.et_look_v2_v3.meteo.vapour_pressure_from_dewpoint_daily">
+<span class="sig-name descname"><span class="pre">vapour_pressure_from_dewpoint_daily</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">t_dew_24</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pywapor.et_look_v2_v3.meteo.vapour_pressure_from_dewpoint_daily" title="Permalink to this definition"></a></dt>
+<dd><div class="math notranslate nohighlight">
+\[e_{a}=6.108\exp\left[\frac{17.27T_{d,24}}{T_{d,24}+237.3}\right]\]</div>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>t_dew_24</strong> (<em>float</em>) – dewpoint temperature,
+<span class="math notranslate nohighlight">\(T_d\)</span>
+[°C]</p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p><strong>vp_24</strong> – vapour pressure,
+<span class="math notranslate nohighlight">\(e_{a,24}\)</span>
+[mbar]</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>float</p>
+</dd>
+</dl>
+<p class="rubric">Examples</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">ETLook</span> <span class="kn">import</span> <span class="n">meteo</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">meteo</span><span class="o">.</span><span class="n">vapour_pressure_from_dewpoint_daily</span><span class="p">(</span><span class="mi">20</span><span class="p">)</span>
+<span class="go">23.382812709274457</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="pywapor.et_look_v2_v3.meteo.vapour_pressure_from_dewpoint_inst">
+<span class="sig-name descname"><span class="pre">vapour_pressure_from_dewpoint_inst</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">t_dew_i</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pywapor.et_look_v2_v3.meteo.vapour_pressure_from_dewpoint_inst" title="Permalink to this definition"></a></dt>
+<dd><div class="math notranslate nohighlight">
+\[e_{a,i}=6.108\exp\left[\frac{17.27T_{d,i}}{T_{d,i}+237.3}\right]\]</div>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>t_dew_i</strong> (<em>float</em>) – instantaneous dew point temperature,
+<span class="math notranslate nohighlight">\(T_{dew,i}\)</span>
+[°C]</p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p><strong>vp_i</strong> – vapour pressure,
+<span class="math notranslate nohighlight">\(e_{a,i}\)</span>
+[mbar]</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>float</p>
+</dd>
+</dl>
+<p class="rubric">Examples</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">ETLook</span> <span class="kn">import</span> <span class="n">meteo</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">meteo</span><span class="o">.</span><span class="n">vapour_pressure_from_dewpoint_inst</span><span class="p">(</span><span class="mi">20</span><span class="p">)</span>
+<span class="go">23.382812709274457</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="pywapor.et_look_v2_v3.meteo.saturated_vapour_pressure_minimum">
+<span class="sig-name descname"><span class="pre">saturated_vapour_pressure_minimum</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">t_air_min_coarse</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pywapor.et_look_v2_v3.meteo.saturated_vapour_pressure_minimum" title="Permalink to this definition"></a></dt>
+<dd><p>Like <a class="reference internal" href="#pywapor.et_look_v2_v3.meteo.saturated_vapour_pressure" title="pywapor.et_look_v2_v3.meteo.saturated_vapour_pressure"><code class="xref py py-func docutils literal notranslate"><span class="pre">saturated_vapour_pressure()</span></code></a> but based on daily minimum air temperature. This
 is only relevant for reference ET calculations.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
@@ -531,9 +648,9 @@ is only relevant for reference ET calculations.</p>
 </dd></dl>
 
 <dl class="py function">
-<dt class="sig sig-object py" id="pywapor.et_look_v2.meteo.saturated_vapour_pressure_maximum">
-<span class="sig-name descname"><span class="pre">saturated_vapour_pressure_maximum</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">t_air_max_coarse</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pywapor.et_look_v2.meteo.saturated_vapour_pressure_maximum" title="Permalink to this definition"></a></dt>
-<dd><p>Like <a class="reference internal" href="#pywapor.et_look_v2.meteo.saturated_vapour_pressure" title="pywapor.et_look_v2.meteo.saturated_vapour_pressure"><code class="xref py py-func docutils literal notranslate"><span class="pre">saturated_vapour_pressure()</span></code></a> but based on daily maximum air temperature. This
+<dt class="sig sig-object py" id="pywapor.et_look_v2_v3.meteo.saturated_vapour_pressure_maximum">
+<span class="sig-name descname"><span class="pre">saturated_vapour_pressure_maximum</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">t_air_max_coarse</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pywapor.et_look_v2_v3.meteo.saturated_vapour_pressure_maximum" title="Permalink to this definition"></a></dt>
+<dd><p>Like <a class="reference internal" href="#pywapor.et_look_v2_v3.meteo.saturated_vapour_pressure" title="pywapor.et_look_v2_v3.meteo.saturated_vapour_pressure"><code class="xref py py-func docutils literal notranslate"><span class="pre">saturated_vapour_pressure()</span></code></a> but based on daily maximum air temperature. This
 is only relevant for reference ET calculations.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
@@ -553,8 +670,8 @@ is only relevant for reference ET calculations.</p>
 </dd></dl>
 
 <dl class="py function">
-<dt class="sig sig-object py" id="pywapor.et_look_v2.meteo.saturated_vapour_pressure_average">
-<span class="sig-name descname"><span class="pre">saturated_vapour_pressure_average</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">svp_24_max</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">svp_24_min</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pywapor.et_look_v2.meteo.saturated_vapour_pressure_average" title="Permalink to this definition"></a></dt>
+<dt class="sig sig-object py" id="pywapor.et_look_v2_v3.meteo.saturated_vapour_pressure_average">
+<span class="sig-name descname"><span class="pre">saturated_vapour_pressure_average</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">svp_24_max</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">svp_24_min</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pywapor.et_look_v2_v3.meteo.saturated_vapour_pressure_average" title="Permalink to this definition"></a></dt>
 <dd><p>Average saturated vapour pressure based on two saturated vapour pressure values
 calculated using minimum and maximum air temperature respectively. This is preferable
 to calculating saturated vapour pressure using the average air temperature, because
@@ -585,9 +702,9 @@ temperature.</p>
 </dd></dl>
 
 <dl class="py function">
-<dt class="sig sig-object py" id="pywapor.et_look_v2.meteo.vapour_pressure_from_specific_humidity_inst">
-<span class="sig-name descname"><span class="pre">vapour_pressure_from_specific_humidity_inst</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">qv_i</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">p_air_i</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pywapor.et_look_v2.meteo.vapour_pressure_from_specific_humidity_inst" title="Permalink to this definition"></a></dt>
-<dd><p>Like <a class="reference internal" href="#pywapor.et_look_v2.meteo.vapour_pressure_from_specific_humidity" title="pywapor.et_look_v2.meteo.vapour_pressure_from_specific_humidity"><code class="xref py py-func docutils literal notranslate"><span class="pre">vapour_pressure_from_specific_humidity()</span></code></a> but as an instantaneous value.</p>
+<dt class="sig sig-object py" id="pywapor.et_look_v2_v3.meteo.vapour_pressure_from_specific_humidity_inst">
+<span class="sig-name descname"><span class="pre">vapour_pressure_from_specific_humidity_inst</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">qv_i</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">p_air_i</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pywapor.et_look_v2_v3.meteo.vapour_pressure_from_specific_humidity_inst" title="Permalink to this definition"></a></dt>
+<dd><p>Like <a class="reference internal" href="#pywapor.et_look_v2_v3.meteo.vapour_pressure_from_specific_humidity" title="pywapor.et_look_v2_v3.meteo.vapour_pressure_from_specific_humidity"><code class="xref py py-func docutils literal notranslate"><span class="pre">vapour_pressure_from_specific_humidity()</span></code></a> but as an instantaneous value.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><ul class="simple">
@@ -611,8 +728,8 @@ temperature.</p>
 </dd></dl>
 
 <dl class="py function">
-<dt class="sig sig-object py" id="pywapor.et_look_v2.meteo.saturated_vapour_pressure">
-<span class="sig-name descname"><span class="pre">saturated_vapour_pressure</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">t_air</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pywapor.et_look_v2.meteo.saturated_vapour_pressure" title="Permalink to this definition"></a></dt>
+<dt class="sig sig-object py" id="pywapor.et_look_v2_v3.meteo.saturated_vapour_pressure">
+<span class="sig-name descname"><span class="pre">saturated_vapour_pressure</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">t_air</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pywapor.et_look_v2_v3.meteo.saturated_vapour_pressure" title="Permalink to this definition"></a></dt>
 <dd><p>Computes saturated vapour pressure <span class="math notranslate nohighlight">\(e_s\)</span> [mbar], it provides
 the vapour pressure when the air is fully saturated with water. It is
 related to air temperature <span class="math notranslate nohighlight">\(T_a\)</span> [C] as:</p>
@@ -642,9 +759,9 @@ related to air temperature <span class="math notranslate nohighlight">\(T_a\)</s
 </dd></dl>
 
 <dl class="py function">
-<dt class="sig sig-object py" id="pywapor.et_look_v2.meteo.saturated_vapour_pressure_daily">
-<span class="sig-name descname"><span class="pre">saturated_vapour_pressure_daily</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">t_air_24</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pywapor.et_look_v2.meteo.saturated_vapour_pressure_daily" title="Permalink to this definition"></a></dt>
-<dd><p>Like <a class="reference internal" href="#pywapor.et_look_v2.meteo.saturated_vapour_pressure" title="pywapor.et_look_v2.meteo.saturated_vapour_pressure"><code class="xref py py-func docutils literal notranslate"><span class="pre">saturated_vapour_pressure()</span></code></a> but as a daily average.</p>
+<dt class="sig sig-object py" id="pywapor.et_look_v2_v3.meteo.saturated_vapour_pressure_daily">
+<span class="sig-name descname"><span class="pre">saturated_vapour_pressure_daily</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">t_air_24</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pywapor.et_look_v2_v3.meteo.saturated_vapour_pressure_daily" title="Permalink to this definition"></a></dt>
+<dd><p>Like <a class="reference internal" href="#pywapor.et_look_v2_v3.meteo.saturated_vapour_pressure" title="pywapor.et_look_v2_v3.meteo.saturated_vapour_pressure"><code class="xref py py-func docutils literal notranslate"><span class="pre">saturated_vapour_pressure()</span></code></a> but as a daily average.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><p><strong>t_air_24</strong> (<em>float</em>) – daily air temperature,
@@ -663,9 +780,9 @@ related to air temperature <span class="math notranslate nohighlight">\(T_a\)</s
 </dd></dl>
 
 <dl class="py function">
-<dt class="sig sig-object py" id="pywapor.et_look_v2.meteo.saturated_vapour_pressure_inst">
-<span class="sig-name descname"><span class="pre">saturated_vapour_pressure_inst</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">t_air_i</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pywapor.et_look_v2.meteo.saturated_vapour_pressure_inst" title="Permalink to this definition"></a></dt>
-<dd><p>Like <a class="reference internal" href="#pywapor.et_look_v2.meteo.saturated_vapour_pressure" title="pywapor.et_look_v2.meteo.saturated_vapour_pressure"><code class="xref py py-func docutils literal notranslate"><span class="pre">saturated_vapour_pressure()</span></code></a> but as an instantaneous value.</p>
+<dt class="sig sig-object py" id="pywapor.et_look_v2_v3.meteo.saturated_vapour_pressure_inst">
+<span class="sig-name descname"><span class="pre">saturated_vapour_pressure_inst</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">t_air_i</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pywapor.et_look_v2_v3.meteo.saturated_vapour_pressure_inst" title="Permalink to this definition"></a></dt>
+<dd><p>Like <a class="reference internal" href="#pywapor.et_look_v2_v3.meteo.saturated_vapour_pressure" title="pywapor.et_look_v2_v3.meteo.saturated_vapour_pressure"><code class="xref py py-func docutils literal notranslate"><span class="pre">saturated_vapour_pressure()</span></code></a> but as an instantaneous value.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><p><strong>t_air_i</strong> (<em>float</em>) – instantaneous air temperature,
@@ -684,8 +801,8 @@ related to air temperature <span class="math notranslate nohighlight">\(T_a\)</s
 </dd></dl>
 
 <dl class="py function">
-<dt class="sig sig-object py" id="pywapor.et_look_v2.meteo.vapour_pressure">
-<span class="sig-name descname"><span class="pre">vapour_pressure</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">svp</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">rh</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pywapor.et_look_v2.meteo.vapour_pressure" title="Permalink to this definition"></a></dt>
+<dt class="sig sig-object py" id="pywapor.et_look_v2_v3.meteo.vapour_pressure">
+<span class="sig-name descname"><span class="pre">vapour_pressure</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">svp</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">rh</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pywapor.et_look_v2_v3.meteo.vapour_pressure" title="Permalink to this definition"></a></dt>
 <dd><p>Computes the vapour pressure <span class="math notranslate nohighlight">\(e_a\)</span> in [mbar].</p>
 <div class="math notranslate nohighlight">
 \[e_{a}=\frac{\phi}{100} \cdot e_{s}\]</div>
@@ -718,15 +835,15 @@ related to air temperature <span class="math notranslate nohighlight">\(T_a\)</s
 </dd></dl>
 
 <dl class="py function">
-<dt class="sig sig-object py" id="pywapor.et_look_v2.meteo.slope_saturated_vapour_pressure">
-<span class="sig-name descname"><span class="pre">slope_saturated_vapour_pressure</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">t_air</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pywapor.et_look_v2.meteo.slope_saturated_vapour_pressure" title="Permalink to this definition"></a></dt>
+<dt class="sig sig-object py" id="pywapor.et_look_v2_v3.meteo.slope_saturated_vapour_pressure">
+<span class="sig-name descname"><span class="pre">slope_saturated_vapour_pressure</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">t_air</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pywapor.et_look_v2_v3.meteo.slope_saturated_vapour_pressure" title="Permalink to this definition"></a></dt>
 <dd><p>Computes the rate of change of vapour pressure <span class="math notranslate nohighlight">\(\Delta\)</span> in [mbar K-1]
 for a given air temperature <span class="math notranslate nohighlight">\(T_a\)</span>. It is a function of the air
 temperature <span class="math notranslate nohighlight">\(T_a\)</span> and the saturated vapour pressure <span class="math notranslate nohighlight">\(e_s\)</span>
 [mbar] which in itself is a function of <span class="math notranslate nohighlight">\(T_a\)</span>.</p>
 <div class="math notranslate nohighlight">
 \[\Delta=\frac{4098 \cdot e_{s}}{\left(237.3+T_{a}\right)^{2}}\]</div>
-<p>for <span class="math notranslate nohighlight">\(e_s\)</span> see <a class="reference internal" href="#pywapor.et_look_v2.meteo.saturated_vapour_pressure" title="pywapor.et_look_v2.meteo.saturated_vapour_pressure"><code class="xref py py-func docutils literal notranslate"><span class="pre">saturated_vapour_pressure()</span></code></a></p>
+<p>for <span class="math notranslate nohighlight">\(e_s\)</span> see <a class="reference internal" href="#pywapor.et_look_v2_v3.meteo.saturated_vapour_pressure" title="pywapor.et_look_v2_v3.meteo.saturated_vapour_pressure"><code class="xref py py-func docutils literal notranslate"><span class="pre">saturated_vapour_pressure()</span></code></a></p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><p><strong>t_air</strong> (<em>float</em>) – air temperature
@@ -751,9 +868,9 @@ temperature <span class="math notranslate nohighlight">\(T_a\)</span> and the sa
 </dd></dl>
 
 <dl class="py function">
-<dt class="sig sig-object py" id="pywapor.et_look_v2.meteo.slope_saturated_vapour_pressure_daily">
-<span class="sig-name descname"><span class="pre">slope_saturated_vapour_pressure_daily</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">t_air_24</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pywapor.et_look_v2.meteo.slope_saturated_vapour_pressure_daily" title="Permalink to this definition"></a></dt>
-<dd><p>Like <a class="reference internal" href="#pywapor.et_look_v2.meteo.slope_saturated_vapour_pressure" title="pywapor.et_look_v2.meteo.slope_saturated_vapour_pressure"><code class="xref py py-func docutils literal notranslate"><span class="pre">slope_saturated_vapour_pressure()</span></code></a> but as a daily average.</p>
+<dt class="sig sig-object py" id="pywapor.et_look_v2_v3.meteo.slope_saturated_vapour_pressure_daily">
+<span class="sig-name descname"><span class="pre">slope_saturated_vapour_pressure_daily</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">t_air_24</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pywapor.et_look_v2_v3.meteo.slope_saturated_vapour_pressure_daily" title="Permalink to this definition"></a></dt>
+<dd><p>Like <a class="reference internal" href="#pywapor.et_look_v2_v3.meteo.slope_saturated_vapour_pressure" title="pywapor.et_look_v2_v3.meteo.slope_saturated_vapour_pressure"><code class="xref py py-func docutils literal notranslate"><span class="pre">slope_saturated_vapour_pressure()</span></code></a> but as a daily average.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><p><strong>t_air_24</strong> (<em>float</em>) – daily air temperature
@@ -772,9 +889,9 @@ temperature <span class="math notranslate nohighlight">\(T_a\)</span> and the sa
 </dd></dl>
 
 <dl class="py function">
-<dt class="sig sig-object py" id="pywapor.et_look_v2.meteo.slope_saturated_vapour_pressure_inst">
-<span class="sig-name descname"><span class="pre">slope_saturated_vapour_pressure_inst</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">t_air_i</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pywapor.et_look_v2.meteo.slope_saturated_vapour_pressure_inst" title="Permalink to this definition"></a></dt>
-<dd><p>Like <a class="reference internal" href="#pywapor.et_look_v2.meteo.slope_saturated_vapour_pressure" title="pywapor.et_look_v2.meteo.slope_saturated_vapour_pressure"><code class="xref py py-func docutils literal notranslate"><span class="pre">slope_saturated_vapour_pressure()</span></code></a> but as an instantaneous.
+<dt class="sig sig-object py" id="pywapor.et_look_v2_v3.meteo.slope_saturated_vapour_pressure_inst">
+<span class="sig-name descname"><span class="pre">slope_saturated_vapour_pressure_inst</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">t_air_i</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pywapor.et_look_v2_v3.meteo.slope_saturated_vapour_pressure_inst" title="Permalink to this definition"></a></dt>
+<dd><p>Like <a class="reference internal" href="#pywapor.et_look_v2_v3.meteo.slope_saturated_vapour_pressure" title="pywapor.et_look_v2_v3.meteo.slope_saturated_vapour_pressure"><code class="xref py py-func docutils literal notranslate"><span class="pre">slope_saturated_vapour_pressure()</span></code></a> but as an instantaneous.
 value</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
@@ -794,8 +911,8 @@ value</p>
 </dd></dl>
 
 <dl class="py function">
-<dt class="sig sig-object py" id="pywapor.et_look_v2.meteo.vapour_pressure_deficit">
-<span class="sig-name descname"><span class="pre">vapour_pressure_deficit</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">svp</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">vp</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pywapor.et_look_v2.meteo.vapour_pressure_deficit" title="Permalink to this definition"></a></dt>
+<dt class="sig sig-object py" id="pywapor.et_look_v2_v3.meteo.vapour_pressure_deficit">
+<span class="sig-name descname"><span class="pre">vapour_pressure_deficit</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">svp</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">vp</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pywapor.et_look_v2_v3.meteo.vapour_pressure_deficit" title="Permalink to this definition"></a></dt>
 <dd><p>Computes the vapour pressure deficit <span class="math notranslate nohighlight">\(\Delta_e\)</span> in [mbar].</p>
 <div class="math notranslate nohighlight">
 \[\Delta_e=e_s-e_a\]</div>
@@ -830,9 +947,9 @@ value</p>
 </dd></dl>
 
 <dl class="py function">
-<dt class="sig sig-object py" id="pywapor.et_look_v2.meteo.vapour_pressure_deficit_daily">
-<span class="sig-name descname"><span class="pre">vapour_pressure_deficit_daily</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">svp_24</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">vp_24</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pywapor.et_look_v2.meteo.vapour_pressure_deficit_daily" title="Permalink to this definition"></a></dt>
-<dd><p>Like <a class="reference internal" href="#pywapor.et_look_v2.meteo.vapour_pressure_deficit" title="pywapor.et_look_v2.meteo.vapour_pressure_deficit"><code class="xref py py-func docutils literal notranslate"><span class="pre">vapour_pressure_deficit()</span></code></a> but as a daily average.</p>
+<dt class="sig sig-object py" id="pywapor.et_look_v2_v3.meteo.vapour_pressure_deficit_daily">
+<span class="sig-name descname"><span class="pre">vapour_pressure_deficit_daily</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">svp_24</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">vp_24</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pywapor.et_look_v2_v3.meteo.vapour_pressure_deficit_daily" title="Permalink to this definition"></a></dt>
+<dd><p>Like <a class="reference internal" href="#pywapor.et_look_v2_v3.meteo.vapour_pressure_deficit" title="pywapor.et_look_v2_v3.meteo.vapour_pressure_deficit"><code class="xref py py-func docutils literal notranslate"><span class="pre">vapour_pressure_deficit()</span></code></a> but as a daily average.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><ul class="simple">
@@ -856,8 +973,8 @@ value</p>
 </dd></dl>
 
 <dl class="py function">
-<dt class="sig sig-object py" id="pywapor.et_look_v2.meteo.air_pressure">
-<span class="sig-name descname"><span class="pre">air_pressure</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">z</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">p_air_0</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1013.25</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pywapor.et_look_v2.meteo.air_pressure" title="Permalink to this definition"></a></dt>
+<dt class="sig sig-object py" id="pywapor.et_look_v2_v3.meteo.air_pressure">
+<span class="sig-name descname"><span class="pre">air_pressure</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">z</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">p_air_0</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1013.25</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pywapor.et_look_v2_v3.meteo.air_pressure" title="Permalink to this definition"></a></dt>
 <dd><p>Computes air pressure <span class="math notranslate nohighlight">\(P\)</span> at a certain elevation derived from the
 air pressure at sea level <span class="math notranslate nohighlight">\(P_0\)</span>. Air pressure decreases with
 increasing elevation.</p>
@@ -902,9 +1019,9 @@ increasing elevation.</p>
 </dd></dl>
 
 <dl class="py function">
-<dt class="sig sig-object py" id="pywapor.et_look_v2.meteo.air_pressure_daily">
-<span class="sig-name descname"><span class="pre">air_pressure_daily</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">z</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">p_air_0_24</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1013.25</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pywapor.et_look_v2.meteo.air_pressure_daily" title="Permalink to this definition"></a></dt>
-<dd><p>Like <a class="reference internal" href="#pywapor.et_look_v2.meteo.air_pressure" title="pywapor.et_look_v2.meteo.air_pressure"><code class="xref py py-func docutils literal notranslate"><span class="pre">air_pressure()</span></code></a> but as a daily average.</p>
+<dt class="sig sig-object py" id="pywapor.et_look_v2_v3.meteo.air_pressure_daily">
+<span class="sig-name descname"><span class="pre">air_pressure_daily</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">z</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">p_air_0_24</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1013.25</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pywapor.et_look_v2_v3.meteo.air_pressure_daily" title="Permalink to this definition"></a></dt>
+<dd><p>Like <a class="reference internal" href="#pywapor.et_look_v2_v3.meteo.air_pressure" title="pywapor.et_look_v2_v3.meteo.air_pressure"><code class="xref py py-func docutils literal notranslate"><span class="pre">air_pressure()</span></code></a> but as a daily average.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><ul class="simple">
@@ -928,8 +1045,8 @@ increasing elevation.</p>
 </dd></dl>
 
 <dl class="py function">
-<dt class="sig sig-object py" id="pywapor.et_look_v2.meteo.dry_air_density">
-<span class="sig-name descname"><span class="pre">dry_air_density</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">p_air</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">vp</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">t_air_k</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pywapor.et_look_v2.meteo.dry_air_density" title="Permalink to this definition"></a></dt>
+<dt class="sig sig-object py" id="pywapor.et_look_v2_v3.meteo.dry_air_density">
+<span class="sig-name descname"><span class="pre">dry_air_density</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">p_air</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">vp</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">t_air_k</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pywapor.et_look_v2_v3.meteo.dry_air_density" title="Permalink to this definition"></a></dt>
 <dd><p>Computes dry air density <span class="math notranslate nohighlight">\(\rho_{d}\)</span> in [kg m-3].</p>
 <div class="math notranslate nohighlight">
 \[\rho_{d}=\frac{P-e_{a}}{\Re \cdot T_{a,K}}\]</div>
@@ -969,9 +1086,9 @@ increasing elevation.</p>
 </dd></dl>
 
 <dl class="py function">
-<dt class="sig sig-object py" id="pywapor.et_look_v2.meteo.dry_air_density_daily">
-<span class="sig-name descname"><span class="pre">dry_air_density_daily</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">p_air_24</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">vp_24</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">t_air_k_24</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pywapor.et_look_v2.meteo.dry_air_density_daily" title="Permalink to this definition"></a></dt>
-<dd><p>Like <a class="reference internal" href="#pywapor.et_look_v2.meteo.dry_air_density" title="pywapor.et_look_v2.meteo.dry_air_density"><code class="xref py py-func docutils literal notranslate"><span class="pre">dry_air_density()</span></code></a> but as a daily average.</p>
+<dt class="sig sig-object py" id="pywapor.et_look_v2_v3.meteo.dry_air_density_daily">
+<span class="sig-name descname"><span class="pre">dry_air_density_daily</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">p_air_24</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">vp_24</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">t_air_k_24</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pywapor.et_look_v2_v3.meteo.dry_air_density_daily" title="Permalink to this definition"></a></dt>
+<dd><p>Like <a class="reference internal" href="#pywapor.et_look_v2_v3.meteo.dry_air_density" title="pywapor.et_look_v2_v3.meteo.dry_air_density"><code class="xref py py-func docutils literal notranslate"><span class="pre">dry_air_density()</span></code></a> but as a daily average.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><ul class="simple">
@@ -998,9 +1115,9 @@ increasing elevation.</p>
 </dd></dl>
 
 <dl class="py function">
-<dt class="sig sig-object py" id="pywapor.et_look_v2.meteo.dry_air_density_inst">
-<span class="sig-name descname"><span class="pre">dry_air_density_inst</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">p_air_i</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">vp_i</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">t_air_k_i</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pywapor.et_look_v2.meteo.dry_air_density_inst" title="Permalink to this definition"></a></dt>
-<dd><p>Like <a class="reference internal" href="#pywapor.et_look_v2.meteo.dry_air_density" title="pywapor.et_look_v2.meteo.dry_air_density"><code class="xref py py-func docutils literal notranslate"><span class="pre">dry_air_density()</span></code></a> but as an instantaneous value.</p>
+<dt class="sig sig-object py" id="pywapor.et_look_v2_v3.meteo.dry_air_density_inst">
+<span class="sig-name descname"><span class="pre">dry_air_density_inst</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">p_air_i</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">vp_i</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">t_air_k_i</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pywapor.et_look_v2_v3.meteo.dry_air_density_inst" title="Permalink to this definition"></a></dt>
+<dd><p>Like <a class="reference internal" href="#pywapor.et_look_v2_v3.meteo.dry_air_density" title="pywapor.et_look_v2_v3.meteo.dry_air_density"><code class="xref py py-func docutils literal notranslate"><span class="pre">dry_air_density()</span></code></a> but as an instantaneous value.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><ul class="simple">
@@ -1027,8 +1144,8 @@ increasing elevation.</p>
 </dd></dl>
 
 <dl class="py function">
-<dt class="sig sig-object py" id="pywapor.et_look_v2.meteo.moist_air_density">
-<span class="sig-name descname"><span class="pre">moist_air_density</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">vp</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">t_air_k</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pywapor.et_look_v2.meteo.moist_air_density" title="Permalink to this definition"></a></dt>
+<dt class="sig sig-object py" id="pywapor.et_look_v2_v3.meteo.moist_air_density">
+<span class="sig-name descname"><span class="pre">moist_air_density</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">vp</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">t_air_k</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pywapor.et_look_v2_v3.meteo.moist_air_density" title="Permalink to this definition"></a></dt>
 <dd><p>Computes moist air density <span class="math notranslate nohighlight">\(\rho_{s}\)</span> in [kg m-3].</p>
 <div class="math notranslate nohighlight">
 \[\rho_{s}=\frac{e_{a}}{R_{v} \cdot T_{a,K}}\]</div>
@@ -1065,9 +1182,9 @@ increasing elevation.</p>
 </dd></dl>
 
 <dl class="py function">
-<dt class="sig sig-object py" id="pywapor.et_look_v2.meteo.moist_air_density_daily">
-<span class="sig-name descname"><span class="pre">moist_air_density_daily</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">vp_24</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">t_air_k_24</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pywapor.et_look_v2.meteo.moist_air_density_daily" title="Permalink to this definition"></a></dt>
-<dd><p>Like <a class="reference internal" href="#pywapor.et_look_v2.meteo.moist_air_density" title="pywapor.et_look_v2.meteo.moist_air_density"><code class="xref py py-func docutils literal notranslate"><span class="pre">moist_air_density()</span></code></a> but as a daily average.</p>
+<dt class="sig sig-object py" id="pywapor.et_look_v2_v3.meteo.moist_air_density_daily">
+<span class="sig-name descname"><span class="pre">moist_air_density_daily</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">vp_24</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">t_air_k_24</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pywapor.et_look_v2_v3.meteo.moist_air_density_daily" title="Permalink to this definition"></a></dt>
+<dd><p>Like <a class="reference internal" href="#pywapor.et_look_v2_v3.meteo.moist_air_density" title="pywapor.et_look_v2_v3.meteo.moist_air_density"><code class="xref py py-func docutils literal notranslate"><span class="pre">moist_air_density()</span></code></a> but as a daily average.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><ul class="simple">
@@ -1091,9 +1208,9 @@ increasing elevation.</p>
 </dd></dl>
 
 <dl class="py function">
-<dt class="sig sig-object py" id="pywapor.et_look_v2.meteo.moist_air_density_inst">
-<span class="sig-name descname"><span class="pre">moist_air_density_inst</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">vp_i</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">t_air_k_i</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pywapor.et_look_v2.meteo.moist_air_density_inst" title="Permalink to this definition"></a></dt>
-<dd><p>Like <a class="reference internal" href="#pywapor.et_look_v2.meteo.moist_air_density" title="pywapor.et_look_v2.meteo.moist_air_density"><code class="xref py py-func docutils literal notranslate"><span class="pre">moist_air_density()</span></code></a> but as an instantaneous value.</p>
+<dt class="sig sig-object py" id="pywapor.et_look_v2_v3.meteo.moist_air_density_inst">
+<span class="sig-name descname"><span class="pre">moist_air_density_inst</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">vp_i</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">t_air_k_i</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pywapor.et_look_v2_v3.meteo.moist_air_density_inst" title="Permalink to this definition"></a></dt>
+<dd><p>Like <a class="reference internal" href="#pywapor.et_look_v2_v3.meteo.moist_air_density" title="pywapor.et_look_v2_v3.meteo.moist_air_density"><code class="xref py py-func docutils literal notranslate"><span class="pre">moist_air_density()</span></code></a> but as an instantaneous value.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><ul class="simple">
@@ -1117,8 +1234,8 @@ increasing elevation.</p>
 </dd></dl>
 
 <dl class="py function">
-<dt class="sig sig-object py" id="pywapor.et_look_v2.meteo.air_density">
-<span class="sig-name descname"><span class="pre">air_density</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">ad_dry</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ad_moist</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pywapor.et_look_v2.meteo.air_density" title="Permalink to this definition"></a></dt>
+<dt class="sig sig-object py" id="pywapor.et_look_v2_v3.meteo.air_density">
+<span class="sig-name descname"><span class="pre">air_density</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">ad_dry</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ad_moist</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pywapor.et_look_v2_v3.meteo.air_density" title="Permalink to this definition"></a></dt>
 <dd><p>Computes air density <span class="math notranslate nohighlight">\(\rho\)</span> in [kg m-3].</p>
 <div class="math notranslate nohighlight">
 \[\rho=\rho_{s}+\rho_{d}\]</div>
@@ -1153,9 +1270,9 @@ increasing elevation.</p>
 </dd></dl>
 
 <dl class="py function">
-<dt class="sig sig-object py" id="pywapor.et_look_v2.meteo.air_density_daily">
-<span class="sig-name descname"><span class="pre">air_density_daily</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">ad_dry_24</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ad_moist_24</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pywapor.et_look_v2.meteo.air_density_daily" title="Permalink to this definition"></a></dt>
-<dd><p>Like <a class="reference internal" href="#pywapor.et_look_v2.meteo.air_density" title="pywapor.et_look_v2.meteo.air_density"><code class="xref py py-func docutils literal notranslate"><span class="pre">air_density()</span></code></a> but as a daily average.</p>
+<dt class="sig sig-object py" id="pywapor.et_look_v2_v3.meteo.air_density_daily">
+<span class="sig-name descname"><span class="pre">air_density_daily</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">ad_dry_24</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ad_moist_24</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pywapor.et_look_v2_v3.meteo.air_density_daily" title="Permalink to this definition"></a></dt>
+<dd><p>Like <a class="reference internal" href="#pywapor.et_look_v2_v3.meteo.air_density" title="pywapor.et_look_v2_v3.meteo.air_density"><code class="xref py py-func docutils literal notranslate"><span class="pre">air_density()</span></code></a> but as a daily average.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><ul class="simple">
@@ -1179,9 +1296,9 @@ increasing elevation.</p>
 </dd></dl>
 
 <dl class="py function">
-<dt class="sig sig-object py" id="pywapor.et_look_v2.meteo.air_density_inst">
-<span class="sig-name descname"><span class="pre">air_density_inst</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">ad_dry_i</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ad_moist_i</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pywapor.et_look_v2.meteo.air_density_inst" title="Permalink to this definition"></a></dt>
-<dd><p>Like <a class="reference internal" href="#pywapor.et_look_v2.meteo.air_density" title="pywapor.et_look_v2.meteo.air_density"><code class="xref py py-func docutils literal notranslate"><span class="pre">air_density()</span></code></a> but as a instantaneous value.</p>
+<dt class="sig sig-object py" id="pywapor.et_look_v2_v3.meteo.air_density_inst">
+<span class="sig-name descname"><span class="pre">air_density_inst</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">ad_dry_i</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ad_moist_i</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pywapor.et_look_v2_v3.meteo.air_density_inst" title="Permalink to this definition"></a></dt>
+<dd><p>Like <a class="reference internal" href="#pywapor.et_look_v2_v3.meteo.air_density" title="pywapor.et_look_v2_v3.meteo.air_density"><code class="xref py py-func docutils literal notranslate"><span class="pre">air_density()</span></code></a> but as a instantaneous value.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><ul class="simple">
@@ -1205,8 +1322,8 @@ increasing elevation.</p>
 </dd></dl>
 
 <dl class="py function">
-<dt class="sig sig-object py" id="pywapor.et_look_v2.meteo.latent_heat">
-<span class="sig-name descname"><span class="pre">latent_heat</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">t_air</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pywapor.et_look_v2.meteo.latent_heat" title="Permalink to this definition"></a></dt>
+<dt class="sig sig-object py" id="pywapor.et_look_v2_v3.meteo.latent_heat">
+<span class="sig-name descname"><span class="pre">latent_heat</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">t_air</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pywapor.et_look_v2_v3.meteo.latent_heat" title="Permalink to this definition"></a></dt>
 <dd><p>Computes latent heat of evaporation <span class="math notranslate nohighlight">\(\lambda\)</span> [J kg-1], describing
 the amount of energy needed to evaporate one kg of water at constant
 pressure and temperature. At higher temperatures less energy will be
@@ -1242,9 +1359,9 @@ required than at lower temperatures.</p>
 </dd></dl>
 
 <dl class="py function">
-<dt class="sig sig-object py" id="pywapor.et_look_v2.meteo.latent_heat_daily">
-<span class="sig-name descname"><span class="pre">latent_heat_daily</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">t_air_24</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pywapor.et_look_v2.meteo.latent_heat_daily" title="Permalink to this definition"></a></dt>
-<dd><p>Like <a class="reference internal" href="#pywapor.et_look_v2.meteo.latent_heat" title="pywapor.et_look_v2.meteo.latent_heat"><code class="xref py py-func docutils literal notranslate"><span class="pre">latent_heat()</span></code></a> but as a daily average.</p>
+<dt class="sig sig-object py" id="pywapor.et_look_v2_v3.meteo.latent_heat_daily">
+<span class="sig-name descname"><span class="pre">latent_heat_daily</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">t_air_24</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pywapor.et_look_v2_v3.meteo.latent_heat_daily" title="Permalink to this definition"></a></dt>
+<dd><p>Like <a class="reference internal" href="#pywapor.et_look_v2_v3.meteo.latent_heat" title="pywapor.et_look_v2_v3.meteo.latent_heat"><code class="xref py py-func docutils literal notranslate"><span class="pre">latent_heat()</span></code></a> but as a daily average.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><p><strong>t_air_24</strong> (<em>float</em>) – daily air temperature,
@@ -1263,8 +1380,8 @@ required than at lower temperatures.</p>
 </dd></dl>
 
 <dl class="py function">
-<dt class="sig sig-object py" id="pywapor.et_look_v2.meteo.psychrometric_constant">
-<span class="sig-name descname"><span class="pre">psychrometric_constant</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">p_air</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">lh</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pywapor.et_look_v2.meteo.psychrometric_constant" title="Permalink to this definition"></a></dt>
+<dt class="sig sig-object py" id="pywapor.et_look_v2_v3.meteo.psychrometric_constant">
+<span class="sig-name descname"><span class="pre">psychrometric_constant</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">p_air</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">lh</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pywapor.et_look_v2_v3.meteo.psychrometric_constant" title="Permalink to this definition"></a></dt>
 <dd><p>Computes the psychrometric constant <span class="math notranslate nohighlight">\(\gamma\)</span> [mbar K-1] which
 relates the partial pressure of water in air to the air temperature.</p>
 <div class="math notranslate nohighlight">
@@ -1306,9 +1423,9 @@ dry air = 0.622 [-]</p></li>
 </dd></dl>
 
 <dl class="py function">
-<dt class="sig sig-object py" id="pywapor.et_look_v2.meteo.psychrometric_constant_daily">
-<span class="sig-name descname"><span class="pre">psychrometric_constant_daily</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">p_air_24</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">lh_24</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pywapor.et_look_v2.meteo.psychrometric_constant_daily" title="Permalink to this definition"></a></dt>
-<dd><p>Like <a class="reference internal" href="#pywapor.et_look_v2.meteo.psychrometric_constant" title="pywapor.et_look_v2.meteo.psychrometric_constant"><code class="xref py py-func docutils literal notranslate"><span class="pre">psychrometric_constant()</span></code></a> but as a daily average.</p>
+<dt class="sig sig-object py" id="pywapor.et_look_v2_v3.meteo.psychrometric_constant_daily">
+<span class="sig-name descname"><span class="pre">psychrometric_constant_daily</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">p_air_24</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">lh_24</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pywapor.et_look_v2_v3.meteo.psychrometric_constant_daily" title="Permalink to this definition"></a></dt>
+<dd><p>Like <a class="reference internal" href="#pywapor.et_look_v2_v3.meteo.psychrometric_constant" title="pywapor.et_look_v2_v3.meteo.psychrometric_constant"><code class="xref py py-func docutils literal notranslate"><span class="pre">psychrometric_constant()</span></code></a> but as a daily average.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><ul class="simple">
@@ -1332,8 +1449,8 @@ dry air = 0.622 [-]</p></li>
 </dd></dl>
 
 <dl class="py function">
-<dt class="sig sig-object py" id="pywapor.et_look_v2.meteo.wind_speed_blending_height">
-<span class="sig-name descname"><span class="pre">wind_speed_blending_height</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">u</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">z_obs</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">2</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">z_b</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">100</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pywapor.et_look_v2.meteo.wind_speed_blending_height" title="Permalink to this definition"></a></dt>
+<dt class="sig sig-object py" id="pywapor.et_look_v2_v3.meteo.wind_speed_blending_height">
+<span class="sig-name descname"><span class="pre">wind_speed_blending_height</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">u</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">z_obs</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">2</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">z_b</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">100</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pywapor.et_look_v2_v3.meteo.wind_speed_blending_height" title="Permalink to this definition"></a></dt>
 <dd><p>Computes the wind speed at blending height <span class="math notranslate nohighlight">\(u_{b}\)</span> [m/s] using the
 logarithmic wind profile.</p>
 <div class="math notranslate nohighlight">
@@ -1371,9 +1488,9 @@ logarithmic wind profile.</p>
 </dd></dl>
 
 <dl class="py function">
-<dt class="sig sig-object py" id="pywapor.et_look_v2.meteo.wind_speed_blending_height_daily">
-<span class="sig-name descname"><span class="pre">wind_speed_blending_height_daily</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">u_24</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">z_obs</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">2</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">z_b</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">100</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pywapor.et_look_v2.meteo.wind_speed_blending_height_daily" title="Permalink to this definition"></a></dt>
-<dd><p>Like <a class="reference internal" href="#pywapor.et_look_v2.meteo.wind_speed_blending_height" title="pywapor.et_look_v2.meteo.wind_speed_blending_height"><code class="xref py py-func docutils literal notranslate"><span class="pre">wind_speed_blending_height()</span></code></a> but as a daily average.</p>
+<dt class="sig sig-object py" id="pywapor.et_look_v2_v3.meteo.wind_speed_blending_height_daily">
+<span class="sig-name descname"><span class="pre">wind_speed_blending_height_daily</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">u_24</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">z_obs</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">2</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">z_b</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">100</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pywapor.et_look_v2_v3.meteo.wind_speed_blending_height_daily" title="Permalink to this definition"></a></dt>
+<dd><p>Like <a class="reference internal" href="#pywapor.et_look_v2_v3.meteo.wind_speed_blending_height" title="pywapor.et_look_v2_v3.meteo.wind_speed_blending_height"><code class="xref py py-func docutils literal notranslate"><span class="pre">wind_speed_blending_height()</span></code></a> but as a daily average.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><ul class="simple">
@@ -1400,8 +1517,8 @@ logarithmic wind profile.</p>
 </dd></dl>
 
 <dl class="py function">
-<dt class="sig sig-object py" id="pywapor.et_look_v2.meteo.wind_speed">
-<span class="sig-name descname"><span class="pre">wind_speed</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">u</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">v</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pywapor.et_look_v2.meteo.wind_speed" title="Permalink to this definition"></a></dt>
+<dt class="sig sig-object py" id="pywapor.et_look_v2_v3.meteo.wind_speed">
+<span class="sig-name descname"><span class="pre">wind_speed</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">u</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">v</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pywapor.et_look_v2_v3.meteo.wind_speed" title="Permalink to this definition"></a></dt>
 <dd><p>Calculate wind speed vector from two components.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
@@ -1420,8 +1537,8 @@ logarithmic wind profile.</p>
 </dd></dl>
 
 <dl class="py function">
-<dt class="sig sig-object py" id="pywapor.et_look_v2.meteo.air_pressure_kpa2mbar">
-<span class="sig-name descname"><span class="pre">air_pressure_kpa2mbar</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">p_air_kpa</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pywapor.et_look_v2.meteo.air_pressure_kpa2mbar" title="Permalink to this definition"></a></dt>
+<dt class="sig sig-object py" id="pywapor.et_look_v2_v3.meteo.air_pressure_kpa2mbar">
+<span class="sig-name descname"><span class="pre">air_pressure_kpa2mbar</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">p_air_kpa</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pywapor.et_look_v2_v3.meteo.air_pressure_kpa2mbar" title="Permalink to this definition"></a></dt>
 <dd><p>Like <code class="xref py py-func docutils literal notranslate"><span class="pre">p_air()</span></code>.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>

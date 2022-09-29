@@ -74,7 +74,7 @@ def time_bins(timelim, bin_length):
     ----------
     timelim : list
         Period for which to prepare data.
-    bin_length : {int | "DEKAD"}
+    bin_length : int | "DEKAD"
         Length of the bins in days or "DEKAD" for dekadal bins.
 
     Returns
@@ -101,29 +101,6 @@ def time_bins(timelim, bin_length):
         out = dates.to_numpy()
     return out
 
-def diags(diagnostics, dss, var):
-    dss_diag = list()
-    for i, ds in enumerate(dss):
-        if isinstance(ds, str):
-            ds = open_ds(ds)
-        xs = [v[1] for v in diagnostics.values()]
-        ys = [v[0] for v in diagnostics.values()]
-        ds = ds.sel(x = xs, y = ys, method = "nearest")
-        ds[f"{var}_source"] = xr.where(ds[var].notnull(), i, -1)
-        dss_diag.append(ds)
-    return dss_diag
-
-def create_diags_attrs(srcs):
-    attr_dict = dict()
-    for i, v in enumerate(srcs):
-        if isinstance(v[0], str):
-            attr_dict[str(i)] = ".".join(v)
-        elif isinstance(v[0], functools.partial):
-            attr_dict[str(i)] = v[0].func.__name__
-        elif isinstance(v[0], types.FunctionType):
-            attr_dict[str(i)] = v[0].__name__
-    return attr_dict
-
 def main(dss, sources, folder, general_enhancers, bins):
     """Create composites for variables contained in the 'xr.Dataset's in 'dss'.
 
@@ -134,20 +111,14 @@ def main(dss, sources, folder, general_enhancers, bins):
         which will be aligned along the time dimensions.
     sources : dict
         Configuration for each variable and source.
-    example_source : tuple, optional
-        Which source to use for spatial alignment, overrides product selected
-        through sources, by default None.
+    folder : str
+        Path to folder in which to store (intermediate) data.
+    general_enhancers : list
+        Functions to apply to the xr.Dataset before creating the final
+        output, by default "default".
     bins : list
         List of 'np.datetime64's which are the boundaries of the groups into
         which the variables will grouped.
-    folder : str
-        Path to folder in which to store (intermediate) data.
-    enhancers : list | "default", optional
-        Functions to apply to the xr.Dataset before creating the final
-        output, by default "default".
-    diagnostics : dict, optional
-        Dictionary with coordinates and point-labels for which graphs can be 
-        created.
 
     Returns
     -------

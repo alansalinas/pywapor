@@ -9,6 +9,13 @@ import pywapor.enhancers.lulc as lulc
 from functools import partial
 
 def constants_defaults():
+    """Return a dictionary with default parameters.
+
+    Returns
+    -------
+    dict
+        Default constants.
+    """
 
     c = {
         'nd_min': 0.125,
@@ -63,8 +70,6 @@ def constants_defaults():
         'co2_ref': 281,
         'gcgdm': 0.4,
         'phot_eff': 2.49,
-
-
 
     }
 

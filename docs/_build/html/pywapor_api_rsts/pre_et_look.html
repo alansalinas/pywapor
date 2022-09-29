@@ -7,6 +7,7 @@
   <title>pywapor.pre_et_look &mdash; pyWaPOR  documentation</title>
       <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
       <link rel="stylesheet" href="../_static/css/theme.css" type="text/css" />
+      <link rel="stylesheet" href="../_static/copybutton.css" type="text/css" />
       <link rel="stylesheet" href="../_static/css/custom.css" type="text/css" />
   <!--[if lt IE 9]>
     <script src="../_static/js/html5shiv.min.js"></script>
@@ -17,6 +18,9 @@
         <script src="../_static/underscore.js"></script>
         <script src="../_static/_sphinx_javascript_frameworks_compat.js"></script>
         <script src="../_static/doctools.js"></script>
+        <script src="../_static/sphinx_highlight.js"></script>
+        <script src="../_static/clipboard.min.js"></script>
+        <script src="../_static/copybutton.js"></script>
         <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
     <script src="../_static/js/theme.js"></script>
     <link rel="index" title="Index" href="../genindex.html" />
@@ -45,12 +49,20 @@
 <li class="toctree-l1"><a class="reference internal" href="../data_sources.html">Data</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../_user_guide.html">User Guide</a></li>
 <li class="toctree-l1 current"><a class="reference internal" href="../_pywapor_api.html">pyWaPOR API</a><ul class="current">
-<li class="toctree-l2 current"><a class="current reference internal" href="#">pywapor.pre_et_look</a></li>
+<li class="toctree-l2 current"><a class="current reference internal" href="#">pywapor.pre_et_look</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#pywapor.pre_et_look.rename_vars"><code class="docutils literal notranslate"><span class="pre">rename_vars()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#pywapor.pre_et_look.lapse_rate"><code class="docutils literal notranslate"><span class="pre">lapse_rate()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#pywapor.pre_et_look.calc_doys"><code class="docutils literal notranslate"><span class="pre">calc_doys()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#pywapor.pre_et_look.add_constants"><code class="docutils literal notranslate"><span class="pre">add_constants()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#pywapor.pre_et_look.main"><code class="docutils literal notranslate"><span class="pre">main()</span></code></a></li>
+</ul>
+</li>
 <li class="toctree-l2"><a class="reference internal" href="et_look.html">pywapor.et_look</a></li>
 <li class="toctree-l2"><a class="reference internal" href="pre_se_root.html">pywapor.pre_se_root</a></li>
 <li class="toctree-l2"><a class="reference internal" href="se_root.html">pywapor.se_root</a></li>
 <li class="toctree-l2"><a class="reference internal" href="enhancers.html">pywapor.enhancers</a></li>
 <li class="toctree-l2"><a class="reference internal" href="general.html">pywapor.general</a></li>
+<li class="toctree-l2"><a class="reference internal" href="collect.html">pywapor.collect</a></li>
 </ul>
 </li>
 <li class="toctree-l1"><a class="reference internal" href="../_etlook.html">ETLook</a></li>
@@ -111,8 +123,80 @@
 <span id="pywapor-pre-et-look"></span><h1>pywapor.pre_et_look<a class="headerlink" href="#module-pywapor.pre_et_look" title="Permalink to this heading"></a></h1>
 <p>Generates input data for <cite>pywapor.et_look</cite>.</p>
 <dl class="py function">
+<dt class="sig sig-object py" id="pywapor.pre_et_look.rename_vars">
+<span class="sig-name descname"><span class="pre">rename_vars</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">ds</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pywapor.pre_et_look.rename_vars" title="Permalink to this definition"></a></dt>
+<dd><p>Rename some variables in a dataset.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>ds</strong> (<em>xr.Dataset</em>) – Input dataset whose variables will be renamed.</p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>Dataset with renamed variables.</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>xr.Dataset</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="pywapor.pre_et_look.lapse_rate">
+<span class="sig-name descname"><span class="pre">lapse_rate</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">ds</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pywapor.pre_et_look.lapse_rate" title="Permalink to this definition"></a></dt>
+<dd><p>Applies lapse rate correction to variables whose name contains <cite>“t_air”</cite>.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>ds</strong> (<em>xr.Dataset</em>) – Dataset on whose variables containing <cite>“t_air”</cite> a lapse rate correction will be applied.</p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>Dataset on whose variables containing <cite>“t_air”</cite> a lapse rate correction has been applied.</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>xr.Dataset</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="pywapor.pre_et_look.calc_doys">
+<span class="sig-name descname"><span class="pre">calc_doys</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">ds</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">bins</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pywapor.pre_et_look.calc_doys" title="Permalink to this definition"></a></dt>
+<dd><p>Calculate the day-of-the-year (doy) in the middle of a timebin and assign the results to a new
+variable <cite>doy</cite>.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>ds</strong> (<em>xr.Dataset</em>) – Input dataset.</p></li>
+<li><p><strong>bins</strong> (<em>list</em><em>, </em><em>optional</em>) – List of boundaries of the timebins, by default None</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>Dataset with a new variable containing the <cite>doy</cite> per timebin.</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>xr.Dataset</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="pywapor.pre_et_look.add_constants">
+<span class="sig-name descname"><span class="pre">add_constants</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">ds</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pywapor.pre_et_look.add_constants" title="Permalink to this definition"></a></dt>
+<dd><p>Adds default dimensionless constants to a dataset.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>ds</strong> (<em>xr.Dataset</em>) – Dataset to which the constants will be added.</p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>Dataset with extra variables.</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>xr.Dataset</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
 <dt class="sig sig-object py" id="pywapor.pre_et_look.main">
-<span class="sig-name descname"><span class="pre">main</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="pre">folder,</span> <span class="pre">latlim,</span> <span class="pre">lonlim,</span> <span class="pre">timelim,</span> <span class="pre">sources='level_1',</span> <span class="pre">bin_length='DEKAD',</span> <span class="pre">enhancers=[&lt;function</span> <span class="pre">lapse_rate&gt;],</span> <span class="pre">diagnostics=None,</span> <span class="pre">example_source=None</span></em><span class="sig-paren">)</span><a class="headerlink" href="#pywapor.pre_et_look.main" title="Permalink to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">main</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="pre">folder,</span> <span class="pre">latlim,</span> <span class="pre">lonlim,</span> <span class="pre">timelim,</span> <span class="pre">sources='level_1',</span> <span class="pre">bin_length='DEKAD',</span> <span class="pre">enhancers=[&lt;function</span> <span class="pre">lapse_rate&gt;]</span></em><span class="sig-paren">)</span><a class="headerlink" href="#pywapor.pre_et_look.main" title="Permalink to this definition"></a></dt>
 <dd><p>Prepare input data for <cite>et_look</cite>.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
@@ -121,18 +205,14 @@
 <li><p><strong>latlim</strong> (<em>list</em>) – Latitude limits of area of interest.</p></li>
 <li><p><strong>lonlim</strong> (<em>list</em>) – Longitude limits of area of interest.</p></li>
 <li><p><strong>timelim</strong> (<em>list</em>) – Period for which to prepare data.</p></li>
-<li><p><strong>sources</strong> (<em>str</em><em> | </em><em>dict</em>) – Configuration for each variable and source.</p></li>
+<li><p><strong>sources</strong> (<em>&quot;level_1&quot;</em><em> | </em><em>&quot;level_2&quot;</em><em> | </em><em>&quot;level_2_v3&quot;</em><em> | </em><em>dict</em>) – Configuration for each variable and source.</p></li>
 <li><p><strong>bin_length</strong> (<em>int</em><em> | </em><em>&quot;DEKAD&quot;</em>) – Composite length.</p></li>
 <li><p><strong>enhancers</strong> (<em>list</em><em>, </em><em>optional</em>) – Functions to apply to the xr.Dataset before creating the final
-output, by default “default”.</p></li>
-<li><p><strong>diagnostics</strong> (<em>dict</em><em>, </em><em>optional</em>) – Dictionary with coordinates and point-labels for which graphs can be
-created.</p></li>
-<li><p><strong>example_source</strong> (<em>tuple</em><em>, </em><em>optional</em>) – Which source to use for spatial alignment, overrides product selected
-through sources, by default None.</p></li>
+output, by default <cite>[lapse_rate]</cite>.</p></li>
 </ul>
 </dd>
 <dt class="field-even">Returns</dt>
-<dd class="field-even"><p>Dataset with data for <cite>pywapor.et_look</cite>.</p>
+<dd class="field-even"><p>Dataset with input data for <cite>pywapor.et_look</cite>.</p>
 </dd>
 <dt class="field-odd">Return type</dt>
 <dd class="field-odd"><p>xr.Dataset</p>
