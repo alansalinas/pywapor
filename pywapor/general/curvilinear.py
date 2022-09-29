@@ -5,6 +5,26 @@ from scipy.spatial import Delaunay, cKDTree
 from dask.diagnostics import ProgressBar
 
 def create_grid(input_ds, dx, dy, bb = None, precision = 0.1):
+    """Creates a rectolinear grid with specified pixel size.
+
+    Parameters
+    ----------
+    input_ds : xr.Dataset
+        Dataset whose `x` and `y` dimensions will be used to create the grid.
+    dx : float
+        Pixel size in x-direction.
+    dy : float
+        Pixel size in y-direction.
+    bb : list, optional
+        Boundingbox for the grid (`[xmin, ymin, xmax, ymax]`), by default None.
+    precision : float, optional
+        Which decimal to use to snap the topleft corner of the grid, by default 0.1.
+
+    Returns
+    -------
+    xr.Dataset
+        Example dataset with `x` and `y` coordinates.
+    """
 
     # precision: The left and lower bounds will snap to a `1/precision`-th degree 
     # below smallest coordinate in input_ds.
@@ -38,6 +58,22 @@ def create_grid(input_ds, dx, dy, bb = None, precision = 0.1):
     return grid_ds
 
 def regrid(grid_ds, input_ds, max_px_dist = 10):
+    """Convert a curvilinear grid to a rectolinear grid.
+
+    Parameters
+    ----------
+    grid_ds : xr.Dataset
+        Dataset with a rectolinear grid.
+    input_ds : xr.Dataset
+        Dataset with variables defined on a curvilinear grid.
+    max_px_dist : int, optional
+        Controls how far data gaps are (spatially) interpolated, by default 10.
+
+    Returns
+    -------
+    xr.Dataset
+        Dataset with variables on a rectolinear grid.
+    """
 
     # Create output dataset
     output_ds = grid_ds.stack({"grid_pixel": ("y", "x")})

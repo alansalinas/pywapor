@@ -16,6 +16,19 @@ import shutil
 from pywapor.general.processing_functions import save_ds
 
 def create_time_settings(timelim):
+    """Reformats the time limits so that they can be ingested by CDS.
+
+    Parameters
+    ----------
+    timelim : list
+        Period for which to prepare data.
+
+    Returns
+    -------
+    list
+        Time entries for CDS.
+    """
+
     dates = pd.date_range(timelim[0], timelim[1], freq = "D")
     settings = list()
     for yr in np.unique(dates.year):
@@ -25,11 +38,37 @@ def create_time_settings(timelim):
     return settings
 
 def request_size(setting):
+    """Check the total size of a CDS request.
+
+    Parameters
+    ----------
+    setting : list
+        Time entries for CDS.
+
+    Returns
+    -------
+    float
+        Size of request.
+    """
     relevant = ["day", "month", "year", "time", "variable"]
     size = np.prod([len(setting[selector]) for selector in relevant if isinstance(setting.get(selector), list)])
     return size
 
 def split_setting(setting, max_size = 100):
+    """Split a request into smaller requests untill size is smaller than `max_size`.
+
+    Parameters
+    ----------
+    setting : list
+        Time entries for CDS.
+    max_size : int, optional
+        Max allowed request size by CDS, by default 100.
+
+    Returns
+    -------
+    list
+        Setting broken up into smaller parts.
+    """
     size = request_size(setting)
     if size <= max_size:
         new_settings = [setting]
@@ -45,11 +84,49 @@ def split_setting(setting, max_size = 100):
     return new_settings
 
 def split_settings(settings, max_size = 100):
+    """Split multuple requests into smaller requests untill all sizes are smaller than `max_size`.
+
+    Parameters
+    ----------
+    setting : list
+        Time entries for CDS.
+    max_size : int, optional
+        Max allowed request size by CDS, by default 100.
+
+    Returns
+    -------
+    list
+        Settings broken up into smaller parts.
+    """
     while np.max([request_size(setting) for setting in settings]) > max_size:
         settings = list(itertools.chain.from_iterable([split_setting(setting, max_size = max_size) for setting in settings]))
     return settings
 
 def download(folder, product_name, latlim, lonlim, timelim, variables, post_processors):
+    """Download data from CDS.
+
+    Parameters
+    ----------
+    folder : str
+        Path to folder in which to save data.
+    product_name : str
+        Product name to download.
+    latlim : list
+        Latitude limits of area of interest.
+    lonlim : list
+        Longitude limits of area of interest.
+    timelim : list
+        Period for which to prepare data.
+    variables : dict
+        keys are variable names, values are additional settings.
+    post_processors : dict
+        processors to apply to specific variables.
+
+    Returns
+    -------
+    xr.Dataset
+        Dataset with downloaded data.
+    """
 
     fn_final = os.path.join(folder, f"{product_name}.nc")
 

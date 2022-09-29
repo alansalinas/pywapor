@@ -7,6 +7,25 @@ from pywapor.general.logger import log
 from pywapor.enhancers.dms.thermal_sharpener import sharpen
 
 def find_setting(sources, setting_str, max_length = np.inf, min_length = 0):
+    """Search a `sources` dictionary for a specific key and return a list of `source.product`s that
+    include that key.
+
+    Parameters
+    ----------
+    sources : dict
+        Source configuration for `pre_et_look` and `pre_se_root`.
+    setting_str : str
+        Key to search for.
+    max_length : int, optional
+        Give a warning of more than `max_length` products have been found, by default np.inf.
+    min_length : int, optional
+        Give a warning if less than `min_length` products have been found, by default 0.
+
+    Returns
+    -------
+    list
+        List of `source.product`s that contain `setting_str` in their nested dictionary.
+    """
     example_sources = list()
     for var, x in sources.items():
         prod = [product for product in x["products"] if setting_str in product.keys()]
@@ -30,6 +49,20 @@ def find_setting(sources, setting_str, max_length = np.inf, min_length = 0):
     return example_sources
 
 def pre_et_look_levels(level = "level_1", bin_length = "DEKAD"):
+    """Create a default `pre_et_look` `sources` dictionary.
+
+    Parameters
+    ----------
+    level : "level_1" | "level_2" | "level_2_v3"
+        For which level to create the `sources`, by default "level_1".
+    bin_length : str, optional
+        Defines the bin length with which the `sources` will be used, by default "DEKAD".
+
+    Returns
+    -------
+    dict
+        Dictionary with variable names as keys and dictionaries as values.
+    """
 
     se_root_dler = partial(se_root.se_root, bin_length = bin_length, 
                             sources = level)
@@ -477,6 +510,18 @@ def pre_et_look_levels(level = "level_1", bin_length = "DEKAD"):
     return levels[level]
 
 def pre_se_root_levels(level = "level_1"):
+    """Create a default `pre_se_root` `sources` dictionary.
+
+    Parameters
+    ----------
+    level : "level_1" | "level_2" | "level_2_v3"
+        For which level to create the `sources`, by default "level_1".
+
+    Returns
+    -------
+    dict
+        Dictionary with variable names as keys and dictionaries as values.
+    """
 
     level_1 = {
 

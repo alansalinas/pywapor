@@ -158,6 +158,13 @@ def create_network(ds, fh, exclude = ["scalar", "temporal-input"]):
     net.show(fh)
 
 def network_colors():
+    """Define default styling for network graph.
+
+    Returns
+    -------
+    dict
+        Default styles for nodes and connections in network graph.
+    """
     group_configs = {
             "main-input": {
                 "color": {

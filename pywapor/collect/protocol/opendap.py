@@ -18,6 +18,42 @@ def download(fp, product_name, coords, variables, post_processors,
                 fn_func, url_func, un_pw = None, tiles = None,  
                 data_source_crs = None, parallel = False, spatial_tiles = True, 
                 request_dims = True, timedelta = None):
+    """_summary_
+
+    Parameters
+    ----------
+    fp : str
+        Path to file in which to download.
+    product_name : str
+        Name of product.
+    coords : dict
+        Coordinate names and boundaries.
+    variables : dict
+        Keys are variable names, values are additional settings.
+    post_processors : dict
+        Processors to apply to specific variables.
+    url_func : function
+        Function that takes `product_name` as input and return a url.
+    un_pw : tuple, optional
+        Username and password to use, by default None.
+    tiles : list, optional
+        Tiles to download, by default None.
+    data_source_crs : rasterio.CRS.crs, optional
+        CRS of datasource, by default None.
+    parallel : bool, optional
+        Download files in parallel (currently not implemented), by default False.
+    spatial_tiles : bool, optional
+        Whether the tiles are spatial or temporal, by default True.
+    request_dims : bool, optional
+        Include dimension settings in the OPENDaP request, by default True.
+    timedelta : datetime.datetime.timedelta, optional
+        Shift the time coordinates by tdelta, by default None.
+
+    Returns
+    -------
+    xr.Dataset
+        Dataset with downloaded data.
+    """
 
     folder = os.path.split(fp)[0]
 
@@ -103,6 +139,30 @@ def start_session(base_url, selection, un_pw = [None, None]):
 
 def download_xarray(url, fp, coords, variables, post_processors, 
                     data_source_crs = None, timedelta = None):
+    """Download a OPENDaP dataset using xarray directly.
+
+    Parameters
+    ----------
+    url : str
+        URL to dataset.
+    fp : str
+        Path to file to download into.
+    coords : dict
+        Coordinates to request.
+    variables : dict
+        Variables to request.
+    post_processors : dict
+        Additional functions to apply to variables.
+    data_source_crs : rasterio.CRS.crs, optional
+        CRS of the data source, by default None.
+    timedelta : datetime.datetime.timedelta, optional
+        Shift the time coordinates by tdelta, by default None.
+
+    Returns
+    -------
+    xr.Dataset
+        Downloaded dataset.
+    """
 
     warnings.filterwarnings("ignore", category=xr.SerializationWarning)
     online_ds = xr.open_dataset(url, decode_coords="all")

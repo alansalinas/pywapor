@@ -17,14 +17,57 @@ import pandas as pd
 import warnings
 
 def fn_func(product_name, tile):
+    """Returns a client-side filename at which to store data.
+
+    Parameters
+    ----------
+    product_name : str
+        Name of the product to download.
+    tile : str
+        Name of the server-side tile to download.
+
+    Returns
+    -------
+    str
+        Filename.
+    """
     fn = f"{product_name}_h{tile[0]:02d}v{tile[1]:02d}.nc"
     return fn
 
 def url_func(product_name, tile):
+    """Returns a url at which to collect MODIS data.
+
+    Parameters
+    ----------
+    product_name : str
+        Name of the product to download.
+    tile : str
+        Name of the server-side tile to download.
+
+    Returns
+    -------
+    str
+        The url.
+    """
     url = f"https://opendap.cr.usgs.gov/opendap/hyrax/{product_name}/h{tile[0]:02d}v{tile[1]:02d}.ncml.nc4?"
     return url
 
 def tiles_intersect(latlim, lonlim):
+    """Creates a list of server-side filenames for tiles that intersect with `latlim` and
+    `lonlim` for the selected product. 
+
+    Parameters
+    ----------
+    latlim : list
+        Latitude limits of area of interest.
+    lonlim : list
+        Longitude limits of area of interest.
+
+    Returns
+    -------
+    list
+        Server-side filenames for tiles.
+    """
     with open(os.path.join(pywapor.collect.__path__[0], "product/MODIS_tiles.geojson")) as f:
         features = json.load(f)["features"]
     aoi = Polygon.from_bounds(lonlim[0], latlim[0], lonlim[1], latlim[1])
@@ -45,6 +88,20 @@ def shortwave_r0(ds, *args):
     return ds
 
 def expand_time_dim(ds, *args):
+    """MODIS lst data comes with a variable specifying the acquisition decimal time per pixel, This function
+    expands the "date" dimension of the data with "time", i.e. afterwards each temporal-slice in the dataset
+    contains data at one specific datetime.
+
+    Parameters
+    ----------
+    ds : xr.Dataset
+        Input dataset, should have `lst_hour` variable.
+
+    Returns
+    -------
+    xr.Dataset
+        Expanded dataset.
+    """
 
     groups = ds.groupby(ds.lst_hour, squeeze = True)
 
@@ -76,6 +133,26 @@ def expand_time_dim(ds, *args):
 
 def mask_bitwise_qa(ds, var, masker = "lst_qa", 
                 product_name = "MOD11A1.061", flags = ["good_qa"]):
+    """Mask MODIS data using a qa variable.
+
+    Parameters
+    ----------
+    ds : xr.Dataset
+        Input data.
+    var : str
+        Variable in `ds` to mask.
+    masker : str, optional
+        Variable in `ds` to use for masking, by default "lst_qa".
+    product_name : str, optional
+        Name of the product, by default "MOD11A1.061".
+    flags : list, optional
+        Which flags not to mask, by default ["good_qa"].
+
+    Returns
+    -------
+    xr.Dataset
+        Masked dataset.
+    """
 
     new_data = ds[var]
 
@@ -89,6 +166,23 @@ def mask_bitwise_qa(ds, var, masker = "lst_qa",
     return ds
 
 def mask_qa(ds, var, masker = ("ndvi_qa", 1.0)):
+    """Mask MODIS data using a qa variable.
+
+    Parameters
+    ----------
+    ds : xr.Dataset
+        Input data
+    var : str
+        Variable name in `ds` to be masked.
+    masker : tuple, optional
+        Variable in `ds` to use for masking, second value defines which value in mask to 
+        use as valid data, by default ("ndvi_qa", 1.0).
+
+    Returns
+    -------
+    xr.Dataset
+        Masked dataset.
+    """
 
     new_data = ds[var].where(ds[masker[0]] != masker[1], np.nan)
     ds = ds.drop_vars(masker[0])
@@ -98,6 +192,22 @@ def mask_qa(ds, var, masker = ("ndvi_qa", 1.0)):
     return ds
 
 def default_vars(product_name, req_vars):
+    """Given a `product_name` and a list of requested variables, returns a dictionary
+    with metadata on which exact layers need to be requested from the server, how they should
+    be renamed, and how their dimensions are defined.
+
+    Parameters
+    ----------
+    product_name : str
+        Name of the product.
+    req_vars : list
+        List of variables to be collected.
+
+    Returns
+    -------
+    dict
+        Metadata on which exact layers need to be requested from the server.
+    """
 
     variables = {
 
@@ -154,6 +264,22 @@ def default_vars(product_name, req_vars):
     return out
 
 def default_post_processors(product_name, req_vars = None):
+    """Given a `product_name` and a list of requested variables, returns a dictionary with a 
+    list of functions per variable that should be applied after having collected the data
+    from a server.
+
+    Parameters
+    ----------
+    product_name : str
+        Name of the product.
+    req_vars : list
+        List of variables to be collected.
+
+    Returns
+    -------
+    dict
+        Functions per variable that should be applied to the variable.
+    """
 
     post_processors = {
         "MOD13Q1.061": {
@@ -182,6 +308,33 @@ def default_post_processors(product_name, req_vars = None):
 
 def download(folder, latlim, lonlim, timelim, product_name, req_vars,
                 variables = None, post_processors = None):
+    """Download MODIS data and store it in a single netCDF file.
+
+    Parameters
+    ----------
+    folder : str
+        Path to folder in which to store results.
+    latlim : list
+        Latitude limits of area of interest.
+    lonlim : list
+        Longitude limits of area of interest.
+    timelim : list
+        Period for which to prepare data.
+    product_name : str
+        Name of the product to download.
+    req_vars : list
+        Which variables to download for the selected product.
+    variables : dict, optional
+        Metadata on which exact layers need to be requested from the server, by default None.
+    post_processors : dict, optional
+        Functions per variable that should be applied to the variable, by default None.
+
+    Returns
+    -------
+    xr.Dataset
+        Downloaded data.
+    """
+
     folder = os.path.join(folder, "MODIS")
 
     appending = False

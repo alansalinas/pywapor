@@ -15,6 +15,22 @@ from pywapor.enhancers.temperature import kelvin_to_celsius
 from pywapor.enhancers.pressure import pa_to_kpa
 
 def default_vars(product_name, req_vars):
+    """Given a `product_name` and a list of requested variables, returns a dictionary
+    with metadata on which exact layers need to be requested from the server, how they should
+    be renamed, and how their dimensions are defined.
+
+    Parameters
+    ----------
+    product_name : str
+        Name of the product.
+    req_vars : list
+        List of variables to be collected.
+
+    Returns
+    -------
+    dict
+        Metadata on which exact layers need to be requested from the server.
+    """
     variables = {
         "M2I1NXASM.5.12.4": {
                     "T2M": [("time", "lat", "lon"), "t_air"],
@@ -52,6 +68,22 @@ def default_vars(product_name, req_vars):
     return out
 
 def default_post_processors(product_name, req_vars):
+    """Given a `product_name` and a list of requested variables, returns a dictionary with a 
+    list of functions per variable that should be applied after having collected the data
+    from a server.
+
+    Parameters
+    ----------
+    product_name : str
+        Name of the product.
+    req_vars : list
+        List of variables to be collected.
+
+    Returns
+    -------
+    dict
+        Functions per variable that should be applied to the variable.
+    """
 
     post_processors = {
         "M2I1NXASM.5.12.4": {
@@ -75,11 +107,38 @@ def default_post_processors(product_name, req_vars):
     return out
 
 def fn_func(product_name, tile):
+    """Returns a client-side filename at which to store data.
+
+    Parameters
+    ----------
+    product_name : str
+        Name of the product to download.
+    tile : str
+        Name of the server-side tile to download.
+
+    Returns
+    -------
+    str
+        Filename.
+    """
     fn = f"{product_name}_{tile.strftime('%Y%m%d')}.nc"
     return fn
 
 def url_func(product_name, tile):
+    """Returns a url at which to collect MERRA2 data.
 
+    Parameters
+    ----------
+    product_name : str
+        Name of the product to download.
+    tile : str
+        Name of the server-side tile to download.
+
+    Returns
+    -------
+    str
+        The url.
+    """
     def _filter(tag):
         tag_value = tag["href"]
         if tag_value[-5:] == ".html":
@@ -101,6 +160,32 @@ def url_func(product_name, tile):
 
 def download(folder, latlim, lonlim, timelim, product_name, req_vars,
                 variables = None, post_processors = None):
+    """Download MERRA2 data and store it in a single netCDF file.
+
+    Parameters
+    ----------
+    folder : str
+        Path to folder in which to store results.
+    latlim : list
+        Latitude limits of area of interest.
+    lonlim : list
+        Longitude limits of area of interest.
+    timelim : list
+        Period for which to prepare data.
+    product_name : str
+        Name of the product to download.
+    req_vars : list
+        Which variables to download for the selected product.
+    variables : dict, optional
+        Metadata on which exact layers need to be requested from the server, by default None.
+    post_processors : dict, optional
+        Functions per variable that should be applied to the variable, by default None.
+
+    Returns
+    -------
+    xr.Dataset
+        Downloaded data.
+    """
     
     folder = os.path.join(folder, "MERRA2")
     appending = False

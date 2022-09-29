@@ -14,6 +14,8 @@ def lulc_to_x(ds, var, convertor, in_var = None, out_var = None):
         Variable name.
     convertor : dict
         Dictionary with keys corresponding to values in `var` and values the replacements.
+    in_var : str, optional
+        Overwrites `var`, by default None.
     out_var : str, optional
         New variable name in case `var` should not be overwritten, by default None.
 

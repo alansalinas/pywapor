@@ -4,6 +4,29 @@ import functools
 import numpy as np
 
 def collect_sources(folder, sources, latlim, lonlim, timelim, return_fps = True):
+    """Download different sources and products within defined limits.
+
+    Parameters
+    ----------
+    folder : str
+        Path to folder in which to store files.
+    sources : dict
+        Configuration for each variable and source.
+    latlim : list
+        Latitude limits of area of interest.
+    lonlim : list
+        Longitude limits of area of interest.
+    timelim : list
+        Period for which to prepare data.
+    return_fps : bool, optional
+        Whether to return the datasets opened or closed as filepaths, by default True
+
+    Returns
+    -------
+    tuple
+        dictionary with keys as (`source`, `product`) and values either filepaths or `xr.Dataset`s and an
+        updated `sources` dictionary in which products that couldn't be downloaded have been removed. 
+    """
     
     reversed_sources, reversed_enhancers = reverse_sources(sources)
 
@@ -81,6 +104,18 @@ def collect_sources(folder, sources, latlim, lonlim, timelim, return_fps = True)
     return dss, sources
 
 def reverse_sources(sources):
+    """Invert the `sources` so that the keys are like (`source`, `product`) and the values lists of variables.
+
+    Parameters
+    ----------
+    sources : dict
+        Configuration for each variable and source.
+
+    Returns
+    -------
+    tuple
+        the reversed sources dictionary and a dictionary listing the enhancers per (`source`, `product`).
+    """
     reversed_sources = dict()
     reversed_enhancers = dict()
     for var, value in sources.items():
@@ -98,6 +133,25 @@ def reverse_sources(sources):
     return reversed_sources, reversed_enhancers
 
 def trim_sources(reversed_sources, sources):
+    """Remove (`source`, `product`)s from `sources` that couldn't be downloaded succesfully.
+
+    Parameters
+    ----------
+    reversed_sources : dict
+        Reversed sources dictionary
+    sources : dict
+        Configuration for each variable and source.
+
+    Returns
+    -------
+    dict
+        Configuration for each variable and source, where some have been removed.
+
+    Raises
+    ------
+    ValueError
+        Each `var` must contain unique `source.product`s.
+    """
     for product, varis in reversed_sources.items():
         for var in varis:
             products_for_var = sources[var]["products"]

@@ -19,6 +19,32 @@ import rioxarray.merge
 
 def download(folder, latlim, lonlim, timelim, product_name, req_vars = ["ndvi", "r0"],
                 variables = None, post_processors = None, timedelta = None):
+    """Download MODIS data and store it in a single netCDF file.
+
+    Parameters
+    ----------
+    folder : str
+        Path to folder in which to store results.
+    latlim : list
+        Latitude limits of area of interest.
+    lonlim : list
+        Longitude limits of area of interest.
+    timelim : list
+        Period for which to prepare data.
+    product_name : str
+        Name of the product to download.
+    req_vars : list, optional
+        Which variables to download for the selected product, by default ["ndvi", "r0"].
+    variables : dict, optional
+        Metadata on which exact layers need to be requested from the server, by default None.
+    post_processors : dict, optional
+        Functions per variable that should be applied to the variable, by default None.
+
+    Returns
+    -------
+    xr.Dataset
+        Downloaded data.
+    """
 
     folder = os.path.join(folder, "PROBAV")
 
@@ -116,6 +142,22 @@ def download(folder, latlim, lonlim, timelim, product_name, req_vars = ["ndvi", 
     return ds
 
 def open_hdf5_groups(fp, variables, coords):
+    """Convert hdf5 with groups (specified in `variable`) to netCDF without groups.
+
+    Parameters
+    ----------
+    fp : str
+        Path to input file.
+    variables : dict
+        Metadata on which exact layers need to be requested from the server.
+    coords : dict
+        Metadata on the coordinates in `fp`.
+
+    Returns
+    -------
+    xr.Dataset
+        Ouput data.
+    """
 
     nc_fp = fp.replace(".HDF5", ".nc")
     if os.path.isfile(nc_fp):
@@ -142,6 +184,22 @@ def open_hdf5_groups(fp, variables, coords):
     return ds
 
 def mask_bitwise_qa(ds, var, flags):
+    """Mask PROBAV data using a qa variable.
+
+    Parameters
+    ----------
+    ds : xr.Dataset
+        Input data.
+    var : str
+        Variable in `ds` to mask.
+    flags : list
+        Which flags not to mask.
+
+    Returns
+    -------
+    xr.Dataset
+        Masked dataset.
+    """
     flag_bits = bm.PROBAV_qa_translator()
     mask = bm.get_mask(ds["qa"].astype("uint8"), flags, flag_bits)
     ds[var] = ds[var].where(~mask, np.nan)
@@ -152,6 +210,22 @@ def calc_r0(ds, *args):
     return ds
 
 def default_post_processors(product_name, req_vars = ["ndvi", "r0"]):
+    """Given a `product_name` and a list of requested variables, returns a dictionary with a 
+    list of functions per variable that should be applied after having collected the data
+    from a server.
+
+    Parameters
+    ----------
+    product_name : str
+        Name of the product.
+    req_vars : list, optional
+        List of variables to be collected, by default ["ndvi", "r0"].
+
+    Returns
+    -------
+    dict
+        Functions per variable that should be applied to the variable.
+    """
 
     post_processors = {
         "S5_TOC_100_m_C1": {
@@ -174,6 +248,22 @@ def default_post_processors(product_name, req_vars = ["ndvi", "r0"]):
     return out
 
 def default_vars(product_name, req_vars = ["ndvi", "r0"]):
+    """Given a `product_name` and a list of requested variables, returns a dictionary
+    with metadata on which exact layers need to be requested from the server, how they should
+    be renamed, and how their dimensions are defined.
+
+    Parameters
+    ----------
+    product_name : str
+        Name of the product.
+    req_vars : list, optional
+        List of variables to be collected, by default ["ndvi", "r0"].
+
+    Returns
+    -------
+    dict
+        Metadata on which exact layers need to be requested from the server.
+    """
     
     variables = {
         "S5_TOC_100_m_C1": {
@@ -203,6 +293,22 @@ def default_vars(product_name, req_vars = ["ndvi", "r0"]):
     return out
 
 def find_tiles(url, dates, session):
+    """Crawl webpage to find tile URLs.
+
+    Parameters
+    ----------
+    url : str
+        Path to start crawl.
+    dates : pd.date_range
+        Dates for which to return URLs.
+    session : requests.Session
+        Session to use during crawl.
+
+    Returns
+    -------
+    list
+        List with URLs to scenes.
+    """
 
     log.info("--> Searching PROBAV tiles.")
 

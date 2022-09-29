@@ -13,6 +13,18 @@ import rasterio
 import warnings
 
 def get_pixel_sizes(dss):
+    """Determines to pixel size for each dataset in `dss`.
+
+    Parameters
+    ----------
+    dss : list
+        List of xr.Datasets.
+
+    Returns
+    -------
+    dict
+        Dictionary where keys are the pixel area and values the datasets.
+    """
     # Check CRSs of datasets.
     crss = [v.rio.crs.to_epsg() for v in dss]
     # Count occurence of the different CRSs.
@@ -24,6 +36,18 @@ def get_pixel_sizes(dss):
     return {np.abs(np.prod(ds2.rio.resolution())): ds for ds, ds2 in dss2}
 
 def has_changed(ds):
+    """Checks if a dataset has been changed since it was opened from disk.
+
+    Parameters
+    ----------
+    ds : xr.Dataset
+        Dataset to check.
+
+    Returns
+    -------
+    bool
+        `True` if the dataset has changed since it was opened. 
+    """
     if "source" in ds.encoding.keys():
         changed = not ds.equals(open_ds(ds.encoding["source"]))
     else:
@@ -31,6 +55,18 @@ def has_changed(ds):
     return changed
 
 def has_geotransform(ds):
+    """Checks if a dataset has a geotransform that can be read by `rasterio`.
+
+    Parameters
+    ----------
+    ds : xr.Dataset
+        Dataset to check.
+
+    Returns
+    -------
+    bool
+        `True` if the dataset has a correctly set geotransform.
+    """
     varis = ds.data_vars
     if not "source" in ds.encoding.keys():
         return False
@@ -45,6 +81,30 @@ def has_geotransform(ds):
     return True
 
 def align_pixels(dss, folder, spatial_interp = "nearest", example_ds = None, stack_dim = "time", fn_append = ""):
+    """Aligns pixels (spatially) among the given datasets.
+
+    Parameters
+    ----------
+    dss : list
+        List of datasets that need to be spatially aligned.
+    folder : str
+        Path to folder in which to store new files.
+    spatial_interp : str, optional
+        Spatial interpolation to use, by default "nearest".
+    example_ds : xr.Dataset, optional
+        Dataset to use as example, if None a example dataset is chosen by selectiona dataset from `dss`
+        with the smallest pixels, by default None.
+    stack_dim : str, optional
+        Dimension name that is not spatial, by default "time".
+    fn_append : str, optional
+        String that will be appended to any files created, by default "".
+
+    Returns
+    -------
+    tuple
+        First value contains a list with all the aligned datasets, second value contains a list with any new files
+        that have been created.
+    """
 
     temp_files = list()
 
@@ -53,7 +113,7 @@ def align_pixels(dss, folder, spatial_interp = "nearest", example_ds = None, sta
     assert len(dss) == len(spatial_interp)
 
     if len(dss) == 1 and isinstance(example_ds, type(None)):
-        dss1 = [dss[0]]
+        dss1 = [list(dss)[0]]
     else:
         if isinstance(example_ds, type(None)):
             example_ds = min(get_pixel_sizes(dss).items(), key=lambda x: x[0])[1]
@@ -74,6 +134,20 @@ def align_pixels(dss, folder, spatial_interp = "nearest", example_ds = None, sta
     return dss1, temp_files
 
 def needs_reprojecting(ds, example_ds):
+    """Check if a dataset is already aligned with `example_ds` or not.
+
+    Parameters
+    ----------
+    ds : xr.Dataset
+        Dataset to check.
+    example_ds : xr.Dataset
+        Dataset to check against.
+
+    Returns
+    -------
+    bool
+        whether or not the `ds` needs to be reprojected.
+    """
     check_crs = ds.rio.crs == example_ds.rio.crs
     check_ysize = ds.y.size == example_ds.y.size
     check_xsize = ds.x.size == example_ds.x.size
@@ -82,6 +156,24 @@ def needs_reprojecting(ds, example_ds):
     return not np.all([check_crs, check_ysize, check_xsize, check_x, check_y])
 
 def choose_reprojecter(src_ds, max_bytes = 2e9, min_times = 10, stack_dim = "time"):
+    """Choose which reprojecting function to use (`reproject_bulk` or `reproject_chunk`).
+
+    Parameters
+    ----------
+    src_ds : xr.Dataset
+        Dataset to be reprojected.
+    max_bytes : int, optional
+        Threshold value to switch to chunked reprojecting, by default 2e9.
+    min_times : int, optional
+        Threshold value to switch to bulk reprojecting, by default 10.
+    stack_dim : str, optional
+        Dimension name that is not spatial, by default "time".
+
+    Returns
+    -------
+    function
+        Function to use for reprojection.
+    """
 
     if stack_dim in src_ds.dims:
         tsize = src_ds.dims[stack_dim]
@@ -96,6 +188,24 @@ def choose_reprojecter(src_ds, max_bytes = 2e9, min_times = 10, stack_dim = "tim
     return reproject
 
 def reproject_bulk(src_ds, example_ds, dst_path, spatial_interp = "nearest", **kwargs):
+    """Reproject a dataset using `rioxarray.reproject_match`.
+
+    Parameters
+    ----------
+    src_ds : xr.Dataset
+        Dataset to be reprojected.
+    example_ds : xr.Dataset
+        Dataset to match to.
+    dst_path : str
+        Path to new file.
+    spatial_interp : "nearest" | "bilinear" | "cubic" | "cubic_spline" | "lanczos" | "average" | "mode", optional
+        Spatial interpolation to use, by default "nearest".
+
+    Returns
+    -------
+    xr.Dataset
+        Reprojected dataset.
+    """
 
     resampling = {'nearest': 0,
                     'bilinear': 1,
@@ -115,6 +225,30 @@ def reproject_bulk(src_ds, example_ds, dst_path, spatial_interp = "nearest", **k
 
 def reproject(src_ds, example_ds, dst_path, spatial_interp = "nearest", 
                 max_bytes = 2e9, min_times = 10, stack_dim = "time"):
+    """Reproject a dataset using `reproject_bulk` or `reproject_chunk`.
+
+    Parameters
+    ----------
+    src_ds : xr.Dataset
+        Dataset to be reprojected.
+    example_ds : xr.Dataset
+        Dataset to match to.
+    dst_path : str
+        Path to new file.
+    spatial_interp : "nearest" | "bilinear" | "cubic" | "cubic_spline" | "lanczos" | "average" | "mode", optional
+        Spatial interpolation to use, by default "nearest".
+    max_bytes : int, optional
+        Threshold value to switch to chunked reprojecting, by default 2e9.
+    min_times : int, optional
+        Threshold value to switch to bulk reprojecting, by default 10.
+    stack_dim : str, optional
+        Dimension name that is not spatial, by default "time".
+
+    Returns
+    -------
+    xr.Dataset
+        Reprojected dataset.
+    """
 
     test_ds = [src_ds, example_ds][np.argmax([src_ds.nbytes, example_ds.nbytes])]
 
@@ -132,6 +266,24 @@ def reproject(src_ds, example_ds, dst_path, spatial_interp = "nearest",
     return ds
 
 def reproject_chunk(src_ds, example_ds, dst_path, spatial_interp = "nearest", stack_dim = "time"):
+    """Reproject a dataset using `rasterio.WarpedVRT`.
+
+    Parameters
+    ----------
+    src_ds : xr.Dataset
+        Dataset to be reprojected.
+    example_ds : xr.Dataset
+        Dataset to match to.
+    dst_path : str
+        Path to new file.
+    spatial_interp : "nearest" | "bilinear" | "cubic" | "cubic_spline" | "lanczos" | "average" | "mode", optional
+        Spatial interpolation to use, by default "nearest".
+
+    Returns
+    -------
+    xr.Dataset
+        Reprojected dataset.
+    """
 
     das = list()
     variables = dict()

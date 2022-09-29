@@ -1,7 +1,7 @@
 from functools import partial
 
 def apply_enhancer(ds, variable, enhancer):
-    """_summary_
+    """Apple a function to a (variable in a) dataset. 
 
     Parameters
     ----------
@@ -12,17 +12,11 @@ def apply_enhancer(ds, variable, enhancer):
     enhancer : function
         Function to be applied to `variable` inside `ds`. Should take `ds` as
         first argument and `variable` as second.
-    source : str, optional
-        Specifies the source of the data inside `ds` for logging purposes, by default None.
-    log_it : bool, optional
-        Create a label to log or not, by default True.
 
     Returns
     -------
-    xr.Dataset
-        The enhanced dataset.
-    str
-        The label to log when calculating the dataset.
+    tuple
+        The enhanced dataset and the label to log when calculating the dataset.
     """
     ds = enhancer(ds, variable)
 

@@ -9,6 +9,22 @@ from functools import partial
 import numpy as  np
 
 def default_vars(product_name, req_vars):
+    """Given a `product_name` and a list of requested variables, returns a dictionary
+    with metadata on which exact layers need to be requested from the server, how they should
+    be renamed, and how their dimensions are defined.
+
+    Parameters
+    ----------
+    product_name : str
+        Name of the product.
+    req_vars : list
+        List of variables to be collected.
+
+    Returns
+    -------
+    dict
+        Metadata on which exact layers need to be requested from the server.
+    """
 
     variables = {
         "sis-agrometeorological-indicators": {
@@ -67,6 +83,22 @@ def jouleperday_to_watt(ds, var):
     return ds
 
 def default_post_processors(product_name, req_vars):
+    """Given a `product_name` and a list of requested variables, returns a dictionary with a 
+    list of functions per variable that should be applied after having collected the data
+    from a server.
+
+    Parameters
+    ----------
+    product_name : str
+        Name of the product.
+    req_vars : list
+        List of variables to be collected.
+
+    Returns
+    -------
+    dict
+        Functions per variable that should be applied to the variable.
+    """
 
     post_processors = {
         "sis-agrometeorological-indicators": {
@@ -101,7 +133,32 @@ def default_post_processors(product_name, req_vars):
 
 def download(folder, latlim, lonlim, timelim, product_name, req_vars, 
                 variables = None, post_processors = None):
+    """Download ERA5 data and store it in a single netCDF file.
 
+    Parameters
+    ----------
+    folder : str
+        Path to folder in which to store results.
+    latlim : list
+        Latitude limits of area of interest.
+    lonlim : list
+        Longitude limits of area of interest.
+    timelim : list
+        Period for which to prepare data.
+    product_name : str
+        Name of the product to download.
+    req_vars : list
+        Which variables to download for the selected product.
+    variables : dict, optional
+        Metadata on which exact layers need to be requested from the server, by default None.
+    post_processors : dict, optional
+        Functions per variable that should be applied to the variable, by default None.
+
+    Returns
+    -------
+    xr.Dataset
+        Downloaded data.
+    """
     product_folder = os.path.join(folder, "ERA5")
 
     if not os.path.exists(product_folder):

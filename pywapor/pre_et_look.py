@@ -16,6 +16,18 @@ from pywapor.general.variables import fill_attrs
 from pywapor.enhancers.temperature import lapse_rate as _lapse_rate
 
 def rename_vars(ds, *args):
+    """Rename some variables in a dataset.
+
+    Parameters
+    ----------
+    ds : xr.Dataset
+        Input dataset whose variables will be renamed.
+
+    Returns
+    -------
+    xr.Dataset
+        Dataset with renamed variables.
+    """
     varis = ["p", "ra", "t_air", "t_air_min", "t_air_max", "u", "vp",
             "u2m", "v2m", "qv", "p_air", "p_air_0", "wv", "t_dew"]
     present_vars = [x for x in varis if x in ds.variables]
@@ -23,12 +35,39 @@ def rename_vars(ds, *args):
     return ds
 
 def lapse_rate(ds, *args):
+    """Applies lapse rate correction to variables whose name contains `"t_air"`.
+
+    Parameters
+    ----------
+    ds : xr.Dataset
+        Dataset on whose variables containing `"t_air"` a lapse rate correction will be applied.
+
+    Returns
+    -------
+    xr.Dataset
+        Dataset on whose variables containing `"t_air"` a lapse rate correction has been applied.
+    """
     present_vars = [x for x in ds.variables if "t_air" in x]
     for var in present_vars:
         ds = _lapse_rate(ds, var)
     return ds
 
 def calc_doys(ds, *args, bins = None):
+    """Calculate the day-of-the-year (doy) in the middle of a timebin and assign the results to a new
+    variable `doy`.
+
+    Parameters
+    ----------
+    ds : xr.Dataset
+        Input dataset.
+    bins : list, optional
+        List of boundaries of the timebins, by default None
+
+    Returns
+    -------
+    xr.Dataset
+        Dataset with a new variable containing the `doy` per timebin.
+    """
     bin_doys = [int(pd.Timestamp(x).strftime("%j")) for x in bins]
     doy = np.mean([bin_doys[:-1], bin_doys[1:]], axis=0, dtype = int)
     if "time_bins" in list(ds.variables):
@@ -36,6 +75,18 @@ def calc_doys(ds, *args, bins = None):
     return ds
 
 def add_constants(ds, *args):
+    """Adds default dimensionless constants to a dataset.
+
+    Parameters
+    ----------
+    ds : xr.Dataset
+        Dataset to which the constants will be added.
+
+    Returns
+    -------
+    xr.Dataset
+        Dataset with extra variables.
+    """
     ds = ds.assign(defaults.constants_defaults())
     return ds
 
@@ -52,24 +103,18 @@ def main(folder, latlim, lonlim, timelim, sources = "level_1", bin_length = "DEK
         Longitude limits of area of interest.
     timelim : list
         Period for which to prepare data.
-    sources : str | dict
+    sources : "level_1" | "level_2" | "level_2_v3" | dict
         Configuration for each variable and source.
     bin_length : int | "DEKAD"
         Composite length.
     enhancers : list, optional
         Functions to apply to the xr.Dataset before creating the final
-        output, by default "default".
-    diagnostics : dict, optional
-        Dictionary with coordinates and point-labels for which graphs can be 
-        created.
-    example_source : tuple, optional
-        Which source to use for spatial alignment, overrides product selected
-        through sources, by default None.
+        output, by default `[lapse_rate]`.
 
     Returns
     -------
     xr.Dataset
-        Dataset with data for `pywapor.et_look`.
+        Dataset with input data for `pywapor.et_look`.
     """
     if not os.path.exists(folder):
         os.makedirs(folder)

@@ -15,6 +15,21 @@ from pywapor.enhancers.dem import calc_slope, calc_aspect
 import numpy as np
 
 def tiles_intersect(latlim, lonlim):
+    """Creates a list of server-side filenames for tiles that intersect with `latlim` and
+    `lonlim` for the selected product. 
+
+    Parameters
+    ----------
+    latlim : list
+        Latitude limits of area of interest.
+    lonlim : list
+        Longitude limits of area of interest.
+
+    Returns
+    -------
+    list
+        Server-side filenames for tiles.
+    """
     with open(os.path.join(pywapor.collect.__path__[0], "product/SRTM30_tiles.geojson")) as f:
         features = json.load(f)["features"]
     aoi = Polygon.from_bounds(lonlim[0], latlim[0], lonlim[1], latlim[1])
@@ -27,7 +42,22 @@ def tiles_intersect(latlim, lonlim):
     return tiles
 
 def default_vars(product_name, req_vars = ["z"]):
+    """Given a `product_name` and a list of requested variables, returns a dictionary
+    with metadata on which exact layers need to be requested from the server, how they should
+    be renamed, and how their dimensions are defined.
 
+    Parameters
+    ----------
+    product_name : str
+        Name of the product.
+    req_vars : list
+        List of variables to be collected.
+
+    Returns
+    -------
+    dict
+        Metadata on which exact layers need to be requested from the server.
+    """
     variables = {
         "30M": {
             "SRTMGL1_DEM": [("time", "lat", "lon"), "z"],
@@ -51,6 +81,22 @@ def drop_time(ds):
     return ds.isel(time=0).drop("time")
 
 def default_post_processors(product_name, req_vars = ["z"]):
+    """Given a `product_name` and a list of requested variables, returns a dictionary with a 
+    list of functions per variable that should be applied after having collected the data
+    from a server.
+
+    Parameters
+    ----------
+    product_name : str
+        Name of the product.
+    req_vars : list
+        List of variables to be collected.
+
+    Returns
+    -------
+    dict
+        Functions per variable that should be applied to the variable.
+    """
     
     post_processors = {
         "30M": {
@@ -65,16 +111,70 @@ def default_post_processors(product_name, req_vars = ["z"]):
     return out
 
 def fn_func(product_name, tile):
+    """Returns a client-side filename at which to store data.
+
+    Parameters
+    ----------
+    product_name : str
+        Name of the product to download.
+    tile : str
+        Name of the server-side tile to download.
+
+    Returns
+    -------
+    str
+        Filename.
+    """
     fn = f"{product_name}_{tile}.nc"
     return fn
 
 def url_func(product_name, tile):
+    """Returns a url at which to collect MERRA2 data.
+
+    Parameters
+    ----------
+    product_name : None
+        Not used.
+    tile : str
+        Name of the server-side tile to download.
+
+    Returns
+    -------
+    str
+        The url.
+    """
     url = f"https://opendap.cr.usgs.gov/opendap/hyrax/SRTMGL1_NC.003/{tile}.SRTMGL1_NC.ncml.nc4?"
     return url
 
 def download(folder, latlim, lonlim, product_name = "30M", req_vars = ["z"], variables = None, post_processors = None, **kwargs):
-    folder = os.path.join(folder, "SRTM")
+    """Download SRTM data and store it in a single netCDF file.
 
+    Parameters
+    ----------
+    folder : str
+        Path to folder in which to store results.
+    latlim : list
+        Latitude limits of area of interest.
+    lonlim : list
+        Longitude limits of area of interest.
+    timelim : list
+        Period for which to prepare data.
+    product_name : str, optional
+        Name of the product to download, by default "30M".
+    req_vars : list, optional
+        Which variables to download for the selected product, by default ["z"].
+    variables : dict, optional
+        Metadata on which exact layers need to be requested from the server, by default None.
+    post_processors : dict, optional
+        Functions per variable that should be applied to the variable, by default None.
+
+    Returns
+    -------
+    xr.Dataset
+        Downloaded data.
+    """
+    folder = os.path.join(folder, "SRTM")
+    
     appending = False
     fn = os.path.join(folder, f"{product_name}.nc")
     if os.path.isfile(fn):
