@@ -7,6 +7,7 @@
   <title>Evapotranspiration &mdash; pyWaPOR  documentation</title>
       <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
       <link rel="stylesheet" href="../_static/css/theme.css" type="text/css" />
+      <link rel="stylesheet" href="../_static/copybutton.css" type="text/css" />
       <link rel="stylesheet" href="../_static/css/custom.css" type="text/css" />
   <!--[if lt IE 9]>
     <script src="../_static/js/html5shiv.min.js"></script>
@@ -17,6 +18,9 @@
         <script src="../_static/underscore.js"></script>
         <script src="../_static/_sphinx_javascript_frameworks_compat.js"></script>
         <script src="../_static/doctools.js"></script>
+        <script src="../_static/sphinx_highlight.js"></script>
+        <script src="../_static/clipboard.min.js"></script>
+        <script src="../_static/copybutton.js"></script>
         <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
         <script>window.MathJax = {"tex": {"inlineMath": [["$", "$"], ["\\(", "\\)"]], "processEscapes": true}, "options": {"ignoreHtmlClass": "tex2jax_ignore|mathjax_ignore|document", "processHtmlClass": "tex2jax_process|mathjax_process|math|output_area"}}</script>
         <script defer="defer" src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
@@ -50,7 +54,13 @@
 <li class="toctree-l1 current"><a class="reference internal" href="../_etlook.html">ETLook</a><ul class="current">
 <li class="toctree-l2"><a class="reference internal" href="clear_sky_radiation.html">Clear Sky Radiation</a></li>
 <li class="toctree-l2"><a class="reference internal" href="soil_moisture.html">Soil Moisture</a></li>
-<li class="toctree-l2 current"><a class="current reference internal" href="#">Evapotranspiration</a></li>
+<li class="toctree-l2 current"><a class="current reference internal" href="#">Evapotranspiration</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#pywapor.et_look_v2_v3.evapotranspiration.interception_mm"><code class="docutils literal notranslate"><span class="pre">interception_mm()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#pywapor.et_look_v2_v3.evapotranspiration.et_reference"><code class="docutils literal notranslate"><span class="pre">et_reference()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#pywapor.et_look_v2_v3.evapotranspiration.et_reference_mm"><code class="docutils literal notranslate"><span class="pre">et_reference_mm()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#pywapor.et_look_v2_v3.evapotranspiration.et_actual_mm"><code class="docutils literal notranslate"><span class="pre">et_actual_mm()</span></code></a></li>
+</ul>
+</li>
 <li class="toctree-l2"><a class="reference internal" href="leaf.html">Leaf</a></li>
 <li class="toctree-l2"><a class="reference internal" href="meteo.html">Meteo</a></li>
 <li class="toctree-l2"><a class="reference internal" href="neutral.html">Neutral</a></li>
@@ -116,11 +126,11 @@
     text-align: unset;
 }
 </style>
-<section id="module-pywapor.et_look_v2.evapotranspiration">
-<span id="evapotranspiration"></span><h1>Evapotranspiration<a class="headerlink" href="#module-pywapor.et_look_v2.evapotranspiration" title="Permalink to this heading"></a></h1>
+<section id="module-pywapor.et_look_v2_v3.evapotranspiration">
+<span id="evapotranspiration"></span><h1>Evapotranspiration<a class="headerlink" href="#module-pywapor.et_look_v2_v3.evapotranspiration" title="Permalink to this heading"></a></h1>
 <dl class="py function">
-<dt class="sig sig-object py" id="pywapor.et_look_v2.evapotranspiration.interception_mm">
-<span class="sig-name descname"><span class="pre">interception_mm</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">P_24</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">vc</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">lai</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">int_max</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.2</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pywapor.et_look_v2.evapotranspiration.interception_mm" title="Permalink to this definition"></a></dt>
+<dt class="sig sig-object py" id="pywapor.et_look_v2_v3.evapotranspiration.interception_mm">
+<span class="sig-name descname"><span class="pre">interception_mm</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">P_24</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">vc</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">lai</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">int_max</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.2</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pywapor.et_look_v2_v3.evapotranspiration.interception_mm" title="Permalink to this definition"></a></dt>
 <dd><p>Computes the daily interception. The daily interception of a vegetated area
 is calculated according to Braden<a class="footnote-reference brackets" href="#footcite-braden1985energiehaushalts" id="id1">1</a>
 and Hoyningen-Huene<a class="footnote-reference brackets" href="#footcite-hoyningen1983interception" id="id2">2</a>.</p>
@@ -156,8 +166,8 @@ and Hoyningen-Huene<a class="footnote-reference brackets" href="#footcite-hoynin
 </dd></dl>
 
 <dl class="py function">
-<dt class="sig sig-object py" id="pywapor.et_look_v2.evapotranspiration.et_reference">
-<span class="sig-name descname"><span class="pre">et_reference</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">rn_24_grass</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ad_24</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">psy_24</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">vpd_24</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ssvp_24</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">u_24</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pywapor.et_look_v2.evapotranspiration.et_reference" title="Permalink to this definition"></a></dt>
+<dt class="sig sig-object py" id="pywapor.et_look_v2_v3.evapotranspiration.et_reference">
+<span class="sig-name descname"><span class="pre">et_reference</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">rn_24_grass</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ad_24</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">psy_24</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">vpd_24</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ssvp_24</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">u_24</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pywapor.et_look_v2_v3.evapotranspiration.et_reference" title="Permalink to this definition"></a></dt>
 <dd><p>Computes the reference evapotranspiration.</p>
 <p>The reference evapotranspiration <span class="math notranslate nohighlight">\(ET_{ref}\)</span> is an important concept
 in irrigation science. The reference evapotranspiration can be inferred
@@ -210,8 +220,8 @@ as follows, with taking the default value for the grass surface resistance
 </dd></dl>
 
 <dl class="py function">
-<dt class="sig sig-object py" id="pywapor.et_look_v2.evapotranspiration.et_reference_mm">
-<span class="sig-name descname"><span class="pre">et_reference_mm</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">et_ref_24</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">lh_24</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pywapor.et_look_v2.evapotranspiration.et_reference_mm" title="Permalink to this definition"></a></dt>
+<dt class="sig sig-object py" id="pywapor.et_look_v2_v3.evapotranspiration.et_reference_mm">
+<span class="sig-name descname"><span class="pre">et_reference_mm</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">et_ref_24</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">lh_24</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pywapor.et_look_v2_v3.evapotranspiration.et_reference_mm" title="Permalink to this definition"></a></dt>
 <dd><p>Computes the reference evapotranspiration.</p>
 <div class="math notranslate nohighlight">
 \[ET_{ref}=ET_{ref} \cdot d_{sec} \cdot \lambda_{24}\]</div>
@@ -242,8 +252,8 @@ as follows, with taking the default value for the grass surface resistance
 </dd></dl>
 
 <dl class="py function">
-<dt class="sig sig-object py" id="pywapor.et_look_v2.evapotranspiration.et_actual_mm">
-<span class="sig-name descname"><span class="pre">et_actual_mm</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">e_24_mm</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">t_24_mm</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pywapor.et_look_v2.evapotranspiration.et_actual_mm" title="Permalink to this definition"></a></dt>
+<dt class="sig sig-object py" id="pywapor.et_look_v2_v3.evapotranspiration.et_actual_mm">
+<span class="sig-name descname"><span class="pre">et_actual_mm</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">e_24_mm</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">t_24_mm</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pywapor.et_look_v2_v3.evapotranspiration.et_actual_mm" title="Permalink to this definition"></a></dt>
 <dd><p>Computes the actual evapotranspiration based on the separate calculations
 of evaporation and transpiration.</p>
 <div class="math notranslate nohighlight">

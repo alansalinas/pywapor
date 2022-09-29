@@ -3,7 +3,7 @@
 Solar Radiation
 ===============
 
-.. automodule:: pywapor.et_look_v2.solar_radiation
+.. automodule:: pywapor.et_look_v2_v3.solar_radiation
    :members:
 
 .. footbibliography::

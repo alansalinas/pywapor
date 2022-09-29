@@ -7,6 +7,7 @@
   <title>Neutral &mdash; pyWaPOR  documentation</title>
       <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
       <link rel="stylesheet" href="../_static/css/theme.css" type="text/css" />
+      <link rel="stylesheet" href="../_static/copybutton.css" type="text/css" />
       <link rel="stylesheet" href="../_static/css/custom.css" type="text/css" />
   <!--[if lt IE 9]>
     <script src="../_static/js/html5shiv.min.js"></script>
@@ -17,6 +18,9 @@
         <script src="../_static/underscore.js"></script>
         <script src="../_static/_sphinx_javascript_frameworks_compat.js"></script>
         <script src="../_static/doctools.js"></script>
+        <script src="../_static/sphinx_highlight.js"></script>
+        <script src="../_static/clipboard.min.js"></script>
+        <script src="../_static/copybutton.js"></script>
         <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
         <script>window.MathJax = {"tex": {"inlineMath": [["$", "$"], ["\\(", "\\)"]], "processEscapes": true}, "options": {"ignoreHtmlClass": "tex2jax_ignore|mathjax_ignore|document", "processHtmlClass": "tex2jax_process|mathjax_process|math|output_area"}}</script>
         <script defer="defer" src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
@@ -53,7 +57,15 @@
 <li class="toctree-l2"><a class="reference internal" href="evapotranspiration.html">Evapotranspiration</a></li>
 <li class="toctree-l2"><a class="reference internal" href="leaf.html">Leaf</a></li>
 <li class="toctree-l2"><a class="reference internal" href="meteo.html">Meteo</a></li>
-<li class="toctree-l2 current"><a class="current reference internal" href="#">Neutral</a></li>
+<li class="toctree-l2 current"><a class="current reference internal" href="#">Neutral</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#pywapor.et_look_v2_v3.neutral.initial_soil_aerodynamic_resistance"><code class="docutils literal notranslate"><span class="pre">initial_soil_aerodynamic_resistance()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#pywapor.et_look_v2_v3.neutral.initial_daily_evaporation"><code class="docutils literal notranslate"><span class="pre">initial_daily_evaporation()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#pywapor.et_look_v2_v3.neutral.initial_daily_evaporation_mm"><code class="docutils literal notranslate"><span class="pre">initial_daily_evaporation_mm()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#pywapor.et_look_v2_v3.neutral.initial_canopy_aerodynamic_resistance"><code class="docutils literal notranslate"><span class="pre">initial_canopy_aerodynamic_resistance()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#pywapor.et_look_v2_v3.neutral.initial_daily_transpiration"><code class="docutils literal notranslate"><span class="pre">initial_daily_transpiration()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="#pywapor.et_look_v2_v3.neutral.initial_daily_transpiration_mm"><code class="docutils literal notranslate"><span class="pre">initial_daily_transpiration_mm()</span></code></a></li>
+</ul>
+</li>
 <li class="toctree-l2"><a class="reference internal" href="radiation.html">Radiation</a></li>
 <li class="toctree-l2"><a class="reference internal" href="resistance.html">Resistance</a></li>
 <li class="toctree-l2"><a class="reference internal" href="roughness.html">Roughness</a></li>
@@ -116,11 +128,11 @@
     text-align: unset;
 }
 </style>
-<section id="module-pywapor.et_look_v2.neutral">
-<span id="neutral"></span><h1>Neutral<a class="headerlink" href="#module-pywapor.et_look_v2.neutral" title="Permalink to this heading"></a></h1>
+<section id="module-pywapor.et_look_v2_v3.neutral">
+<span id="neutral"></span><h1>Neutral<a class="headerlink" href="#module-pywapor.et_look_v2_v3.neutral" title="Permalink to this heading"></a></h1>
 <dl class="py function">
-<dt class="sig sig-object py" id="pywapor.et_look_v2.neutral.initial_soil_aerodynamic_resistance">
-<span class="sig-name descname"><span class="pre">initial_soil_aerodynamic_resistance</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">u_24</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">z_obs</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">2</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pywapor.et_look_v2.neutral.initial_soil_aerodynamic_resistance" title="Permalink to this definition"></a></dt>
+<dt class="sig sig-object py" id="pywapor.et_look_v2_v3.neutral.initial_soil_aerodynamic_resistance">
+<span class="sig-name descname"><span class="pre">initial_soil_aerodynamic_resistance</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">u_24</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">z_obs</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">2</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pywapor.et_look_v2_v3.neutral.initial_soil_aerodynamic_resistance" title="Permalink to this definition"></a></dt>
 <dd><p>Computes the aerodynamic resistance for soil without stability corrections
 <span class="math notranslate nohighlight">\(r_{a,soil}^{0}\)</span>.</p>
 <div class="math notranslate nohighlight">
@@ -157,8 +169,8 @@ heat.</p>
 </dd></dl>
 
 <dl class="py function">
-<dt class="sig sig-object py" id="pywapor.et_look_v2.neutral.initial_daily_evaporation">
-<span class="sig-name descname"><span class="pre">initial_daily_evaporation</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">rn_24_soil</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">g0_24</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ssvp_24</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ad_24</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">vpd_24</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">psy_24</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">r_soil</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ra_soil_init</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pywapor.et_look_v2.neutral.initial_daily_evaporation" title="Permalink to this definition"></a></dt>
+<dt class="sig sig-object py" id="pywapor.et_look_v2_v3.neutral.initial_daily_evaporation">
+<span class="sig-name descname"><span class="pre">initial_daily_evaporation</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">rn_24_soil</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">g0_24</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ssvp_24</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ad_24</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">vpd_24</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">psy_24</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">r_soil</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ra_soil_init</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pywapor.et_look_v2_v3.neutral.initial_daily_evaporation" title="Permalink to this definition"></a></dt>
 <dd><p>Computes the soil evaporation based on the Penman Monteith equation
 adapted for soil.</p>
 <div class="math notranslate nohighlight">
@@ -211,8 +223,8 @@ adapted for soil.</p>
 </dd></dl>
 
 <dl class="py function">
-<dt class="sig sig-object py" id="pywapor.et_look_v2.neutral.initial_daily_evaporation_mm">
-<span class="sig-name descname"><span class="pre">initial_daily_evaporation_mm</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">e_24_init</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">lh_24</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pywapor.et_look_v2.neutral.initial_daily_evaporation_mm" title="Permalink to this definition"></a></dt>
+<dt class="sig sig-object py" id="pywapor.et_look_v2_v3.neutral.initial_daily_evaporation_mm">
+<span class="sig-name descname"><span class="pre">initial_daily_evaporation_mm</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">e_24_init</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">lh_24</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pywapor.et_look_v2_v3.neutral.initial_daily_evaporation_mm" title="Permalink to this definition"></a></dt>
 <dd><p>Computes the soil evaporation based on the Penman Monteith equation
 adapted for soil.</p>
 <div class="math notranslate nohighlight">
@@ -244,8 +256,8 @@ adapted for soil.</p>
 </dd></dl>
 
 <dl class="py function">
-<dt class="sig sig-object py" id="pywapor.et_look_v2.neutral.initial_canopy_aerodynamic_resistance">
-<span class="sig-name descname"><span class="pre">initial_canopy_aerodynamic_resistance</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">u_24</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">z0m</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">z_obs</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">2</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pywapor.et_look_v2.neutral.initial_canopy_aerodynamic_resistance" title="Permalink to this definition"></a></dt>
+<dt class="sig sig-object py" id="pywapor.et_look_v2_v3.neutral.initial_canopy_aerodynamic_resistance">
+<span class="sig-name descname"><span class="pre">initial_canopy_aerodynamic_resistance</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">u_24</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">z0m</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">z_obs</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">2</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pywapor.et_look_v2_v3.neutral.initial_canopy_aerodynamic_resistance" title="Permalink to this definition"></a></dt>
 <dd><p>Computes the aerodynamic resistance for a canopy soil without stability
 corrections <span class="math notranslate nohighlight">\(r_{a,}^{0}\)</span>.</p>
 <div class="math notranslate nohighlight">
@@ -283,8 +295,8 @@ heat.</p>
 </dd></dl>
 
 <dl class="py function">
-<dt class="sig sig-object py" id="pywapor.et_look_v2.neutral.initial_daily_transpiration">
-<span class="sig-name descname"><span class="pre">initial_daily_transpiration</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">rn_24_canopy</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ssvp_24</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ad_24</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">vpd_24</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">psy_24</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">r_canopy</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ra_canopy_init</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pywapor.et_look_v2.neutral.initial_daily_transpiration" title="Permalink to this definition"></a></dt>
+<dt class="sig sig-object py" id="pywapor.et_look_v2_v3.neutral.initial_daily_transpiration">
+<span class="sig-name descname"><span class="pre">initial_daily_transpiration</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">rn_24_canopy</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ssvp_24</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ad_24</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">vpd_24</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">psy_24</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">r_canopy</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ra_canopy_init</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pywapor.et_look_v2_v3.neutral.initial_daily_transpiration" title="Permalink to this definition"></a></dt>
 <dd><p>Computes the soil evaporation based on the Penman Monteith equation adapted
 for soil.</p>
 <div class="math notranslate nohighlight">
@@ -335,8 +347,8 @@ for soil.</p>
 </dd></dl>
 
 <dl class="py function">
-<dt class="sig sig-object py" id="pywapor.et_look_v2.neutral.initial_daily_transpiration_mm">
-<span class="sig-name descname"><span class="pre">initial_daily_transpiration_mm</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">t_24_init</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">lh_24</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pywapor.et_look_v2.neutral.initial_daily_transpiration_mm" title="Permalink to this definition"></a></dt>
+<dt class="sig sig-object py" id="pywapor.et_look_v2_v3.neutral.initial_daily_transpiration_mm">
+<span class="sig-name descname"><span class="pre">initial_daily_transpiration_mm</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">t_24_init</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">lh_24</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pywapor.et_look_v2_v3.neutral.initial_daily_transpiration_mm" title="Permalink to this definition"></a></dt>
 <dd><p>Computes the canopy transpiration based on the Penman Monteith equation
 adapted for canopy.</p>
 <div class="math notranslate nohighlight">

@@ -10,3 +10,7 @@ pywapor.enhancers
    enhancers/lulc
    enhancers/temperature
    enhancers/apply_enhancers
+   enhancers/other
+   enhancers/pressure
+   enhancers/wind
+   enhancers/dms

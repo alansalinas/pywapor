@@ -3,7 +3,7 @@
 Neutral
 =============
 
-.. automodule:: pywapor.et_look_v2.neutral
+.. automodule:: pywapor.et_look_v2_v3.neutral
    :members:
 
 .. footbibliography::

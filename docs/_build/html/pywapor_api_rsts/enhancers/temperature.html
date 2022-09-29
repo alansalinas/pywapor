@@ -7,6 +7,7 @@
   <title>temperature &mdash; pyWaPOR  documentation</title>
       <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
       <link rel="stylesheet" href="../../_static/css/theme.css" type="text/css" />
+      <link rel="stylesheet" href="../../_static/copybutton.css" type="text/css" />
       <link rel="stylesheet" href="../../_static/css/custom.css" type="text/css" />
   <!--[if lt IE 9]>
     <script src="../../_static/js/html5shiv.min.js"></script>
@@ -17,6 +18,9 @@
         <script src="../../_static/underscore.js"></script>
         <script src="../../_static/_sphinx_javascript_frameworks_compat.js"></script>
         <script src="../../_static/doctools.js"></script>
+        <script src="../../_static/sphinx_highlight.js"></script>
+        <script src="../../_static/clipboard.min.js"></script>
+        <script src="../../_static/copybutton.js"></script>
         <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
     <script src="../../_static/js/theme.js"></script>
     <link rel="index" title="Index" href="../../genindex.html" />
@@ -53,11 +57,25 @@
 <li class="toctree-l3"><a class="reference internal" href="dem.html">dem</a></li>
 <li class="toctree-l3"><a class="reference internal" href="gap_fill.html">gap_fill</a></li>
 <li class="toctree-l3"><a class="reference internal" href="lulc.html">lulc</a></li>
-<li class="toctree-l3 current"><a class="current reference internal" href="#">temperature</a></li>
+<li class="toctree-l3 current"><a class="current reference internal" href="#">temperature</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#pywapor.enhancers.temperature.template"><code class="docutils literal notranslate"><span class="pre">template()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#pywapor.enhancers.temperature.kelvin_to_celsius"><code class="docutils literal notranslate"><span class="pre">kelvin_to_celsius()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#pywapor.enhancers.temperature.celsius_to_kelvin"><code class="docutils literal notranslate"><span class="pre">celsius_to_kelvin()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#pywapor.enhancers.temperature.lapse_rate"><code class="docutils literal notranslate"><span class="pre">lapse_rate()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#pywapor.enhancers.temperature.create_circle"><code class="docutils literal notranslate"><span class="pre">create_circle()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#pywapor.enhancers.temperature.local_mean"><code class="docutils literal notranslate"><span class="pre">local_mean()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#pywapor.enhancers.temperature.bt_to_lst"><code class="docutils literal notranslate"><span class="pre">bt_to_lst()</span></code></a></li>
+</ul>
+</li>
 <li class="toctree-l3"><a class="reference internal" href="apply_enhancers.html">apply_enhancers</a></li>
+<li class="toctree-l3"><a class="reference internal" href="other.html">other</a></li>
+<li class="toctree-l3"><a class="reference internal" href="pressure.html">pressure</a></li>
+<li class="toctree-l3"><a class="reference internal" href="wind.html">wind</a></li>
+<li class="toctree-l3"><a class="reference internal" href="dms.html">dms</a></li>
 </ul>
 </li>
 <li class="toctree-l2"><a class="reference internal" href="../general.html">pywapor.general</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../collect.html">pywapor.collect</a></li>
 </ul>
 </li>
 <li class="toctree-l1"><a class="reference internal" href="../../_etlook.html">ETLook</a></li>
@@ -119,6 +137,27 @@
 <span id="temperature"></span><h1>temperature<a class="headerlink" href="#module-pywapor.enhancers.temperature" title="Permalink to this heading"></a></h1>
 <p>Functions to make adjustments to temperature maps.</p>
 <dl class="py function">
+<dt class="sig sig-object py" id="pywapor.enhancers.temperature.template">
+<span class="sig-name descname"><span class="pre">template</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">ds</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">var</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">out_var</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pywapor.enhancers.temperature.template" title="Permalink to this definition"></a></dt>
+<dd><p>Example enhancer function.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>ds</strong> (<em>xr.Dataset</em>) – Input dataset.</p></li>
+<li><p><strong>var</strong> (<em>str</em>) – Variable to adjust.</p></li>
+<li><p><strong>out_var</strong> (<em>str</em><em>, </em><em>optional</em>) – variable to store new variable, by default None.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>Output dataset.</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>xr.Dataset</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
 <dt class="sig sig-object py" id="pywapor.enhancers.temperature.kelvin_to_celsius">
 <span class="sig-name descname"><span class="pre">kelvin_to_celsius</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">ds</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">var</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">in_var</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">out_var</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pywapor.enhancers.temperature.kelvin_to_celsius" title="Permalink to this definition"></a></dt>
 <dd><p>Convert units of a variable from Kelvin to degrees Celsius.</p>
@@ -127,6 +166,7 @@
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>ds</strong> (<em>xr.Dataset</em>) – Dataset containing <cite>var</cite>.</p></li>
 <li><p><strong>var</strong> (<em>str</em>) – Variable name.</p></li>
+<li><p><strong>in_var</strong> (<em>str</em><em>, </em><em>optional</em>) – Overwrites <cite>var</cite>, by default None.</p></li>
 <li><p><strong>out_var</strong> (<em>str</em><em>, </em><em>optional</em>) – Instead of overwriting <cite>var</cite>, store the new data in <cite>out_var</cite>,
 by default None.</p></li>
 </ul>
@@ -235,6 +275,30 @@ calculate the local mean.</p></li>
 </dd>
 <dt class="field-odd">Return type</dt>
 <dd class="field-odd"><p>ndarray</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="pywapor.enhancers.temperature.bt_to_lst">
+<span class="sig-name descname"><span class="pre">bt_to_lst</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">ds</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">x</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ndvi_s</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.2</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ndvi_v</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.5</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">emis_s</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.97</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">emis_v</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.985</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pywapor.enhancers.temperature.bt_to_lst" title="Permalink to this definition"></a></dt>
+<dd><p>Convert brightness temperature to land surface temperature according to Sobrino et al (2008).</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>ds</strong> (<em>xr.Dataset</em>) – Input.</p></li>
+<li><p><strong>x</strong> (<em>None</em>) – Not used.</p></li>
+<li><p><strong>ndvi_s</strong> (<em>float</em><em>, </em><em>optional</em>) – Threshold value, by default 0.2</p></li>
+<li><p><strong>ndvi_v</strong> (<em>float</em><em>, </em><em>optional</em>) – Threshold value, by default 0.5</p></li>
+<li><p><strong>emis_s</strong> (<em>float</em><em>, </em><em>optional</em>) – Threshold value, by default 0.97</p></li>
+<li><p><strong>emis_v</strong> (<em>float</em><em>, </em><em>optional</em>) – Threshold value, by default 0.985</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>Dataset in which <cite>bt</cite> has been replaced with <cite>lst</cite>.</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>xr.Dataset</p>
 </dd>
 </dl>
 </dd></dl>

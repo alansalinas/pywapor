@@ -3,7 +3,7 @@
 Resistance
 =============
 
-.. automodule:: pywapor.et_look_v2.resistance
+.. automodule:: pywapor.et_look_v2_v3.resistance
    :members:
 
 .. footbibliography::

@@ -3,7 +3,7 @@
 Evapotranspiration
 ==================
 
-.. automodule:: pywapor.et_look_v2.evapotranspiration
+.. automodule:: pywapor.et_look_v2_v3.evapotranspiration
    :members:
 
 .. footbibliography::

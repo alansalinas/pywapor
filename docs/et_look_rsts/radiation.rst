@@ -3,7 +3,7 @@
 Radiation
 =============
 
-.. automodule:: pywapor.et_look_v2.radiation
+.. automodule:: pywapor.et_look_v2_v3.radiation
    :members:
 
 .. footbibliography::

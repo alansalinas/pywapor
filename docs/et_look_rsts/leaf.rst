@@ -3,7 +3,7 @@
 Leaf
 =============
 
-.. automodule:: pywapor.et_look_v2.leaf
+.. automodule:: pywapor.et_look_v2_v3.leaf
    :members:
 
 .. footbibliography::
