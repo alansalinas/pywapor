@@ -85,7 +85,7 @@ def download(fp, product_name, coords, variables, post_processors,
 
     # Reproject if necessary.
     if ds.rio.crs.to_epsg() != 4326:
-        ds = ds.rio.reproject(rasterio.crs.CRS.from_epsg(4326))
+        ds = ds.rio.reproject(CRS.from_epsg(4326))
 
     # Apply product specific functions.
     for var, funcs in post_processors.items():

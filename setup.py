@@ -2,7 +2,7 @@ from setuptools import setup, find_packages
 
 setup(
     name = 'pywapor',
-    version = '3.1.2',
+    version = '3.1.5',
     url = 'https://www.fao.org/aquastat/py-wapor/',
     author = "FAO",
     author_email = "bert.coerver@fao.org",
@@ -47,6 +47,8 @@ setup(
         'geopy',
         'sklearn',
         'numba',
+# NOTE Another fix for Colab... https://github.com/googlecolab/colabtools/issues/3134
+        'importlib-metadata==4.13.0',
     ],
     classifiers=[
         "Operating System :: OS Independent",
