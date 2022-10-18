@@ -90,7 +90,6 @@ def collect_sources(folder, sources, latlim, lonlim, timelim, return_fps = True)
                 dss[(source_name, product_name)] = x
             finally:
                 log.pop()
-                continue
 
     if return_fps:
         for key, ds in dss.items():
