@@ -2,6 +2,7 @@ import os
 import rasterio
 from rasterio import shutil as rio_shutil
 from rasterio.vrt import WarpedVRT
+from rasterio.crs import CRS
 import xarray as xr
 import numpy as np
 import os
@@ -32,7 +33,7 @@ def get_pixel_sizes(dss):
     # Pick the dominant CRS.
     crs = uniqs[np.argmax(counts)]
     # Reproject to common CRS.
-    dss2 = [(ds, ds.rio.reproject(rasterio.CRS.from_epsg(crs))) for ds in dss]
+    dss2 = [(ds, ds.rio.reproject(CRS.from_epsg(crs))) for ds in dss]
     return {np.abs(np.prod(ds2.rio.resolution())): ds for ds, ds2 in dss2}
 
 def has_changed(ds):
