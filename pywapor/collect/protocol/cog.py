@@ -90,6 +90,10 @@ def download(fp, product_name, coords, variables, post_processors, url_func,
     # Process the new netCDF.
     ds = open_ds(fp.replace(".nc", "_temp.nc"))
 
+    if int(gdal.__version__.split(".")[0]) < 3:
+        # NOTE this is terrible, but Google Colab uses a 7 year old GDAL version...
+        ds = ds * 0.01
+
     ds = ds.rename_vars({k: f"Band{v}" for k,v in zip(list(ds.data_vars), bands)})
 
     ds = process_ds(ds, coords, variables)
