@@ -8,6 +8,7 @@ import pywapor.collect.protocol.sentinelapi as sentinelapi
 import numpy as np
 from functools import partial
 from pywapor.general.processing_functions import open_ds, remove_ds, save_ds
+from lxml import etree
 
 def apply_qa(ds, var):
     """Mask SENTINEL2 data using a qa variable.
@@ -72,8 +73,9 @@ def scale_data(ds, var):
     xr.Dataset
         Output data.
     """
-    scale = 1./10000. # BOA_QUANTIFICATION_VALUE
-    offset = -1000 # BOA_ADD_OFFSET
+    
+    scale = 1./ds.scale_factor # BOA_QUANTIFICATION_VALUE
+    offset = ds.offset_factor # BOA_ADD_OFFSET
     ds[var] = (ds[var] + offset) * scale
     ds[var] = ds[var].where((ds[var] <= 1.00) & (ds[var] >= 0.00))
     return ds
@@ -412,8 +414,27 @@ def time_func(fn):
     return dtime
 
 def s2_processor(scene_folder, variables):
+
     dss = [open_ds(glob.glob(os.path.join(scene_folder, "**", "*" + k), recursive = True)[0], decode_coords=None).isel(band=0).rename({"band_data": v[1]}) for k, v in variables.items()]
     ds = xr.merge(dss).drop_vars("band")
+
+    meta_fps = glob.glob(os.path.join(scene_folder, "**", "MTD_MSIL2A.xml"), recursive = True)
+    if len(meta_fps) >= 1:
+        tree = etree.parse(meta_fps[0])
+        root = tree.getroot()
+        offsets = [float(x.text) for x in root.iter('BOA_ADD_OFFSET')]
+        scales = [float(x.text) for x in root.iter('BOA_QUANTIFICATION_VALUE')]
+        scale = np.median(scales)
+        offset = np.median(offsets)
+        if len(np.unique(offsets)) != 1:
+            log.warning(f"Multiple offsets found for `{scene_folder}`, using `{offset}`, check `{meta_fps[0]}` for more info.")
+        if len(scales) != 1:
+            log.warning(f"Multiple scales found for `{scene_folder}`, using `{scale}`, check `{meta_fps[0]}` for more info.")
+        ds.attrs = {"scale_factor": scale, "offset_factor": offset}
+    else:
+        ds.attrs = {"scale_factor": 10000.0, "offset_factor": -1000.0}
+        log.warning(f"No scale/offset found for `{meta_fps[0]}`, using `{ds.attrs}`.")
+
     return ds
 
 def download(folder, latlim, lonlim, timelim, product_name, 
@@ -486,7 +507,7 @@ def download(folder, latlim, lonlim, timelim, product_name,
 
     def node_filter(node_info):
         fn = os.path.split(node_info["node_path"])[-1]
-        to_dl = list(variables.keys())
+        to_dl = list(variables.keys()) + ["MTD_MSIL2A.xml"]
         return np.any([x in fn for x in to_dl])
     # node_filter = None
 
