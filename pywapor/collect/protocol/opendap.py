@@ -1,7 +1,6 @@
 import xarray as xr
 import numpy as np
 import os
-import tqdm
 import rasterio
 import rioxarray.merge
 import tempfile
@@ -66,7 +65,7 @@ def download(fp, product_name, coords, variables, post_processors,
     # Make data request URLs.
     session = start_session(url_func(product_name, tiles[0]), selection, un_pw)
     if spatial_tiles:
-        idxss = [find_idxs(url_func(product_name, x), selection, session) for x in tqdm.tqdm(tiles, delay = 20)]
+        idxss = [find_idxs(url_func(product_name, x), selection, session) for x in tiles]
         urls = [create_url(url_func(product_name, x), idxs, variables, request_dims = request_dims) for x, idxs in zip(tiles, idxss)]
     else:
         idxs = find_idxs(url_func(product_name, tiles[0]), selection, session)
@@ -76,16 +75,19 @@ def download(fp, product_name, coords, variables, post_processors,
     files = download_urls(urls, "", session, fps = fps, parallel = parallel)
 
     # Merge spatial tiles.
+    coords_ = {k: [v[0], selection[v[0]]] for k,v in coords.items()}
     if spatial_tiles:
-        dss = [process_ds(xr.open_dataset(x, decode_coords = "all"), coords, variables, crs = data_source_crs) for x in files]
+        dss = [process_ds(xr.open_dataset(x, decode_coords = "all"), coords_, variables, crs = data_source_crs) for x in files]
         ds = rioxarray.merge.merge_datasets(dss)
     else:
         dss = files
-        ds = process_ds(xr.open_mfdataset(files, decode_coords = "all"), coords, variables, crs = data_source_crs)
+        ds = process_ds(xr.open_mfdataset(files, decode_coords = "all"), coords_, variables, crs = data_source_crs)
 
     # Reproject if necessary.
     if ds.rio.crs.to_epsg() != 4326:
         ds = ds.rio.reproject(CRS.from_epsg(4326))
+
+    ds = ds.rio.clip_box(coords["x"][1][0], coords["y"][1][0], coords["x"][1][1], coords["y"][1][1])
 
     # Apply product specific functions.
     for var, funcs in post_processors.items():
@@ -196,8 +198,7 @@ def download_xarray(url, fp, coords, variables, post_processors,
 
     return out
 
-def create_selection(coords, ds = None, target_crs = None, 
-                        source_crs = CRS.from_epsg(4326)):
+def create_selection(coords, target_crs = None, source_crs = CRS.from_epsg(4326)):
     """Create a dictionary that can be given to `xr.Dataset.sel`.
 
     Parameters
@@ -207,9 +208,6 @@ def create_selection(coords, ds = None, target_crs = None,
         are "x" for latitude, "y" for longitude and "t" for time, but other selections
         keys are also allowed (e.g. so select a band). Values are tuples with the first
         value the respective dimension names in the `ds` and the second value the selector.
-    ds : xr.Dataset, optional
-        Dataset on which the selection will be applied, can be supplied to check if 
-        dimensions are sorted ascending or descending and to derive `target_crs`, by default None.
     target_crs : rasterio.crs.CRS, optional
         crs of the dataset on which the selection will be applied, by default None.
     source_crs : rasterio.crs.CRS, optional
@@ -223,26 +221,22 @@ def create_selection(coords, ds = None, target_crs = None,
     selection = {}
 
     if not isinstance(target_crs, type(None)):
-        coords["x"][1], coords["y"][1] = rasterio.warp.transform(source_crs,
-                                                target_crs,
-                                                coords["x"][1], coords["y"][1])
-    elif not isinstance(ds, type(None)):
-        if ds.rio.crs != source_crs:
-            coords["x"][1], coords["y"][1] = rasterio.warp.transform(source_crs,
-                                        ds.rio.crs,
-                                        coords["x"][1], coords["y"][1]) 
+        bounds = rasterio.warp.transform_bounds(source_crs, target_crs, 
+                                                coords["x"][1][0], 
+                                                coords["y"][1][0], 
+                                                coords["x"][1][1], 
+                                                coords["y"][1][1])
+    else:
+        bounds = [coords["x"][1][0], coords["y"][1][0], coords["x"][1][1], coords["y"][1][1]]
+    
+    selection[coords["x"][0]] = [bounds[0], bounds[2]]
+    selection[coords["y"][0]] = [bounds[1], bounds[3]]
 
     if "t" in coords.keys():
-        coords["t"][1] = [np.datetime64(t) for t in coords["t"][1]]
+        selection[coords["t"][0]] = [np.datetime64(t) for t in coords["t"][1]]
 
     for name, lim in coords.values():
-        # If `ds` is given, checks if the dimensions are sorted from high to low
-        # or from low to high and adjusts the limit accordingly.
-        if isinstance(ds, xr.Dataset) and hasattr(lim, "__iter__"):
-            lim = {False: lim, True: lim[::-1]}[bool(ds[name][0] - ds[name][1] > 0)]
-        # Create a slice object if `lim` is a list or tuple.
-        # if hasattr(lim, "__iter__"):
-        #     lim = slice(*lim)
-        selection[name] = lim
+        if name not in selection.keys():
+            selection[name] = lim
 
     return selection
