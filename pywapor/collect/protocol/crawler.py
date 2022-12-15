@@ -304,7 +304,8 @@ def download_url(url, fp, session = None, waitbar = True, headers = None,
         except socket.timeout as e:
             log.info(f"--> Server connection timed out.")
         except HTTPError as e:
-            log.info(f"--> Server error {e}.")
+            error_body = getattr(getattr(e, "response", ""), "text", "")
+            log.info(f"--> Server error {e} [{error_body}].")
         else:
             ...
         finally:
