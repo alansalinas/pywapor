@@ -9,13 +9,14 @@ from pywapor.general.logger import log
 from cryptography.fernet import Fernet
 import cdsapi
 from sentinelsat import SentinelAPI
+from pywapor.collect.product.LANDSAT import espa_api
 
 def setup(account):
     """Asks, saves and tests a username/password combination for `account`.
 
     Parameters
     ----------
-    account : {"NASA" | "VITO" | "WAPOR" | "ECMWF" | "SENTINEL" | "VIIRSL1"}
+    account : {"NASA" | "VITO" | "WAPOR" | "ECMWF" | "SENTINEL" | "VIIRSL1" | "EARTHEXPLORER"}
         Which un/pw combination to store.
     """
 
@@ -74,7 +75,18 @@ def setup(account):
             _ = obj.pop("NASA")
             with open(json_filehandle, 'w') as outfile:
                 json.dump(obj, outfile)
-            sys.exit(f"Please fix your NASA account.")            
+            sys.exit(f"Please fix your NASA account.") 
+
+    if account == "EARTHEXPLORER":
+        log.info("--> Testing EARTHEXPLORER un/pw.")
+        succes = earthexplorer_account()
+        if succes:
+            log.info("--> EARTHEXPLORER un/pw working.")
+        else:
+            _ = obj.pop("EARTHEXPLORER")
+            with open(json_filehandle, 'w') as outfile:
+                json.dump(obj, outfile)
+            sys.exit(f"Please fix your EARTHEXPLORER account.")            
 
     if account == "VITO":
         log.info("--> Testing VITO un/pw.")
@@ -138,7 +150,7 @@ def get(account):
 
     Parameters
     ----------
-    account : {"NASA" | "VITO" | "WAPOR" | "ECMWF" | "SENTINEL" | "VIIRSL1"}
+    account : {"NASA" | "VITO" | "WAPOR" | "ECMWF" | "SENTINEL" | "VIIRSL1" | "EARTHEXPLORER"}
         Which un/pw combination to load.
     """
 
@@ -326,6 +338,51 @@ def nasa_account(user_pw = None):
             succes = False
             if os.path.isfile(test_file):
                 os.remove(test_file)
+
+        if not succes:
+            log.warning(f"Try {n}/{n_max} failed.")
+            time.sleep(3)
+            
+        n += 1
+
+    if not succes:
+        log.warning(error)
+
+    return succes
+
+def earthexplorer_account(user_pw = None):
+    """Check if the given or stored WAPOR token is 
+    correct. Accounts can be created on https://wapor.apps.fao.org/home/WAPOR_2/1.
+
+    Parameters
+    ----------
+    user_pw : tuple, optional
+        ("", "token") to check, if `None` will try to load the 
+        password from the keychain, by default None.
+
+    Returns
+    -------
+    bool
+        True if the password works, otherwise False.
+    """
+    n_max = 3
+    succes = False
+    n = 1
+
+    while not succes and n <= n_max:
+
+        if not isinstance(user_pw, type(None)):
+            username, pw = user_pw
+        else:
+            username, pw = get('EARTHEXPLORER')
+
+        response = espa_api('user', uauth = (username, pw))
+
+        if "email" in response.keys():
+            succes = True
+        else:
+            error = "wrong username/password."
+            succes = False
 
         if not succes:
             log.warning(f"Try {n}/{n_max} failed.")
@@ -542,6 +599,7 @@ if __name__ == "__main__":
     ecmwf_succes = ecmwf_account()
     sentinel_succes = sentinel_account()
     viirsl1_succes = viirsl1_account()
+    earthexplorer_succes = earthexplorer_account()
 
     print(nasa_succes, vito_succes, wapor_succes, ecmwf_succes, 
           viirsl1_succes, sentinel_succes)
