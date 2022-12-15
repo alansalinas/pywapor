@@ -47,6 +47,7 @@ setup(
         'geopy',
         'sklearn',
         'numba',
+        'xmltodict',
 # NOTE Another fix for Colab... https://github.com/googlecolab/colabtools/issues/3134
         'importlib-metadata==4.13.0',
     ],
