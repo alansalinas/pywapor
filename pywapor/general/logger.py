@@ -37,4 +37,5 @@ def adjust_logger(log_write, folder, log_level):
         handler.setLevel("DEBUG")
         log_settings.addHandler(handler)
         logging_redirect_tqdm(loggers = log_settings.handlers)
+        log_settings.propagate = False
     log_settings.setLevel(log_level)
