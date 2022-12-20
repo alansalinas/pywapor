@@ -216,13 +216,15 @@ def calc_r0(ds, var):
     xr.Dataset
         Output data.
     """
+
     weights = {
-        "blue": 0.074,
-        "green": 0.083,
-        "red": 0.334,
-        "nir": 0.356,
-        "offset": 0.033,
+        "blue":     0.171,
+        "green":    0.060,
+        "red":      0.334,
+        "nir":      0.371,
+        "offset":   0.018,
     }
+    
     reqs = ["blue", "green", "red", "nir"]
     if np.all([x in ds.data_vars for x in reqs]):
         ds["offset"] = xr.ones_like(ds["blue"])
