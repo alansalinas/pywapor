@@ -2,7 +2,7 @@ from osgeo import gdal
 import numpy as np
 import xarray as xr
 
-def gap_fill(ds, var, out_var = None):
+def gap_fill(ds, var, out_var = None, max_search_dist = 8):
     """Apply gdal.FillNoData to every time slice of `var` in `ds`.
 
     Parameters
@@ -44,7 +44,7 @@ def gap_fill(ds, var, out_var = None):
 
         # Pass the gdal.Dataset to the gap filling algorithm.
         _ = gdal.FillNodata(targetBand = band, maskBand = None, 
-                            maxSearchDist = 5, smoothingIterations = 0)
+                            maxSearchDist = max_search_dist, smoothingIterations = 0)
 
         # Read the results and replace the no-data-values again.
         array = band.ReadAsArray()

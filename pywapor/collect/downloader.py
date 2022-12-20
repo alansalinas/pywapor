@@ -95,11 +95,12 @@ def collect_sources(folder, sources, latlim, lonlim, timelim, return_fps = True)
                 attempts[(source, product_name)] += 1
 
             else:
-                if "time" in x.coords:
-                    stime = np.datetime_as_string(x.time.values[0], unit = "m")
-                    etime = np.datetime_as_string(x.time.values[-1], unit = "m")
-                    log.add().info(f"> timesize: {x.time.size} [{stime}, ..., {etime}]").sub()
-                dss[(source_name, product_name)] = x
+                if not isinstance(x, type(None)):
+                    if "time" in x.coords:
+                        stime = np.datetime_as_string(x.time.values[0], unit = "m")
+                        etime = np.datetime_as_string(x.time.values[-1], unit = "m")
+                        log.add().info(f"> timesize: {x.time.size} [{stime}, ..., {etime}]").sub()
+                    dss[(source_name, product_name)] = x
             finally:
                 log.pop()
 

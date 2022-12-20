@@ -36,6 +36,7 @@ from pywapor.general.logger import log, adjust_logger
 from pywapor.general.processing_functions import open_ds, save_ds, remove_ds, adjust_timelim_dtype, make_example_ds
 from pywapor.collect.protocol.crawler import download_urls
 from pywapor.enhancers.apply_enhancers import apply_enhancer
+from pywapor.enhancers.gap_fill import gap_fill
 import xmltodict
 from pywapor.general import bitmasks
 
@@ -56,28 +57,28 @@ def calc_r0(ds, var, product_name = None):
     """
 
     weights = {
-                "LT05": {
+                "LT05_SR": {
                         "blue": 0.116,
                         "green": 0.010,
                         "red": 0.364,
                         "nir": 0.360,
                         "offset": 0.032,
                 },
-                "LE07": {
+                "LE07_SR": {
                         "blue": 0.085,
                         "green": 0.057,
                         "red": 0.349,
                         "nir": 0.359,
                         "offset": 0.033,
                 },
-                "LC08": {
+                "LC08_SR": {
                         "blue": 0.141,
                         "green": 0.114,
                         "red": 0.322,
                         "nir": 0.364,
                         "offset": 0.018,
                 },
-                "LC09": {
+                "LC09_SR": {
                         "blue": 0.141,
                         "green": 0.114,
                         "red": 0.322,
@@ -143,12 +144,12 @@ def apply_qa(ds, var, pixel_qa_flags = None, radsat_qa_flags = None, product_nam
     masks = list()
 
     if ("pixel_qa" in ds.data_vars) and not isinstance(pixel_qa_flags, type(None)):
-        pixel_qa_bits = bitmasks.get_pixel_qa_bits(2, int(product_name[-1]), 2)
+        pixel_qa_bits = bitmasks.get_pixel_qa_bits(2, int(product_name.split("_")[0][-1]), 2)
         mask1 = bitmasks.get_mask(ds["pixel_qa"], pixel_qa_flags, pixel_qa_bits)
         masks.append(mask1)
 
     if ("radsat_qa" in ds.data_vars) and not isinstance(radsat_qa_flags, type(None)):
-        radsat_qa_bits = bitmasks.get_radsat_qa_bits(2, int(product_name[-1]), 2)
+        radsat_qa_bits = bitmasks.get_radsat_qa_bits(2, int(product_name.split("_")[0][-1]), 2)
         radsat_qa_flags = list(radsat_qa_bits.keys())
         mask2 = bitmasks.get_mask(ds["radsat_qa"], radsat_qa_flags, radsat_qa_bits)
         masks.append(mask2)
@@ -173,90 +174,102 @@ def default_vars(product_name, req_vars):
 
     variables = {
 
-        "LT05": {
-            'sr_band1':     [('YDim_sr_band1', 'XDim_sr_band1'), 'blue', [mask_invalid, scale_data, partial(apply_qa, product_name = "LT05", pixel_qa_flags = pixel_qa_flags_457, radsat_qa_flags = ["terrain_occlusion", "saturated_band1"])]],
-            'sr_band2':     [('YDim_sr_band2', 'XDim_sr_band2'), 'green', [mask_invalid, scale_data, partial(apply_qa, product_name = "LT05", pixel_qa_flags = pixel_qa_flags_457, radsat_qa_flags = ["terrain_occlusion", "saturated_band2"])]],
-            'sr_band3':     [('YDim_sr_band3', 'XDim_sr_band3'), 'red', [mask_invalid, scale_data, partial(apply_qa, product_name = "LT05", pixel_qa_flags = pixel_qa_flags_457, radsat_qa_flags = ["terrain_occlusion", "saturated_band3"])]],
-            'sr_band4':     [('YDim_sr_band4', 'XDim_sr_band4'), 'nir', [mask_invalid, scale_data, partial(apply_qa, product_name = "LT05", pixel_qa_flags = pixel_qa_flags_457, radsat_qa_flags = ["terrain_occlusion", "saturated_band4"])]],
-            'sr_band5':     [('YDim_sr_band5', 'XDim_sr_band5'), 'swir1', [mask_invalid, scale_data, partial(apply_qa, product_name = "LT05", pixel_qa_flags = pixel_qa_flags_457, radsat_qa_flags = ["terrain_occlusion", "saturated_band5"])]],
-            'sr_band7':     [('YDim_sr_band7', 'XDim_sr_band7'), 'swir2', [mask_invalid, scale_data, partial(apply_qa, product_name = "LT05", pixel_qa_flags = pixel_qa_flags_457, radsat_qa_flags = ["terrain_occlusion", "saturated_band7"])]],
+        "LT05_SR": {
+            'sr_band1':     [('YDim_sr_band1', 'XDim_sr_band1'), 'blue', [mask_invalid, scale_data, partial(apply_qa, product_name = "LT05_SR", pixel_qa_flags = pixel_qa_flags_457, radsat_qa_flags = ["terrain_occlusion", "saturated_band1"])]],
+            'sr_band2':     [('YDim_sr_band2', 'XDim_sr_band2'), 'green', [mask_invalid, scale_data, partial(apply_qa, product_name = "LT05_SR", pixel_qa_flags = pixel_qa_flags_457, radsat_qa_flags = ["terrain_occlusion", "saturated_band2"])]],
+            'sr_band3':     [('YDim_sr_band3', 'XDim_sr_band3'), 'red', [mask_invalid, scale_data, partial(apply_qa, product_name = "LT05_SR", pixel_qa_flags = pixel_qa_flags_457, radsat_qa_flags = ["terrain_occlusion", "saturated_band3"])]],
+            'sr_band4':     [('YDim_sr_band4', 'XDim_sr_band4'), 'nir', [mask_invalid, scale_data, partial(apply_qa, product_name = "LT05_SR", pixel_qa_flags = pixel_qa_flags_457, radsat_qa_flags = ["terrain_occlusion", "saturated_band4"])]],
+            'sr_band5':     [('YDim_sr_band5', 'XDim_sr_band5'), 'swir1', [mask_invalid, scale_data, partial(apply_qa, product_name = "LT05_SR", pixel_qa_flags = pixel_qa_flags_457, radsat_qa_flags = ["terrain_occlusion", "saturated_band5"])]],
+            'sr_band7':     [('YDim_sr_band7', 'XDim_sr_band7'), 'swir2', [mask_invalid, scale_data, partial(apply_qa, product_name = "LT05_SR", pixel_qa_flags = pixel_qa_flags_457, radsat_qa_flags = ["terrain_occlusion", "saturated_band7"])]],
+            'qa_pixel':     [('YDim_qa_pixel', 'XDim_qa_pixel'), 'pixel_qa', []],
+            'qa_radsat':    [('YDim_qa_radsat', 'XDim_qa_radsat'), 'radsat_qa', []],
+        },
+        "LT05_ST": {
             'st_band6':     [('YDim_st_band6', 'XDim_st_band6'), 'lst', [mask_invalid, scale_data]],
             'st_qa':        [('YDim_st_qa', 'XDim_st_qa'), 'lst_qa', [mask_invalid, scale_data]],
+        },
+        "LE07_SR": {
+            'sr_band1':     [('YDim_sr_band1', 'XDim_sr_band1'), 'blue', [mask_invalid, scale_data, partial(apply_qa, product_name = "LE0_SR", pixel_qa_flags = pixel_qa_flags_457, radsat_qa_flags = ["terrain_occlusion", "saturated_band1"])]],
+            'sr_band2':     [('YDim_sr_band2', 'XDim_sr_band2'), 'green', [mask_invalid, scale_data, partial(apply_qa, product_name = "LE07_SR", pixel_qa_flags = pixel_qa_flags_457, radsat_qa_flags = ["terrain_occlusion", "saturated_band2"])]],
+            'sr_band3':     [('YDim_sr_band3', 'XDim_sr_band3'), 'red', [mask_invalid, scale_data, partial(apply_qa, product_name = "LE07_SR", pixel_qa_flags = pixel_qa_flags_457, radsat_qa_flags = ["terrain_occlusion", "saturated_band3"])]],
+            'sr_band4':     [('YDim_sr_band4', 'XDim_sr_band4'), 'nir', [mask_invalid, scale_data, partial(apply_qa, product_name = "LE07_SR", pixel_qa_flags = pixel_qa_flags_457, radsat_qa_flags = ["terrain_occlusion", "saturated_band4"])]],
+            'sr_band5':     [('YDim_sr_band5', 'XDim_sr_band5'), 'swir1', [mask_invalid, scale_data, partial(apply_qa, product_name = "LE07_SR", pixel_qa_flags = pixel_qa_flags_457, radsat_qa_flags = ["terrain_occlusion", "saturated_band5"])]],
+            'sr_band7':     [('YDim_sr_band7', 'XDim_sr_band7'), 'swir2', [mask_invalid, scale_data, partial(apply_qa, product_name = "LE07_SR", pixel_qa_flags = pixel_qa_flags_457, radsat_qa_flags = ["terrain_occlusion", "saturated_band7"])]],
             'qa_pixel':     [('YDim_qa_pixel', 'XDim_qa_pixel'), 'pixel_qa', []],
             'qa_radsat':    [('YDim_qa_radsat', 'XDim_qa_radsat'), 'radsat_qa', []],
         },
-        "LE07": {
-            'sr_band1':     [('YDim_sr_band1', 'XDim_sr_band1'), 'blue', [mask_invalid, scale_data, partial(apply_qa, product_name = "LE07", pixel_qa_flags = pixel_qa_flags_457, radsat_qa_flags = ["terrain_occlusion", "saturated_band1"])]],
-            'sr_band2':     [('YDim_sr_band2', 'XDim_sr_band2'), 'green', [mask_invalid, scale_data, partial(apply_qa, product_name = "LE07", pixel_qa_flags = pixel_qa_flags_457, radsat_qa_flags = ["terrain_occlusion", "saturated_band2"])]],
-            'sr_band3':     [('YDim_sr_band3', 'XDim_sr_band3'), 'red', [mask_invalid, scale_data, partial(apply_qa, product_name = "LE07", pixel_qa_flags = pixel_qa_flags_457, radsat_qa_flags = ["terrain_occlusion", "saturated_band3"])]],
-            'sr_band4':     [('YDim_sr_band4', 'XDim_sr_band4'), 'nir', [mask_invalid, scale_data, partial(apply_qa, product_name = "LE07", pixel_qa_flags = pixel_qa_flags_457, radsat_qa_flags = ["terrain_occlusion", "saturated_band4"])]],
-            'sr_band5':     [('YDim_sr_band5', 'XDim_sr_band5'), 'swir1', [mask_invalid, scale_data, partial(apply_qa, product_name = "LE07", pixel_qa_flags = pixel_qa_flags_457, radsat_qa_flags = ["terrain_occlusion", "saturated_band5"])]],
-            'sr_band7':     [('YDim_sr_band7', 'XDim_sr_band7'), 'swir2', [mask_invalid, scale_data, partial(apply_qa, product_name = "LE07", pixel_qa_flags = pixel_qa_flags_457, radsat_qa_flags = ["terrain_occlusion", "saturated_band7"])]],
+        "LE07_ST": {
             'st_band6':     [('YDim_st_band6', 'XDim_st_band6'), 'lst', [mask_invalid, scale_data]],
             'st_qa':        [('YDim_st_qa', 'XDim_st_qa'), 'lst_qa', [mask_invalid, scale_data]],
+        },
+        "LC08_SR": {
+            'sr_band1':     [('YDim_sr_band1', 'XDim_sr_band1'), 'coastal',[mask_invalid, scale_data, partial(apply_qa, product_name = "LC08_SR", pixel_qa_flags = pixel_qa_flags_89, radsat_qa_flags = ["terrain_occlusion", "saturated_band1"])]],
+            'sr_band2':     [('YDim_sr_band2', 'XDim_sr_band2'), 'blue', [mask_invalid, scale_data, partial(apply_qa, product_name = "LC08_SR", pixel_qa_flags = pixel_qa_flags_89, radsat_qa_flags = ["terrain_occlusion", "saturated_band2"])]],
+            'sr_band3':     [('YDim_sr_band3', 'XDim_sr_band3'), 'green', [mask_invalid, scale_data, partial(apply_qa, product_name = "LC08_SR", pixel_qa_flags = pixel_qa_flags_89, radsat_qa_flags = ["terrain_occlusion", "saturated_band3"])]],
+            'sr_band4':     [('YDim_sr_band4', 'XDim_sr_band4'), 'red', [mask_invalid, scale_data, partial(apply_qa, product_name = "LC08_SR", pixel_qa_flags = pixel_qa_flags_89, radsat_qa_flags = ["terrain_occlusion", "saturated_band4"])]],
+            'sr_band5':     [('YDim_sr_band5', 'XDim_sr_band5'), 'nir', [mask_invalid, scale_data, partial(apply_qa, product_name = "LC08_SR", pixel_qa_flags = pixel_qa_flags_89, radsat_qa_flags = ["terrain_occlusion", "saturated_band5"])]],
+            'sr_band6':     [('YDim_sr_band6', 'XDim_sr_band6'), 'swir1', [mask_invalid, scale_data, partial(apply_qa, product_name = "LC08_SR", pixel_qa_flags = pixel_qa_flags_89, radsat_qa_flags = ["terrain_occlusion", "saturated_band6"])]],
+            'sr_band7':     [('YDim_sr_band7', 'XDim_sr_band7'), 'swir2', [mask_invalid, scale_data, partial(apply_qa, product_name = "LC08_SR", pixel_qa_flags = pixel_qa_flags_89, radsat_qa_flags = ["terrain_occlusion", "saturated_band7"])]],
             'qa_pixel':     [('YDim_qa_pixel', 'XDim_qa_pixel'), 'pixel_qa', []],
             'qa_radsat':    [('YDim_qa_radsat', 'XDim_qa_radsat'), 'radsat_qa', []],
         },
-        "LC08": {
-            'sr_band1':     [('YDim_sr_band1', 'XDim_sr_band1'), 'coastal',[mask_invalid, scale_data, partial(apply_qa, product_name = "LC08", pixel_qa_flags = pixel_qa_flags_89, radsat_qa_flags = ["terrain_occlusion", "saturated_band1"])]],
-            'sr_band2':     [('YDim_sr_band2', 'XDim_sr_band2'), 'blue', [mask_invalid, scale_data, partial(apply_qa, product_name = "LC08", pixel_qa_flags = pixel_qa_flags_89, radsat_qa_flags = ["terrain_occlusion", "saturated_band2"])]],
-            'sr_band3':     [('YDim_sr_band3', 'XDim_sr_band3'), 'green', [mask_invalid, scale_data, partial(apply_qa, product_name = "LC08", pixel_qa_flags = pixel_qa_flags_89, radsat_qa_flags = ["terrain_occlusion", "saturated_band3"])]],
-            'sr_band4':     [('YDim_sr_band4', 'XDim_sr_band4'), 'red', [mask_invalid, scale_data, partial(apply_qa, product_name = "LC08", pixel_qa_flags = pixel_qa_flags_89, radsat_qa_flags = ["terrain_occlusion", "saturated_band4"])]],
-            'sr_band5':     [('YDim_sr_band5', 'XDim_sr_band5'), 'nir', [mask_invalid, scale_data, partial(apply_qa, product_name = "LC08", pixel_qa_flags = pixel_qa_flags_89, radsat_qa_flags = ["terrain_occlusion", "saturated_band5"])]],
-            'sr_band6':     [('YDim_sr_band6', 'XDim_sr_band6'), 'swir1', [mask_invalid, scale_data, partial(apply_qa, product_name = "LC08", pixel_qa_flags = pixel_qa_flags_89, radsat_qa_flags = ["terrain_occlusion", "saturated_band6"])]],
-            'sr_band7':     [('YDim_sr_band7', 'XDim_sr_band7'), 'swir2', [mask_invalid, scale_data, partial(apply_qa, product_name = "LC08", pixel_qa_flags = pixel_qa_flags_89, radsat_qa_flags = ["terrain_occlusion", "saturated_band7"])]],
+        "LC08_ST": {
             'st_band10':    [('YDim_st_band10', 'XDim_st_band10'), 'lst', [mask_invalid, scale_data]],
             'st_qa':        [('YDim_st_qa', 'XDim_st_qa'), 'lst_qa', [mask_invalid, scale_data]],
+        },
+        "LC09_SR": {
+            'sr_band1':     [('YDim_sr_band1', 'XDim_sr_band1'), 'coastal',[mask_invalid, scale_data, partial(apply_qa, product_name = "LC09_SR", pixel_qa_flags = pixel_qa_flags_89, radsat_qa_flags = ["terrain_occlusion", "saturated_band1"])]],
+            'sr_band2':     [('YDim_sr_band2', 'XDim_sr_band2'), 'blue', [mask_invalid, scale_data, partial(apply_qa, product_name = "LC09_SR", pixel_qa_flags = pixel_qa_flags_89, radsat_qa_flags = ["terrain_occlusion", "saturated_band2"])]],
+            'sr_band3':     [('YDim_sr_band3', 'XDim_sr_band3'), 'green', [mask_invalid, scale_data, partial(apply_qa, product_name = "LC09_SR", pixel_qa_flags = pixel_qa_flags_89, radsat_qa_flags = ["terrain_occlusion", "saturated_band3"])]],
+            'sr_band4':     [('YDim_sr_band4', 'XDim_sr_band4'), 'red', [mask_invalid, scale_data, partial(apply_qa, product_name = "LC09_SR", pixel_qa_flags = pixel_qa_flags_89, radsat_qa_flags = ["terrain_occlusion", "saturated_band4"])]],
+            'sr_band5':     [('YDim_sr_band5', 'XDim_sr_band5'), 'nir', [mask_invalid, scale_data, partial(apply_qa, product_name = "LC09_SR", pixel_qa_flags = pixel_qa_flags_89, radsat_qa_flags = ["terrain_occlusion", "saturated_band5"])]],
+            'sr_band6':     [('YDim_sr_band6', 'XDim_sr_band6'), 'swir1', [mask_invalid, scale_data, partial(apply_qa, product_name = "LC09_SR", pixel_qa_flags = pixel_qa_flags_89, radsat_qa_flags = ["terrain_occlusion", "saturated_band6"])]],
+            'sr_band7':     [('YDim_sr_band7', 'XDim_sr_band7'), 'swir2', [mask_invalid, scale_data, partial(apply_qa, product_name = "LC09_SR", pixel_qa_flags = pixel_qa_flags_89, radsat_qa_flags = ["terrain_occlusion", "saturated_band7"])]],
             'qa_pixel':     [('YDim_qa_pixel', 'XDim_qa_pixel'), 'pixel_qa', []],
             'qa_radsat':    [('YDim_qa_radsat', 'XDim_qa_radsat'), 'radsat_qa', []],
         },
-        "LC09": {
-            'sr_band1':     [('YDim_sr_band1', 'XDim_sr_band1'), 'coastal',[mask_invalid, scale_data, partial(apply_qa, product_name = "LC09", pixel_qa_flags = pixel_qa_flags_89, radsat_qa_flags = ["terrain_occlusion", "saturated_band1"])]],
-            'sr_band2':     [('YDim_sr_band2', 'XDim_sr_band2'), 'blue', [mask_invalid, scale_data, partial(apply_qa, product_name = "LC09", pixel_qa_flags = pixel_qa_flags_89, radsat_qa_flags = ["terrain_occlusion", "saturated_band2"])]],
-            'sr_band3':     [('YDim_sr_band3', 'XDim_sr_band3'), 'green', [mask_invalid, scale_data, partial(apply_qa, product_name = "LC09", pixel_qa_flags = pixel_qa_flags_89, radsat_qa_flags = ["terrain_occlusion", "saturated_band3"])]],
-            'sr_band4':     [('YDim_sr_band4', 'XDim_sr_band4'), 'red', [mask_invalid, scale_data, partial(apply_qa, product_name = "LC09", pixel_qa_flags = pixel_qa_flags_89, radsat_qa_flags = ["terrain_occlusion", "saturated_band4"])]],
-            'sr_band5':     [('YDim_sr_band5', 'XDim_sr_band5'), 'nir', [mask_invalid, scale_data, partial(apply_qa, product_name = "LC09", pixel_qa_flags = pixel_qa_flags_89, radsat_qa_flags = ["terrain_occlusion", "saturated_band5"])]],
-            'sr_band6':     [('YDim_sr_band6', 'XDim_sr_band6'), 'swir1', [mask_invalid, scale_data, partial(apply_qa, product_name = "LC09", pixel_qa_flags = pixel_qa_flags_89, radsat_qa_flags = ["terrain_occlusion", "saturated_band6"])]],
-            'sr_band7':     [('YDim_sr_band7', 'XDim_sr_band7'), 'swir2', [mask_invalid, scale_data, partial(apply_qa, product_name = "LC09", pixel_qa_flags = pixel_qa_flags_89, radsat_qa_flags = ["terrain_occlusion", "saturated_band7"])]],
+        "LC09_ST": {
             'st_band10':    [('YDim_st_band10', 'XDim_st_band10'), 'lst', [mask_invalid, scale_data]],
             'st_qa':        [('YDim_st_qa', 'XDim_st_qa'), 'lst_qa', [mask_invalid, scale_data]],
-            'qa_pixel':     [('YDim_qa_pixel', 'XDim_qa_pixel'), 'pixel_qa', []],
-            'qa_radsat':    [('YDim_qa_radsat', 'XDim_qa_radsat'), 'radsat_qa', []],
-        },
+        }
 
     }
 
     req_dl_vars = {
 
-        "LT05": {
+        "LT05_SR": {
             'blue': ['sr_band1', 'qa_pixel', 'qa_radsat'],
             'green': ['sr_band2', 'qa_pixel', 'qa_radsat'],
             'red': ['sr_band3', 'qa_pixel', 'qa_radsat'],
             'nir': ['sr_band4', 'qa_pixel', 'qa_radsat'],
             'swir1': ['sr_band5', 'qa_pixel', 'qa_radsat'],
             'swir2': ['sr_band7', 'qa_pixel', 'qa_radsat'],
-            'lst': ['st_band6', 'st_qa'],
-            'lst_qa': ['st_qa'],
             'pixel_qa': ['qa_pixel'],
             'radsat_qa': ['qa_radsat'],
             'ndvi': ['sr_band3', 'sr_band4', 'qa_pixel', 'qa_radsat'],
-            'r0': ['sr_bands1', 'sr_band2', 'sr_band3', 'sr_band4', 'qa_pixel', 'qa_radsat'],
+            'r0': ['sr_band1', 'sr_band2', 'sr_band3', 'sr_band4', 'qa_pixel', 'qa_radsat'],
         },
-        "LE07": {
+        "LT05_ST": {
+            'lst': ['st_band6', 'st_qa'],
+            'lst_qa': ['st_qa'],
+        },
+        "LE07_SR": {
             'blue': ['sr_band1', 'qa_pixel', 'qa_radsat'],
             'green': ['sr_band2', 'qa_pixel', 'qa_radsat'],
             'red': ['sr_band3', 'qa_pixel', 'qa_radsat'],
             'nir': ['sr_band4', 'qa_pixel', 'qa_radsat'],
             'swir1': ['sr_band5', 'qa_pixel', 'qa_radsat'],
             'swir2': ['sr_band7', 'qa_pixel', 'qa_radsat'],
-            'lst': ['st_band6', 'st_qa'],
-            'lst_qa': ['st_qa'],
             'pixel_qa': ['qa_pixel'],
             'radsat_qa': ['qa_radsat'],
             'ndvi': ['sr_band3', 'sr_band4', 'qa_pixel', 'qa_radsat'],
-            'r0': ['sr_bands1', 'sr_band2', 'sr_band3', 'sr_band4', 'qa_pixel', 'qa_radsat'],
+            'r0': ['sr_band1', 'sr_band2', 'sr_band3', 'sr_band4', 'qa_pixel', 'qa_radsat'],
         },
-        "LC08": {
+        "LE07_ST": {
+            'lst': ['st_band6', 'st_qa'],
+            'lst_qa': ['st_qa'],
+        },
+        "LC08_SR": {
             'coastal': ['sr_band1', 'qa_pixel', 'qa_radsat'],
             'blue': ['sr_band2', 'qa_pixel', 'qa_radsat'],
             'green': ['sr_band3', 'qa_pixel', 'qa_radsat'],
@@ -264,14 +277,16 @@ def default_vars(product_name, req_vars):
             'nir': ['sr_band5', 'qa_pixel', 'qa_radsat'],
             'swir1': ['sr_band6', 'qa_pixel', 'qa_radsat'],
             'swir2': ['sr_band7', 'qa_pixel', 'qa_radsat'],
-            'lst': ['st_band10', 'st_qa'],
-            'lst_qa': ['st_qa'],
             'pixel_qa': ['qa_pixel'],
             'radsat_qa': ['qa_radsat'],
             'ndvi': ['sr_band4', 'sr_band5', 'qa_pixel', 'qa_radsat'],
-            'r0': ['sr_bands2', 'sr_band3', 'sr_band4', 'sr_band5', 'qa_pixel', 'qa_radsat'],
+            'r0': ['sr_band2', 'sr_band3', 'sr_band4', 'sr_band5', 'qa_pixel', 'qa_radsat'],
         },
-        "LC09": {
+        "LC08_ST": {
+            'lst': ['st_band10', 'st_qa'],
+            'lst_qa': ['st_qa'],
+        },
+        "LC09_SR": {
             'coastal': ['sr_band1', 'qa_pixel', 'qa_radsat'],
             'blue': ['sr_band2', 'qa_pixel', 'qa_radsat'],
             'green': ['sr_band3', 'qa_pixel', 'qa_radsat'],
@@ -279,14 +294,15 @@ def default_vars(product_name, req_vars):
             'nir': ['sr_band5', 'qa_pixel', 'qa_radsat'],
             'swir1': ['sr_band6', 'qa_pixel', 'qa_radsat'],
             'swir2': ['sr_band7', 'qa_pixel', 'qa_radsat'],
-            'lst': ['st_band10', 'st_qa'],
-            'lst_qa': ['st_qa'],
             'pixel_qa': ['qa_pixel'],
             'radsat_qa': ['qa_radsat'],
             'ndvi': ['sr_band4', 'sr_band5', 'qa_pixel', 'qa_radsat'],
-            'r0': ['sr_bands2', 'sr_band3', 'sr_band4', 'sr_band5', 'qa_pixel', 'qa_radsat'],
+            'r0': ['sr_band2', 'sr_band3', 'sr_band4', 'sr_band5', 'qa_pixel', 'qa_radsat'],
         },
-
+        "LC09_ST": {
+            'lst': ['st_band10', 'st_qa'],
+            'lst_qa': ['st_qa'],
+        },
     }
 
     out = {val:variables[product_name][val] for sublist in map(req_dl_vars[product_name].get, req_vars) for val in sublist}
@@ -296,7 +312,7 @@ def default_vars(product_name, req_vars):
 def default_post_processors(product_name, req_vars):
 
     post_processors = {
-        "LT05": {
+        "LT05_SR": {
             'coastal': [],
             'blue': [],
             'green': [],
@@ -304,14 +320,33 @@ def default_post_processors(product_name, req_vars):
             'nir': [],
             'swir1': [],
             'swir2': [],
-            'lst': [mask_uncertainty],
-            'lst_qa': [],
             'pixel_qa': [],
             'radsat_qa': [],
             'ndvi': [calc_normalized_difference],
-            'r0': [partial(calc_r0, product_name = "LT05")],
+            'r0': [partial(calc_r0, product_name = "LT05_SR")],
             },
-        "LE07": { # TODO add gap-filling here
+        "LT05_ST": {
+            'lst': [mask_uncertainty],
+            'lst_qa': [],
+        },
+        "LE07_SR": {
+            'coastal': [gap_fill],
+            'blue': [gap_fill],
+            'green': [gap_fill],
+            'red': [gap_fill],
+            'nir': [gap_fill],
+            'swir1': [gap_fill],
+            'swir2': [gap_fill],
+            'pixel_qa': [],
+            'radsat_qa': [],
+            'ndvi': [calc_normalized_difference, gap_fill],
+            'r0': [partial(calc_r0, product_name = "LE07_SR"), gap_fill],
+            },
+        "LE07_ST": {
+            'lst': [mask_uncertainty, gap_fill],
+            'lst_qa': [],
+        },
+        "LC08_SR": {
             'coastal': [],
             'blue': [],
             'green': [],
@@ -319,14 +354,16 @@ def default_post_processors(product_name, req_vars):
             'nir': [],
             'swir1': [],
             'swir2': [],
-            'lst': [mask_uncertainty],
-            'lst_qa': [],
             'pixel_qa': [],
             'radsat_qa': [],
             'ndvi': [calc_normalized_difference],
-            'r0': [partial(calc_r0, product_name = "LE07")],
+            'r0': [partial(calc_r0, product_name = "LC08_SR")],
             },
-        "LC08": {
+        "LC08_ST": {
+            'lst': [mask_uncertainty],
+            'lst_qa': [],
+        },
+        "LC09_SR": {
             'coastal': [],
             'blue': [],
             'green': [],
@@ -334,28 +371,15 @@ def default_post_processors(product_name, req_vars):
             'nir': [],
             'swir1': [],
             'swir2': [],
-            'lst': [mask_uncertainty],
-            'lst_qa': [],
             'pixel_qa': [],
             'radsat_qa': [],
             'ndvi': [calc_normalized_difference],
-            'r0': [partial(calc_r0, product_name = "LC08")],
+            'r0': [partial(calc_r0, product_name = "LC09_SR")],
             },
-        "LC09": {
-            'coastal': [],
-            'blue': [],
-            'green': [],
-            'red': [],
-            'nir': [],
-            'swir1': [],
-            'swir2': [],
+        "LC09_ST": {
             'lst': [mask_uncertainty],
             'lst_qa': [],
-            'pixel_qa': [],
-            'radsat_qa': [],
-            'ndvi': [calc_normalized_difference],
-            'r0': [partial(calc_r0, product_name = "LC09")],
-            },
+        }
     }
 
     out = {k:v for k,v in post_processors[product_name].items() if k in req_vars}
@@ -389,14 +413,23 @@ def search_stac(latlim, lonlim, timelim, product_name, extra_search_kwargs):
 
     bb = [lonlim[0], latlim[0], lonlim[1], latlim[1]]
 
-    platform = {"LC08": "LANDSAT_8",
-                "LC09": "LANDSAT_9",
-                "LE07": "LANDSAT_7",
-                "LT05": "LANDSAT_5"}[product_name]
-    search_kwargs = {   
-                        **{'platform': {'or':[platform]}}, # TODO this doesnt work, so filtering manually later, doc example: `'platform': {'or':['LANDSAT_8','LANDSAT_9']}`.
-                        **extra_search_kwargs
-                    }
+    # TODO this doesnt work, so filtering manually later, doc example: `'platform': {'or':['LANDSAT_8','LANDSAT_9']}`.
+    # platform = {
+    #             "LC08_SR": "LANDSAT_8",
+    #             "LC09_SR": "LANDSAT_9",
+    #             "LE07_SR": "LANDSAT_7",
+    #             "LT05_SR": "LANDSAT_5",
+
+    #             "LC08_ST": "LANDSAT_8",
+    #             "LC09_ST": "LANDSAT_9",
+    #             "LE07_ST": "LANDSAT_7",
+    #             "LT05_ST": "LANDSAT_5",
+    #             }[product_name]
+    # search_kwargs = {   
+    #                     **{'platform': {'or':[platform]}},
+    #                     **extra_search_kwargs
+    #                 }
+    search_kwargs = extra_search_kwargs
 
     stac = 'https://landsatlook.usgs.gov/stac-server' # Landsat STAC API Endpoint
     stac_response = r.get(stac).json() 
@@ -412,9 +445,9 @@ def search_stac(latlim, lonlim, timelim, product_name, extra_search_kwargs):
 
     query = r.post(search, json=params, ).json()   # send POST request to the stac-search endpoint with params passed in
 
-    ids = np.unique([x["id"].replace("_ST", "").replace("_SR", "") for x in query["features"] if product_name in x["id"]]).tolist()
+    ids = np.unique([x["id"].replace("_ST", "").replace("_SR", "") for x in query["features"] if product_name.split("_")[0] in x["id"]]).tolist()
 
-    log.info(f"--> Found {len(ids)} scenes.")
+    log.info(f"--> Found {len(ids)} scenes. {ids}")
 
     return ids, query
 
@@ -456,12 +489,12 @@ def unpack(fp, folder):
 def check_availabilty(product_folder, product_name, scene_ids):
     paths = glob.glob(os.path.join(product_folder, "**", "*.nc"), recursive = True)
     regex_str = r'_.{4}_\d{6}_\d{8}_\d{8}_\d{2}_T\d.nc'
-    unpacked_scenes = set([os.path.splitext(os.path.split(f)[-1])[0] for f in paths if re.search(f'{product_name}{regex_str}', f)])
-    packed_scenes = {[y.name for y in tarfile.open(x, encoding='utf-8').getmembers() if ".nc" in y.name][0][:-3]: x for x in glob.glob(os.path.join(product_folder, "**", f"{product_name}*.tar.gz"), recursive = True)}
+    unpacked_scenes = set([os.path.splitext(os.path.split(f)[-1])[0] for f in paths if re.search(f'{product_name.split("_")[0]}{regex_str}', f)])
+    packed_scenes = {[y.name for y in tarfile.open(x, encoding='utf-8').getmembers() if ".nc" in y.name][0][:-3]: x for x in glob.glob(os.path.join(product_folder, "**", f"{product_name.split('_')[0]}*.tar.gz"), recursive = True)}
     to_unpack = [fp for k, fp in packed_scenes.items() if (k in scene_ids) and (k not in unpacked_scenes)]
     for fp in to_unpack:
         unpack(fp, product_folder)
-    available_scenes = unpacked_scenes.union(set(packed_scenes.keys()))
+    available_scenes = unpacked_scenes.union(set(packed_scenes.keys())).intersection(scene_ids)
     return available_scenes
 
 def download_scenes(scene_ids, product_folder, product_name, latlim, lonlim, max_attempts = 5, wait_time = 300):
@@ -489,7 +522,10 @@ def download_scenes(scene_ids, product_folder, product_name, latlim, lonlim, max
 
     while len(to_download) + len(to_wait) + len(to_request) > 0 and attempt < max_attempts:
 
+        log.info("entering WHILE")
+
         if attempt > 0:
+            log.info("SLEEPING")
             time.sleep(wait_time)
 
         # Get an overview of the existing orders.
@@ -611,11 +647,6 @@ def _process_scene(scene, product_folder, product_name, variables, example_ds = 
     ds = ds.rio.reproject_match(example_ds).chunk("auto")
     ds = ds.assign_coords({"x": example_ds.x, "y": example_ds.y})
 
-    # Apply variable specific functions.
-    for vars in variables.values():
-        for func in vars[2]:
-            ds, _ = apply_enhancer(ds, vars[1], func)
-
     # Add time dimension to data arrays.
     ds = ds.expand_dims({"time": 1})
 
@@ -624,6 +655,11 @@ def _process_scene(scene, product_folder, product_name, variables, example_ds = 
     time_str = mtl['LANDSAT_METADATA_FILE']["IMAGE_ATTRIBUTES"]["SCENE_CENTER_TIME"]
     datetime_str = date_str + " " + time_str.replace("Z", "")
     ds = ds.assign_coords({"time":[np.datetime64(datetime_str)]})
+
+    # Apply variable specific functions.
+    for vars in variables.values():
+        for func in vars[2]:
+            ds, _ = apply_enhancer(ds, vars[1], func)
 
     # Cleanup attributes
     for var in ["x", "y", "time"]:
@@ -637,12 +673,15 @@ def process_scenes(fp, scene_paths, product_folder, product_name, variables, pos
 
     log.info(f"--> Processing {len(scene_paths)} scenes.").add()
 
+    chunks = {"time": 1, "x": 1000, "y": 1000}
+
     example_ds = None
     for i, scene in enumerate(scene_paths):
         ds, example_ds = _process_scene(scene, product_folder, product_name, variables, example_ds = example_ds)
         fp_temp = scene.replace(".nc", "_temp.nc")
-        ds = save_ds(ds, fp_temp, encoding = "initiate", label = f"({i+1}/{len(scene_paths)}) Processing `{os.path.split(scene)[-1]}`.")
+        ds = save_ds(ds, fp_temp, chunks = chunks, encoding = "initiate", label = f"({i+1}/{len(scene_paths)}) Processing `{os.path.split(scene)[-1]}`.")
         dss.append(ds)
+    remove_ds(example_ds)
 
     ds = xr.concat(dss, "time")
     
@@ -675,9 +714,12 @@ def process_scenes(fp, scene_paths, product_folder, product_name, variables, pos
 def download(folder, latlim, lonlim, timelim, product_name, 
                 req_vars, variables = None, post_processors = None, 
                 extra_search_kwargs = {'eo:cloud_cover': {'gte': 0, 'lt': 30}},
-                max_attempts = 24, wait_time = 300):
+                max_attempts = 2, wait_time = 10):
 
     product_folder = os.path.join(folder, "LANDSAT")
+
+    if not os.path.exists(product_folder):
+        os.makedirs(product_folder)
 
     appending = False
     fn = os.path.join(product_folder, f"{product_name}.nc")
@@ -707,10 +749,11 @@ def download(folder, latlim, lonlim, timelim, product_name,
     scene_ids, _ = search_stac(latlim, lonlim, timelim, product_name, extra_search_kwargs)
 
     if len(scene_ids) == 0:
-        ... # TODO
+        return None
 
     # Order and download scenes (ESPA)
     available_scenes, to_download, to_request, to_wait = download_scenes(scene_ids, product_folder, product_name, latlim, lonlim, max_attempts = max_attempts, wait_time = wait_time)
+    # log.info(f"available_scenes = {available_scenes}")
 
     if len(available_scenes) < len(scene_ids) and len(to_wait) > 0:
         if appending:
@@ -719,6 +762,7 @@ def download(folder, latlim, lonlim, timelim, product_name,
 
     # Process scenes.
     scene_paths = [glob.glob(os.path.join(product_folder, "**", f"*{x}.nc"), recursive = True)[0] for x in available_scenes]
+    # log.info(f"scene_paths = {scene_paths}")
     ds_new = process_scenes(fn, scene_paths, product_folder, product_name, variables, post_processors)
 
     if appending:
@@ -727,6 +771,9 @@ def download(folder, latlim, lonlim, timelim, product_name,
         ds = save_ds(ds, os.path.join(product_folder, f"{product_name}.nc"), encoding = "initiate", label = lbl)
         remove_ds(ds_new)
         remove_ds(existing_ds)
+        # ds = ds.close()
+        # os.rename(os.path.join(product_folder, f"{product_name}_merged.nc"), os.path.join(product_folder, f"{product_name}.nc"))
+        # ds = open_ds(os.path.join(product_folder, f"{product_name}.nc"))
     else:
         ds = ds_new
 
@@ -735,27 +782,29 @@ def download(folder, latlim, lonlim, timelim, product_name,
 if __name__ == "__main__":
 
     tests = {
-        "LT05": ["2010-03-29", "2010-04-25"], 
-        "LE07": ["2010-03-29", "2010-04-25"], 
-        "LC08": ["2022-03-29", "2022-04-25"], 
-        "LC09": ["2022-03-29", "2022-04-25"]
+        # "LT05_SR": ["2010-03-29", "2010-04-25"], 
+        # "LE07_SR": ["2010-03-29", "2010-04-25"], 
+        # "LC08_SR": ["2022-03-29", "2022-04-25"], 
+        # "LC09_SR": ["2022-03-29", "2022-04-25"]
+        "LC08_ST": ["2022-03-29", "2022-04-25"],
     }
 
     folder = f"/Users/hmcoerver/Local/landsat_test2"
     adjust_logger(True, folder, "INFO")
-    # for product_name, timelim in tests.items():
-    #     print(product_name, timelim)
-        # 
-    #     latlim = [28.9, 29.7]
-    #     lonlim = [30.2, 31.2]
-    #     # timelim = ["2022-03-29", "2022-04-25"]
-    #     # product_name = "LC08"
-    #     req_vars = ["ndvi", "green", "lst"]
-    #     variables = None
-    #     post_processors = None
-    #     example_ds = None
-    #     extra_search_kwargs = {'eo:cloud_cover': {'gte': 0, 'lt': 30}}
-    #     ds = download(folder, latlim, lonlim, timelim, product_name, 
-    #                     req_vars, variables = variables, post_processors = post_processors, 
-    #                     extra_search_kwargs = extra_search_kwargs)
+    for product_name, timelim in tests.items():
+        print(product_name, timelim)
+        
+        latlim = [28.9, 29.7]
+        lonlim = [30.2, 31.2]
+        # timelim = ["2022-03-29", "2022-04-25"]
+        # product_name = "LC08"
+        req_vars = ["lst"]
+        # req_vars = ["r0"]
+        variables = None
+        post_processors = None
+        # example_ds = None
+        extra_search_kwargs = {'eo:cloud_cover': {'gte': 0, 'lt': 30}}
+        ds = download(folder, latlim, lonlim, timelim, product_name, 
+                        req_vars, variables = variables, post_processors = post_processors, 
+                        extra_search_kwargs = extra_search_kwargs)
 
