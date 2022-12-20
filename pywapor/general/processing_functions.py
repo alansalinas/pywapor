@@ -112,7 +112,7 @@ def process_ds(ds, coords, variables, crs = None):
 
     return ds
 
-def make_example_ds(ds, folder, target_crs, bb = None):
+def make_example_ds(ds, folder, target_crs, bb = None, example_ds_fp = None):
     """Make an dataset suitable to use as an example for matching with other datasets.
 
     Parameters
@@ -131,7 +131,8 @@ def make_example_ds(ds, folder, target_crs, bb = None):
     xr.Dataset
         Example dataset.
     """
-    example_ds_fp = os.path.join(folder, "example_ds.nc")
+    if isinstance(example_ds_fp, type(None)):
+        example_ds_fp = os.path.join(folder, "example_ds.nc")
     if os.path.isfile(example_ds_fp):
         example_ds = open_ds(example_ds_fp)
     else:
