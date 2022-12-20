@@ -2,6 +2,7 @@ from pywapor.general.logger import log, adjust_logger
 import types
 import functools
 import numpy as np
+from collections import OrderedDict
 
 def collect_sources(folder, sources, latlim, lonlim, timelim, return_fps = True):
     """Download different sources and products within defined limits.
@@ -39,6 +40,10 @@ def collect_sources(folder, sources, latlim, lonlim, timelim, return_fps = True)
 
         reversed_sources = {k: v for k, v in reversed_sources.items() if attempts[k] < max_attempts}
 
+        # Make sure Landsat is always processed first, because orders take time.
+        pairs = list(reversed_sources.items())
+        reversed_sources = OrderedDict([x for x in pairs if x[0][0] == "LANDSAT"] + [x for x in pairs if x[0][0] != "LANDSAT"])
+
         for (source, product_name), req_vars in reversed_sources.items():
             
             if isinstance(source, str):
@@ -66,12 +71,18 @@ def collect_sources(folder, sources, latlim, lonlim, timelim, return_fps = True)
                 "post_processors": reversed_enhancers[(source, product_name)]
             }
 
+            # On first attempt for any Landsat product, only order the scenes. Then retry when everything else has finished.
+            if source == "LANDSAT" and attempts[(source, product_name)] == 0:
+                args.update({"max_attempts": 1})
+
             try:
                 x = dler(**args)
                 attempts[(source, product_name)] += max_attempts * 10
             except Exception as e:
 
-                if "NetCDF: Filter error: unimplemented filter encountered" in e.args[0]:
+                exception_args = getattr(e, "args", tuple())
+
+                if "NetCDF: Filter error: unimplemented filter encountered" in str(exception_args[0]):
                     info_url = r"https://github.com/Unidata/netcdf4-python/issues/1182"
                     log.warning(f"--> Looks like you installed `netcdf4` incorrectly, see {info_url} for more info.")
 
@@ -82,6 +93,7 @@ def collect_sources(folder, sources, latlim, lonlim, timelim, return_fps = True)
                     log.exception("")
 
                 attempts[(source, product_name)] += 1
+
             else:
                 if "time" in x.coords:
                     stime = np.datetime_as_string(x.time.values[0], unit = "m")
