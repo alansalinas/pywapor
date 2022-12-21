@@ -447,7 +447,7 @@ def search_stac(latlim, lonlim, timelim, product_name, extra_search_kwargs):
 
     ids = np.unique([x["id"].replace("_ST", "").replace("_SR", "") for x in query["features"] if product_name.split("_")[0] in x["id"]]).tolist()
 
-    log.info(f"--> Found {len(ids)} scenes. {ids}")
+    log.info(f"--> Found {len(ids)} scenes.")
 
     return ids, query
 
@@ -477,6 +477,8 @@ def request_scenes(ids, image_extents):
 
     order_response = espa_api('order', verb='post', body = order, uauth = uauth)
 
+    time.sleep(10)
+
     return order_response
 
 def unpack(fp, folder):
@@ -497,6 +499,89 @@ def check_availabilty(product_folder, product_name, scene_ids):
     available_scenes = unpacked_scenes.union(set(packed_scenes.keys())).intersection(scene_ids)
     return available_scenes
 
+def update_order_statuses(scene_ids, product_folder, product_name, to_download, to_wait, to_request, uauth, image_extents, verbose = True):
+
+    all_orders = espa_api(f"item-status", uauth = uauth)
+    available_scenes = check_availabilty(product_folder, product_name, scene_ids)
+    
+    for order_id, order in all_orders.items():
+
+        if not verbose:
+            log.info(f"--> Checking {order_id}.")
+
+        # Get specific order details.
+        order_folder = os.path.join(product_folder, "orders")
+        order_details_fp = os.path.join(order_folder, f"{order_id}.json")
+        if os.path.isfile(order_details_fp):
+            with open(order_details_fp, "r") as fp:
+                order_details = json.load(fp)
+        else:
+            order_details = espa_api(f"order/{order_id}", uauth = uauth)
+            with open(order_details_fp, "w") as fp:
+                json.dump(order_details , fp) 
+
+        if order_details["product_opts"].get("image_extents") != image_extents:
+            if not verbose:
+                log.warning(f"--> Skipping {order_details['orderid']}, incorrect image extents.")
+            continue
+
+        for scene in order:
+
+            if (scene["status"] == "complete") and (scene["name"] in scene_ids) and (scene["name"] not in available_scenes):
+                to_download[scene["name"]] = scene["product_dload_url"]
+                to_request.discard(scene["name"])
+                to_wait.discard(scene["name"])
+                if not verbose:
+                    log.info(f"--> {scene['name']} status: `complete`.")
+            elif (scene["status"] == "oncache") and (scene["name"] in scene_ids) and (scene["name"] not in available_scenes):
+                to_request.discard(scene["name"])
+                to_wait.add(scene["name"])
+                if not verbose:
+                    log.info(f"--> {scene['name']} status: `oncache`.")
+            elif (scene["status"] == "onorder") and (scene["name"] in scene_ids) and (scene["name"] not in available_scenes):
+                to_request.discard(scene["name"])
+                to_wait.add(scene["name"])
+                if not verbose:
+                    log.info(f"--> {scene['name']} status: `onorder`.")
+            elif (scene["status"] == "queued") and (scene["name"] in scene_ids) and (scene["name"] not in available_scenes):
+                to_request.discard(scene["name"])
+                to_wait.add(scene["name"])
+                if not verbose:
+                    log.info(f"--> {scene['name']} status: `queued`.")
+            elif (scene["status"] == "processing") and (scene["name"] in scene_ids) and (scene["name"] not in available_scenes):
+                to_request.discard(scene["name"])
+                to_wait.add(scene["name"])
+                if not verbose:
+                    log.info(f"--> {scene['name']} status: `processing`.")
+            elif (scene["status"] == "error") and (scene["name"] in scene_ids) and (scene["name"] not in available_scenes):
+                to_wait.discard(scene["name"])
+                if not verbose:
+                    log.info(f"--> {scene['name']} status: `error` ({scene['note']}).")
+            elif (scene["status"] == "retry") and (scene["name"] in scene_ids) and (scene["name"] not in available_scenes):
+                to_request.discard(scene["name"])
+                to_wait.add(scene["name"])
+                if not verbose:
+                    log.info(f"--> {scene['name']} status: `retry`.")
+            elif (scene["status"] == "unavailable") and (scene["name"] in scene_ids) and (scene["name"] not in available_scenes):
+                to_request.discard(scene["name"])
+                to_wait.add(scene["name"])
+                if not verbose:
+                    log.info(f"--> {scene['name']} status: `unavailable`.")
+            elif (scene["status"] == "cancelled") and (scene["name"] in scene_ids) and (scene["name"] not in available_scenes):
+                to_request.add(scene["name"])
+                to_wait.discard(scene["name"])
+                if not verbose:
+                    log.info(f"--> {scene['name']} status: `cancelled`.")
+            elif (scene["name"] in scene_ids) and (scene["name"] not in available_scenes):
+                to_request.add(scene["name"])
+                to_wait.discard(scene["name"])
+                if not verbose:
+                    log.info(f"--> {scene['name']} status: `{scene['status']}`.")
+            else:
+                ...
+
+    return available_scenes, to_download, to_wait, to_request
+
 def download_scenes(scene_ids, product_folder, product_name, latlim, lonlim, max_attempts = 5, wait_time = 300):
 
     image_extents = {
@@ -509,9 +594,6 @@ def download_scenes(scene_ids, product_folder, product_name, latlim, lonlim, max
 
     uauth = pywapor.collect.accounts.get("EARTHEXPLORER")
 
-    # Make sure the total length is not 0 so the while-loop is started.
-    to_request, to_wait, to_download = ([True], [True], [True])
-
     attempt = 0
 
     # Check which scenes already exist locally
@@ -522,73 +604,13 @@ def download_scenes(scene_ids, product_folder, product_name, latlim, lonlim, max
 
     while len(to_download) + len(to_wait) + len(to_request) > 0 and attempt < max_attempts:
 
-        log.info("entering WHILE")
-
         if attempt > 0:
-            log.info("SLEEPING")
+            log.info(f"--> Waiting {wait_time} seconds before trying again.")
             time.sleep(wait_time)
 
-        # Get an overview of the existing orders.
-        all_orders = espa_api(f"item-status", uauth = uauth)
-        for order_id, order in all_orders.items():
-
-            # Get specific order details.
-            order_details_fp = os.path.join(product_folder, f"{order_id}.json")
-            if os.path.isfile(order_details_fp):
-                with open(order_details_fp, "r") as fp:
-                    order_details = json.load(fp)
-            else:
-                order_details = espa_api(f"order/{order_id}", uauth = uauth)
-                with open(order_details_fp, "w") as fp:
-                    json.dump(order_details , fp) 
-
-            if order_details["product_opts"].get("image_extents") != image_extents:
-                continue
-
-            for scene in order:
-
-                if (scene["status"] == "complete") and (scene["name"] in scene_ids) and (scene["name"] not in available_scenes):
-                    to_download[scene["name"]] = scene["product_dload_url"]
-                    to_request.discard(scene["name"])
-                    to_wait.discard(scene["name"])
-                    log.info(f"--> {scene['name']} status: `complete`.")
-                elif (scene["status"] == "oncache") and (scene["name"] in scene_ids) and (scene["name"] not in available_scenes):
-                    to_request.discard(scene["name"])
-                    to_wait.add(scene["name"])
-                    log.info(f"--> {scene['name']} status: `oncache`.")
-                elif (scene["status"] == "onorder") and (scene["name"] in scene_ids) and (scene["name"] not in available_scenes):
-                    to_request.discard(scene["name"])
-                    to_wait.add(scene["name"])
-                    log.info(f"--> {scene['name']} status: `onorder`.")
-                elif (scene["status"] == "queued") and (scene["name"] in scene_ids) and (scene["name"] not in available_scenes):
-                    to_request.discard(scene["name"])
-                    to_wait.add(scene["name"])
-                    log.info(f"--> {scene['name']} status: `queued`.")
-                elif (scene["status"] == "processing") and (scene["name"] in scene_ids) and (scene["name"] not in available_scenes):
-                    to_request.discard(scene["name"])
-                    to_wait.add(scene["name"])
-                    log.info(f"--> {scene['name']} status: `processing`.")
-                elif (scene["status"] == "error") and (scene["name"] in scene_ids) and (scene["name"] not in available_scenes):
-                    to_wait.discard(scene["name"])
-                    log.info(f"--> {scene['name']} status: `error` ({scene['note']}).")
-                elif (scene["status"] == "retry") and (scene["name"] in scene_ids) and (scene["name"] not in available_scenes):
-                    to_request.discard(scene["name"])
-                    to_wait.add(scene["name"])
-                    log.info(f"--> {scene['name']} status: `retry`.")
-                elif (scene["status"] == "unavailable") and (scene["name"] in scene_ids) and (scene["name"] not in available_scenes):
-                    to_request.discard(scene["name"])
-                    to_wait.add(scene["name"])
-                    log.info(f"--> {scene['name']} status: `unavailable`.")
-                elif (scene["status"] == "cancelled") and (scene["name"] in scene_ids) and (scene["name"] not in available_scenes):
-                    to_request.add(scene["name"])
-                    to_wait.discard(scene["name"])
-                    log.info(f"--> {scene['name']} status: `cancelled`.")
-                elif (scene["name"] in scene_ids) and (scene["name"] not in available_scenes):
-                    to_request.add(scene["name"])
-                    to_wait.discard(scene["name"])
-                    log.info(f"--> {scene['name']} status: `{scene['status']}`.")
-                else:
-                    ...
+        # Update statutes
+        available_scenes, to_download, to_wait, to_request = update_order_statuses(scene_ids, product_folder, product_name, to_download, to_wait, to_request, uauth, image_extents)
+        # log.info(f"--> {len(available_scenes)} scenes available, {len(to_download)} ready for download, {len(to_request)} need to be requested and {len(to_wait)} are being processed.")
 
         # Request missing scenes on (ESPA)
         if len(to_request) > 0:
@@ -596,18 +618,17 @@ def download_scenes(scene_ids, product_folder, product_name, latlim, lonlim, max
 
         # Download completed scenes (ESPA)
         if len(to_download) > 0:
+            log.info(f"--> Downloading {len(to_download)} scenes.")
             fps = download_urls(list(to_download.values()), product_folder)
-
             for fp in fps:
                 unpack(fp, product_folder)
+            to_download = dict()
 
-            to_download = set()
-
-        available_scenes = check_availabilty(product_folder, product_name, scene_ids)
-        to_request = set(scene_ids).difference(available_scenes)
+        available_scenes, to_download, to_wait, to_request = update_order_statuses(scene_ids, product_folder, product_name, to_download, to_wait, to_request, uauth, image_extents)
+        # log.info(f"--> {len(available_scenes)} scenes available, {len(to_download)} ready for download, {len(to_request)} need to be requested and {len(to_wait)} are being processed.")
 
         attempt += 1
-        log.info(f"--> {len(available_scenes)} scenes collected, waiting for {len(to_wait) + len(to_request)} more scenes.")
+        log.info(f"--> {len(available_scenes)} scenes collected in attempt {attempt}/{max_attempts}, waiting for {len(to_wait) + len(to_request)} more scenes.")
         
     return available_scenes, to_download, to_request, to_wait
 
@@ -714,12 +735,16 @@ def process_scenes(fp, scene_paths, product_folder, product_name, variables, pos
 def download(folder, latlim, lonlim, timelim, product_name, 
                 req_vars, variables = None, post_processors = None, 
                 extra_search_kwargs = {'eo:cloud_cover': {'gte': 0, 'lt': 30}},
-                max_attempts = 2, wait_time = 10):
+                max_attempts = 24, wait_time = 300):
 
     product_folder = os.path.join(folder, "LANDSAT")
+    order_folder = os.path.join(product_folder, "orders")
 
     if not os.path.exists(product_folder):
         os.makedirs(product_folder)
+
+    if not os.path.exists(order_folder):
+        os.makedirs(order_folder)
 
     appending = False
     fn = os.path.join(product_folder, f"{product_name}.nc")
@@ -755,10 +780,11 @@ def download(folder, latlim, lonlim, timelim, product_name,
     available_scenes, to_download, to_request, to_wait = download_scenes(scene_ids, product_folder, product_name, latlim, lonlim, max_attempts = max_attempts, wait_time = wait_time)
     # log.info(f"available_scenes = {available_scenes}")
 
+    # log.info(f"available_scenes: {len(available_scenes)}, scene_ids: {len(scene_ids)}, to_wait: {len(to_wait)}, to_download: {len(to_download)}, to_request: {len(to_request)} \n\n {available_scenes} \n {scene_ids} \n {to_wait}")
     if len(available_scenes) < len(scene_ids) and len(to_wait) > 0:
         if appending:
             os.rename(fn.replace("_appendix.nc", "_to_be_appended.nc"), fn.replace("_appendix.nc", ".nc"))
-        raise ValueError(f"Waiting for order of {len(to_wait)} scenes to finish.")
+        raise ValueError(f"Waiting for order of {len(to_wait)} scenes to finish.", len(to_wait))
 
     # Process scenes.
     scene_paths = [glob.glob(os.path.join(product_folder, "**", f"*{x}.nc"), recursive = True)[0] for x in available_scenes]
@@ -789,22 +815,22 @@ if __name__ == "__main__":
         "LC08_ST": ["2022-03-29", "2022-04-25"],
     }
 
-    folder = f"/Users/hmcoerver/Local/landsat_test2"
-    adjust_logger(True, folder, "INFO")
-    for product_name, timelim in tests.items():
-        print(product_name, timelim)
+    # folder = f"/Users/hmcoerver/Local/landsat_test2"
+    # adjust_logger(True, folder, "INFO")
+    # for product_name, timelim in tests.items():
+    #     print(product_name, timelim)
         
-        latlim = [28.9, 29.7]
-        lonlim = [30.2, 31.2]
-        # timelim = ["2022-03-29", "2022-04-25"]
-        # product_name = "LC08"
-        req_vars = ["lst"]
-        # req_vars = ["r0"]
-        variables = None
-        post_processors = None
-        # example_ds = None
-        extra_search_kwargs = {'eo:cloud_cover': {'gte': 0, 'lt': 30}}
-        ds = download(folder, latlim, lonlim, timelim, product_name, 
-                        req_vars, variables = variables, post_processors = post_processors, 
-                        extra_search_kwargs = extra_search_kwargs)
+    #     latlim = [28.9, 29.7]
+    #     lonlim = [30.2, 31.2]
+    #     # timelim = ["2022-03-29", "2022-04-25"]
+    #     # product_name = "LC08"
+    #     req_vars = ["lst"]
+    #     # req_vars = ["r0"]
+    #     variables = None
+    #     post_processors = None
+    #     # example_ds = None
+    #     extra_search_kwargs = {'eo:cloud_cover': {'gte': 0, 'lt': 30}}
+    #     ds = download(folder, latlim, lonlim, timelim, product_name, 
+    #                     req_vars, variables = variables, post_processors = post_processors, 
+    #                     extra_search_kwargs = extra_search_kwargs)
 
