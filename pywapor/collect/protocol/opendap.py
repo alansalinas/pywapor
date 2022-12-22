@@ -81,7 +81,8 @@ def download(fp, product_name, coords, variables, post_processors,
         ds = rioxarray.merge.merge_datasets(dss)
     else:
         dss = files
-        ds = process_ds(xr.open_mfdataset(files, decode_coords = "all"), coords_, variables, crs = data_source_crs)
+        ds = xr.concat([xr.open_dataset(x, decode_coords="all") for x in files], dim = "time")
+        ds = process_ds(ds, coords_, variables, crs = data_source_crs)
 
     # Reproject if necessary.
     if ds.rio.crs.to_epsg() != 4326:

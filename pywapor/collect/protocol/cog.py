@@ -111,6 +111,7 @@ def download(fp, product_name, coords, variables, post_processors, url_func,
     out = save_ds(ds, fp, encoding = "initiate", label = f"Saving {fn}.")
 
     # Remove the temporary file.
-    remove_ds(ds)
+    ds = ds.close()
+    remove_ds(fp.replace(".nc", "_temp.nc"))
 
     return out

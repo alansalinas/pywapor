@@ -58,18 +58,22 @@ def remove_ds(ds):
         Either a `xr.Dataset` (in which case its `source` as defined in the `encoding` attribute will be used)
         or a `str` in which case it must be a path to a file.
     """
+    fp = None
     if isinstance(ds, xr.Dataset):
         if "source" in ds.encoding.keys():
             fp = ds.encoding["source"]
-            ds = xr.open_dataset(fp)
-            ds = ds.close()
-            os.remove(fp)
+        ds = ds.close()
     elif isinstance(ds, str):
         if os.path.isfile(ds):
             fp = ds
-            ds = xr.open_dataset(fp)
-            ds = ds.close()
-            os.remove(fp)        
+
+    if not isinstance(fp, type(None)):
+        ds = xr.open_dataset(fp)
+        ds = ds.close()
+        try:
+            os.remove(fp)
+        except PermissionError:
+            log.info(f"--> Unable to delete temporary file `{fp}`.")
 
 def process_ds(ds, coords, variables, crs = None):
     """Apply some rioxarray related transformations to a dataset.
