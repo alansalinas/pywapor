@@ -8,6 +8,7 @@ import fnmatch
 import os
 import numpy as np
 from functools import partial
+import copy
 import xarray as xr
 from pywapor.general.processing_functions import open_ds, remove_ds, save_ds
 from pywapor.collect.protocol.crawler import find_paths
@@ -189,19 +190,17 @@ def download(folder, latlim, lonlim, timelim, product_name, req_vars,
     
     folder = os.path.join(folder, "MERRA2")
     appending = False
+
     fn = os.path.join(folder, f"{product_name}.nc")
+    req_vars_orig = copy.deepcopy(req_vars)
     if os.path.isfile(fn):
-        os.rename(fn, fn.replace(".nc", "_to_be_appended.nc"))
-        existing_ds = open_ds(fn.replace(".nc", "_to_be_appended.nc"))
-        if np.all([x in existing_ds.data_vars for x in req_vars]):
+        existing_ds = open_ds(fn)
+        req_vars_new = list(set(req_vars).difference(set(existing_ds.data_vars)))
+        if len(req_vars_new) > 0:
+            req_vars = req_vars_new
             existing_ds = existing_ds.close()
-            os.rename(fn.replace(".nc", "_to_be_appended.nc"), fn)
-            existing_ds = open_ds(fn)
-            return existing_ds[req_vars]
         else:
-            appending = True
-            fn = os.path.join(folder, f"{product_name}_appendix.nc")
-            req_vars = [x for x in req_vars if x not in existing_ds.data_vars]
+            return existing_ds[req_vars_orig]
 
     spatial_buffer = True
     if spatial_buffer:

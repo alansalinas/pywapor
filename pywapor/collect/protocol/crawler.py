@@ -261,7 +261,7 @@ def _download_url(url, fp, session = None, waitbar = True, headers = None):
     return fp
 
 def download_url(url, fp, session = None, waitbar = True, headers = None, 
-                    max_tries = 10, wait_sec = 15):
+                    max_tries = 3, wait_sec = 15):
     """Download a URL to a file.
 
     Parameters

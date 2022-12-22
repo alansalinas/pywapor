@@ -42,7 +42,12 @@ def collect_sources(folder, sources, latlim, lonlim, timelim, return_fps = True,
 
         # Make sure Landsat is always processed first, because orders take time.
         pairs = list(reversed_sources.items())
-        reversed_sources = OrderedDict([x for x in pairs if x[0][0] == "LANDSAT"] + [x for x in pairs if x[0][0] != "LANDSAT"])
+        reversed_sources = OrderedDict(
+                                        [x for x in pairs if x[0][0] == "LANDSAT"] + 
+                                        [x for x in pairs if (x[0][0] != "LANDSAT") and ("se_root" not in x[1])] +
+                                        [x for x in pairs if "se_root" in x[1]]
+                                        )
+
 
         for (source, product_name), req_vars in reversed_sources.items():
             

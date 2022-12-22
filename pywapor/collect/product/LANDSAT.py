@@ -26,6 +26,7 @@ import shutil
 import glob
 import json
 import warnings
+import copy
 import os
 from functools import partial
 import numpy as np
@@ -189,7 +190,7 @@ def default_vars(product_name, req_vars):
             'st_qa':        [('YDim_st_qa', 'XDim_st_qa'), 'lst_qa', [mask_invalid, scale_data]],
         },
         "LE07_SR": {
-            'sr_band1':     [('YDim_sr_band1', 'XDim_sr_band1'), 'blue', [mask_invalid, scale_data, partial(apply_qa, product_name = "LE0_SR", pixel_qa_flags = pixel_qa_flags_457, radsat_qa_flags = ["terrain_occlusion", "saturated_band1"])]],
+            'sr_band1':     [('YDim_sr_band1', 'XDim_sr_band1'), 'blue', [mask_invalid, scale_data, partial(apply_qa, product_name = "LE07_SR", pixel_qa_flags = pixel_qa_flags_457, radsat_qa_flags = ["terrain_occlusion", "saturated_band1"])]],
             'sr_band2':     [('YDim_sr_band2', 'XDim_sr_band2'), 'green', [mask_invalid, scale_data, partial(apply_qa, product_name = "LE07_SR", pixel_qa_flags = pixel_qa_flags_457, radsat_qa_flags = ["terrain_occlusion", "saturated_band2"])]],
             'sr_band3':     [('YDim_sr_band3', 'XDim_sr_band3'), 'red', [mask_invalid, scale_data, partial(apply_qa, product_name = "LE07_SR", pixel_qa_flags = pixel_qa_flags_457, radsat_qa_flags = ["terrain_occlusion", "saturated_band3"])]],
             'sr_band4':     [('YDim_sr_band4', 'XDim_sr_band4'), 'nir', [mask_invalid, scale_data, partial(apply_qa, product_name = "LE07_SR", pixel_qa_flags = pixel_qa_flags_457, radsat_qa_flags = ["terrain_occlusion", "saturated_band4"])]],
@@ -746,20 +747,16 @@ def download(folder, latlim, lonlim, timelim, product_name,
     if not os.path.exists(order_folder):
         os.makedirs(order_folder)
 
-    appending = False
     fn = os.path.join(product_folder, f"{product_name}.nc")
+    req_vars_orig = copy.deepcopy(req_vars)
     if os.path.isfile(fn):
-        os.rename(fn, fn.replace(".nc", "_to_be_appended.nc"))
-        existing_ds = open_ds(fn.replace(".nc", "_to_be_appended.nc"))
-        if np.all([x in existing_ds.data_vars for x in req_vars]):
+        existing_ds = open_ds(fn)
+        req_vars_new = list(set(req_vars).difference(set(existing_ds.data_vars)))
+        if len(req_vars_new) > 0:
+            req_vars = req_vars_new
             existing_ds = existing_ds.close()
-            os.rename(fn.replace(".nc", "_to_be_appended.nc"), fn)
-            existing_ds = open_ds(fn)
-            return existing_ds[req_vars]
         else:
-            appending = True
-            fn = os.path.join(product_folder, f"{product_name}_appendix.nc")
-            req_vars = [x for x in req_vars if x not in existing_ds.data_vars]
+            return existing_ds[req_vars_orig]
 
     if isinstance(variables, type(None)):
         variables = default_vars(product_name, req_vars)
@@ -782,28 +779,14 @@ def download(folder, latlim, lonlim, timelim, product_name,
 
     # log.info(f"available_scenes: {len(available_scenes)}, scene_ids: {len(scene_ids)}, to_wait: {len(to_wait)}, to_download: {len(to_download)}, to_request: {len(to_request)} \n\n {available_scenes} \n {scene_ids} \n {to_wait}")
     if len(available_scenes) < len(scene_ids) and len(to_wait) > 0:
-        if appending:
-            os.rename(fn.replace("_appendix.nc", "_to_be_appended.nc"), fn.replace("_appendix.nc", ".nc"))
         raise ValueError(f"Waiting for order of {len(to_wait)} scenes to finish.", len(to_wait))
 
     # Process scenes.
     scene_paths = [glob.glob(os.path.join(product_folder, "**", f"*{x}.nc"), recursive = True)[0] for x in available_scenes]
     # log.info(f"scene_paths = {scene_paths}")
-    ds_new = process_scenes(fn, scene_paths, product_folder, product_name, variables, post_processors)
+    ds = process_scenes(fn, scene_paths, product_folder, product_name, variables, post_processors)
 
-    if appending:
-        ds = xr.merge([ds_new, existing_ds])
-        lbl = f"Appending new variables (`{'`, `'.join(req_vars)}`) to existing file."
-        ds = save_ds(ds, os.path.join(product_folder, f"{product_name}.nc"), encoding = "initiate", label = lbl)
-        remove_ds(ds_new)
-        remove_ds(existing_ds)
-        # ds = ds.close()
-        # os.rename(os.path.join(product_folder, f"{product_name}_merged.nc"), os.path.join(product_folder, f"{product_name}.nc"))
-        # ds = open_ds(os.path.join(product_folder, f"{product_name}.nc"))
-    else:
-        ds = ds_new
-
-    return ds
+    return ds[req_vars_orig]
 
 if __name__ == "__main__":
 

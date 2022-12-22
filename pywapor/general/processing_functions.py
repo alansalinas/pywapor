@@ -179,7 +179,13 @@ def save_ds(ds, fp, decode_coords = "all", encoding = None, chunks = "auto", pre
     xr.Dataset
         The newly created dataset.
     """
-    temp_fp = fp.replace(".nc", "_temp.xx")
+    if os.path.isfile(fp):
+        log.info("--> Appending data to an existing file.")
+        appending = True
+        temp_fp = fp
+    else:
+        appending = False
+        temp_fp = fp.replace(".nc", "_temp.xx")
 
     folder = os.path.split(fp)[0]
     if not os.path.isdir(folder):
@@ -224,11 +230,12 @@ def save_ds(ds, fp, decode_coords = "all", encoding = None, chunks = "auto", pre
     with ProgressBar(minimum = 90*10, dt = 2.0):
         with warnings.catch_warnings():
             warnings.filterwarnings("ignore", message="All-NaN slice encountered")
-            ds.to_netcdf(temp_fp, encoding = encoding)
+            ds.to_netcdf(temp_fp, encoding = encoding, mode = {True: "a", False: "w"}[appending])
 
     ds = ds.close()
 
-    os.rename(temp_fp, fp)
+    if not appending:
+        os.rename(temp_fp, fp)
 
     ds = open_ds(fp, decode_coords = decode_coords, chunks = chunks)
 

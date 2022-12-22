@@ -7,6 +7,7 @@ from pywapor.enhancers.temperature import kelvin_to_celsius
 from functools import partial
 import numpy as np
 from pywapor.enhancers.pressure import pa_to_kpa
+import copy
 
 def default_vars(product_name, req_vars):
     """Given a `product_name` and a list of requested variables, returns a dictionary
@@ -122,21 +123,16 @@ def download(folder, latlim, lonlim, timelim, product_name, req_vars,
     """
     folder = os.path.join(folder, "GEOS5")
 
-    appending = False
     fn = os.path.join(folder, f"{product_name}.nc")
+    req_vars_orig = copy.deepcopy(req_vars)
     if os.path.isfile(fn):
-        os.rename(fn, fn.replace(".nc", "_to_be_appended.nc"))
-        existing_ds = open_ds(fn.replace(".nc", "_to_be_appended.nc"))
-        if np.all([x in existing_ds.data_vars for x in req_vars]):
+        existing_ds = open_ds(fn)
+        req_vars_new = list(set(req_vars).difference(set(existing_ds.data_vars)))
+        if len(req_vars_new) > 0:
+            req_vars = req_vars_new
             existing_ds = existing_ds.close()
-            os.rename(fn.replace(".nc", "_to_be_appended.nc"), fn)
-            existing_ds = open_ds(fn)
-            return existing_ds[req_vars]
         else:
-            appending = True
-            fn = os.path.join(folder, f"{product_name}_appendix.nc")
-            req_vars = [x for x in req_vars if x not in existing_ds.data_vars]
-
+            return existing_ds[req_vars_orig]
 
     spatial_buffer = True
     if spatial_buffer:
@@ -160,20 +156,11 @@ def download(folder, latlim, lonlim, timelim, product_name, req_vars,
 
     timedelta = np.timedelta64(90, "m")
 
-    ds_new = opendap.download_xarray(url, fn, coords, variables, post_processors, 
+    ds = opendap.download_xarray(url, fn, coords, variables, post_processors, 
                                     data_source_crs = data_source_crs,
                                     timedelta = timedelta)
 
-    if appending:
-        ds = xr.merge([ds_new, existing_ds])
-        lbl = f"Appending new variables (`{'`, `'.join(req_vars)}`) to existing file."
-        ds = save_ds(ds, os.path.join(folder, f"{product_name}.nc"), encoding = "initiate", label = lbl)
-        remove_ds(ds_new)
-        remove_ds(existing_ds)
-    else:
-        ds = ds_new
-
-    return ds
+    return ds[req_vars_orig]
 
 if __name__ == "__main__":
 

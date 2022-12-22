@@ -45,7 +45,7 @@ setup(
         'shapely',
         'lxml',
         'geopy',
-        'sklearn',
+        'scikit-learn',
         'numba',
         'xmltodict',
 # NOTE Another fix for Colab... https://github.com/googlecolab/colabtools/issues/3134

@@ -9,6 +9,7 @@ import numpy as np
 from functools import partial
 from pywapor.general.processing_functions import open_ds, remove_ds, save_ds
 from lxml import etree
+import copy
 
 def apply_qa(ds, var):
     """Mask SENTINEL2 data using a qa variable.
@@ -473,20 +474,16 @@ def download(folder, latlim, lonlim, timelim, product_name,
 
     product_folder = os.path.join(folder, "SENTINEL2")
 
-    appending = False
-    fn = os.path.join(product_folder, f"{product_name}.nc")
+    fn = os.path.join(folder, f"{product_name}.nc")
+    req_vars_orig = copy.deepcopy(req_vars)
     if os.path.isfile(fn):
-        os.rename(fn, fn.replace(".nc", "_to_be_appended.nc"))
-        existing_ds = open_ds(fn.replace(".nc", "_to_be_appended.nc"))
-        if np.all([x in existing_ds.data_vars for x in req_vars]):
+        existing_ds = open_ds(fn)
+        req_vars_new = list(set(req_vars).difference(set(existing_ds.data_vars)))
+        if len(req_vars_new) > 0:
+            req_vars = req_vars_new
             existing_ds = existing_ds.close()
-            os.rename(fn.replace(".nc", "_to_be_appended.nc"), fn)
-            existing_ds = open_ds(fn)
-            return existing_ds[req_vars]
         else:
-            appending = True
-            fn = os.path.join(product_folder, f"{product_name}_appendix.nc")
-            req_vars = [x for x in req_vars if x not in existing_ds.data_vars]
+            return existing_ds[req_vars_orig]
             
     if isinstance(variables, type(None)):
         variables = default_vars(product_name, req_vars)
@@ -515,18 +512,9 @@ def download(folder, latlim, lonlim, timelim, product_name,
 
     scenes = sentinelapi.download(product_folder, latlim, lonlim, timelim, search_kwargs, node_filter = node_filter)
 
-    ds_new = sentinelapi.process_sentinel(scenes, variables, "SENTINEL2", time_func, os.path.split(fn)[-1], post_processors, bb = bb)
+    ds = sentinelapi.process_sentinel(scenes, variables, "SENTINEL2", time_func, os.path.split(fn)[-1], post_processors, bb = bb)
 
-    if appending:
-        ds = xr.merge([ds_new, existing_ds])
-        lbl = f"Appending new variables (`{'`, `'.join(req_vars)}`) to existing file."
-        ds = save_ds(ds, os.path.join(product_folder, f"{product_name}.nc"), encoding = "initiate", label = lbl)
-        remove_ds(ds_new)
-        remove_ds(existing_ds)
-    else:
-        ds = ds_new
-
-    return ds
+    return ds[req_vars_orig]
 
 # if __name__ == "__main__":
 
