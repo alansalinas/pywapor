@@ -5,11 +5,25 @@ import getpass
 import sys
 import requests
 import time
-from pywapor.general.logger import log
+from pywapor.general.logger import log, adjust_logger
 from cryptography.fernet import Fernet
 import cdsapi
 from sentinelsat import SentinelAPI
 from pywapor.collect.product.LANDSAT import espa_api
+
+def ask_pw(account):
+    if account == "WAPOR" or account == "VIIRSL1":
+        account_name = ""
+        pwd = input(f"{account} API token: ")
+    elif account == "ECMWF":
+        account_name = 'https://cds.climate.copernicus.eu/api/v2'
+        api_key_1 = input(f"{account} UID: ")
+        api_key_2 = input(f"{account} CDS API key: ")
+        pwd = f"{api_key_1}:{api_key_2}"
+    else:
+        account_name = input(f"{account} username: ")
+        pwd = getpass.getpass(f"{account} password: ")            
+    return account_name, pwd
 
 def setup(account):
     """Asks, saves and tests a username/password combination for `account`.
@@ -28,10 +42,9 @@ def setup(account):
     if not os.path.exists(filehandle):
         create_key()
     
-    f = open(filehandle,"r")
-    key = f.read()
-    f.close()
-    
+    with open(filehandle,"r") as f:
+        key = f.read()
+
     cipher_suite = Fernet(key.encode('utf-8'))
 
     if os.path.exists(json_filehandle):
@@ -39,109 +52,44 @@ def setup(account):
         with open(json_filehandle) as f:
             datastore = f.read()
         obj = json.loads(datastore)      
-        f.close()
     else:
         obj = {}
 
-    if account == "WAPOR":
-        API_Key = input(f"{account} API token: ")
-        API_Key_crypt = cipher_suite.encrypt(("%s" %API_Key).encode('utf-8'))
-        obj[account] = [str(API_Key_crypt.decode("utf-8"))]
-    if account == "VIIRSL1":
-        API_Key = input(f"{account} API token: ")
-        API_Key_crypt = cipher_suite.encrypt(("%s" %API_Key).encode('utf-8'))
-        obj[account] = [str(API_Key_crypt.decode("utf-8"))]
-    elif account == "ECMWF":
-        API_Key = input(f"{account} CDS API key: ")
-        API_Key_crypt = cipher_suite.encrypt(("%s" %API_Key).encode('utf-8'))
-        obj[account] = [str(API_Key_crypt.decode("utf-8"))]
-    else:
-        account_name = input(f"{account} username: ")
-        pwd = getpass.getpass(f"{account} password: ")            
-        account_name_crypt = cipher_suite.encrypt(("%s" %account_name).encode('utf-8'))
-        pwd_crypt = cipher_suite.encrypt(("%s" %pwd).encode('utf-8'))
-        obj[account] = ([str(account_name_crypt.decode("utf-8")), str(pwd_crypt.decode("utf-8"))])
+    n = 1
+    max_attempts = 3
+    succes = False
 
-    # save extent in task
-    with open(json_filehandle, 'w') as outfile:
-        json.dump(obj, outfile)        
+    while n <= max_attempts and not succes:
 
-    if account == "NASA":
-        log.info("--> Testing NASA un/pw.")
-        succes = nasa_account()
+        account_name, pwd = ask_pw(account)
+
+        log.info(f"--> Testing {account} un/pw.")
+        succes, error = {
+            "NASA": nasa_account,
+            "EARTHEXPLORER": earthexplorer_account,
+            "VITO": vito_account,
+            "WAPOR": wapor_account,
+            "VIIRSL1": viirsl1_account,
+            "ECMWF": ecmwf_account,
+            "SENTINEL": sentinel_account,
+        }[account]((account_name, pwd))
+
         if succes:
-            log.info("--> NASA un/pw working.")
-        else:
-            _ = obj.pop("NASA")
+            log.info(f"--> {account} un/pw working.")
+            # Encrypting un/pw
+            account_name_crypt = cipher_suite.encrypt(("%s" %account_name).encode('utf-8'))
+            pwd_crypt = cipher_suite.encrypt(("%s" %pwd).encode('utf-8'))
+            obj[account] = ([str(account_name_crypt.decode("utf-8")), str(pwd_crypt.decode("utf-8"))])
+            # Save to disk
             with open(json_filehandle, 'w') as outfile:
-                json.dump(obj, outfile)
-            sys.exit(f"Please fix your NASA account.") 
+                json.dump(obj, outfile)     
+        else:
+            log.warning(f"--> ({n}/{max_attempts}) {account} not working ({error}).")
 
-    if account == "EARTHEXPLORER":
-        log.info("--> Testing EARTHEXPLORER un/pw.")
-        succes = earthexplorer_account()
-        if succes:
-            log.info("--> EARTHEXPLORER un/pw working.")
-        else:
-            _ = obj.pop("EARTHEXPLORER")
-            with open(json_filehandle, 'w') as outfile:
-                json.dump(obj, outfile)
-            sys.exit(f"Please fix your EARTHEXPLORER account.")            
+        n += 1
 
-    if account == "VITO":
-        log.info("--> Testing VITO un/pw.")
-        succes = vito_account()
-        if succes:
-            log.info("--> VITO un/pw working.")
-        else:
-            _ = obj.pop("VITO")
-            with open(json_filehandle, 'w') as outfile:
-                json.dump(obj, outfile)
-            sys.exit(f"Please fix your VITO account.")  
-
-    if account == "WAPOR":
-        log.info("--> Testing WAPOR token.")
-        succes = wapor_account()
-        if succes:
-            log.info("--> WAPOR token working.")
-        else:
-            _ = obj.pop("WAPOR")
-            with open(json_filehandle, 'w') as outfile:
-                json.dump(obj, outfile)
-            sys.exit(f"Please fix your WAPOR token.")
-
-    if account == "VIIRSL1":
-        log.info("--> Testing VIIRSL1 token.")
-        succes = True
-        if succes:
-            log.info("--> VIIRSL1 token working.")
-        else:
-            _ = obj.pop("VIIRSL1")
-            with open(json_filehandle, 'w') as outfile:
-                json.dump(obj, outfile)
-            sys.exit(f"Please fix your VIIRSL1 token.")  
-
-    if account == "ECMWF":
-        log.info("--> Testing ECMWF key.")
-        succes = ecmwf_account()
-        if succes:
-            log.info("--> ECMWF key working.")
-        else:
-            _ = obj.pop("ECMWF")
-            with open(json_filehandle, 'w') as outfile:
-                json.dump(obj, outfile)
-            sys.exit(f"Please fix your ECMWF key.")
-
-    if account == "SENTINEL":
-        log.info("--> Testing Sentinel key.")
-        succes = sentinel_account()
-        if succes:
-            log.info("--> Sentinel key working.")
-        else:
-            _ = obj.pop("Sentinel")
-            with open(json_filehandle, 'w') as outfile:
-                json.dump(obj, outfile)
-            sys.exit(f"Please fix your Sentinel key.") 
+    if not succes:
+        sys.exit(f"Please fix your {account} account.") 
 
     return
 
@@ -188,23 +136,10 @@ def get(account):
         obj = json.loads(datastore)      
         f.close()       
 
-    if account == "WAPOR":
-        username_crypt = obj[account]
-        username = cipher_suite.decrypt(username_crypt[0].encode("utf-8"))
-        pwd = b''
-    elif account == "VIIRSL1":
-        username_crypt = obj[account]
-        username = cipher_suite.decrypt(username_crypt[0].encode("utf-8"))
-        pwd = b''
-    elif account == "ECMWF":
-        pwd_crypt = obj[account]
-        pwd = cipher_suite.decrypt(pwd_crypt[0].encode("utf-8"))
-        username = b'https://cds.climate.copernicus.eu/api/v2'
-    else:
-        username_crypt, pwd_crypt = obj[account]
-        username = cipher_suite.decrypt(username_crypt.encode("utf-8"))
-        pwd = cipher_suite.decrypt(pwd_crypt.encode("utf-8"))  
-    
+    username_crypt, pwd_crypt = obj[account]
+    username = cipher_suite.decrypt(username_crypt.encode("utf-8"))
+    pwd = cipher_suite.decrypt(pwd_crypt.encode("utf-8"))  
+
     return(str(username.decode("utf-8")), str(pwd.decode("utf-8")))
 
 def create_key():
@@ -220,7 +155,7 @@ def create_key():
     with open(filehandle,"w+") as f:
         f.write(str(Fernet.generate_key().decode("utf-8")))
 
-def vito_account(user_pw = None):
+def vito_account(user_pw):
     """Check if the given or stored VITO username/password combination
     is correct. Accounts can be created on https://www.vito-eodata.be.
 
@@ -235,55 +170,37 @@ def vito_account(user_pw = None):
     bool
         True if the password works, otherwise False.
     """
-    n_max = 3
-    succes = False
-    n = 1
 
-    while not succes and n <= n_max:
+    folder = os.path.dirname(os.path.realpath(pywapor.__path__[0]))
+    test_url = r"https://www.vito-eodata.be/PDF/datapool/Free_Data/PROBA-V_300m/S1_TOC_-_300_m_C1/2014/1/15/PV_S1_TOC-20140115_333M_V101/PROBAV_S1_TOC_20140115_333M_V101.VRG"
+    test_file = os.path.join(folder, "vito_test.vrg")
 
-        folder = os.path.dirname(os.path.realpath(pywapor.__path__[0]))
-        test_url = r"https://www.vito-eodata.be/PDF/datapool/Free_Data/PROBA-V_300m/S1_TOC_-_300_m_C1/2014/1/15/PV_S1_TOC-20140115_333M_V101/PROBAV_S1_TOC_20140115_333M_V101.VRG"
-        test_file = os.path.join(folder, "vito_test.vrg")
+    if os.path.isfile(test_file):
+        os.remove(test_file)
 
+    username, password = user_pw
+
+    x = requests.get(test_url, auth = (username, password))
+
+    error = ""
+
+    if x.ok:
+        with open(test_file, 'w+b') as z:
+            z.write(x.content)
+            statinfo = os.stat(test_file)
+            succes = statinfo.st_size == 15392
+            os.remove(test_file)
+            if not succes:
+                error = "something went wrong."
+    else:
+        error = "wrong username/password."
+        succes = False
         if os.path.isfile(test_file):
             os.remove(test_file)
 
-        if not isinstance(user_pw, type(None)):
-            username, password = user_pw
-        else:
-            username, password = get('VITO')
+    return succes, error
 
-        x = requests.get(test_url, auth = (username, password))
-
-        if x.ok:
-
-            with open(test_file, 'w+b') as z:
-                z.write(x.content)
-
-                statinfo = os.stat(test_file)
-                succes = statinfo.st_size == 15392
-                os.remove(test_file)
-                if not succes:
-                    error = "something went wrong."
-
-        else:
-            error = "wrong username/password."
-            succes = False
-            if os.path.isfile(test_file):
-                os.remove(test_file)
-
-        if not succes:
-            log.warning(f"Try {n}/{n_max} failed.")
-            time.sleep(3)
-            
-        n += 1
-
-    if not succes:
-        log.warning(error)
-
-    return succes
-
-def nasa_account(user_pw = None):
+def nasa_account(user_pw):
     """Check if the given or stored NASA username/password combination is 
     correct. Accounts can be created on https://urs.earthdata.nasa.gov/users/new.
 
@@ -298,59 +215,44 @@ def nasa_account(user_pw = None):
     bool
         True if the password works, otherwise False.
     """
-    n_max = 3
-    succes = False
-    n = 1
 
-    while not succes and n <= n_max:
+    folder = os.path.dirname(os.path.realpath(pywapor.__path__[0]))
+    test_url = r"https://goldsmr4.gesdisc.eosdis.nasa.gov/data/MERRA2/M2T3NXGLC.5.12.4/1987/08/MERRA2_100.tavg3_2d_glc_Nx.19870801.nc4"
+    test_file = os.path.join(folder, "nasa_test.nc4")
 
-        folder = os.path.dirname(os.path.realpath(pywapor.__path__[0]))
-        test_url = r"https://goldsmr4.gesdisc.eosdis.nasa.gov/data/MERRA2/M2T3NXGLC.5.12.4/1987/08/MERRA2_100.tavg3_2d_glc_Nx.19870801.nc4"
-        test_file = os.path.join(folder, "nasa_test.nc4")
+    if os.path.isfile(test_file):
+        os.remove(test_file)
 
+    username, password = user_pw
+
+    x = requests.get(test_url, allow_redirects = False)
+    y = requests.get(x.headers['location'], auth = (username, password))
+
+    error = ""
+
+    if x.ok and y.ok:
+
+        with open(test_file, 'w+b') as z:
+            z.write(y.content)
+    
+        if os.path.isfile(test_file):
+            statinfo = os.stat(test_file)
+            succes = statinfo.st_size == 3963517
+            os.remove(test_file)
+            if not succes:
+                error = "please add 'NASA GESDISC DATA ARCHIVE' to 'Approved Applications'."
+        else:
+            succes = False
+
+    else:
+        error = "wrong username/password."
+        succes = False
         if os.path.isfile(test_file):
             os.remove(test_file)
 
-        if not isinstance(user_pw, type(None)):
-            username, password = user_pw
-        else:
-            username, password = get('NASA')
+    return succes, error
 
-        x = requests.get(test_url, allow_redirects = False)
-        y = requests.get(x.headers['location'], auth = (username, password))
-
-        if x.ok and y.ok:
-
-            with open(test_file, 'w+b') as z:
-                z.write(y.content)
-        
-            if os.path.isfile(test_file):
-                statinfo = os.stat(test_file)
-                succes = statinfo.st_size == 3963517
-                os.remove(test_file)
-                if not succes:
-                    error = "please add 'NASA GESDISC DATA ARCHIVE' to 'Approved Applications'."
-            else:
-                succes = False
-
-        else:
-            error = "wrong username/password."
-            succes = False
-            if os.path.isfile(test_file):
-                os.remove(test_file)
-
-        if not succes:
-            log.warning(f"Try {n}/{n_max} failed.")
-            time.sleep(3)
-            
-        n += 1
-
-    if not succes:
-        log.warning(error)
-
-    return succes
-
-def earthexplorer_account(user_pw = None):
+def earthexplorer_account(user_pw):
     """Check if the given or stored WAPOR token is 
     correct. Accounts can be created on https://wapor.apps.fao.org/home/WAPOR_2/1.
 
@@ -365,37 +267,21 @@ def earthexplorer_account(user_pw = None):
     bool
         True if the password works, otherwise False.
     """
-    n_max = 3
-    succes = False
-    n = 1
 
-    while not succes and n <= n_max:
+    username, pw = user_pw
 
-        if not isinstance(user_pw, type(None)):
-            username, pw = user_pw
-        else:
-            username, pw = get('EARTHEXPLORER')
+    response = espa_api('user', uauth = (username, pw))
 
-        response = espa_api('user', uauth = (username, pw))
+    if "email" in response.keys():
+        succes = True
+        error = ""
+    else:
+        error = "wrong username/password."
+        succes = False
 
-        if "email" in response.keys():
-            succes = True
-        else:
-            error = "wrong username/password."
-            succes = False
+    return succes, error
 
-        if not succes:
-            log.warning(f"Try {n}/{n_max} failed.")
-            time.sleep(3)
-            
-        n += 1
-
-    if not succes:
-        log.warning(error)
-
-    return succes
-
-def wapor_account(user_pw = None):
+def wapor_account(user_pw):
     """Check if the given or stored WAPOR token is 
     correct. Accounts can be created on https://wapor.apps.fao.org/home/WAPOR_2/1.
 
@@ -410,38 +296,22 @@ def wapor_account(user_pw = None):
     bool
         True if the password works, otherwise False.
     """
-    n_max = 3
-    succes = False
-    n = 1
 
-    while not succes and n <= n_max:
+    _, pw = user_pw
 
-        if not isinstance(user_pw, type(None)):
-            username, _ = user_pw
-        else:
-            username, _ = get('WAPOR')
+    sign_in= 'https://io.apps.fao.org/gismgr/api/v1/iam/sign-in'
+    resp_vp=requests.post(sign_in,headers={'X-GISMGR-API-KEY': pw})
+    
+    if resp_vp.ok:
+        succes = True
+        error = ""
+    else:
+        error = "wrong token."
+        succes = False
 
-        sign_in= 'https://io.apps.fao.org/gismgr/api/v1/iam/sign-in'
-        resp_vp=requests.post(sign_in,headers={'X-GISMGR-API-KEY':username})
-        
-        if resp_vp.ok:
-            succes = True
-        else:
-            error = "wrong token."
-            succes = False
+    return succes, error
 
-        if not succes:
-            log.warning(f"Try {n}/{n_max} failed.")
-            time.sleep(3)
-            
-        n += 1
-
-    if not succes:
-        log.warning(error)
-
-    return succes
-
-def viirsl1_account(user_pw = None):
+def viirsl1_account(user_pw):
     """Check if the given or stored VIIRSL1 token is 
     correct. Accounts can be created on https://ladsweb.modaps.eosdis.nasa.gov/.
 
@@ -456,38 +326,23 @@ def viirsl1_account(user_pw = None):
     bool
         True if the password works, otherwise False.
     """
-    n_max = 3
-    succes = False
-    n = 1
 
-    while not succes and n <= n_max:
+    _, token = user_pw
 
-        if not isinstance(user_pw, type(None)):
-            username, _ = user_pw
-        else:
-            username, _ = get('VIIRSL1')
-
-        headers = {'Authorization': 'Bearer ' + username}
-        test_url = "https://ladsweb.modaps.eosdis.nasa.gov/archive/allData/5110/VNP02IMG/2018/008/VNP02IMG.A2018008.2348.001.2018061005026.nc"
-        response = requests.Session().get(test_url, headers=headers, stream = True)
-        for data in response.iter_content(chunk_size=1024):
-            succes = b'DOCTYPE' not in data
-            if not succes:
-                error = "wrong token."
-            break
-
+    headers = {'Authorization': 'Bearer ' + token}
+    test_url = "https://ladsweb.modaps.eosdis.nasa.gov/archive/allData/5110/VNP02IMG/2018/008/VNP02IMG.A2018008.2348.001.2018061005026.nc"
+    response = requests.Session().get(test_url, headers=headers, stream = True)
+    for data in response.iter_content(chunk_size=1024):
+        succes = b'DOCTYPE' not in data
         if not succes:
-            log.warning(f"Try {n}/{n_max} failed.")
-            time.sleep(3)
-            
-        n += 1
+            error = "wrong token."
+        else:
+            error = ""
+        break
 
-    if not succes:
-        log.warning(error)
+    return succes, error
 
-    return succes
-
-def sentinel_account(user_pw = None):
+def sentinel_account(user_pw):
     """Check if the given or stored SENTINEL username and password is 
     correct. Accounts can be created on https://scihub.copernicus.eu/userguide/SelfRegistration.
 
@@ -502,39 +357,23 @@ def sentinel_account(user_pw = None):
     bool
         True if the password works, otherwise False.
     """
-    n_max = 3
-    succes = False
-    n = 1
 
-    while not succes and n <= n_max:
+    username, password = user_pw
 
-        if not isinstance(user_pw, type(None)):
-            username, password = user_pw
-        else:
-            username, password = get('SENTINEL')
+    try:
+        api = SentinelAPI(username, password, 'https://apihub.copernicus.eu/apihub')
+        _ = api.count(
+                    platformname = 'Sentinel-2',
+                    producttype = 'S2MSI2A')
+        succes = True
+        error = ""
+    except:
+        error = "wrong token."
+        succes = False
 
-        try:
-            api = SentinelAPI(username, password, 'https://apihub.copernicus.eu/apihub')
-            _ = api.count(
-                        platformname = 'Sentinel-2',
-                        producttype = 'S2MSI2A')
-            succes = True
-        except:
-            error = "wrong token."
-            succes = False
+    return succes, error
 
-        if not succes:
-            log.warning(f"Try {n}/{n_max} failed.")
-            time.sleep(3)
-            
-        n += 1
-
-    if not succes:
-        log.warning(error)
-
-    return succes
-
-def ecmwf_account(user_pw = None):
+def ecmwf_account(user_pw):
     """Check if the given or stored ECMWF key is 
     correct. Accounts can be created on https://cds.climate.copernicus.eu/#!/home.
 
@@ -549,57 +388,51 @@ def ecmwf_account(user_pw = None):
     bool
         True if the password works, otherwise False.
     """
-    n_max = 1
-    succes = False
-    n = 1
 
-    while not succes and n <= n_max:
+    url, key = user_pw
 
-        if not isinstance(user_pw, type(None)):
-            url, key = user_pw
-        else:
-            url, key = get('ECMWF')
+    try:
+        c = cdsapi.Client(url = url, key = key, verify = True, quiet = True)
+        fp = os.path.join(pywapor.__path__[0], "test.zip")
+        _ = c.retrieve(
+            'sis-agrometeorological-indicators',
+            {
+                'format': 'zip',
+                'variable': '2m_temperature',
+                'statistic': '24_hour_mean',
+                'year': '2005',
+                'month': '11',
+                'day': ['01'],
+                'area': [2,-2,-2,2]
+            },
+            fp)
+        os.remove(fp)
+        succes = True
+        error = ""
+    except:
+        error = "wrong key."
+        succes = False
 
-        try:
-            c = cdsapi.Client(url = url, key = key, verify = True, quiet = True)
-            fp = os.path.join(pywapor.__path__[0], "test.zip")
-            _ = c.retrieve(
-                'sis-agrometeorological-indicators',
-                {
-                    'format': 'zip',
-                    'variable': '2m_temperature',
-                    'statistic': '24_hour_mean',
-                    'year': '2005',
-                    'month': '11',
-                    'day': ['01'],
-                    'area': [2,-2,-2,2]
-                },
-                fp)
-            os.remove(fp)
-            succes = True
-        except:
-            error = "wrong key."
-            succes = False
-
-        if not succes:
-            log.warning(f"Try {n}/{n_max} failed.")
-            time.sleep(3)
-            
-        n += 1
-
-    if not succes:
-        log.warning(error)
-
-    return succes
+    return succes, error
 
 if __name__ == "__main__":
-    nasa_succes = nasa_account()
-    vito_succes = vito_account()
-    wapor_succes = wapor_account()
-    ecmwf_succes = ecmwf_account()
-    sentinel_succes = sentinel_account()
-    viirsl1_succes = viirsl1_account()
-    earthexplorer_succes = earthexplorer_account()
+    ...
+    adjust_logger(True, r"/Users/hmcoerver/Desktop", "INFO")
 
-    print(nasa_succes, vito_succes, wapor_succes, ecmwf_succes, 
-          viirsl1_succes, sentinel_succes)
+    un_pw1= get("NASA")
+    check1 = nasa_account(un_pw1)
+
+    un_pw2 = get("VITO")
+    check2 = vito_account(un_pw2)
+
+    un_pw3 = get("WAPOR")
+    check3 = wapor_account(un_pw3)
+
+    un_pw4 = get("ECMWF")
+    check4 = ecmwf_account(un_pw4)
+
+    un_pw5 = get("VIIRSL1")
+    check5 = viirsl1_account(un_pw5)
+
+    un_pw6 = get("EARTHEXPLORER")
+    check6 = earthexplorer_account(un_pw6)
