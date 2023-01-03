@@ -4,7 +4,7 @@ import functools
 import numpy as np
 from collections import OrderedDict
 
-def collect_sources(folder, sources, latlim, lonlim, timelim, return_fps = True, landsat_order_only = False):
+def collect_sources(folder, sources, latlim, lonlim, timelim, landsat_order_only = False):
     """Download different sources and products within defined limits.
 
     Parameters
@@ -109,15 +109,11 @@ def collect_sources(folder, sources, latlim, lonlim, timelim, return_fps = True,
                         stime = np.datetime_as_string(x.time.values[0], unit = "m")
                         etime = np.datetime_as_string(x.time.values[-1], unit = "m")
                         log.add().info(f"> timesize: {x.time.size} [{stime}, ..., {etime}]").sub()
-                    dss[(source_name, product_name)] = x
+                    fp = x.encoding["source"]
+                    x = x.close()
+                    dss[(source_name, product_name)] = fp
             finally:
                 log.pop()
-
-    if return_fps:
-        for key, ds in dss.items():
-            fp = ds.encoding["source"]
-            ds = ds.close()
-            dss[key] = fp
 
     reversed_sources = {k: v for k, v in reversed_sources.items() if attempts[k] <= max_attempts}
     sources = trim_sources(reversed_sources, sources)

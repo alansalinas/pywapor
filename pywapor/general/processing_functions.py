@@ -11,6 +11,35 @@ import warnings
 import rasterio.warp
 import pandas as pd
 from pywapor.general.performance import performance_check
+import glob
+import os
+import re
+
+def remove_temp_files(folder):
+
+    log_file = glob.glob(os.path.join(folder, "log.txt"))[0]
+
+    with open(log_file, "r") as f:
+        lines = f.readlines()
+
+    regex_pattern = r"--> Unable to delete temporary file `(.*)`"
+
+    files = list()
+    for line in lines:
+        out = re.findall(regex_pattern,line)
+        if len(out) == 1:
+            file = out[0]
+            if os.path.isfile(file):
+                files.append(out[0])
+    
+    for fh in files:
+        if os.path.isfile(fh):
+            try:
+                os.remove(fh)
+            except PermissionError:
+                ...
+                
+    return files
 
 def log_example_ds(example_ds):
     """Writes some metadata about a `example_ds` to the logger.

@@ -13,6 +13,7 @@ import os
 import numpy as np
 import pywapor.general.pre_defaults as defaults
 from pywapor.general.logger import log
+from pywapor.general.processing_functions import remove_temp_files
 
 def rename_meteo(ds, *args):
     """Rename some variables in a dataset.
@@ -107,13 +108,12 @@ def main(folder, latlim, lonlim, timelim, sources = "level_1", bin_length = "DEK
     buffered_timelim = [adjusted_timelim[0] - np.timedelta64(3, "D"), 
                         adjusted_timelim[1] + np.timedelta64(3, "D")]
 
-    example_dss, example_sources = downloader.collect_sources(folder, example_sources, latlim, lonlim, adjusted_timelim, return_fps = False, landsat_order_only = True)
+    example_dss, example_sources = downloader.collect_sources(folder, example_sources, latlim, lonlim, adjusted_timelim, landsat_order_only = True)
+    other_dss, other_sources = downloader.collect_sources(folder, other_sources, latlim, lonlim, buffered_timelim)
     
-    other_dss, other_sources = downloader.collect_sources(folder, other_sources, latlim, lonlim, buffered_timelim, return_fps = False)
-
     # If there are example-t variables that rely on landsat, try one more time to collect them.
     if np.any(list({var: np.any([product_info["source"] == "LANDSAT" for product_info in info["products"]]) for var, info in example_sources.items()}.values())):
-        example_dss, example_sources = downloader.collect_sources(folder, example_sources, latlim, lonlim, adjusted_timelim, return_fps = False)
+        example_dss, example_sources = downloader.collect_sources(folder, example_sources, latlim, lonlim, adjusted_timelim)
 
     if len(example_dss) == 0:
         lbl = f"Unable to collect the essential variable(s) (`{'and'.join(example_t_vars)}`) to which the other variables should be aligned."
@@ -126,6 +126,8 @@ def main(folder, latlim, lonlim, timelim, sources = "level_1", bin_length = "DEK
 
     t2 = datetime.datetime.now()
     log.sub().info(f"< PRE_SE_ROOT ({str(t2 - t1)})")
+
+    files = remove_temp_files(folder)
 
     return ds
 
