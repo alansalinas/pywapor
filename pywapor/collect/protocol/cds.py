@@ -258,7 +258,10 @@ def download(folder, product_name, latlim, lonlim, timelim, variables, post_proc
     # Remove unpacked zips.
     for subfolder in subfolders:
         if os.path.isdir(subfolder):
-            shutil.rmtree(subfolder)
+            try:
+                shutil.rmtree(subfolder)
+            except PermissionError:
+                ... # Windows...
     
     return ds
 

@@ -474,7 +474,7 @@ def download(folder, latlim, lonlim, timelim, product_name,
 
     product_folder = os.path.join(folder, "SENTINEL2")
 
-    fn = os.path.join(folder, f"{product_name}.nc")
+    fn = os.path.join(product_folder, f"{product_name}.nc")
     req_vars_orig = copy.deepcopy(req_vars)
     if os.path.isfile(fn):
         existing_ds = open_ds(fn)
@@ -484,7 +484,7 @@ def download(folder, latlim, lonlim, timelim, product_name,
             existing_ds = existing_ds.close()
         else:
             return existing_ds[req_vars_orig]
-            
+
     if isinstance(variables, type(None)):
         variables = default_vars(product_name, req_vars)
 

@@ -10,6 +10,7 @@ from pywapor.general.logger import log, adjust_logger
 import matplotlib.pyplot as plt
 import numpy as np
 import pywapor
+import re
 from pywapor.general.performance import performance_check
 from mpl_toolkits.axes_grid1 import make_axes_locatable
 
@@ -72,7 +73,7 @@ def highres_inputs(workdir, temporal_hr_input_data, static_hr_input_data):
     ds.FlushCache()
     ds = None
 
-    ds = xr.open_dataset(temporal_hr_input_data[0].split(":")[1])
+    ds = xr.open_dataset(re.findall(r"NETCDF:(.*):.*", temporal_hr_input_data[0])[0])
     times = [x.strftime("%Y%m%d_%H%M%S") for x in pd.to_datetime(ds.time.values)]
     ds = ds.close()
 
@@ -117,7 +118,7 @@ def lowres_inputs(workdir, temporal_lr_input_data):
     if not os.path.exists(workdir):
         os.makedirs(workdir)
 
-    ds = xr.open_dataset(temporal_lr_input_data.split(":")[1], chunks = "auto")
+    ds = xr.open_dataset(re.findall(r"NETCDF:(.*):.*", temporal_lr_input_data)[0], chunks = "auto")
     times = [x.strftime("%Y%m%d_%H%M%S") for x in pd.to_datetime(ds.time.values)]
     ds = ds.close()
 
@@ -220,6 +221,9 @@ def sharpen(dss, var, folder, make_plots = False, vars_for_sharpening = ['nmdi',
     dict
         Keys are variable names, values are (sharpened) datasets.
     """
+    # Open unopened netcdf files.
+    dss = {**{k: open_ds(v) for k, v in dss.items() if isinstance(v, str)}, 
+            **{k:v for k,v in dss.items() if not isinstance(v, str)}}
 
     if 'cos_solar_zangle' in vars_for_sharpening and not 'cos_solar_zangle' in dss.keys():
         dss = get_cos_solar_zangle(dss, "bt", folder)
@@ -286,7 +290,8 @@ def sharpen(dss, var, folder, make_plots = False, vars_for_sharpening = ['nmdi',
 
     ds = save_ds(ds, fp, encoding = "initiate", label = f"Merging sharpened `{var}` files.")
 
-    dss[var] = ds
+    ds = ds.close()
+    dss[var] = fp
 
     for x in out_fns:
         remove_ds(x)

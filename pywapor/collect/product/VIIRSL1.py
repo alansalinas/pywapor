@@ -506,7 +506,7 @@ def download(folder, latlim, lonlim, timelim, product_name, req_vars,
     urls = find_VIIRSL1_urls(year_doy_time, "VNP03IMG", folder)
 
     # Create authentication header.
-    token, _ = accounts.get('VIIRSL1')
+    _, token = accounts.get('VIIRSL1')
     headers = {'Authorization': 'Bearer ' + token}
 
     # Try to download the geolocation data.

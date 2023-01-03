@@ -176,7 +176,10 @@ def vito_account(user_pw):
     test_file = os.path.join(folder, "vito_test.vrg")
 
     if os.path.isfile(test_file):
-        os.remove(test_file)
+        try:
+            os.remove(test_file)
+        except PermissionError:
+            ...
 
     username, password = user_pw
 
@@ -189,14 +192,17 @@ def vito_account(user_pw):
             z.write(x.content)
             statinfo = os.stat(test_file)
             succes = statinfo.st_size == 15392
-            os.remove(test_file)
             if not succes:
                 error = "something went wrong."
     else:
         error = "wrong username/password."
         succes = False
-        if os.path.isfile(test_file):
+
+    if os.path.isfile(test_file):
+        try:
             os.remove(test_file)
+        except PermissionError:
+            ...
 
     return succes, error
 
@@ -221,7 +227,10 @@ def nasa_account(user_pw):
     test_file = os.path.join(folder, "nasa_test.nc4")
 
     if os.path.isfile(test_file):
-        os.remove(test_file)
+        try:
+            os.remove(test_file)
+        except PermissionError:
+            ...
 
     username, password = user_pw
 
@@ -238,7 +247,6 @@ def nasa_account(user_pw):
         if os.path.isfile(test_file):
             statinfo = os.stat(test_file)
             succes = statinfo.st_size == 3963517
-            os.remove(test_file)
             if not succes:
                 error = "please add 'NASA GESDISC DATA ARCHIVE' to 'Approved Applications'."
         else:
@@ -247,8 +255,12 @@ def nasa_account(user_pw):
     else:
         error = "wrong username/password."
         succes = False
-        if os.path.isfile(test_file):
+    
+    if os.path.isfile(test_file):
+        try:
             os.remove(test_file)
+        except PermissionError:
+            ...
 
     return succes, error
 

@@ -132,7 +132,11 @@ def main(folder, latlim, lonlim, timelim, sources = "level_1", bin_length = "DEK
 
     general_enhancers = enhancers + [rename_vars, fill_attrs, partial(calc_doys, bins = bins), add_constants]
 
-    dss, sources = downloader.collect_sources(folder, sources, latlim, lonlim, [bins[0], bins[-1]])
+    adjusted_timelim = [bins[0], bins[-1]]
+    buffered_timelim = [adjusted_timelim[0] - np.timedelta64(3, "D"), 
+                        adjusted_timelim[1] + np.timedelta64(3, "D")]
+
+    dss, sources = downloader.collect_sources(folder, sources, latlim, lonlim, buffered_timelim)
 
     ds = compositer.main(dss, sources, folder, general_enhancers, bins)
 
