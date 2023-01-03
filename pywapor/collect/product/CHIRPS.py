@@ -164,7 +164,7 @@ def download(folder, latlim, lonlim, timelim, product_name = "P05", req_vars = [
     spatial_tiles = False
     un_pw = accounts.get("NASA")
     request_dims = False
-    ds_new = opendap.download(fn, product_name, coords, 
+    ds = opendap.download(fn, product_name, coords, 
                 variables, post_processors, fn_func, url_func, un_pw = un_pw, 
                 tiles = tiles, data_source_crs = data_source_crs, parallel = parallel, 
                 spatial_tiles = spatial_tiles, request_dims = request_dims,

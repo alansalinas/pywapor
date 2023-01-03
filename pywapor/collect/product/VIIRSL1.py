@@ -259,7 +259,7 @@ def find_VIIRSL1_urls(year_doy_time, product, workdir,
             fp = download_url(url, fp)
 
         # Open the json and find the exact url of the required scene.
-        all_scenes = [x["name"] for x in json.load(open(fp))]
+        all_scenes = [x["name"] for x in json.load(open(fp))["content"]]
         req_scenes = fnmatch.filter(all_scenes, f"{product}.A{year}{doy}.{t}.*.*.nc")
 
         # Check if a corrct url is found.
