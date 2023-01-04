@@ -75,9 +75,10 @@ def download(folder, latlim, lonlim, timelim, product_name, req_vars = ["ndvi", 
 
     coords = {"x": ["lon", None], "y": ["lat", None]}
 
+    # TODO use urllib
     base_url = f"https://www.vito-eodata.be/PDF/datapool/Free_Data/PROBA-V_100m/{product_name}"
     coord_req = "?coord=" + ",".join([str(x) for x in bb])
-    url = os.path.join(base_url, coord_req)
+    url = f"{base_url}/{coord_req}"
 
     session = requests.sessions.Session()
     session.auth = accounts.get("VITO")
