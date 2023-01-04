@@ -50,8 +50,10 @@ def se_root(folder, latlim, lonlim, timelim, sources = "level_1", bin_length = "
 
     if isinstance(sources, str):
         sources = levels.pre_se_root_levels(sources)
-    ds_in = pre_se_root.main(folder, latlim, lonlim, timelim, sources, bin_length)
+
+    ds_in = pre_se_root.main(folder, latlim, lonlim, timelim, sources, bin_length, buffer_timelim = False)
     ds_out = main(ds_in, se_root_version = se_root_version)
+
     return ds_out
 
 def main(input_data, se_root_version = "v2", export_vars = "default", chunks = {"time": 1, "x": 1000, "y": 1000}):

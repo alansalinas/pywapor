@@ -59,7 +59,7 @@ def add_constants(ds, *args):
     ds = ds.assign(defaults.constants_defaults())
     return ds
 
-def main(folder, latlim, lonlim, timelim, sources = "level_1", bin_length = "DEKAD", enhancers = [], **kwargs):
+def main(folder, latlim, lonlim, timelim, sources = "level_1", bin_length = "DEKAD", enhancers = [], buffer_timelim = True, **kwargs):
     """Prepare input data for `se_root`.
 
     Parameters
@@ -103,10 +103,14 @@ def main(folder, latlim, lonlim, timelim, sources = "level_1", bin_length = "DEK
 
     general_enhancers = enhancers + [rename_meteo, add_constants, bt_to_lst, drop_empty_times]
 
-    bins = compositer.time_bins(timelim, bin_length)
-    adjusted_timelim = [bins[0], bins[-1]]
-    buffered_timelim = [adjusted_timelim[0] - np.timedelta64(3, "D"), 
-                        adjusted_timelim[1] + np.timedelta64(3, "D")]
+    if buffer_timelim:
+        bins = compositer.time_bins(timelim, bin_length)
+        adjusted_timelim = [bins[0], bins[-1]]
+        buffered_timelim = [adjusted_timelim[0] - np.timedelta64(3, "D"), 
+                            adjusted_timelim[1] + np.timedelta64(3, "D")]
+    else:
+        adjusted_timelim = timelim
+        buffered_timelim = timelim
 
     example_dss, example_sources = downloader.collect_sources(folder, example_sources, latlim, lonlim, adjusted_timelim, landsat_order_only = True)
     other_dss, other_sources = downloader.collect_sources(folder, other_sources, latlim, lonlim, buffered_timelim)
