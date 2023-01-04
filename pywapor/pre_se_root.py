@@ -13,6 +13,7 @@ import os
 import numpy as np
 import pywapor.general.pre_defaults as defaults
 from pywapor.general.logger import log
+from pywapor.general.processing_functions import remove_temp_files
 
 def rename_meteo(ds, *args):
     """Rename some variables in a dataset.
@@ -58,7 +59,7 @@ def add_constants(ds, *args):
     ds = ds.assign(defaults.constants_defaults())
     return ds
 
-def main(folder, latlim, lonlim, timelim, sources = "level_1", bin_length = "DEKAD", enhancers = [], **kwargs):
+def main(folder, latlim, lonlim, timelim, sources = "level_1", bin_length = "DEKAD", enhancers = [], buffer_timelim = True, **kwargs):
     """Prepare input data for `se_root`.
 
     Parameters
@@ -102,25 +103,35 @@ def main(folder, latlim, lonlim, timelim, sources = "level_1", bin_length = "DEK
 
     general_enhancers = enhancers + [rename_meteo, add_constants, bt_to_lst, drop_empty_times]
 
-    bins = compositer.time_bins(timelim, bin_length)
-    adjusted_timelim = [bins[0], bins[-1]]
-    buffered_timelim = [adjusted_timelim[0] - np.timedelta64(3, "D"), 
-                        adjusted_timelim[1] + np.timedelta64(3, "D")]
+    if buffer_timelim:
+        bins = compositer.time_bins(timelim, bin_length)
+        adjusted_timelim = [bins[0], bins[-1]]
+        buffered_timelim = [adjusted_timelim[0] - np.timedelta64(3, "D"), 
+                            adjusted_timelim[1] + np.timedelta64(3, "D")]
+    else:
+        adjusted_timelim = timelim
+        buffered_timelim = timelim
 
-    example_dss, example_sources = downloader.collect_sources(folder, example_sources, latlim, lonlim, adjusted_timelim, return_fps = False)
+    example_dss, example_sources = downloader.collect_sources(folder, example_sources, latlim, lonlim, adjusted_timelim, landsat_order_only = True)
+    other_dss, other_sources = downloader.collect_sources(folder, other_sources, latlim, lonlim, buffered_timelim)
+    
+    # If there are example-t variables that rely on landsat, try one more time to collect them.
+    if np.any(list({var: np.any([product_info["source"] == "LANDSAT" for product_info in info["products"]]) for var, info in example_sources.items()}.values())):
+        example_dss, example_sources = downloader.collect_sources(folder, example_sources, latlim, lonlim, adjusted_timelim)
 
     if len(example_dss) == 0:
         lbl = f"Unable to collect the essential variable(s) (`{'and'.join(example_t_vars)}`) to which the other variables should be aligned."
         log.error("--> " + lbl)
         raise ValueError(lbl)
-    
-    other_dss, other_sources = downloader.collect_sources(folder, other_sources, latlim, lonlim, buffered_timelim, return_fps = False)
+
     dss= {**example_dss, **other_dss}
 
     ds = aligner.main(dss, sources, folder, general_enhancers, example_t_vars = example_t_vars)
 
     t2 = datetime.datetime.now()
     log.sub().info(f"< PRE_SE_ROOT ({str(t2 - t1)})")
+
+    files = remove_temp_files(folder)
 
     return ds
 

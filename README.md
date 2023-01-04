@@ -119,6 +119,16 @@ For questions, requests or issues with this repository, please contact Bert Coer
 
 ### Release Notes
 
+#### 3.2.0 (2023-01-04)
+<br>
+<ul>
+    <li> Full Landsat support, automatically download and process Landsat (5-9) data.</li>
+    <li> Fixed a bug that caused some MODIS data to be missing inside the selected boundingbox. </li>
+    <li> You can now re-enter a password in case you've provided an incorrect one. </li>
+    <li> Bugfixes (including more Windows specific ones). </li>
+    <li> Updated weights to calculate albedo for Landsat and Sentinel. </li>
+</ul>
+
 #### 3.1.0 (2022-09-22)
 <br>
 <ul>

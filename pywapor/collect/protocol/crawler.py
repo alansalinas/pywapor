@@ -261,7 +261,7 @@ def _download_url(url, fp, session = None, waitbar = True, headers = None):
     return fp
 
 def download_url(url, fp, session = None, waitbar = True, headers = None, 
-                    max_tries = 10, wait_sec = 15):
+                    max_tries = 3, wait_sec = 15):
     """Download a URL to a file.
 
     Parameters
@@ -304,7 +304,8 @@ def download_url(url, fp, session = None, waitbar = True, headers = None,
         except socket.timeout as e:
             log.info(f"--> Server connection timed out.")
         except HTTPError as e:
-            log.info(f"--> Server error {e}.")
+            error_body = getattr(getattr(e, "response", ""), "text", "")
+            log.info(f"--> Server error {e} [{error_body}].")
         else:
             ...
         finally:

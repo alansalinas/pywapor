@@ -5,6 +5,7 @@ from itertools import product
 import xarray as xr
 import pywapor
 from pywapor.collect.protocol import cog
+import copy
 from pywapor.general.processing_functions import open_ds, save_ds, remove_ds
 from pywapor.enhancers.apply_enhancers import apply_enhancer
 from pywapor.enhancers.dem import calc_slope, calc_aspect
@@ -176,20 +177,16 @@ def download(folder, latlim, lonlim, product_name = "GLO30", req_vars = ["z"],
 
     folder = os.path.join(folder, "COPERNICUS")
 
-    appending = False
     final_fp = os.path.join(folder, f"{product_name}.nc")
+    req_vars_orig = copy.deepcopy(req_vars)
     if os.path.isfile(final_fp):
-        os.rename(final_fp, final_fp.replace(".nc", "_to_be_appended.nc"))
-        existing_ds = open_ds(final_fp.replace(".nc", "_to_be_appended.nc"))
-        if np.all([x in existing_ds.data_vars for x in req_vars]):
+        existing_ds = open_ds(final_fp)
+        req_vars_new = list(set(req_vars).difference(set(existing_ds.data_vars)))
+        if len(req_vars_new) > 0:
+            req_vars = req_vars_new
             existing_ds = existing_ds.close()
-            os.rename(final_fp.replace(".nc", "_to_be_appended.nc"), final_fp)
-            existing_ds = open_ds(final_fp)
-            return existing_ds[req_vars]
         else:
-            appending = True
-            final_fp = os.path.join(folder, f"{product_name}_appendix.nc")
-            req_vars = [x for x in req_vars if x not in existing_ds.data_vars]
+            return existing_ds[req_vars_orig]
             
     spatial_buffer = True
     if spatial_buffer:
@@ -242,21 +239,12 @@ def download(folder, latlim, lonlim, product_name = "GLO30", req_vars = ["z"],
     ds = ds[list(post_processors.keys())]
     
     # Save final output.
-    ds_new = save_ds(ds, final_fp, encoding = "initiate", label = f"Saving {product_name}.nc")
-
-    if appending:
-        ds = xr.merge([ds_new, existing_ds])
-        lbl = f"Appending new variables (`{'`, `'.join(req_vars)}`) to existing file."
-        ds = save_ds(ds, os.path.join(folder, f"{product_name}.nc"), encoding = "initiate", label = lbl)
-        remove_ds(ds_new)
-        remove_ds(existing_ds)
-    else:
-        ds = ds_new
+    ds = save_ds(ds, final_fp, encoding = "initiate", label = f"Saving {product_name}.nc")
 
     for nc in dss:
         remove_ds(nc)
 
-    return ds
+    return ds[req_vars_orig]
 
 if __name__ == "__main__":
 

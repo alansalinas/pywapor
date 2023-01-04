@@ -11,6 +11,35 @@ import warnings
 import rasterio.warp
 import pandas as pd
 from pywapor.general.performance import performance_check
+import glob
+import os
+import re
+
+def remove_temp_files(folder):
+
+    log_file = glob.glob(os.path.join(folder, "log.txt"))[0]
+
+    with open(log_file, "r") as f:
+        lines = f.readlines()
+
+    regex_pattern = r"--> Unable to delete temporary file `(.*)`"
+
+    files = list()
+    for line in lines:
+        out = re.findall(regex_pattern,line)
+        if len(out) == 1:
+            file = out[0]
+            if os.path.isfile(file):
+                files.append(out[0])
+    
+    for fh in files:
+        if os.path.isfile(fh):
+            try:
+                os.remove(fh)
+            except PermissionError:
+                ...
+                
+    return files
 
 def log_example_ds(example_ds):
     """Writes some metadata about a `example_ds` to the logger.
@@ -58,18 +87,22 @@ def remove_ds(ds):
         Either a `xr.Dataset` (in which case its `source` as defined in the `encoding` attribute will be used)
         or a `str` in which case it must be a path to a file.
     """
+    fp = None
     if isinstance(ds, xr.Dataset):
         if "source" in ds.encoding.keys():
             fp = ds.encoding["source"]
-            ds = xr.open_dataset(fp)
-            ds = ds.close()
-            os.remove(fp)
+        ds = ds.close()
     elif isinstance(ds, str):
         if os.path.isfile(ds):
             fp = ds
-            ds = xr.open_dataset(fp)
-            ds = ds.close()
-            os.remove(fp)        
+
+    if not isinstance(fp, type(None)):
+        ds = xr.open_dataset(fp)
+        ds = ds.close()
+        try:
+            os.remove(fp)
+        except PermissionError:
+            log.info(f"--> Unable to delete temporary file `{fp}`.")
 
 def process_ds(ds, coords, variables, crs = None):
     """Apply some rioxarray related transformations to a dataset.
@@ -112,7 +145,7 @@ def process_ds(ds, coords, variables, crs = None):
 
     return ds
 
-def make_example_ds(ds, folder, target_crs, bb = None):
+def make_example_ds(ds, folder, target_crs, bb = None, example_ds_fp = None):
     """Make an dataset suitable to use as an example for matching with other datasets.
 
     Parameters
@@ -131,7 +164,8 @@ def make_example_ds(ds, folder, target_crs, bb = None):
     xr.Dataset
         Example dataset.
     """
-    example_ds_fp = os.path.join(folder, "example_ds.nc")
+    if isinstance(example_ds_fp, type(None)):
+        example_ds_fp = os.path.join(folder, "example_ds.nc")
     if os.path.isfile(example_ds_fp):
         example_ds = open_ds(example_ds_fp)
     else:
@@ -178,7 +212,13 @@ def save_ds(ds, fp, decode_coords = "all", encoding = None, chunks = "auto", pre
     xr.Dataset
         The newly created dataset.
     """
-    temp_fp = fp.replace(".nc", "_temp.xx")
+    if os.path.isfile(fp):
+        log.info("--> Appending data to an existing file.")
+        appending = True
+        temp_fp = fp
+    else:
+        appending = False
+        temp_fp = fp.replace(".nc", "_temp.xx")
 
     folder = os.path.split(fp)[0]
     if not os.path.isdir(folder):
@@ -223,11 +263,14 @@ def save_ds(ds, fp, decode_coords = "all", encoding = None, chunks = "auto", pre
     with ProgressBar(minimum = 90*10, dt = 2.0):
         with warnings.catch_warnings():
             warnings.filterwarnings("ignore", message="All-NaN slice encountered")
-            ds.to_netcdf(temp_fp, encoding = encoding)
+            warnings.filterwarnings("ignore", message="invalid value encountered in power")
+            warnings.filterwarnings("ignore", message="invalid value encountered in log")
+            ds.to_netcdf(temp_fp, encoding = encoding, mode = {True: "a", False: "w"}[appending])
 
     ds = ds.close()
 
-    os.rename(temp_fp, fp)
+    if not appending:
+        os.rename(temp_fp, fp)
 
     ds = open_ds(fp, decode_coords = decode_coords, chunks = chunks)
 

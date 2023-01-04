@@ -16,6 +16,7 @@ import numpy as np
 from pywapor.general.processing_functions import process_ds, save_ds, open_ds, remove_ds
 import datetime
 import rioxarray.merge
+import copy
 
 def download(folder, latlim, lonlim, timelim, product_name, req_vars = ["ndvi", "r0"],
                 variables = None, post_processors = None, timedelta = None):
@@ -48,20 +49,16 @@ def download(folder, latlim, lonlim, timelim, product_name, req_vars = ["ndvi", 
 
     folder = os.path.join(folder, "PROBAV")
 
-    appending = False
     fn = os.path.join(folder, f"{product_name}.nc")
+    req_vars_orig = copy.deepcopy(req_vars)
     if os.path.isfile(fn):
-        os.rename(fn, fn.replace(".nc", "_to_be_appended.nc"))
-        existing_ds = open_ds(fn.replace(".nc", "_to_be_appended.nc"))
-        if np.all([x in existing_ds.data_vars for x in req_vars]):
+        existing_ds = open_ds(fn)
+        req_vars_new = list(set(req_vars).difference(set(existing_ds.data_vars)))
+        if len(req_vars_new) > 0:
+            req_vars = req_vars_new
             existing_ds = existing_ds.close()
-            os.rename(fn.replace(".nc", "_to_be_appended.nc"), fn)
-            existing_ds = open_ds(fn)
-            return existing_ds[req_vars]
         else:
-            appending = True
-            fn = os.path.join(folder, f"{product_name}_appendix.nc")
-            req_vars = [x for x in req_vars if x not in existing_ds.data_vars]
+            return existing_ds[req_vars_orig]
 
     dates = pd.date_range(timelim[0], timelim[1], freq="D")
 
@@ -78,9 +75,10 @@ def download(folder, latlim, lonlim, timelim, product_name, req_vars = ["ndvi", 
 
     coords = {"x": ["lon", None], "y": ["lat", None]}
 
+    # TODO use urllib
     base_url = f"https://www.vito-eodata.be/PDF/datapool/Free_Data/PROBA-V_100m/{product_name}"
     coord_req = "?coord=" + ",".join([str(x) for x in bb])
-    url = os.path.join(base_url, coord_req)
+    url = f"{base_url}/{coord_req}"
 
     session = requests.sessions.Session()
     session.auth = accounts.get("VITO")
@@ -124,22 +122,13 @@ def download(folder, latlim, lonlim, timelim, product_name, req_vars = ["ndvi", 
 
     ds = ds[req_vars]
 
-    ds_new = save_ds(ds, fn, label = f"Merging files.")
-
-    if appending:
-        ds = xr.merge([ds_new, existing_ds])
-        lbl = f"Appending new variables (`{'`, `'.join(req_vars)}`) to existing file."
-        ds = save_ds(ds, os.path.join(folder, f"{product_name}.nc"), encoding = "initiate", label = lbl)
-        remove_ds(ds_new)
-        remove_ds(existing_ds)
-    else:
-        ds = ds_new
+    ds = save_ds(ds, fn, label = f"Merging files.")
 
     for k, v in dss.items():
         for nc in v:
             remove_ds(nc)
 
-    return ds
+    return ds[req_vars_orig]
 
 def open_hdf5_groups(fp, variables, coords):
     """Convert hdf5 with groups (specified in `variable`) to netCDF without groups.

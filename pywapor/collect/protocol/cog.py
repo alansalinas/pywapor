@@ -80,15 +80,20 @@ def download(fp, product_name, coords, variables, post_processors, url_func,
     if is_not_local:
         url = f"/vsicurl/{url}"
 
+    # Check if path is free.
+    temp_path = fp.replace(".nc", "_temp.nc")
+    while os.path.isfile(temp_path):
+        temp_path = temp_path.replace(".nc", "_.nc")
+
     # Run gdal.Translate.
-    ds = gdal.Translate(fp.replace(".nc", "_temp.nc"), url, options = options)
+    ds = gdal.Translate(temp_path, url, options = options)
 
     # Reset the gdal.Dataset.
     ds.FlushCache()
     ds = None
 
     # Process the new netCDF.
-    ds = open_ds(fp.replace(".nc", "_temp.nc"))
+    ds = open_ds(temp_path)
 
     # TODO Also check COPERNICUS and GLOBCOVER...
     if int(gdal.__version__.split(".")[0]) < 3 and "WaPOR" in product_name:
@@ -111,6 +116,7 @@ def download(fp, product_name, coords, variables, post_processors, url_func,
     out = save_ds(ds, fp, encoding = "initiate", label = f"Saving {fn}.")
 
     # Remove the temporary file.
-    remove_ds(ds)
+    ds = ds.close()
+    remove_ds(temp_path)
 
     return out

@@ -53,7 +53,7 @@ def pre_et_look_levels(level = "level_1", bin_length = "DEKAD"):
 
     Parameters
     ----------
-    level : "level_1" | "level_2" | "level_2_v3"
+    level : "level_1" | "level_2" | "level_3" | "level_2_v3"
         For which level to create the `sources`, by default "level_1".
     bin_length : str, optional
         Defines the bin length with which the `sources` will be used, by default "DEKAD".
@@ -362,6 +362,70 @@ def pre_et_look_levels(level = "level_1", bin_length = "DEKAD"):
             "spatial_interp": "nearest",
             }
 
+    level_3 = copy.deepcopy(level_1)
+
+    level_3["ndvi"] = {
+
+            "products": [
+                {
+                    "source": "LANDSAT",
+                    "product_name": "LT05_SR",
+                    "enhancers": "default",
+                    "is_example": True
+                },
+                {
+                    "source": "LANDSAT",
+                    "product_name": "LE07_SR",
+                    "enhancers": "default",
+                    "is_example": True
+                },
+                {
+                    "source": "LANDSAT",
+                    "product_name": "LC08_SR",
+                    "enhancers": "default",
+                    "is_example": True
+                },
+                {
+                    "source": "LANDSAT",
+                    "product_name": "LC09_SR",
+                    "enhancers": "default",
+                    "is_example": True
+                },
+            ],
+            "composite_type": "mean",
+            "temporal_interp": "linear",
+            "spatial_interp": "nearest",
+            }
+
+    level_3["r0"] = {
+
+            "products": [
+                {
+                    "source": "LANDSAT",
+                    "product_name": "LT05_SR",
+                    "enhancers": "default",
+                },
+                {
+                    "source": "LANDSAT",
+                    "product_name": "LE07_SR",
+                    "enhancers": "default",
+                },
+                {
+                    "source": "LANDSAT",
+                    "product_name": "LC08_SR",
+                    "enhancers": "default",
+                },
+                {
+                    "source": "LANDSAT",
+                    "product_name": "LC09_SR",
+                    "enhancers": "default",
+                },
+            ],
+            "composite_type": "mean",
+            "temporal_interp": "linear",
+            "spatial_interp": "nearest",
+            }
+
     level_2_v3 = dict()
 
     level_2_v3["ndvi"] = {
@@ -504,6 +568,8 @@ def pre_et_look_levels(level = "level_1", bin_length = "DEKAD"):
     levels = {
             "level_1": level_1,
             "level_2": level_2,
+            "level_3": level_3,
+
             "level_2_v3": level_2_v3
                 }
 
@@ -514,7 +580,7 @@ def pre_se_root_levels(level = "level_1"):
 
     Parameters
     ----------
-    level : "level_1" | "level_2" | "level_2_v3"
+    level : "level_1" | "level_2" | "level_3" | "level_2_v3"
         For which level to create the `sources`, by default "level_1".
 
     Returns
@@ -702,6 +768,68 @@ def pre_se_root_levels(level = "level_1"):
             "spatial_interp": "nearest",
             }
 
+    level_3 = copy.deepcopy(level_1)
+
+    level_3["ndvi"] = {
+
+            "products": [
+                {
+                    "source": "LANDSAT",
+                    "product_name": "LT05_SR",
+                    "enhancers": "default",
+                    "is_example": True
+                },
+                {
+                    "source": "LANDSAT",
+                    "product_name": "LE07_SR",
+                    "enhancers": "default",
+                    "is_example": True
+                },
+                {
+                    "source": "LANDSAT",
+                    "product_name": "LC08_SR",
+                    "enhancers": "default",
+                    "is_example": True
+                },
+                {
+                    "source": "LANDSAT",
+                    "product_name": "LC09_SR",
+                    "enhancers": "default",
+                    "is_example": True
+                },
+            ],
+            "composite_type": "mean",
+            "temporal_interp": "linear",
+            "spatial_interp": "nearest",
+            }
+
+    level_3["lst"] = {
+            "products": [
+                {
+                    "source": "LANDSAT",
+                    "product_name": "LT05_ST",
+                    "enhancers": "default",
+                },
+                {
+                    "source": "LANDSAT",
+                    "product_name": "LE07_ST",
+                    "enhancers": "default",
+                },
+                {
+                    "source": "LANDSAT",
+                    "product_name": "LC08_ST",
+                    "enhancers": "default",
+                },
+                {
+                    "source": "LANDSAT",
+                    "product_name": "LC09_ST",
+                    "enhancers": "default",
+                },
+            ],
+            "temporal_interp": None,
+            "spatial_interp": "nearest",
+        }
+
     level_2_v3 = dict()
 
     level_2_v3["ndvi"] = {
@@ -774,10 +902,10 @@ def pre_se_root_levels(level = "level_1"):
         'temporal_interp': "linear",
         'spatial_interp': 'bilinear'}
 
-
     levels = {
                 "level_1": level_1,
                 "level_2": level_2,
+                "level_3": level_3,
                 "level_2_v3": level_2_v3,
                 }
 
@@ -787,10 +915,12 @@ if __name__ == "__main__":
 
     et_look_sources_lvl1 = pre_et_look_levels(level = "level_1", bin_length = "DEKAD")
     et_look_sources_lvl2 = pre_et_look_levels(level = "level_2", bin_length = "DEKAD")
+    et_look_sources_lvl3 = pre_et_look_levels(level = "level_3", bin_length = "DEKAD")
     et_look_sources_lvl2_v3 = pre_et_look_levels(level = "level_2_v3", bin_length = "DEKAD")
 
     se_root_sources_lvl1 = pre_se_root_levels(level = "level_1")
     se_root_sources_lvl2 = pre_se_root_levels(level = "level_2")
+    se_root_sources_lvl3 = pre_se_root_levels(level = "level_3")
     se_root_sources_lvl2_v3 = pre_se_root_levels(level = "level_2_v3")
 
     

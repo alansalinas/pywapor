@@ -208,8 +208,6 @@ def process_sentinel(scenes, variables, source_name, time_func, final_fn, post_p
 
     # Define output path.
     fp = os.path.join(folder, final_fn)
-    if os.path.isfile(fp):
-        os.remove(fp)
     
     # Apply general product functions.
     for var, funcs in post_processors.items():

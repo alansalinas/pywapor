@@ -8,6 +8,8 @@ import pywapor.collect.protocol.sentinelapi as sentinelapi
 import numpy as np
 from functools import partial
 from pywapor.general.processing_functions import open_ds, remove_ds, save_ds
+from lxml import etree
+import copy
 
 def apply_qa(ds, var):
     """Mask SENTINEL2 data using a qa variable.
@@ -72,8 +74,9 @@ def scale_data(ds, var):
     xr.Dataset
         Output data.
     """
-    scale = 1./10000. # BOA_QUANTIFICATION_VALUE
-    offset = -1000 # BOA_ADD_OFFSET
+    
+    scale = 1./ds.scale_factor # BOA_QUANTIFICATION_VALUE
+    offset = ds.offset_factor # BOA_ADD_OFFSET
     ds[var] = (ds[var] + offset) * scale
     ds[var] = ds[var].where((ds[var] <= 1.00) & (ds[var] >= 0.00))
     return ds
@@ -214,13 +217,15 @@ def calc_r0(ds, var):
     xr.Dataset
         Output data.
     """
+
     weights = {
-        "blue": 0.074,
-        "green": 0.083,
-        "red": 0.334,
-        "nir": 0.356,
-        "offset": 0.033,
+        "blue":     0.171,
+        "green":    0.060,
+        "red":      0.334,
+        "nir":      0.371,
+        "offset":   0.018,
     }
+    
     reqs = ["blue", "green", "red", "nir"]
     if np.all([x in ds.data_vars for x in reqs]):
         ds["offset"] = xr.ones_like(ds["blue"])
@@ -412,8 +417,27 @@ def time_func(fn):
     return dtime
 
 def s2_processor(scene_folder, variables):
+
     dss = [open_ds(glob.glob(os.path.join(scene_folder, "**", "*" + k), recursive = True)[0], decode_coords=None).isel(band=0).rename({"band_data": v[1]}) for k, v in variables.items()]
     ds = xr.merge(dss).drop_vars("band")
+
+    meta_fps = glob.glob(os.path.join(scene_folder, "**", "MTD_MSIL2A.xml"), recursive = True)
+    if len(meta_fps) >= 1:
+        tree = etree.parse(meta_fps[0])
+        root = tree.getroot()
+        offsets = [float(x.text) for x in root.iter('BOA_ADD_OFFSET')]
+        scales = [float(x.text) for x in root.iter('BOA_QUANTIFICATION_VALUE')]
+        scale = np.median(scales)
+        offset = np.median(offsets)
+        if len(np.unique(offsets)) != 1:
+            log.warning(f"Multiple offsets found for `{scene_folder}`, using `{offset}`, check `{meta_fps[0]}` for more info.")
+        if len(scales) != 1:
+            log.warning(f"Multiple scales found for `{scene_folder}`, using `{scale}`, check `{meta_fps[0]}` for more info.")
+        ds.attrs = {"scale_factor": scale, "offset_factor": offset}
+    else:
+        ds.attrs = {"scale_factor": 10000.0, "offset_factor": -1000.0}
+        log.warning(f"No scale/offset found for `{meta_fps[0]}`, using `{ds.attrs}`.")
+
     return ds
 
 def download(folder, latlim, lonlim, timelim, product_name, 
@@ -450,21 +474,17 @@ def download(folder, latlim, lonlim, timelim, product_name,
 
     product_folder = os.path.join(folder, "SENTINEL2")
 
-    appending = False
     fn = os.path.join(product_folder, f"{product_name}.nc")
+    req_vars_orig = copy.deepcopy(req_vars)
     if os.path.isfile(fn):
-        os.rename(fn, fn.replace(".nc", "_to_be_appended.nc"))
-        existing_ds = open_ds(fn.replace(".nc", "_to_be_appended.nc"))
-        if np.all([x in existing_ds.data_vars for x in req_vars]):
+        existing_ds = open_ds(fn)
+        req_vars_new = list(set(req_vars).difference(set(existing_ds.data_vars)))
+        if len(req_vars_new) > 0:
+            req_vars = req_vars_new
             existing_ds = existing_ds.close()
-            os.rename(fn.replace(".nc", "_to_be_appended.nc"), fn)
-            existing_ds = open_ds(fn)
-            return existing_ds[req_vars]
         else:
-            appending = True
-            fn = os.path.join(product_folder, f"{product_name}_appendix.nc")
-            req_vars = [x for x in req_vars if x not in existing_ds.data_vars]
-            
+            return existing_ds[req_vars_orig]
+
     if isinstance(variables, type(None)):
         variables = default_vars(product_name, req_vars)
 
@@ -486,24 +506,15 @@ def download(folder, latlim, lonlim, timelim, product_name,
 
     def node_filter(node_info):
         fn = os.path.split(node_info["node_path"])[-1]
-        to_dl = list(variables.keys())
+        to_dl = list(variables.keys()) + ["MTD_MSIL2A.xml"]
         return np.any([x in fn for x in to_dl])
     # node_filter = None
 
     scenes = sentinelapi.download(product_folder, latlim, lonlim, timelim, search_kwargs, node_filter = node_filter)
 
-    ds_new = sentinelapi.process_sentinel(scenes, variables, "SENTINEL2", time_func, os.path.split(fn)[-1], post_processors, bb = bb)
+    ds = sentinelapi.process_sentinel(scenes, variables, "SENTINEL2", time_func, os.path.split(fn)[-1], post_processors, bb = bb)
 
-    if appending:
-        ds = xr.merge([ds_new, existing_ds])
-        lbl = f"Appending new variables (`{'`, `'.join(req_vars)}`) to existing file."
-        ds = save_ds(ds, os.path.join(product_folder, f"{product_name}.nc"), encoding = "initiate", label = lbl)
-        remove_ds(ds_new)
-        remove_ds(existing_ds)
-    else:
-        ds = ds_new
-
-    return ds
+    return ds[req_vars_orig]
 
 # if __name__ == "__main__":
 

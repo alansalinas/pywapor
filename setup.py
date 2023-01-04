@@ -2,7 +2,7 @@ from setuptools import setup, find_packages
 
 setup(
     name = 'pywapor',
-    version = '3.1.5',
+    version = '3.2.0',
     url = 'https://www.fao.org/aquastat/py-wapor/',
     author = "FAO",
     author_email = "bert.coerver@fao.org",
@@ -45,8 +45,9 @@ setup(
         'shapely',
         'lxml',
         'geopy',
-        'sklearn',
+        'scikit-learn',
         'numba',
+        'xmltodict',
 # NOTE Another fix for Colab... https://github.com/googlecolab/colabtools/issues/3134
         'importlib-metadata==4.13.0',
     ],

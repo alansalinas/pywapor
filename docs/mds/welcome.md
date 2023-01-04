@@ -124,44 +124,55 @@ For questions, requests or issues with this repository, please contact Bert Coer
 #### Release Notes
 
 <p><details open>
+<summary><b>3.2.0 (2023-01-03)</b></summary>
+<ul>
+    <li> - Full Landsat support, automatically download and process Landsat (5-9) data. </li>
+    <li> - Fixed a bug that caused some MODIS data to be missing inside the selected boundingbox. </li>
+    <li> - You can now re-enter a password in case you've provided an incorrect one. </li>
+    <li> - Bugfixes (including more Windows specific ones). </li>
+    <li> - Updated weights to calculate albedo for Landsat and Sentinel. </li>
+</ul>
+</details></p>
+
+<p><details>
 <summary><b>3.1.0 (2022-09-22)</b></summary>
 <ul>
-    <li> Added a thermal sharpening algorithm (<a href = https://github.com/radosuav/pyDMS>pyDMS</a>) to increase LST resolution.</li>
-    <li> Now, when after several failed attempts to download a variable, the code will continue processing other variables. </li>
-    <li> Improved cloud-masking for VIIRSL1. </li>
-    <li> Bugfixes (including several Windows specific ones). </li>
-    <li> More information in the log. </li>
+    <li> - Added a thermal sharpening algorithm (<a href = https://github.com/radosuav/pyDMS>pyDMS</a>) to increase LST resolution.</li>
+    <li> - Now, when after several failed attempts to download a variable, the code will continue processing other variables. </li>
+    <li> - Improved cloud-masking for VIIRSL1. </li>
+    <li> - Bugfixes (including several Windows specific ones). </li>
+    <li> - More information in the log. </li>
 </ul>
 </details></p>
 
 <p><details>
 <summary><b>3.0.0 (2022-08-31)</b></summary>
 <ul>
-    <li> Bugfixes. Most noteably, server side errors when downloading data are now handeled better, i.e. collect tools will retry several times when a download fails, but many other smaller issues have been fixed too.</li>
-    <li> Performance improvements, mostly due to fewer reprojections. </li>
-    <li> Better logging. The logs from SENTINEL and ERA5 are now directed to seperate channels and logs now show peak-memory-usage for critical calculation steps.
-    <li> `et_look` and `se_root` now accept a `chunks` keyword to adjust the chunksizes at which the calculations are done. Increase them if you have a lot of RAM available, decrease them for slower calculations but with less memory usage.</li>
-    <li> Support for WaPOR v3 methodology. Choose `et_look_version = "v3"` and `se_root_version = "v3"` when running the respective models (`et_look` and `se_root`).</li>
-    <li> Default configurations for WaPOR v3 input datasets, i.e. choose `sources = "level_2_v3"` when running `pre_et_look` or `pre_se_root`.
-    <li> New collect functions for COPERNICUS DEM. </li>
-    <li> The data structure for STATICS is now consistent with the other products. </li>
+    <li> - Bugfixes. Most noteably, server side errors when downloading data are now handeled better, i.e. collect tools will retry several times when a download fails, but many other smaller issues have been fixed too. </li>
+    <li> - Performance improvements, mostly due to fewer reprojections. </li>
+    <li> - Better logging. The logs from SENTINEL and ERA5 are now directed to seperate channels and logs now show peak-memory-usage for critical calculation steps.
+    <li> - `et_look` and `se_root` now accept a `chunks` keyword to adjust the chunksizes at which the calculations are done. Increase them if you have a lot of RAM available, decrease them for slower calculations but with less memory usage.</li>
+    <li> - Support for WaPOR v3 methodology. Choose `et_look_version = "v3"` and `se_root_version = "v3"` when running the respective models (`et_look` and `se_root`).</li>
+    <li> - Default configurations for WaPOR v3 input datasets, i.e. choose `sources = "level_2_v3"` when running `pre_et_look` or `pre_se_root`.
+    <li> - New collect functions for COPERNICUS DEM. </li>
+    <li> - The data structure for STATICS is now consistent with the other products. </li>
 </ul>
 </details></p>
 
 <p><details>
 <summary><b>2.6.0 (2022-08-04)</b></summary>
 <ul>
-    <li> New collect functions for VIIRS (Level-1), SENTINEL-2, SENTINEL-3 and (ag)ERA5.</li>
-    <li> pyWaPOR now works with Python versions greater than 3.8.
+    <li> - New collect functions for VIIRS (Level-1), SENTINEL-2, SENTINEL-3 and (ag)ERA5.</li>
+    <li> - pyWaPOR now works with Python versions greater than 3.8.
 </ul>
 </details></p>
 
 <p><details>
 <summary><b>2.5.0 (2022-06-23)</b></summary>
 <ul>
-    <li> Rewritten collect tools.</li>
-    <li> The entire workflow now works with netCDF.</li>
-    <li>All the netCDF files are formatted to support the <a href = "https://corteva.github.io/rioxarray/stable/getting_started/getting_started.html">rio-acccessor</a>.</li>
+    <li> - Rewritten collect tools.</li>
+    <li> - The entire workflow now works with netCDF.</li>
+    <li> - All the netCDF files are formatted to support the <a href = "https://corteva.github.io/rioxarray/stable/getting_started/getting_started.html">rio-acccessor</a>.</li>
 </ul>
 </details></p>
 
@@ -169,50 +180,50 @@ For questions, requests or issues with this repository, please contact Bert Coer
 <summary><b>2.4.2 (2022-04-26)</b></summary>
 <br>
 <ul>
-    <li> New biomass module and NPP calculation.</li>
+    <li> - New biomass module and NPP calculation.</li>
 </ul>
 </details></p>
 
 <p><details>
 <summary><b>2.4.1 (2022-03-11)</b></summary>
 <ul>
-    <li> NetCDF files are now compressed when saved to disk.</li>
-    <li> Calculation of Total Biomass Production is now turned on by default.</li>
-    <li> It is no longer required to provide <b>all</b> input variables to et_look,
+    <li> - NetCDF files are now compressed when saved to disk.</li>
+    <li> - Calculation of Total Biomass Production is now turned on by default.</li>
+    <li> - It is no longer required to provide <b>all</b> input variables to et_look,
     the model will calculate as many variables as possible with the given data. For example,
     if you are only interested in acquiring interception rates, it would now suffice to only prepare ndvi and p (precipitation) data with pre_et_look.</li>
-    <li> et_look now automatically generates an interactive network graph visualising the executed computation steps.</li>
+    <li> - et_look now automatically generates an interactive network graph visualising the executed computation steps.</li>
 </ul>
 </details></p>
 
 <p><details>
 <summary><b>2.4.0 (2022-02-03)</b></summary>
 <ul>
-    <li> Easily apply your own functions to data, i.e. use your own custom filters, gap-fillers etc.</li>
-    <li> Side-load your own data, i.e. easily incorporate you own datasets.</li>
-    <li> Added functions to process Landsat Level-2 to “ndvi”, “lst” and “r0”.</li>
-    <li> Data is now stored and processed as netCDF (using xarray and dask).</li>
-    <li> Calculations in et_look() and se_root() are now done in chunks, instead of using a for-loop.</li>
-    <li> Some previously constant parameters now have spatial variability.</li>
-    <li> Improved logging.</li>
-    <li> Download functions now show progress and download-speed.</li>
-    <li> MODIS datasets switched from v6.0 (decommissioned soon) to v6.1.</li>
-    <li> The lapse-rate correction to temperature data is now more accurate and faster.</li>
-    <li> VITO and WAPOR passwords are now checked when entered.</li>
-    <li> Other bug-fixes and performance improvements.</li>
+    <li> - Easily apply your own functions to data, i.e. use your own custom filters, gap-fillers etc.</li>
+    <li> - Side-load your own data, i.e. easily incorporate you own datasets.</li>
+    <li> - Added functions to process Landsat Level-2 to “ndvi”, “lst” and “r0”.</li>
+    <li> - Data is now stored and processed as netCDF (using xarray and dask).</li>
+    <li> - Calculations in et_look() and se_root() are now done in chunks, instead of using a for-loop.</li>
+    <li> - Some previously constant parameters now have spatial variability.</li>
+    <li> - Improved logging.</li>
+    <li> - Download functions now show progress and download-speed.</li>
+    <li> - MODIS datasets switched from v6.0 (decommissioned soon) to v6.1.</li>
+    <li> - The lapse-rate correction to temperature data is now more accurate and faster.</li>
+    <li> - VITO and WAPOR passwords are now checked when entered.</li>
+    <li> - Other bug-fixes and performance improvements.</li>
 </ul>
 </details></p>
 
 <p><details>
 <summary><b>2.3.0 (2021-11-19)</b></summary>
 <ul> 
-    <li>Automatically create input composites before running ETLook.</li>
-    <li>Choose composite lengths in number of days or dekads.</li>
-    <li>Option to choose which products to use per variable.</li>
-    <li>Calculate soil saturation separate from ETLook.</li>
-    <li>PROBA-V support for NDVI and Albedo inputs.</li>
-    <li>Define diagnostics pixels, for which extra outputs are created (e.g. charts, maps etc.).</li>
-    <li>Bug-fixes and performance improvements.</li>
+    <li> - Automatically create input composites before running ETLook.</li>
+    <li> - Choose composite lengths in number of days or dekads.</li>
+    <li> - Option to choose which products to use per variable.</li>
+    <li> - Calculate soil saturation separate from ETLook.</li>
+    <li> - PROBA-V support for NDVI and Albedo inputs.</li>
+    <li> - Define diagnostics pixels, for which extra outputs are created (e.g. charts, maps etc.).</li>
+    <li> - Bug-fixes and performance improvements.</li>
 </ul>
 </details></p>
 

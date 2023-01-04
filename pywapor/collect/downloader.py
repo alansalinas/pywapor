@@ -2,8 +2,9 @@ from pywapor.general.logger import log, adjust_logger
 import types
 import functools
 import numpy as np
+from collections import OrderedDict
 
-def collect_sources(folder, sources, latlim, lonlim, timelim, return_fps = True):
+def collect_sources(folder, sources, latlim, lonlim, timelim, landsat_order_only = False):
     """Download different sources and products within defined limits.
 
     Parameters
@@ -39,6 +40,15 @@ def collect_sources(folder, sources, latlim, lonlim, timelim, return_fps = True)
 
         reversed_sources = {k: v for k, v in reversed_sources.items() if attempts[k] < max_attempts}
 
+        # Make sure Landsat is always processed first, because orders take time.
+        pairs = list(reversed_sources.items())
+        reversed_sources = OrderedDict(
+                                        [x for x in pairs if x[0][0] == "LANDSAT"] + 
+                                        [x for x in pairs if (x[0][0] != "LANDSAT") and ("se_root" not in x[1])] +
+                                        [x for x in pairs if "se_root" in x[1]]
+                                        )
+
+
         for (source, product_name), req_vars in reversed_sources.items():
             
             if isinstance(source, str):
@@ -66,36 +76,44 @@ def collect_sources(folder, sources, latlim, lonlim, timelim, return_fps = True)
                 "post_processors": reversed_enhancers[(source, product_name)]
             }
 
+            # On first attempt for any Landsat product, only order the scenes. Then retry when everything else has finished.
+            if source == "LANDSAT" and attempts[(source, product_name)] == 0:
+                args.update({"max_attempts": 1})
+
             try:
                 x = dler(**args)
                 attempts[(source, product_name)] += max_attempts * 10
             except Exception as e:
 
-                if "NetCDF: Filter error: unimplemented filter encountered" in e.args[0]:
+                exception_args = getattr(e, "args", tuple())
+
+                if "NetCDF: Filter error: unimplemented filter encountered" in str(exception_args[0]):
                     info_url = r"https://github.com/Unidata/netcdf4-python/issues/1182"
                     log.warning(f"--> Looks like you installed `netcdf4` incorrectly, see {info_url} for more info.")
 
-                if attempts[(source, product_name)] < max_attempts - 1:
+                if "Waiting for order of" in str(exception_args[0]):
+                    log.info(f"--> Continuing with collection of other sources while waiting for {exception_args[1]} `{source_name}.{product_name}` scenes to finish processing.")
+                    if landsat_order_only:
+                        attempts[(source, product_name)] += max_attempts * 10
+                elif attempts[(source, product_name)] < max_attempts - 1:
                     log.warning(f"--> Collect attempt {attempts[(source, product_name)] + 1} of {max_attempts} for `{source_name}.{product_name}` failed, trying again after other sources have been collected. ({type(e).__name__}: {e}).")
                 else:
                     log.warning(f"--> Collect attempt {attempts[(source, product_name)] + 1} of {max_attempts} for `{source_name}.{product_name}` failed, giving up now, see full traceback below for more info. ({type(e).__name__}: {e}).")
                     log.exception("")
 
                 attempts[(source, product_name)] += 1
+
             else:
-                if "time" in x.coords:
-                    stime = np.datetime_as_string(x.time.values[0], unit = "m")
-                    etime = np.datetime_as_string(x.time.values[-1], unit = "m")
-                    log.add().info(f"> timesize: {x.time.size} [{stime}, ..., {etime}]").sub()
-                dss[(source_name, product_name)] = x
+                if not isinstance(x, type(None)):
+                    if "time" in x.coords:
+                        stime = np.datetime_as_string(x.time.values[0], unit = "m")
+                        etime = np.datetime_as_string(x.time.values[-1], unit = "m")
+                        log.add().info(f"> timesize: {x.time.size} [{stime}, ..., {etime}]").sub()
+                    fp = x.encoding["source"]
+                    x = x.close()
+                    dss[(source_name, product_name)] = fp
             finally:
                 log.pop()
-
-    if return_fps:
-        for key, ds in dss.items():
-            fp = ds.encoding["source"]
-            ds = ds.close()
-            dss[key] = fp
 
     reversed_sources = {k: v for k, v in reversed_sources.items() if attempts[k] <= max_attempts}
     sources = trim_sources(reversed_sources, sources)

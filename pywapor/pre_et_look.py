@@ -14,6 +14,7 @@ from functools import partial
 import pywapor.general.pre_defaults as defaults
 from pywapor.general.variables import fill_attrs
 from pywapor.enhancers.temperature import lapse_rate as _lapse_rate
+from pywapor.general.processing_functions import remove_temp_files
 
 def rename_vars(ds, *args):
     """Rename some variables in a dataset.
@@ -131,12 +132,18 @@ def main(folder, latlim, lonlim, timelim, sources = "level_1", bin_length = "DEK
 
     general_enhancers = enhancers + [rename_vars, fill_attrs, partial(calc_doys, bins = bins), add_constants]
 
-    dss, sources = downloader.collect_sources(folder, sources, latlim, lonlim, [bins[0], bins[-1]], return_fps=False)
+    adjusted_timelim = [bins[0], bins[-1]]
+    buffered_timelim = [adjusted_timelim[0] - np.timedelta64(3, "D"), 
+                        adjusted_timelim[1] + np.timedelta64(3, "D")]
+
+    dss, sources = downloader.collect_sources(folder, sources, latlim, lonlim, buffered_timelim)
 
     ds = compositer.main(dss, sources, folder, general_enhancers, bins)
 
     t2 = datetime.datetime.now()
     log.sub().info(f"< PRE_ET_LOOK ({str(t2 - t1)})")
+
+    files = remove_temp_files(folder)
 
     return ds
 

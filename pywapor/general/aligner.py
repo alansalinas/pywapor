@@ -109,6 +109,11 @@ def main(dss, sources, folder, general_enhancers, example_t_vars = ["lst"]):
     else:
         log.warning(f"--> No valid example dataset set.")
         example_ds = None
+
+    # Open unopened netcdf files.
+    dss2 = {**{k: open_ds(v) for k, v in dss2.items() if isinstance(v, str)}, 
+            **{k:v for k,v in dss2.items() if not isinstance(v, str)}}
+
     spatial_interps = [sources[list(x.data_vars)[0]]["spatial_interp"] for x in dss2.values()]
     dss3, temp_files3 = align_pixels(dss2.values(), folder, spatial_interps, example_ds, fn_append = "_step2")
     cleanup.append(temp_files3)
