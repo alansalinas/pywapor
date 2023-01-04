@@ -263,6 +263,8 @@ def save_ds(ds, fp, decode_coords = "all", encoding = None, chunks = "auto", pre
     with ProgressBar(minimum = 90*10, dt = 2.0):
         with warnings.catch_warnings():
             warnings.filterwarnings("ignore", message="All-NaN slice encountered")
+            warnings.filterwarnings("ignore", message="invalid value encountered in power")
+            warnings.filterwarnings("ignore", message="invalid value encountered in log")
             ds.to_netcdf(temp_fp, encoding = encoding, mode = {True: "a", False: "w"}[appending])
 
     ds = ds.close()
