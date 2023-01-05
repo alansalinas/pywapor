@@ -3,6 +3,7 @@ import types
 import functools
 import numpy as np
 from collections import OrderedDict
+import copy
 
 def collect_sources(folder, sources, latlim, lonlim, timelim, landsat_order_only = False):
     """Download different sources and products within defined limits.
@@ -70,7 +71,7 @@ def collect_sources(folder, sources, latlim, lonlim, timelim, landsat_order_only
                 "folder": folder,
                 "latlim": latlim,
                 "lonlim": lonlim,
-                "timelim": timelim,
+                "timelim": copy.deepcopy(timelim),
                 "product_name": product_name,
                 "req_vars": req_vars,
                 "post_processors": reversed_enhancers[(source, product_name)]
@@ -189,7 +190,7 @@ def trim_sources(reversed_sources, sources):
 
 if __name__ == "__main__":
 
-    return_fps = False
+    return_fps = True
 
 #     import datetime
 
