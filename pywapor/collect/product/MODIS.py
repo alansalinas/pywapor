@@ -349,6 +349,11 @@ def download(folder, latlim, lonlim, timelim, product_name, req_vars,
         else:
             return existing_ds[req_vars_orig]
 
+    spatial_buffer = {"MYD13Q1.061": False, "MYD11A1.061": True, "MOD11A1.061": True, "MCD43A3.061": True, "MOD13Q1.061": False}[product_name]
+    if spatial_buffer:
+        latlim = [latlim[0] - 0.01, latlim[1] + 0.01]
+        lonlim = [lonlim[0] - 0.01, lonlim[1] + 0.01]
+
     if product_name == "MOD13Q1.061" or product_name == "MYD13Q1.061":
         timedelta = np.timedelta64(8, "D")
         timelim[0] = timelim[0] - pd.Timedelta(timedelta)

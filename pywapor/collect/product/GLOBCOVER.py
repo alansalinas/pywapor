@@ -141,6 +141,11 @@ def download(folder, latlim, lonlim, product_name, req_vars = ["lulc"],
         else:
             return existing_ds[req_vars_orig]
 
+    spatial_buffer = True
+    if spatial_buffer:
+        latlim = [latlim[0] - 0.01, latlim[1] + 0.01]
+        lonlim = [lonlim[0] - 0.01, lonlim[1] + 0.01]
+
     coords = {"x": ("lon", lonlim), "y": ("lat", latlim)}
 
     if isinstance(variables, type(None)):
