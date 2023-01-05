@@ -418,33 +418,40 @@ def ecmwf_account(user_pw):
                 'area': [2,-2,-2,2]
             },
             fp)
-        os.remove(fp)
+        try:
+            os.remove(fp)
+        except PermissionError:
+            ... # windows...
         succes = True
         error = ""
-    except:
-        error = "wrong key."
+    except Exception as e:
+        exception_args = getattr(e, "args", tuple())
         succes = False
+        if "Client has not agreed to the required terms and conditions" in str(exception_args[0]):
+            error = exception_args[0]
+        else:
+            error = "wrong key"
 
     return succes, error
 
 if __name__ == "__main__":
     ...
-    adjust_logger(True, r"/Users/hmcoerver/Desktop", "INFO")
+    # adjust_logger(True, r"/Users/hmcoerver/Desktop", "INFO")
 
-    un_pw1= get("NASA")
-    check1 = nasa_account(un_pw1)
+    # un_pw1= get("NASA")
+    # check1 = nasa_account(un_pw1)
 
-    un_pw2 = get("VITO")
-    check2 = vito_account(un_pw2)
+    # un_pw2 = get("VITO")
+    # check2 = vito_account(un_pw2)
 
-    un_pw3 = get("WAPOR")
-    check3 = wapor_account(un_pw3)
+    # un_pw3 = get("WAPOR")
+    # check3 = wapor_account(un_pw3)
 
-    un_pw4 = get("ECMWF")
-    check4 = ecmwf_account(un_pw4)
+    # un_pw4 = get("ECMWF")
+    # check4 = ecmwf_account(un_pw4)
 
-    un_pw5 = get("VIIRSL1")
-    check5 = viirsl1_account(un_pw5)
+    # un_pw5 = get("VIIRSL1")
+    # check5 = viirsl1_account(un_pw5)
 
-    un_pw6 = get("EARTHEXPLORER")
-    check6 = earthexplorer_account(un_pw6)
+    # un_pw6 = get("EARTHEXPLORER")
+    # check6 = earthexplorer_account(un_pw6)
