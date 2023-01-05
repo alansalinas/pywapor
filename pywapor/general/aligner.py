@@ -69,7 +69,11 @@ def main(dss, sources, folder, general_enhancers, example_t_vars = ["lst"]):
 
         # Align pixels of different products for a single variable together.
         dss_part = [ds[[var]] for ds in dss.values() if var in ds.data_vars]
+        if len(dss_part) > 1:
+            log.info(f"--> Spatially aligning {len(dss_part)} `{var}` products together.").add()
         dss1, temp_files1 = align_pixels(dss_part, folder, spatial_interp, fn_append = "_step1")
+        if len(dss_part) > 1:
+            log.sub()
         cleanup.append(temp_files1)
 
         # Combine different source_products (along time dimension).
