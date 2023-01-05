@@ -110,7 +110,7 @@ def download(fp, product_name, coords, variables, post_processors, url_func,
     for var, funcs in post_processors.items():
         for func in funcs:
             ds, label = apply_enhancer(ds, var, func)
-            log.info(label)
+            # log.info(label)
 
     # Save final output.
     out = save_ds(ds, fp, encoding = "initiate", label = f"Saving {fn}.")

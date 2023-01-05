@@ -5,94 +5,6 @@ import xarray as xr
 import numpy as np
 import copy
 
-def get_source_level_selections():
-    """Gives a definition of which products are used for each variable per level.
-
-    Returns
-    -------
-    dict
-        Dictionary with the products to use per variable per level.
-    """
-
-    source_selection_level2 = {
-        "ndvi": ["PROBAV"],
-        "r0": ["PROBAV"],
-        "lst": ["MOD11", "MYD11"],
-        "lulc": ["WAPOR"],
-        "z": ["SRTM"],
-        "p_24": ["CHIRPS"],
-        "ra_24": ["MERRA2"],
-        't_air_24': ["GEOS5"],
-        't_air_min_24': ["GEOS5"], 
-        't_air_max_24': ["GEOS5"],
-        'u2m_24': ["GEOS5"],
-        'v2m_24': ["GEOS5"],
-        'p_air_0_24': ["GEOS5"],
-        'qv_24': ["GEOS5"],
-        "t_air_i": ["GEOS5"],
-        "u2m_i": ["GEOS5"],
-        "v2m_i": ["GEOS5"],
-        "qv_i": ["GEOS5"],
-        "wv_i": ["GEOS5"],
-        "p_air_i": ["GEOS5"],
-        "p_air_0_i": ["GEOS5"],
-        "lw_offset": ["STATICS"],
-        "lw_slope": ["STATICS"],
-        "r0_bare": ["STATICS"],
-        "r0_full": ["STATICS"],
-        "rn_offset": ["STATICS"],
-        "rn_slope": ["STATICS"],
-        "t_amp_year": ["STATICS"],
-        "t_opt": ["STATICS"],
-        "vpd_slope": ["STATICS"],
-        "z_oro": ["STATICS"],
-        # "z_obst_max": ["STATICS"],
-        # "rs_min": ["STATICS"],
-        # "land_mask": ["STATICS"],
-    }
-
-    source_selection_level1 = {
-        "ndvi": ["MOD13", "MYD13"],
-        "r0": ["MCD43"],
-        "lst": ["MOD11", "MYD11"],
-        "lulc": ["WAPOR"],
-        "z": ["SRTM"],
-        "p_24": ["CHIRPS"],
-        "ra_24": ["MERRA2"],
-        't_air_24': ["GEOS5"],
-        't_air_min_24': ["GEOS5"], 
-        't_air_max_24': ["GEOS5"],
-        'u2m_24': ["GEOS5"],
-        'v2m_24': ["GEOS5"],
-        'p_air_0_24': ["GEOS5"],
-        'qv_24': ["GEOS5"],
-        "t_air_i": ["GEOS5"],
-        "u2m_i": ["GEOS5"],
-        "v2m_i": ["GEOS5"],
-        "qv_i": ["GEOS5"],
-        "wv_i": ["GEOS5"],
-        "p_air_i": ["GEOS5"],
-        "p_air_0_i": ["GEOS5"],
-        "lw_offset": ["STATICS"],
-        "lw_slope": ["STATICS"],
-        "r0_bare": ["STATICS"],
-        "r0_full": ["STATICS"],
-        "rn_offset": ["STATICS"],
-        "rn_slope": ["STATICS"],
-        "t_amp_year": ["STATICS"],
-        "t_opt": ["STATICS"],
-        "vpd_slope": ["STATICS"],
-        "z_oro": ["STATICS"],
-        # "z_obst_max": ["STATICS"],
-        # "rs_min": ["STATICS"],
-        # "land_mask": ["STATICS"],
-    }
-
-    levels = {"level_1": source_selection_level1, 
-              "level_2": source_selection_level2}
-
-    return levels
-
 def fill_attrs(ds, *args):
     """Fills in the attributes of a xr.Dataset.
 
@@ -365,21 +277,6 @@ def get_var_definitions():
             "units": "-",
             "definition": ""
         },
-        # "epoch": {
-        #     "long_name": "",
-        #     "units": "",
-        #     "definition": ""
-        # },
-        # "epoch_ends": {
-        #     "long_name": "",
-        #     "units": "",
-        #     "definition": ""
-        # },
-        # "epoch_starts": {
-        #     "long_name": "",
-        #     "units": "",
-        #     "definition": ""
-        # },
         "et_24_mm": {
             "long_name": "Daily evapotranspiration in mm",
             "units": "mm day-1",
@@ -774,16 +671,6 @@ def get_var_definitions():
             "units": "radians",
             "definition": ""
         },
-        # "sources": {
-        #     "long_name": "",
-        #     "units": "",
-        #     "definition": ""
-        # },
-        # "spatial_ref": {
-        #     "long_name": "",
-        #     "units": "",
-        #     "definition": ""
-        # },
         "ssvp_24": {
             "long_name": "Daily slope of saturated vapour pressure curve",
             "units": "mbar K-1",
@@ -899,11 +786,6 @@ def get_var_definitions():
             "units": "K",
             "definition": ""
         },
-        # "time": {
-        #     "long_name": "",
-        #     "units": "",
-        #     "definition": ""
-        # },
         "trans_24": {
             "long_name": "Daily atmospheric transmissivity",
             "units": "-",

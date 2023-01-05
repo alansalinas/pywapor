@@ -145,7 +145,8 @@ def main(input_data, et_look_version = "v2", export_vars = "default", chunks = {
     ds["r_canopy"] = ETLook.resistance.canopy_resistance(ds["r_canopy_0"], ds["stress_moist"], rcan_max = ds["rcan_max"])
 
     # **initial canopy aerodynamic resistance***********************************************************
-
+    if ds["z_oro"].dtype == object:
+        ds["z_oro"] = ETLook.roughness.orographic_roughness(ds["z"], ds["x"], ds["y"])
     ds["z_obst"] = ETLook.roughness.obstacle_height(ds["ndvi"], ds["z_obst_max"], ndvi_obs_min = ds["ndvi_obs_min"], ndvi_obs_max = ds["ndvi_obs_max"], obs_fr = ds["obs_fr"])
     ds["z0m"] = ETLook.roughness.roughness_length(ds["lai"], ds["z_oro"], ds["z_obst"], ds["z_obst_max"], ds["land_mask"])
     if ds["u_24"].dtype == object:
@@ -309,9 +310,9 @@ def check_for_non_chuncked_arrays(ds):
                 print(var)
 
 if __name__ == "__main__":
+    ...
+    # input_data = r'/Users/hmcoerver/Local/test8/et_look_in_.nc'
+    # et_look_version = "v2"
+    # export_vars = "default"
 
-    input_data = r'/Users/hmcoerver/Local/test8/et_look_in_.nc'
-    et_look_version = "v2"
-    export_vars = "default"
-
-    out = main(input_data, et_look_version = et_look_version, export_vars = export_vars)
+    # out = main(input_data, et_look_version = et_look_version, export_vars = export_vars)
