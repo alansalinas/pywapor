@@ -77,7 +77,7 @@ def main(dss, sources, folder, general_enhancers, example_t_vars = ["lst"]):
         cleanup.append(temp_files1)
 
         # Combine different source_products (along time dimension).
-        ds = xr.combine_nested(dss1, concat_dim = "time").chunk({"time": -1}).sortby("time").squeeze()
+        ds = xr.combine_nested(dss1, concat_dim = "time").sortby("time").chunk(chunks).squeeze()
 
         if var in example_t_vars:
             if "time" not in ds[var].dims:
@@ -88,9 +88,10 @@ def main(dss, sources, folder, general_enhancers, example_t_vars = ["lst"]):
                 example_time = xr.concat([example_time, ds["time"]], dim = "time").drop_duplicates("time").sortby("time")
             dss2[var] = ds
         elif "time" in ds[var].dims:
-            lbl = f"Aligning times in `{var}` ({ds.time.size}) with `{'` and `'.join(example_t_vars)}` ({example_time.time.size}, {temporal_interp})."
             ds = ds.interpolate_na(dim = "time", method = temporal_interp).ffill("time").bfill("time")
-            ds = ds.interp_like(example_time, method = temporal_interp)
+            lbl = f"Aligning times in `{var}` ({ds.time.size}) with `{'` and `'.join(example_t_vars)}` ({example_time.time.size}, {temporal_interp})."
+            if not ds.time.equals(example_time):
+                ds = ds.interp_like(example_time, method = temporal_interp)
             dst_path = os.path.join(folder, f"{var}_i.nc")
             ds = save_ds(ds, dst_path, chunks = chunks, encoding = "initiate", label = lbl)
             dss2[var] = ds
@@ -106,12 +107,12 @@ def main(dss, sources, folder, general_enhancers, example_t_vars = ["lst"]):
             dss2 = func(dss2, var, folder)
 
     # Align all the variables together.
-    example_source = levels.find_setting(sources, "is_example", max_length = 1, min_length = 1)
+    example_source = levels.find_setting(sources, "is_example", min_length = 1)
     if len(example_source) == 1:
         example_ds = dss[example_source[0]]
         log_example_ds(example_ds)
     else:
-        log.warning(f"--> No valid example dataset set.")
+        log.warning(f"--> Multiple example datasets found, selecting lowest resolution.")
         example_ds = None
 
     # Open unopened netcdf files.

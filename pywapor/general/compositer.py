@@ -125,6 +125,8 @@ def main(dss, sources, folder, general_enhancers, bins):
     xr.Dataset
         Dataset with variables grouped into composites.
     """
+    chunks = {"time": -1, "y": 500, "x": 500}
+
     # Open unopened netcdf files.
     dss = {**{k: open_ds(v) for k, v in dss.items() if isinstance(v, str)}, 
             **{k:v for k,v in dss.items() if not isinstance(v, str)}}
@@ -158,13 +160,13 @@ def main(dss, sources, folder, general_enhancers, bins):
 
         # Combine different source_products (along time dimension).
         if np.all(["time" in x[var].dims for x in dss1]):
-            ds = xr.combine_nested(dss1, concat_dim = "time").chunk({"time": -1}).sortby("time").squeeze()
+            ds = xr.combine_nested(dss1, concat_dim = "time").sortby("time").chunk(chunks).squeeze()
         elif np.all(["time" not in x[var].dims for x in dss1]):
             ds = xr.concat(dss1, "stacked").median("stacked")
             if len(dss1) > 1:
                 log.warning(f"--> Multiple ({len(dss1)}) sources for time-invariant `{var}` found, reducing those with 'median'.")
         else:
-            ds = xr.combine_nested([x for x in dss1 if "time" in x[var].dims], concat_dim = "time").chunk({"time": -1}).sortby("time").squeeze()
+            ds = xr.combine_nested([x for x in dss1 if "time" in x[var].dims], concat_dim = "time").sortby("time").chunk(chunks).squeeze()
             log.warning(f"--> Both time-dependent and time-invariant data found for `{var}`, dropping time-invariant data.")
 
         if "time" in ds.dims:
