@@ -328,7 +328,7 @@ def reproject_chunk(src_ds, example_ds, dst_path, spatial_interp = "nearest", st
         def _save_warped_vrt(src_path, var, vrt_options, part_path):
             with rasterio.open(f'NETCDF:{src_path}:{var}') as src:
                 with WarpedVRT(src, **vrt_options) as vrt:
-                    rio_shutil.copy(vrt, part_path, driver='netcdf', creation_options = {"COMPRESS": "DEFLATE"})
+                    rio_shutil.copy(vrt, part_path, driver='netcdf')#, creation_options = {"COMPRESS": "DEFLATE"})
 
         _save_warped_vrt(src_path, var, vrt_options, part_path, label = "Warping VRT to netCDF.")
 
