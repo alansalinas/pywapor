@@ -20,7 +20,7 @@ def remove_temp_files(folder):
     log_files = glob.glob(os.path.join(folder, "log.txt"))
 
     if not len(log_files) == 1:
-        return
+        return None
     else:
         log_file = log_files[0]
 
