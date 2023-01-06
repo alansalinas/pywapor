@@ -74,7 +74,7 @@ def constants_defaults():
         "rn_slope": 0.92,
         "rn_offset": -61.0,
         "vpd_slope": -0.3,
-        "t_amp_year": 20,
+        "t_amp_year": 8,
 
         # statics (se_root)
         "r0_bare": 0.38,
