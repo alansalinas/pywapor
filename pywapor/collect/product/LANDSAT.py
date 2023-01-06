@@ -507,9 +507,6 @@ def update_order_statuses(scene_ids, product_folder, product_name, to_download, 
     
     for order_id, order in all_orders.items():
 
-        if not verbose:
-            log.info(f"--> Checking {order_id}.")
-
         # Get specific order details.
         order_folder = os.path.join(product_folder, "orders")
         order_details_fp = os.path.join(order_folder, f"{order_id}.json")
@@ -522,8 +519,6 @@ def update_order_statuses(scene_ids, product_folder, product_name, to_download, 
                 json.dump(order_details , fp) 
 
         if order_details["product_opts"].get("image_extents") != image_extents:
-            if not verbose:
-                log.warning(f"--> Skipping {order_details['orderid']}, incorrect image extents.")
             continue
 
         for scene in order:
@@ -532,52 +527,39 @@ def update_order_statuses(scene_ids, product_folder, product_name, to_download, 
                 to_download[scene["name"]] = scene["product_dload_url"]
                 to_request.discard(scene["name"])
                 to_wait.discard(scene["name"])
-                if not verbose:
-                    log.info(f"--> {scene['name']} status: `complete`.")
             elif (scene["status"] == "oncache") and (scene["name"] in scene_ids) and (scene["name"] not in available_scenes):
                 to_request.discard(scene["name"])
                 to_wait.add(scene["name"])
-                if not verbose:
-                    log.info(f"--> {scene['name']} status: `oncache`.")
             elif (scene["status"] == "onorder") and (scene["name"] in scene_ids) and (scene["name"] not in available_scenes):
                 to_request.discard(scene["name"])
                 to_wait.add(scene["name"])
-                if not verbose:
-                    log.info(f"--> {scene['name']} status: `onorder`.")
             elif (scene["status"] == "queued") and (scene["name"] in scene_ids) and (scene["name"] not in available_scenes):
                 to_request.discard(scene["name"])
                 to_wait.add(scene["name"])
-                if not verbose:
-                    log.info(f"--> {scene['name']} status: `queued`.")
             elif (scene["status"] == "processing") and (scene["name"] in scene_ids) and (scene["name"] not in available_scenes):
                 to_request.discard(scene["name"])
                 to_wait.add(scene["name"])
-                if not verbose:
-                    log.info(f"--> {scene['name']} status: `processing`.")
             elif (scene["status"] == "error") and (scene["name"] in scene_ids) and (scene["name"] not in available_scenes):
                 to_wait.discard(scene["name"])
+                to_request.discard(scene["name"])
                 if not verbose:
-                    log.info(f"--> {scene['name']} status: `error` ({scene['note']}).")
+                    log.info(f"--> Error in `{scene['name']}` request, `{scene['note']}`.")
             elif (scene["status"] == "retry") and (scene["name"] in scene_ids) and (scene["name"] not in available_scenes):
                 to_request.discard(scene["name"])
                 to_wait.add(scene["name"])
-                if not verbose:
-                    log.info(f"--> {scene['name']} status: `retry`.")
             elif (scene["status"] == "unavailable") and (scene["name"] in scene_ids) and (scene["name"] not in available_scenes):
                 to_request.discard(scene["name"])
-                to_wait.add(scene["name"])
+                to_wait.discard(scene["name"])
                 if not verbose:
-                    log.info(f"--> {scene['name']} status: `unavailable`.")
+                    log.info(f"--> Scene `{scene['name']}` is unavailable, `{scene['note']}`.")
             elif (scene["status"] == "cancelled") and (scene["name"] in scene_ids) and (scene["name"] not in available_scenes):
                 to_request.add(scene["name"])
                 to_wait.discard(scene["name"])
                 if not verbose:
-                    log.info(f"--> {scene['name']} status: `cancelled`.")
+                    log.info(f"Scene `{scene['name']}` order is cancelled, `{scene['note']}`. Ordering again.")
             elif (scene["name"] in scene_ids) and (scene["name"] not in available_scenes):
                 to_request.add(scene["name"])
                 to_wait.discard(scene["name"])
-                if not verbose:
-                    log.info(f"--> {scene['name']} status: `{scene['status']}`.")
             else:
                 ...
 
@@ -610,7 +592,7 @@ def download_scenes(scene_ids, product_folder, product_name, latlim, lonlim, max
             time.sleep(wait_time)
 
         # Update statutes
-        available_scenes, to_download, to_wait, to_request = update_order_statuses(scene_ids, product_folder, product_name, to_download, to_wait, to_request, uauth, image_extents)
+        available_scenes, to_download, to_wait, to_request = update_order_statuses(scene_ids, product_folder, product_name, to_download, to_wait, to_request, uauth, image_extents, verbose = True)
         # log.info(f"--> {len(available_scenes)} scenes available, {len(to_download)} ready for download, {len(to_request)} need to be requested and {len(to_wait)} are being processed.")
 
         # Request missing scenes on (ESPA)
@@ -625,7 +607,7 @@ def download_scenes(scene_ids, product_folder, product_name, latlim, lonlim, max
                 unpack(fp, product_folder)
             to_download = dict()
 
-        available_scenes, to_download, to_wait, to_request = update_order_statuses(scene_ids, product_folder, product_name, to_download, to_wait, to_request, uauth, image_extents)
+        available_scenes, to_download, to_wait, to_request = update_order_statuses(scene_ids, product_folder, product_name, to_download, to_wait, to_request, uauth, image_extents, verbose = False)
         # log.info(f"--> {len(available_scenes)} scenes available, {len(to_download)} ready for download, {len(to_request)} need to be requested and {len(to_wait)} are being processed.")
 
         attempt += 1
@@ -790,14 +772,52 @@ def download(folder, latlim, lonlim, timelim, product_name,
 
 if __name__ == "__main__":
 
-    tests = {
-        # "LT05_SR": ["2010-03-29", "2010-04-25"], 
-        # "LE07_SR": ["2010-03-29", "2010-04-25"], 
-        # "LC08_SR": ["2022-03-29", "2022-04-25"], 
-        # "LC09_SR": ["2022-03-29", "2022-04-25"]
-        "LC08_ST": ["2022-03-29", "2022-04-25"],
-    }
+    # tests = {
+    #     # "LT05_SR": ["2010-03-29", "2010-04-25"], 
+    #     # "LE07_SR": ["2010-03-29", "2010-04-25"], 
+    #     # "LC08_SR": ["2022-03-29", "2022-04-25"], 
+    #     # "LC09_SR": ["2022-03-29", "2022-04-25"]
+    #     "LC08_ST": ["2022-03-29", "2022-04-25"],
+    # }
 
+    sources = "level_3"
+    period = 3
+    area = "pakistan_south"
+
+    lonlim, latlim = {
+        "fayoum":           ([30.2,  31.2],  [28.9,  29.7]),
+        "pakistan_south":   ([67.70, 67.90], [26.35, 26.55]),
+        "pakistan_hydera":  ([68.35, 68.71], [25.49, 25.73]),
+    }[area]
+
+    timelim = {
+        0: [datetime.date(2019, 10, 1), datetime.date(2019, 10, 11)],
+        1: [datetime.date(2022, 5, 1), datetime.date(2022, 5, 11)],
+        2: [datetime.date(2022, 10, 1), datetime.date(2022, 10, 11)],
+        3: [datetime.date(2022, 8, 1), datetime.date(2022, 10, 1)],
+        4: [datetime.date(2021, 8, 1), datetime.date(2021, 10, 1)],
+    }[period]
+
+    folder = f"/Users/hmcoerver/Local/{area}_{sources}_{period}" #
+
+    adjust_logger(True, folder, "INFO")
+
+    bin_length = "DEKAD"
+
+    from pywapor.general import compositer
+    bins = compositer.time_bins(timelim, bin_length)
+
+    adjusted_timelim = [bins[0], bins[-1]]
+    timelim = [adjusted_timelim[0] - np.timedelta64(3, "D"), 
+                        adjusted_timelim[1] + np.timedelta64(3, "D")]
+
+    product_name = "LE07_SR"
+
+    variables = None
+    post_processors = None
+    extra_search_kwargs = {'eo:cloud_cover': {'gte': 0, 'lt': 30}}
+    max_attempts = 24
+    wait_time = 300
     # folder = f"/Users/hmcoerver/Local/landsat_test2"
     # adjust_logger(True, folder, "INFO")
     # for product_name, timelim in tests.items():
