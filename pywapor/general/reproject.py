@@ -251,9 +251,10 @@ def reproject(src_ds, example_ds, dst_path, spatial_interp = "nearest",
         Reprojected dataset.
     """
 
-    test_ds = [src_ds, example_ds][np.argmax([src_ds.nbytes, example_ds.nbytes])]
+    # test_ds = [src_ds, example_ds][np.argmax([src_ds.nbytes, example_ds.nbytes])]
 
-    reproj = choose_reprojecter(test_ds, max_bytes = max_bytes, min_times = min_times, stack_dim = stack_dim)
+    # reproj = choose_reprojecter(test_ds, max_bytes = max_bytes, min_times = min_times, stack_dim = stack_dim)
+    reproj = reproject_bulk
 
     if "source" in src_ds.encoding.keys():
         log.info(f"--> Selected `{reproj.__name__}` for reprojection of {os.path.split(src_ds.encoding['source'])[-1]}.").add()
@@ -360,12 +361,15 @@ def reproject_chunk(src_ds, example_ds, dst_path, spatial_interp = "nearest", st
 
     return ds
 
-# if __name__ == "__main__":
+if __name__ == "__main__":
 
-#     src_ds = open_ds(r"/Users/hmcoerver/Local/test_data/SENTINEL3/SL_2_LST___.nc")
-#     example_ds = open_ds(r"/Users/hmcoerver/Local/test_data/SENTINEL2/S2MSI2A.nc")
-#     dst_path = r"/Users/hmcoerver/Local/test_data/output_test.nc"
-#     spatial_interp = "nearest"
+
+
+    src_ds = open_ds(r"/Users/hmcoerver/Local/custom_levels/MODIS/MOD13Q1.061.nc")
+    example_ds = open_ds(r"/Users/hmcoerver/Local/custom_levels/LANDSAT/LC08_SR.nc")
+    dst_path = r"/Users/hmcoerver/Local/custom_levels/test2.nc"
+
+    # spatial_interp = "nearest"
 #     var = "lst"
 
-#     ds = reproject_chunk(src_ds, example_ds, dst_path, spatial_interp = "nearest")
+    ds = reproject_bulk(src_ds, example_ds, dst_path, spatial_interp = "nearest")

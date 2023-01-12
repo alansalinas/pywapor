@@ -72,6 +72,18 @@ def main(input_data, et_look_version = "v2", export_vars = "default", chunks = {
         ds["nd_min"] = 0.1
         ds["tenacity"] = 1.0
 
+    if ds["rs_min"].dtype == object:
+        ds["rs_min"] = 100
+        log.info(f"--> Setting `rs_min` to `100`.")
+
+    if ds["land_mask"].dtype == object:
+        ds["land_mask"] = 1
+        log.info(f"--> Setting `land_mask` to `1`.")
+
+    if ds["z_obst_max"].dtype == object:
+        ds["z_obst_max"] = 3
+        log.info(f"--> Setting `z_obst_max` to `3`.")
+
     ds["decl"] = ETLook.solar_radiation.declination(ds["doy"])
     ds["iesd"] = ETLook.solar_radiation.inverse_earth_sun_distance(ds["doy"])
 
@@ -145,7 +157,9 @@ def main(input_data, et_look_version = "v2", export_vars = "default", chunks = {
     ds["r_canopy"] = ETLook.resistance.canopy_resistance(ds["r_canopy_0"], ds["stress_moist"], rcan_max = ds["rcan_max"])
 
     # **initial canopy aerodynamic resistance***********************************************************
-    # if ds["z_oro"].dtype == object: # TODO this function is wrong...
+    if ds["z_oro"].dtype == object: # TODO this function is wrong...
+        ds["z_oro"] = 0.001
+        log.info(f"--> Setting `z_oro` to `0.001`.")
         # ds["z_oro"] = ETLook.roughness.orographic_roughness(ds["z"], ds["x"], ds["y"])
     
     ds["z_obst"] = ETLook.roughness.obstacle_height(ds["ndvi"], ds["z_obst_max"], ndvi_obs_min = ds["ndvi_obs_min"], ndvi_obs_max = ds["ndvi_obs_max"], obs_fr = ds["obs_fr"])
@@ -312,6 +326,10 @@ def check_for_non_chuncked_arrays(ds):
 
 if __name__ == "__main__":
     ...
+
+    chunks = {"time_bins": 1, "x": 1000, "y": 1000}
+    et_look_version = "v2"
+    export_vars = "default"
     # input_data = r'/Users/hmcoerver/Local/test8/et_look_in_.nc'
     # et_look_version = "v2"
     # export_vars = "default"

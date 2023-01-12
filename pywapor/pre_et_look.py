@@ -119,10 +119,10 @@ def main(folder, latlim, lonlim, timelim, sources = "level_1", bin_length = "DEK
         Longitude limits of area of interest.
     timelim : list
         Period for which to prepare data.
-    sources : "level_1" | "level_2" | "level_2_v3" | dict
-        Configuration for each variable and source.
-    bin_length : int | "DEKAD"
-        Composite length.
+    sources : "level_1" | "level_2" | "level_2_v3" | dict, optional
+        Configuration for each variable and source, by default `"level_1"`.
+    bin_length : int | "DEKAD", optional
+        Composite length, by_default `"DEKAD"`.
     enhancers : list, optional
         Functions to apply to the xr.Dataset before creating the final
         output, by default `[lapse_rate]`.

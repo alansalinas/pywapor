@@ -148,6 +148,8 @@ def apply_qa(ds, var, pixel_qa_flags = None, radsat_qa_flags = None, product_nam
         pixel_qa_bits = bitmasks.get_pixel_qa_bits(2, int(product_name.split("_")[0][-1]), 2)
         mask1 = bitmasks.get_mask(ds["pixel_qa"], pixel_qa_flags, pixel_qa_bits)
         masks.append(mask1)
+        # Don't allow negative reflectances
+        ds[var] = ds[var].clip(0, np.inf)
 
     if ("radsat_qa" in ds.data_vars) and not isinstance(radsat_qa_flags, type(None)):
         radsat_qa_bits = bitmasks.get_radsat_qa_bits(2, int(product_name.split("_")[0][-1]), 2)
@@ -331,20 +333,20 @@ def default_post_processors(product_name, req_vars):
             'lst_qa': [],
         },
         "LE07_SR": {
-            'coastal': [gap_fill],
-            'blue': [gap_fill],
-            'green': [gap_fill],
-            'red': [gap_fill],
-            'nir': [gap_fill],
-            'swir1': [gap_fill],
-            'swir2': [gap_fill],
+            'coastal': [],
+            'blue': [],
+            'green': [],
+            'red': [],
+            'nir': [],
+            'swir1': [],
+            'swir2': [],
             'pixel_qa': [],
             'radsat_qa': [],
-            'ndvi': [calc_normalized_difference, gap_fill],
-            'r0': [partial(calc_r0, product_name = "LE07_SR"), gap_fill],
+            'ndvi': [calc_normalized_difference],
+            'r0': [partial(calc_r0, product_name = "LE07_SR")],
             },
         "LE07_ST": {
-            'lst': [mask_uncertainty, gap_fill],
+            'lst': [mask_uncertainty, ],
             'lst_qa': [],
         },
         "LC08_SR": {
@@ -719,6 +721,46 @@ def download(folder, latlim, lonlim, timelim, product_name,
                 req_vars, variables = None, post_processors = None, 
                 extra_search_kwargs = {'eo:cloud_cover': {'gte': 0, 'lt': 30}},
                 max_attempts = 24, wait_time = 300):
+    """Order, Download and preprocess Landsat scenes.
+
+    Parameters
+    ----------
+    folder : str
+        Path to folder in which to store results.
+    latlim : list
+        Latitude limits of area of interest.
+    lonlim : list
+        Longitude limits of area of interest.
+    timelim : list
+        Period for which to prepare data.
+    product_name : str
+        Name of the product to download.
+    req_vars : list
+        Which variables to download for the selected product.
+    variables : dict, optional
+        Metadata on which exact layers need to be requested from the server, by default None.
+    post_processors : dict, optional
+        Functions per variable that should be applied to the variable, by default None.
+    extra_search_kwargs : dict, optional
+        Extra keywords passed to the scene searching API, by default {'eo:cloud_cover': {'gte': 0, 'lt': 30}}
+    max_attempts : int, optional
+        Maximum number of retries, by default 24.
+    wait_time : int, optional
+        Wait time in seconds between retries, by default 300.
+
+    Returns
+    -------
+    xr.Dataset
+        Dataset with the requested variables.
+
+    Raises
+    ------
+    ValueError
+        Raised when not all found scenes could be downloaded within the max_attempts.
+    """
+
+
+    adjust_logger(True, folder, "INFO")
 
     product_folder = os.path.join(folder, "LANDSAT")
     order_folder = os.path.join(product_folder, "orders")

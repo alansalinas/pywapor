@@ -379,8 +379,9 @@ def sentinel_account(user_pw):
                     producttype = 'S2MSI2A')
         succes = True
         error = ""
-    except:
-        error = "wrong token."
+    except Exception as e:
+        exception_args = getattr(e, "args", ["wrong_token"])
+        error = exception_args[0]
         succes = False
 
     return succes, error
@@ -425,10 +426,11 @@ def ecmwf_account(user_pw):
         succes = True
         error = ""
     except Exception as e:
-        exception_args = getattr(e, "args", tuple())
+        exception_args = getattr(e, "args", ["wrong_token"])
         succes = False
-        if "Client has not agreed to the required terms and conditions" in str(exception_args[0]):
-            error = exception_args[0]
+        if len(exception_args) > 0:
+            if "Client has not agreed to the required terms and conditions" in str(exception_args[0]):
+                error = exception_args[0]
         else:
             error = "wrong key"
 
