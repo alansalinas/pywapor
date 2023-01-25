@@ -284,9 +284,15 @@ def earthexplorer_account(user_pw):
 
     response = espa_api('user', uauth = (username, pw))
 
-    if "email" in response.keys():
+    if isinstance(response, type(None)):
+        response = {"username": "x"}
+
+    if "email" in response.keys() and response["username"] == username:
         succes = True
         error = ""
+    elif response["username"].casefold() == username.casefold() and response["username"] != username:
+        error = "wrong username, please make sure capitalization is correct."
+        succes = False
     else:
         error = "wrong username/password."
         succes = False

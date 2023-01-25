@@ -402,7 +402,7 @@ def espa_api(endpoint, verb='get', body=None, uauth=None):
     try:
         response.raise_for_status()
     except Exception as e:
-        log.warning(e)
+        log.warning(str(e))
         return None
     else:
         return data
@@ -461,6 +461,8 @@ def request_scenes(ids, image_extents):
     order = espa_api('available-products', 
                         body = {"inputs": list(ids)}, 
                         uauth = uauth)
+    
+
 
     if "not implemented" in order.keys():
         missing = order.pop("not implemented")
@@ -812,54 +814,54 @@ def download(folder, latlim, lonlim, timelim, product_name,
 
     return ds[req_vars_orig]
 
-if __name__ == "__main__":
+# if __name__ == "__main__":
 
-    # tests = {
-    #     # "LT05_SR": ["2010-03-29", "2010-04-25"], 
-    #     # "LE07_SR": ["2010-03-29", "2010-04-25"], 
-    #     # "LC08_SR": ["2022-03-29", "2022-04-25"], 
-    #     # "LC09_SR": ["2022-03-29", "2022-04-25"]
-    #     "LC08_ST": ["2022-03-29", "2022-04-25"],
-    # }
+#     # tests = {
+#     #     # "LT05_SR": ["2010-03-29", "2010-04-25"], 
+#     #     # "LE07_SR": ["2010-03-29", "2010-04-25"], 
+#     #     # "LC08_SR": ["2022-03-29", "2022-04-25"], 
+#     #     # "LC09_SR": ["2022-03-29", "2022-04-25"]
+#     #     "LC08_ST": ["2022-03-29", "2022-04-25"],
+#     # }
 
-    sources = "level_3"
-    period = 3
-    area = "pakistan_south"
+#     sources = "level_3"
+#     period = 3
+#     area = "pakistan_south"
 
-    lonlim, latlim = {
-        "fayoum":           ([30.2,  31.2],  [28.9,  29.7]),
-        "pakistan_south":   ([67.70, 67.90], [26.35, 26.55]),
-        "pakistan_hydera":  ([68.35, 68.71], [25.49, 25.73]),
-    }[area]
+#     lonlim, latlim = {
+#         "fayoum":           ([30.2,  31.2],  [28.9,  29.7]),
+#         "pakistan_south":   ([67.70, 67.90], [26.35, 26.55]),
+#         "pakistan_hydera":  ([68.35, 68.71], [25.49, 25.73]),
+#     }[area]
 
-    timelim = {
-        0: [datetime.date(2019, 10, 1), datetime.date(2019, 10, 11)],
-        1: [datetime.date(2022, 5, 1), datetime.date(2022, 5, 11)],
-        2: [datetime.date(2022, 10, 1), datetime.date(2022, 10, 11)],
-        3: [datetime.date(2022, 8, 1), datetime.date(2022, 10, 1)],
-        4: [datetime.date(2021, 8, 1), datetime.date(2021, 10, 1)],
-    }[period]
+#     timelim = {
+#         0: [datetime.date(2019, 10, 1), datetime.date(2019, 10, 11)],
+#         1: [datetime.date(2022, 5, 1), datetime.date(2022, 5, 11)],
+#         2: [datetime.date(2022, 10, 1), datetime.date(2022, 10, 11)],
+#         3: [datetime.date(2022, 8, 1), datetime.date(2022, 10, 1)],
+#         4: [datetime.date(2021, 8, 1), datetime.date(2021, 10, 1)],
+#     }[period]
 
-    folder = f"/Users/hmcoerver/Local/{area}_{sources}_{period}" #
+#     folder = f"/Users/hmcoerver/Local/{area}_{sources}_{period}" #
 
-    adjust_logger(True, folder, "INFO")
+#     adjust_logger(True, folder, "INFO")
 
-    bin_length = "DEKAD"
+#     bin_length = "DEKAD"
 
-    from pywapor.general import compositer
-    bins = compositer.time_bins(timelim, bin_length)
+#     from pywapor.general import compositer
+#     bins = compositer.time_bins(timelim, bin_length)
 
-    adjusted_timelim = [bins[0], bins[-1]]
-    timelim = [adjusted_timelim[0] - np.timedelta64(3, "D"), 
-                        adjusted_timelim[1] + np.timedelta64(3, "D")]
+#     adjusted_timelim = [bins[0], bins[-1]]
+#     timelim = [adjusted_timelim[0] - np.timedelta64(3, "D"), 
+#                         adjusted_timelim[1] + np.timedelta64(3, "D")]
 
-    product_name = "LE07_SR"
+#     product_name = "LE07_SR"
 
-    variables = None
-    post_processors = None
-    extra_search_kwargs = {'eo:cloud_cover': {'gte': 0, 'lt': 30}}
-    max_attempts = 24
-    wait_time = 300
+#     variables = None
+#     post_processors = None
+#     extra_search_kwargs = {'eo:cloud_cover': {'gte': 0, 'lt': 30}}
+#     max_attempts = 24
+#     wait_time = 300
     # folder = f"/Users/hmcoerver/Local/landsat_test2"
     # adjust_logger(True, folder, "INFO")
     # for product_name, timelim in tests.items():
