@@ -59,6 +59,21 @@ def add_constants(ds, *args):
     ds = ds.assign(defaults.constants_defaults())
     return ds
 
+def remove_empty_statics(ds, *args):
+    for var in ds.data_vars:
+        if "time" not in ds[var].coords and "time_bins" not in ds[var].coords:
+            if ds[var].isnull().all():
+                ds = ds.drop(var)
+                log.info(f"--> Removing `{var}` from dataset since it is empty.")
+    return ds
+
+def add_constants_new(ds, *args): # TODO make sure this only adds constants for et_look, not for se_root.
+    c = defaults.constants_defaults()
+    for var, value in c.items():
+        if var not in ds.data_vars:
+            ds[var] = value
+    return ds
+
 def main(folder, latlim, lonlim, timelim, sources = "level_1", bin_length = "DEKAD", enhancers = [], buffer_timelim = True, **kwargs):
     """Prepare input data for `se_root`.
 
@@ -101,7 +116,7 @@ def main(folder, latlim, lonlim, timelim, sources = "level_1", bin_length = "DEK
     example_sources = {k:v for k,v in sources.items() if k in example_t_vars}
     other_sources = {k:v for k,v in sources.items() if k not in example_t_vars}
 
-    general_enhancers = enhancers + [rename_meteo, add_constants, bt_to_lst, drop_empty_times]
+    general_enhancers = enhancers + [rename_meteo, remove_empty_statics, add_constants_new, bt_to_lst, drop_empty_times]
 
     if buffer_timelim:
         bins = compositer.time_bins(timelim, bin_length)

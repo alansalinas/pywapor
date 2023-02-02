@@ -125,6 +125,8 @@ def main(dss, sources, folder, general_enhancers, bins):
     xr.Dataset
         Dataset with variables grouped into composites.
     """
+    chunks = {"time": -1, "y": 500, "x": 500}
+
     # Open unopened netcdf files.
     dss = {**{k: open_ds(v) for k, v in dss.items() if isinstance(v, str)}, 
             **{k:v for k,v in dss.items() if not isinstance(v, str)}}
@@ -158,13 +160,13 @@ def main(dss, sources, folder, general_enhancers, bins):
 
         # Combine different source_products (along time dimension).
         if np.all(["time" in x[var].dims for x in dss1]):
-            ds = xr.combine_nested(dss1, concat_dim = "time").chunk({"time": -1}).sortby("time").squeeze()
+            ds = xr.combine_nested(dss1, concat_dim = "time").sortby("time").chunk(chunks).squeeze()
         elif np.all(["time" not in x[var].dims for x in dss1]):
             ds = xr.concat(dss1, "stacked").median("stacked")
             if len(dss1) > 1:
                 log.warning(f"--> Multiple ({len(dss1)}) sources for time-invariant `{var}` found, reducing those with 'median'.")
         else:
-            ds = xr.combine_nested([x for x in dss1 if "time" in x[var].dims], concat_dim = "time").chunk({"time": -1}).sortby("time").squeeze()
+            ds = xr.combine_nested([x for x in dss1 if "time" in x[var].dims], concat_dim = "time").sortby("time").chunk(chunks).squeeze()
             log.warning(f"--> Both time-dependent and time-invariant data found for `{var}`, dropping time-invariant data.")
 
         if "time" in ds.dims:
@@ -181,13 +183,14 @@ def main(dss, sources, folder, general_enhancers, bins):
                     ds = ds.chunk({"time": -1, "y": "auto", "x": "auto"})
                     log.warning(f"--> Multiple `{var}` images for an identical datetime found, reducing those with 'median'.")
 
-                ds = add_times(ds, bins, composite_type = composite_type)
+                ds = add_times(ds, bins, composite_type = composite_type).chunk({"time": -1, "y": "auto", "x": "auto"})
                 ds = ds.interpolate_na(dim="time", method = temporal_interp)
 
             # Make composites.
             ds[var] = compositers[composite_type](ds[var].groupby_bins("time", bins, labels = bins[:-1]))
 
-            # Drop time coordinates.
+        # Drop time coordinates.
+        if "time" in ds.coords:
             ds = ds.drop_vars(["time"])
 
         # Save output
@@ -207,13 +210,14 @@ def main(dss, sources, folder, general_enhancers, bins):
                 dss2[var] = func(dss2, var, folder)
 
     # Align all the variables together.
-    example_source = levels.find_setting(sources, "is_example", max_length = 1, min_length = 1)
+    example_source = levels.find_setting(sources, "is_example", min_length = 1)
     if len(example_source) == 1:
         example_ds = dss[example_source[0]]
         log_example_ds(example_ds)
     else:
-        log.warning(f"--> No valid example dataset set.")
+        log.warning(f"--> Multiple example datasets found, selecting lowest resolution.")
         example_ds = None
+
     spatial_interps = [sources[list(x.data_vars)[0]]["spatial_interp"] for x in dss2.values()]
     dss3, temp_files3 = align_pixels(dss2.values(), folder, spatial_interps, example_ds, stack_dim = "time_bins", fn_append = "_step2")
     cleanup.append(temp_files3)
@@ -237,9 +241,19 @@ def main(dss, sources, folder, general_enhancers, bins):
 
     return ds
 
-if __name__ == "__main__":
+# if __name__ == "__main__":
 
-    cleanup = False
+#     cleanup = False
+
+#     dss = {
+#         ("LANDSAT", "LC08_SR"): r"/Users/hmcoerver/Local/custom_levels/LANDSAT/LC08_SR.nc",
+#         ("MODIS", "MYD13Q1.061"): r"/Users/hmcoerver/Local/custom_levels/MODIS/MYD13Q1.061.nc",
+#     }
+
+#     folder = r"/Users/hmcoerver/Local/custom_levels"
+#     timelim = ["2021-08-11", "2021-08-21"]
+#     lonlim = [68.5, 69.0]
+#     latlim = [25.5, 26.0]
 
 #     import datetime
 

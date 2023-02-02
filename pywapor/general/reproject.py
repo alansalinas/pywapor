@@ -328,7 +328,7 @@ def reproject_chunk(src_ds, example_ds, dst_path, spatial_interp = "nearest", st
         def _save_warped_vrt(src_path, var, vrt_options, part_path):
             with rasterio.open(f'NETCDF:{src_path}:{var}') as src:
                 with WarpedVRT(src, **vrt_options) as vrt:
-                    rio_shutil.copy(vrt, part_path, driver='netcdf', creation_options = {"COMPRESS": "DEFLATE"})
+                    rio_shutil.copy(vrt, part_path, driver='netcdf')#, creation_options = {"COMPRESS": "DEFLATE"})
 
         _save_warped_vrt(src_path, var, vrt_options, part_path, label = "Warping VRT to netCDF.")
 
@@ -360,12 +360,15 @@ def reproject_chunk(src_ds, example_ds, dst_path, spatial_interp = "nearest", st
 
     return ds
 
-# if __name__ == "__main__":
+if __name__ == "__main__":
 
-#     src_ds = open_ds(r"/Users/hmcoerver/Local/test_data/SENTINEL3/SL_2_LST___.nc")
-#     example_ds = open_ds(r"/Users/hmcoerver/Local/test_data/SENTINEL2/S2MSI2A.nc")
-#     dst_path = r"/Users/hmcoerver/Local/test_data/output_test.nc"
-#     spatial_interp = "nearest"
+
+
+    src_ds = open_ds(r"/Users/hmcoerver/Local/custom_levels/MODIS/MOD13Q1.061.nc")
+    example_ds = open_ds(r"/Users/hmcoerver/Local/custom_levels/LANDSAT/LC08_SR.nc")
+    dst_path = r"/Users/hmcoerver/Local/custom_levels/test2.nc"
+
+    # spatial_interp = "nearest"
 #     var = "lst"
 
-#     ds = reproject_chunk(src_ds, example_ds, dst_path, spatial_interp = "nearest")
+    ds = reproject_bulk(src_ds, example_ds, dst_path, spatial_interp = "nearest")

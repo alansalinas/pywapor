@@ -13,6 +13,8 @@ def gap_fill(ds, var, out_var = None, max_search_dist = 8):
         Variable name.
     out_var : str, optional
         New variable name in case `var` should not be overwritten, by default None.
+    max_search_dist : int, optional
+        Control the maximum size of gaps to be filled, by default 8.
 
     Returns
     -------

@@ -110,7 +110,7 @@ def pre_et_look_levels(level = "level_1", bin_length = "DEKAD"):
                 },
             ],
             "composite_type": "max",
-            "temporal_interp": "linear",
+            "temporal_interp": None,
             "spatial_interp": "bilinear",
         },
 
@@ -466,7 +466,7 @@ def pre_et_look_levels(level = "level_1", bin_length = "DEKAD"):
                 },
             ],
             "composite_type": "max",
-            "temporal_interp": "linear",
+            "temporal_interp": None,
             "spatial_interp": "bilinear",
         }
 

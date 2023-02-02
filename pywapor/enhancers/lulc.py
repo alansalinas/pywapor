@@ -2,6 +2,7 @@
 `land_mask`, `lue_max`, `rs_min` and `z_obst_max`.
 """
 import numpy as np
+from pywapor.general.logger import log
 
 def lulc_to_x(ds, var, convertor, in_var = None, out_var = None):
     """Convert values in a classified map to other values based on a dictionary.
@@ -24,6 +25,9 @@ def lulc_to_x(ds, var, convertor, in_var = None, out_var = None):
     xr.Dataset
         Dataset with the replaced values.
     """
+
+    log.info(f"--> Calculating `{out_var}` from `lulc`.")
+
     if not isinstance(in_var, type(None)):
         var = in_var
 

@@ -4,39 +4,17 @@
 """
 import numpy as np
 import xarray as xr
+from pywapor.general.processing_functions import calc_dlat_dlon
+from pywapor.enhancers.dem import calc_slope
 
-def orographic_roughness(slope, dem_resolution=1000.0):
-    r"""
-    Computes the orographic roughness, which is a function of the slope of the
-    terrain. Steeper slopes will increase the orographic roughness.
+def orographic_roughness(z, x, y):
 
-    .. math ::
+    dlat, dlon = calc_dlat_dlon(None, None, None, (y.values, x.values))            
+    dem_resolution = np.nanmedian(np.nanmean([dlat, dlon], axis = 0))
+    slope_per = np.tan(calc_slope(z.to_dataset(), "slope")["slope"])
+    z_oro = 0.002 * (((dem_resolution * slope_per)**2) / dem_resolution)
 
-        z_{oro}=0.002 \cdot \left(\frac{\left(x_{res} \cdot \frac{\Delta}{100}\right)}
-        {x_{res}}^{2}\right)
-
-    Parameters
-    ----------
-    slope : float
-        slope, 
-        :math:`\Delta`
-        [rad]
-    dem_resolution : float
-        resolution of dem, 
-        :math:`x_{res}`
-        [m]
-
-    Returns
-    -------
-    z_oro : float
-        orographic roughness, 
-        :math:`z_{oro}`
-        [m]
-
-    """
-
-    slope_per = np.tan(slope)
-    return 0.002*(((dem_resolution*slope_per)**2)/dem_resolution)
+    return z_oro
 
 def roughness_length(lai, z_oro, z_obst, z_obst_max, land_mask=1):
     r"""

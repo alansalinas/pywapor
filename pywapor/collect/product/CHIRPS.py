@@ -147,6 +147,11 @@ def download(folder, latlim, lonlim, timelim, product_name = "P05", req_vars = [
         else:
             return existing_ds[req_vars_orig]
 
+    spatial_buffer = True
+    if spatial_buffer:
+        latlim = [latlim[0] - 0.05, latlim[1] + 0.05]
+        lonlim = [lonlim[0] - 0.05, lonlim[1] + 0.05]
+
     tiles = [None]
     coords = {"x": ["longitude", lonlim], "y": ["latitude", latlim], "t": ["time", timelim]}
     if isinstance(variables, type(None)):

@@ -59,7 +59,7 @@ def regrid_VNP(workdir, latlim, lonlim, dx_dy = (0.0033, 0.0033)):
         dt_str = ".".join(os.path.split(nc02)[-1].split(".")[1:3])
         ncs03 = glob.glob(os.path.join(workdir, f"VNP03IMG.{dt_str}*.nc"))
         ncs_cloud = glob.glob(os.path.join(workdir, f"CLDMSK_L2_VIIRS_SNPP.{dt_str}*.nc"))
-        if len(ncs03) != 1 and len(ncs_cloud) != 1:
+        if len(ncs03) != 1 or len(ncs_cloud) != 1:
             continue
         else:
             nc03 = ncs03[0]
@@ -446,7 +446,7 @@ def default_post_processors(product_name, req_vars = None):
 
 def download(folder, latlim, lonlim, timelim, product_name, req_vars,
                 variables = None, post_processors = None):
-    """Download MODIS data and store it in a single netCDF file.
+    """Download VIIRSL1 data and store it in a single netCDF file.
 
     Parameters
     ----------

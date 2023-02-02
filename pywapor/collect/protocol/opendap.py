@@ -104,6 +104,10 @@ def download(fp, product_name, coords, variables, post_processors,
     
     # Save final output.
     ds.attrs = {}
+    for var in ds.data_vars: # NOTE Keeping band attributes can cause problems when 
+        # opening the data using rasterio (in reproject_chunk), see https://github.com/rasterio/rasterio/discussions/2751
+        ds[var].attrs = {}
+
     ds = save_ds(ds, fp, encoding = "initiate", label = "Saving merged data.")
 
     # Remove temporary files.

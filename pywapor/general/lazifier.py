@@ -26,7 +26,9 @@ def decorate_mod(module, decorator):
                         "stability_parameter", 
                         "stability_factor", 
                         "friction_velocity", 
-                        "ra_canopy", 
+                        "ra_canopy",
+                        "calc_dlat_dlon",
+                        "calc_slope",
                         "stability_parameter_obs", 
                         "stability_correction_heat_obs"]:
             obj = getattr(module, name)
@@ -68,7 +70,10 @@ def etlook_decorator(func):
             x.attrs["et_look_module"] = group
             return x
         else:
-            log.warning(f"--> Insufficient data found for `{func.__name__}`.")
+            missing_args = [arg.name for arg in args if arg.dtype == object]
+            missing_kwargs = [name for name, arg in kwargs.items() if arg.dtype == object]
+            missing = missing_args + missing_kwargs
+            log.warning(f"--> Insufficient data found for `{func.__name__}`, missing [`{'`, `'.join(missing)}`]")
     wrapper_func.__module__ = func.__module__
     wrapper_func.__name__ = func.__name__
     setattr(wrapper_func, "decorated", True)

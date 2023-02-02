@@ -91,6 +91,21 @@ def add_constants(ds, *args):
     ds = ds.assign(defaults.constants_defaults())
     return ds
 
+def remove_empty_statics(ds, *args):
+    for var in ds.data_vars:
+        if "time" not in ds[var].coords and "time_bins" not in ds[var].coords:
+            if ds[var].isnull().all():
+                ds = ds.drop(var)
+                log.info(f"--> Removing `{var}` from dataset since it is empty.")
+    return ds
+
+def add_constants_new(ds, *args): # TODO make sure this only adds constants for et_look, not for se_root.
+    c = defaults.constants_defaults()
+    for var, value in c.items():
+        if var not in ds.data_vars:
+            ds[var] = value
+    return ds
+
 def main(folder, latlim, lonlim, timelim, sources = "level_1", bin_length = "DEKAD", enhancers = [lapse_rate]):
     """Prepare input data for `et_look`.
 
@@ -104,10 +119,10 @@ def main(folder, latlim, lonlim, timelim, sources = "level_1", bin_length = "DEK
         Longitude limits of area of interest.
     timelim : list
         Period for which to prepare data.
-    sources : "level_1" | "level_2" | "level_2_v3" | dict
-        Configuration for each variable and source.
-    bin_length : int | "DEKAD"
-        Composite length.
+    sources : "level_1" | "level_2" | "level_2_v3" | dict, optional
+        Configuration for each variable and source, by default `"level_1"`.
+    bin_length : int | "DEKAD", optional
+        Composite length, by_default `"DEKAD"`.
     enhancers : list, optional
         Functions to apply to the xr.Dataset before creating the final
         output, by default `[lapse_rate]`.
@@ -130,7 +145,7 @@ def main(folder, latlim, lonlim, timelim, sources = "level_1", bin_length = "DEK
 
     bins = compositer.time_bins(timelim, bin_length)
 
-    general_enhancers = enhancers + [rename_vars, fill_attrs, partial(calc_doys, bins = bins), add_constants]
+    general_enhancers = enhancers + [rename_vars, fill_attrs, partial(calc_doys, bins = bins), remove_empty_statics, add_constants_new]
 
     adjusted_timelim = [bins[0], bins[-1]]
     buffered_timelim = [adjusted_timelim[0] - np.timedelta64(3, "D"), 

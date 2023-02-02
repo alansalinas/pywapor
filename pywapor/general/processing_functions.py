@@ -17,7 +17,12 @@ import re
 
 def remove_temp_files(folder):
 
-    log_file = glob.glob(os.path.join(folder, "log.txt"))[0]
+    log_files = glob.glob(os.path.join(folder, "log.txt"))
+
+    if not len(log_files) == 1:
+        return None
+    else:
+        log_file = log_files[0]
 
     with open(log_file, "r") as f:
         lines = f.readlines()
