@@ -251,10 +251,9 @@ def reproject(src_ds, example_ds, dst_path, spatial_interp = "nearest",
         Reprojected dataset.
     """
 
-    # test_ds = [src_ds, example_ds][np.argmax([src_ds.nbytes, example_ds.nbytes])]
+    test_ds = [src_ds, example_ds][np.argmax([src_ds.nbytes, example_ds.nbytes])]
 
-    # reproj = choose_reprojecter(test_ds, max_bytes = max_bytes, min_times = min_times, stack_dim = stack_dim)
-    reproj = reproject_bulk
+    reproj = choose_reprojecter(test_ds, max_bytes = max_bytes, min_times = min_times, stack_dim = stack_dim)
 
     if "source" in src_ds.encoding.keys():
         log.info(f"--> Selected `{reproj.__name__}` for reprojection of {os.path.split(src_ds.encoding['source'])[-1]}.").add()
