@@ -193,7 +193,7 @@ def make_example_ds(ds, folder, target_crs, bb = None, example_ds_fp = None):
     return example_ds
 
 @performance_check
-def save_ds(ds, fp, decode_coords = "all", encoding = None, chunks = "auto", precision = 4):
+def save_ds(ds, fp, decode_coords = "all", encoding = None, chunks = "auto", precision = 4, scheduler=None):
     """Save a `xr.Dataset` as netcdf.
 
     Parameters
@@ -270,7 +270,11 @@ def save_ds(ds, fp, decode_coords = "all", encoding = None, chunks = "auto", pre
             warnings.filterwarnings("ignore", message="All-NaN slice encountered")
             warnings.filterwarnings("ignore", message="invalid value encountered in power")
             warnings.filterwarnings("ignore", message="invalid value encountered in log")
-            ds.to_netcdf(temp_fp, encoding = encoding, mode = {True: "a", False: "w"}[appending])
+            if isinstance(scheduler, type(None)):
+                ds.to_netcdf(temp_fp, encoding = encoding, mode = {True: "a", False: "w"}[appending])
+            else:
+                ds = ds.to_netcdf(temp_fp, compute = False, encoding = encoding, mode = {True: "a", False: "w"}[appending])
+                _ = ds.compute(scheduler=scheduler)
 
     ds = ds.close()
 
