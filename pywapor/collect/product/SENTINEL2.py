@@ -422,21 +422,35 @@ def s2_processor(scene_folder, variables):
     ds = xr.merge(dss).drop_vars("band")
 
     meta_fps = glob.glob(os.path.join(scene_folder, "**", "MTD_MSIL2A.xml"), recursive = True)
+    
     if len(meta_fps) >= 1:
         tree = etree.parse(meta_fps[0])
         root = tree.getroot()
-        offsets = [float(x.text) for x in root.iter('BOA_ADD_OFFSET')]
-        scales = [float(x.text) for x in root.iter('BOA_QUANTIFICATION_VALUE')]
-        scale = np.median(scales)
-        offset = np.median(offsets)
+        baseline = [float(x.text) for x in root.iter('PROCESSING_BASELINE')][0]    
+        # NOTE https://sentinels.copernicus.eu/en/web/sentinel/-/copernicus-sentinel-2-major-products-upgrade-upcoming
+        # NOTE https://stackoverflow.com/questions/72566760/how-to-correct-sentinel-2-baseline-v0400-offset
+        if baseline >= 4.0:
+            offsets = [float(x.text) for x in root.iter('BOA_ADD_OFFSET')]
+            scales = [float(x.text) for x in root.iter('BOA_QUANTIFICATION_VALUE')]
+            scale = np.median(scales)
+            offset = np.median(offsets)
+            ds.attrs = {"scale_factor": scale, "offset_factor": offset}
+        else:
+            offsets = [0.]
+            offset = offsets[0]
+            scales = [float(x.text) for x in root.iter('BOA_QUANTIFICATION_VALUE')]
+            scale = np.median(scales)
         if len(np.unique(offsets)) != 1:
-            log.warning(f"Multiple offsets found for `{scene_folder}`, using `{offset}`, check `{meta_fps[0]}` for more info.")
+            log.warning(f"--> Multiple offsets found for `{scene_folder}`, using `{offset}`, check `{meta_fps[0]}` for more info.")
         if len(scales) != 1:
-            log.warning(f"Multiple scales found for `{scene_folder}`, using `{scale}`, check `{meta_fps[0]}` for more info.")
-        ds.attrs = {"scale_factor": scale, "offset_factor": offset}
+            log.warning(f"--> Multiple scales found for `{scene_folder}`, using `{scale}`, check `{meta_fps[0]}` for more info.")
     else:
-        ds.attrs = {"scale_factor": 10000.0, "offset_factor": -1000.0}
-        log.warning(f"No scale/offset found for `{meta_fps[0]}`, using `{ds.attrs}`.")
+        t = time_func(os.path.split(scene_folder)[-1])
+        if t < np.datetime64("2022-01-25"):
+            ds.attrs = {"scale_factor": 10000.0, "offset_factor": 0.}
+        else:
+            ds.attrs = {"scale_factor": 10000.0, "offset_factor": -1000.0}
+        log.warning(f"--> No scale/offset found for `{meta_fps[0]}`, using `{ds.attrs}`.")
 
     return ds
 
@@ -510,7 +524,7 @@ def download(folder, latlim, lonlim, timelim, product_name,
         return np.any([x in fn for x in to_dl])
     # node_filter = None
 
-    scenes = sentinelapi.download(product_folder, latlim, lonlim, timelim, search_kwargs, node_filter = node_filter)
+    scenes = sentinelapi.download(product_folder, latlim, lonlim, timelim, search_kwargs, node_filter = node_filter, to_dl = variables.keys())
 
     ds = sentinelapi.process_sentinel(scenes, variables, "SENTINEL2", time_func, os.path.split(fn)[-1], post_processors, bb = bb)
 

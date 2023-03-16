@@ -21,7 +21,7 @@ import hashlib
 import json
 from sentinelsat.download import Downloader
 
-def download(folder, latlim, lonlim, timelim, search_kwargs, node_filter = None):
+def download(folder, latlim, lonlim, timelim, search_kwargs, node_filter = None, to_dl = None):
     """Download data using the SentinelSAT API.
 
     Parameters
@@ -88,9 +88,18 @@ def download(folder, latlim, lonlim, timelim, search_kwargs, node_filter = None)
                 json.dump(products, f)
         return products
 
+    def _check_scene(folder, v, to_dl):
+        fns = [os.path.split(x)[-1] for x in glob.glob(os.path.join(folder, v + "*", "**","*"), recursive=True)]
+        check = np.all([np.any([y in x for x in fns]) for y in to_dl])
+        return check
+
     products = _search_query(api, {"area": footprint, "date": tuple(timelim), **search_kwargs})
     log.info(f"--> Found {len(products)} {search_kwargs['producttype']} scenes.")
-    to_keep = {k: v for k, v in products.items() if len(glob.glob(os.path.join(folder, v + "*"))) == 0}
+    
+    if not isinstance(to_dl, type(None)):
+        to_keep = {k: v for k, v in products.items() if not _check_scene(folder, v, to_dl)}
+    else:
+        to_keep = {k: v for k, v in products.items() if len(glob.glob(os.path.join(folder, v + "*"))) == 0}
     log.info(f"--> {len(products) - len(to_keep)} scenes already downloaded, collecting remaining {len(to_keep)}.")
 
     dler = Downloader(api, node_filter = node_filter)
@@ -99,15 +108,12 @@ def download(folder, latlim, lonlim, timelim, search_kwargs, node_filter = None)
     statuses, exceptions, out = dler.download_all(to_keep, folder)
 
     if len(exceptions) > 0:
-        log.info(f"--> An exception occured, check `log_sentinelapi.txt` for more info.")
- 
-    log.info(f"--> Finished downloading {search_kwargs['producttype']} scenes.")
+        log.info(f"--> An exception occured for {len(exceptions)} scenes, check `log_sentinelapi.txt` for more info.")
 
-    if isinstance(node_filter, type(None)):
-        scenes = [x["path"] for x in out.values()]
-    else:
-        scenes = [os.path.join(folder, x["node_path"][2:]) for x in out.values()]
-    
+    scenes = [glob.glob(os.path.join(folder, v + "*"))[0] for k, v in products.items() if not k in exceptions.keys()]
+
+    log.info(f"--> Finished downloading {len(scenes)} {search_kwargs['producttype']} scenes.")
+
     return scenes
 
 def process_sentinel(scenes, variables, source_name, time_func, final_fn, post_processors, bb = None):
