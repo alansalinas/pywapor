@@ -180,7 +180,7 @@ def download(folder, latlim, lonlim, timelim, product_name,
     # node_filter = None
 
     scenes = sentinelapi.download(product_folder, latlim, lonlim, timelim, 
-                                    search_kwargs, node_filter = node_filter)
+                                    search_kwargs, node_filter = node_filter, to_dl = variables.keys())
 
     ds = sentinelapi.process_sentinel(scenes, variables, "SENTINEL3", time_func, os.path.split(fn)[-1], post_processors, bb = bb)
 
