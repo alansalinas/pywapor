@@ -17,6 +17,8 @@ import glob
 import rasterio.crs
 import types
 import logging
+import hashlib
+import json
 from sentinelsat.download import Downloader
 
 def download(folder, latlim, lonlim, timelim, search_kwargs, node_filter = None):
@@ -73,13 +75,28 @@ def download(folder, latlim, lonlim, timelim, search_kwargs, node_filter = None)
     logger.addHandler(handler)
 
     footprint = create_wkt(latlim, lonlim)
-    products = api.query(footprint, date = tuple(timelim), **search_kwargs)
+
+    def _search_query(api, kwargs):
+        search_hash = hashlib.sha1(json.dumps({k:str(v) for k,v in kwargs.items()}, sort_keys=True).encode()).hexdigest()
+        fp = os.path.join(folder, search_hash + ".json")
+        if os.path.isfile(fp):
+            with open(fp) as f:
+                products = json.load(f)
+        else:
+            products = {k: v["title"] for k,v in api.query(**kwargs).items()}
+            with open(fp, "w") as f:
+                json.dump(products, f)
+        return products
+
+    products = _search_query(api, {"area": footprint, "date": tuple(timelim), **search_kwargs})
     log.info(f"--> Found {len(products)} {search_kwargs['producttype']} scenes.")
+    to_keep = {k: v for k, v in products.items() if len(glob.glob(os.path.join(folder, v + "*"))) == 0}
+    log.info(f"--> {len(products) - len(to_keep)} scenes already downloaded, collecting remaining {len(to_keep)}.")
 
     dler = Downloader(api, node_filter = node_filter)
     dler._tqdm = types.MethodType(_progress_bar, dler)
 
-    statuses, exceptions, out = dler.download_all(products, folder)
+    statuses, exceptions, out = dler.download_all(to_keep, folder)
 
     if len(exceptions) > 0:
         log.info(f"--> An exception occured, check `log_sentinelapi.txt` for more info.")
