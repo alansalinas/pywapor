@@ -16,7 +16,7 @@ def plot_point(ax, point_ds, ylim = [-0.2, 1], t_idx = None, title = True, xtick
             obj = ax.scatter(
                     X, Y,
                     color = cmap(i),
-                    label = point_ds.sensor.attrs[str(sensor_name)],
+                    label = point_ds.sensor.attrs[str(int(sensor_name))],
                     )
             handles.append(obj)
     obj = ax.plot(point_ds["time"], point_ds["ndvi_smoothed"], label = "smoothed", color = cmap(i + 1))
@@ -45,8 +45,13 @@ def plot_point(ax, point_ds, ylim = [-0.2, 1], t_idx = None, title = True, xtick
             lmbda = point_ds['lmbda_sel']
             title_parts.append(f"Lambda: {lmbda.values:.0E}")
         if "cves" in point_ds.data_vars and "lmbda_sel" in point_ds.data_vars:
-            cve = point_ds['cves'].sel(lmbda = point_ds['lmbda_sel'], method = "nearest").values
+            if "lmbda" in point_ds["cves"].dims:
+                cve = point_ds['cves'].sel(lmbda = point_ds['lmbda_sel'], method = "nearest").values
+            else:
+                cve = point_ds["cves"].values
             title_parts.append(f"CVE: {cve:.4f}")
+        if "a" in point_ds["ndvi_smoothed"].attrs.keys():
+            title_parts.append(f"a: {point_ds['ndvi_smoothed'].attrs['a']}")
         if "x" in point_ds.coords:
             lat = float(point_ds.y.values)
             title_parts.append(f"Lat.: {lat:.3f}")
@@ -55,7 +60,7 @@ def plot_point(ax, point_ds, ylim = [-0.2, 1], t_idx = None, title = True, xtick
             title_parts.append(f"Lon.: {lon:.3f}")
         full_title = ", ".join(title_parts)
         ax.set_title(full_title)
-    ax.legend(handles = handles, ncols = 5, loc = "lower center")
+    ax.legend(handles = handles, ncols = 4, loc = "lower center")
     return handles
 
 def plot_map(ax, da, points = None, cmap = "RdBu_r", ylim = [-1.0, 1.0], ytick = True, xtick = True, norm = None):
