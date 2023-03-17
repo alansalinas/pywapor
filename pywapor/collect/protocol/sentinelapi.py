@@ -209,6 +209,7 @@ def process_sentinel(scenes, variables, source_name, time_func, final_fn, post_p
         dtime = time_func(fn)
         ds = ds.expand_dims({"time": 1})
         ds = ds.assign_coords({"time":[dtime]})
+        ds.attrs = {}
 
         # Save to netcdf
         ds = save_ds(ds, fp, chunks = chunks, encoding = "initiate", label = f"({i+1}/{len(scenes)}) Processing {fn} to netCDF.")
