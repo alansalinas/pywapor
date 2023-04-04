@@ -1,220 +1,113 @@
 import xarray as xr
 import numpy as np
-from numba import float64, guvectorize
-import os
-import pandas as pd
-from pywapor.general.processing_functions import save_ds
-from pywapor.enhancers.smooth.plotters import plot_overview, plot_stats, create_video
-import tqdm
-import glob
-from joblib import Parallel, delayed
+from pywapor.general.processing_functions import save_ds, open_ds
+from pywapor.enhancers.smooth.plotters import make_overview
+from pywapor.general.logger import log
+from pywapor.enhancers.smooth.core import _wt1, _wt2, cve1, second_order_diff_matrix, dist_to_finite
 
-def open_ts(fps):
+def xr_dist_to_finite(y, dim = "time"):
 
-    dss = list()
-    for fp in fps:
-        name = os.path.split(fp)[-1].replace(".nc", "")
-        ds = xr.open_dataset(fp, decode_coords = "all")
-        ds["sensor"] = xr.ones_like(ds["time"], dtype = int).where(False, name)
-        dss.append(ds)
-    ds = xr.concat(dss, dim = "time", combine_attrs = "drop_conflicts").sortby("time").transpose("y", "x", "time")
-    ds["sensor"] = ds["sensor"].astype("<U7")
-    ds.attrs = {}
+    if not dim in y.dims:
+        raise ValueError
 
-    attribute = {str(i): sensor_name for i, sensor_name in enumerate(np.unique(ds.sensor))}
-    values = np.array(list(attribute.keys()), dtype = int)
-    coords = np.array(list(attribute.values()), dtype = str)
-    transformer = xr.DataArray(values, dims=["sensor"], coords = {"sensor": coords})
-    ds["sensor"] = transformer.sel(sensor = ds.sensor).drop("sensor").assign_attrs(attribute)
+    out = xr.apply_ufunc(
+        dist_to_finite, y, y[dim],
+        input_core_dims=[[dim], [dim]],
+        output_core_dims=[[dim]],
+        vectorize=False,
+        dask="parallelized",
+    )
 
-    return ds
+    return out
 
-def filter_ts(x, y, tol = 0.002):
-    diff_forward = x.diff("time").assign_coords({"time": x.time[:-1]})
-    diff_backward = x.diff("time").assign_coords({"time": x.time[1:]})
-    d2x = (diff_forward + diff_backward).reindex_like(x.time, fill_value = tol * 2)
-    print(f"--> Removing {(d2x < tol).sum().values} time slices.")
-    y = y.where(d2x >= tol, drop = True)
-    x = x.where(d2x >= tol, drop = True)
-    return x, y
-
-def choose_func(y, lmbdas, fname):
-
-    funcs = {"wt": [wt1, wt2], "cve": [cve1, cve2]}
-
+def xr_choose_func(y, lmbdas, dim):
+    
+    funcs = [_wt1, _wt2]
     y_dims = getattr(y, "ndim", 0)
     lmbdas_dims = getattr(lmbdas, "ndim", 0)
     if y_dims in [2,3] and lmbdas_dims in [1]:
-        wt = funcs[fname][1]
+        wt_func = funcs[1]
+        icd = [[dim],[],["lmbda"],[],[],[],[],[]]
+        ocd = [["lmbda", dim]]
     elif y_dims in [2] and lmbdas_dims in [2]:
         raise ValueError
     else:
-        wt = funcs[fname][0]
+        wt_func = funcs[0]
+        icd = [[dim],[],[],[],[],[],[],[]]
+        ocd = [[dim]]
 
-    if y_dims == 3 and lmbdas_dims == 2 and not isinstance(y, xr.DataArray):
-        assert y.shape[:2] == lmbdas.shape
-    elif y_dims == 3 and lmbdas_dims == 2 and isinstance(y, xr.DataArray):
-        assert np.all([True for k, v in lmbdas.sizes.items() if y.sizes[k] == v])
+    return wt_func, icd, ocd
 
-    print(f"Using {wt.__name__}")
+def xr_cve(y, x, lmbdas, u):
 
-    return wt
-
-def second_order_diff_matrix(x):
-    X = np.append(x, [np.nan, np.nan])
-    # Create x-aware delta matrix. When sample-points are at equal distance,
-    # this reduces to [[1, -2, 1, ...], ..., [..., 1, -2, 1]].
-    diag_n0 = 2  / ((X[1:-1] - X[:-2])  * (X[2:]   - X[:-2]))
-    diag_n1 = -2 / ((X[2:-1] - X[1:-2]) * (X[1:-2] - X[0:-3]))
-    diag_n2 = 2  / ((X[2:-2] - X[1:-3]) * (X[2:-2] - X[0:-4]))
-    D = np.diag(diag_n0) + np.diag(diag_n1, k = 1) + np.diag(diag_n2, k = 2)
-    D = D[:-2,:]
-    return D
-
-def whittaker(y, x, lmbdas = 10.):
-
-    x, y, lmbdas, dim_name = assert_dtypes(x, y, lmbdas)
+    # Check dimension and dtypes are valid.
+    x, y, lmbdas, dim = assert_dtypes(x, y, lmbdas)
 
     # Normalize x-coordinates
     x = (x - x.min()) / (x.max() - x.min()) * x.size
 
-    # Remove points that are too close together
-    if isinstance(x, xr.DataArray):
-        original_time = x[dim_name]
-        x, y = filter_ts(x, y, tol = 0.002)
+    # Create x-aware delta matrix.
+    A = second_order_diff_matrix(x)
+
+    # Make default u weights if necessary.
+    if isinstance(u, type(None)):
+        u = np.ones(x.shape)
+
+    # Apply whittaker smoothing along axis.
+    cves = xr.apply_ufunc(
+        cve1, lmbdas, y, A, u,
+        input_core_dims = [["lmbda"],[dim],[],[]],
+        output_core_dims = [["lmbda"]],
+        dask = "allowed",
+        )
+    
+    return cves
+
+def xr_wt(y, x, lmbdas, u = None, a = 0.5, min_drange = -np.inf, 
+          max_drange = np.inf, max_iter = 10):
+
+    # Check dimension and dtypes are valid.
+    x, y, lmbdas, dim = assert_dtypes(x, y, lmbdas)
+
+    # Normalize x-coordinates
+    x = (x - x.min()) / (x.max() - x.min()) * x.size
 
     # Create x-aware delta matrix.
-    D = second_order_diff_matrix(x)
-    A = np.dot(D.T, D)
+    A = second_order_diff_matrix(x)
 
-    # Choose which Whittaker function to use depending on shapes of y and lmbdas.
-    wt = choose_func(y, lmbdas, "wt")
+    # Make default u weights if necessary.
+    if isinstance(u, type(None)):
+        u = np.ones(x.shape)
 
-    if isinstance(x, xr.DataArray):
+    # Choose which vectorized function to use.
+    _wt, icd, ocd = xr_choose_func(y, lmbdas, dim)
 
-        if wt.__name__ == "wt1":
-            icd = [[dim_name], [], []]
-            ocd = [[dim_name]]
-        elif wt.__name__ == "wt2":
-            
-            icd = [[dim_name], [], ["lmbda"]]
-            ocd = [["lmbda", dim_name]]
+    # Make sure lmbdas is chunked similar to y.
+    if not isinstance(y.chunk, type(None)):
+        lmbdas = lmbdas.chunk({k: v for k, v in y.unify_chunks().chunksizes.items() if k in lmbdas.dims})
 
-        # Make sure lmbdas is chunked similar to y.
-        if not isinstance(y.chunk, type(None)):
-            lmbdas = lmbdas.chunk({k: v for k,v in y.chunksizes.items() if k in lmbdas.dims})
+    # Apply whittaker smoothing along axis.
+    z = xr.apply_ufunc(
+        _wt, y, A, lmbdas, u, a, min_drange, max_drange, max_iter,
+        input_core_dims = icd,
+        output_core_dims = ocd,
+        dask = "allowed",
+        )
 
-        # Apply whittaker smoothing along axis.
-        z = xr.apply_ufunc(
-            wt, y, A, lmbdas,
-            input_core_dims=icd,
-            output_core_dims=ocd,
-            dask = "allowed",
-            )
-
-        z = z.reindex_like(original_time, fill_value = np.nan)
-    else:
-        z = wt(y, A, lmbdas)
+    # Add some metadata.
+    z.attrs = {"a": f"{a:.2f}", 
+               "min_drange": str(min_drange), 
+               "max_drange": str(max_drange)}
 
     return z
 
-@guvectorize([(float64[:], float64[:,::1], float64[:], float64[:])], '(n),(n,n),()->(n)')
-def wt1(Y, A, lmbda, Z):
-    # Create weights.
-    w = np.isfinite(Y, np.zeros_like(Y))
-    W = np.diag(w)
-    # Set np.nan in y to 0.
-    Y = np.where(w == 0, 0, Y)
-    Z[:] = np.linalg.solve(W + lmbda * A, np.dot(W,Y))
-
-@guvectorize([(float64[:], float64[:,::1], float64[:], float64[:,:])], '(n),(n,n),(k)->(k,n)')
-def wt2(Y, A, lmbda, Z):
-    # Create weights.
-    w = np.isfinite(Y, np.zeros_like(Y))
-    W = np.diag(w)
-    # Set np.nan in y to 0.
-    Y = np.where(w == 0, 0, Y)
-    for i, lmbda in enumerate(lmbda):
-        Z[i, :] = np.linalg.solve(W + lmbda * A, np.dot(W,Y))
-
-def cross_val_lmbda(y, x, lmbdas = np.logspace(0, 3, 4)):
-
-    x, y, lmbdas, dim_name = assert_dtypes(x, y, lmbdas)
-
-    # Normalize x-coordinates
-    x = (x - x.min()) / (x.max() - x.min()) * x.size
-
-    # Remove points that are too close together
-    if isinstance(x, xr.DataArray):
-        x, y = filter_ts(x, y, tol = 0.002)
-
-    # Create x-aware delta matrix.
-    D = second_order_diff_matrix(x)
-    A = np.dot(D.T, D)
-
-    # Choose which function to use depending on shapes of y and lmbdas.
-    cve = choose_func(y, lmbdas, "cve")
-
-    if isinstance(x, xr.DataArray):
-
-        # Determine dimension names.
-        if cve.__name__ == "cve1":
-            icd = [[], [dim_name], []]
-            ocd = [[]]
-        elif cve.__name__ == "cve2":
-            icd = [["lmbda"], [dim_name], []]
-            ocd = [["lmbda"]]
-
-        # Make sure lmbdas is chunked similar to y.
-        if not isinstance(y.chunk, type(None)):
-            lmbdas = lmbdas.chunk({k: v for k,v in y.chunksizes.items() if k in lmbdas.dims})
-
-        # Calculate the cross validation standard error for each lambda using
-        # the hat matrix.
-        cves = xr.apply_ufunc(
-            cve, lmbdas, y, A,
-            input_core_dims=icd,
-            output_core_dims=ocd,
-            dask = "allowed")
-
-        # Select the lambda for which the error is smallest.
-        if "lmbda" in cves.dims:
-            lmbda_sel = cves.idxmin(dim = "lmbda")
-        else:
-            cves.assign_coords({"lmbda": lmbdas})
-            lmbda_sel = lmbdas
-    else:
-        cves = cve(lmbdas, y, A)
-        if np.isscalar(lmbdas):
-            lmbda_sel = lmbdas
-        elif lmbdas.ndim == 1:
-            idx = np.argmin(cves, axis = -1)
-            lmbda_sel = lmbdas[idx]
-        else:
-            lmbda_sel = lmbdas
-        
-    return lmbda_sel, cves
-
-@guvectorize([(float64, float64[:], float64[:,::1], float64[:])], '(),(m),(m,m)->()')
-def cve1(lmbda, Y, A, cves):
-    w = np.isfinite(Y, np.zeros_like(Y))
-    W = np.diag(w)
-    Y_ = np.where(w == 0, 0, Y)
-    H = np.linalg.solve(W + lmbda * A, W) # Eq. 13
-    y_hat = np.dot(H, Y_) # Eq. 10
-    hii = np.diag(H)
-    cves[:] = np.sqrt(np.nanmean(((Y - y_hat)/(1- hii))**2)) # Eq. 9 + 11
-
-@guvectorize([(float64[:], float64[:], float64[:,::1], float64[:])], '(k),(m),(m,m)->(k)')
-def cve2(lmbdas, Y, A, cves):
-    w = np.isfinite(Y, np.zeros_like(Y))
-    W = np.diag(w)
-    Y_ = np.where(w == 0, 0, Y)
-    for i, lmbda in enumerate(lmbdas):
-        H = np.linalg.solve(W + lmbda * A, W) # Eq. 13
-        y_hat = np.dot(H, Y_) # Eq. 10
-        hii = np.diag(H)
-        cves[i,...] = np.sqrt(np.nanmean(((Y - y_hat)/(1- hii))**2)) # Eq. 9 + 11
+def make_weights(sensor_da, weights):
+    weights_dict = {{v: k for k, v in sensor_da.attrs.items()}[sensor]: weight for sensor, weight in weights.items() if sensor in sensor_da.attrs.values()}
+    values = np.array(list(weights_dict.values()))
+    coords = np.array(list(weights_dict.keys()), dtype = int)
+    transformer = xr.DataArray(values, dims=["sensor"], coords = {"sensor": coords})
+    u = transformer.sel(sensor = sensor_da).values
+    return u
 
 def assert_dtypes(x, y, lmbdas):
 
@@ -241,6 +134,8 @@ def assert_dtypes(x, y, lmbdas):
         raise TypeError
 
     # Check lmbdas.
+    if isinstance(lmbdas, float) or isinstance(lmbdas, int) or isinstance(lmbdas, list):
+        lmbdas = np.array(lmbdas)
     assert lmbdas.ndim <= 2
     if isinstance(x, xr.DataArray) and (isinstance(lmbdas, np.ndarray) or np.isscalar(lmbdas)):
         if not np.isscalar(lmbdas):
@@ -267,113 +162,146 @@ def assert_dtypes(x, y, lmbdas):
     
     return x, y, lmbdas, dim_name
 
+def whittaker_smoothing(ds, var, lmbdas = 100., weights = None, a = 0.5, 
+                        max_iter = 10, out_fh = None, xdim = "time", max_dist = None,
+                        new_x = None, export_all = False, chunks = {}, make_plots = None,
+                        valid_drange = [-np.inf, np.inf], **kwargs):
+    """Apply Whittaker smoothing to a variable in a dataset.
 
-def whittaker_smoothing(ds, var, lmbdas = 100., out_fh = None, xdim = "time", new_x = None, export_all = False):
+    Parameters
+    ----------
+    ds : xr.Dataset
+        Dataset containing a variable `var` which has at least the dimension called `xdim`.
+    var : str
+        Name of the variable in `ds` to smooth. The variable can have a shape
+        (nt), (nx,ny,nt) or (n,nt) with nt the size of the dimension `xdim`.
+    lmbdas : int | float | np.array | xr.DataArray, optional
+        Lambda value to use for smoothing, shape should be (), (m) or (nx, ny), by default 100.
+    a : float, optional
+        Apply quantile smoothing, value can be between 0.01 and 0.99. When 0.5,
+        no iterations (limited by `max_iter`) are done, by default 0.5
+    max_iter : int, optional
+        Maximum number of iterations to perform when applying quantile smoothing, by default 10
+    out_fh : _type_, optional
+        Path to store results, when None the output is saved in the same folder as the input, by default None.
+    xdim : str, optional
+        The dimension describing the x values of the variable to be smoothed, by default "time"
+    new_x : _type_, optional
+        Extra values to add to the x dimension (used for interpolation), by default None
+    export_all : bool, optional
+        Whether to save only the smoothed data or also diagnostics information, by default False
 
-    if isinstance(out_fh, type(None)):
-        folder = os.path.split(ds.encoding["source"])[0]
-        out_fh = os.path.join(folder, f"smoothed_{var}.nc")
-    else:
-        folder = os.path.split(out_fh)[0]
+    Returns
+    -------
+    xr.Dataset
+        Dataset containing at least (depending on `export_all`) a variable called `{var}_smoothed`.
+    """
+    # Check if the chunk overwriter is correct (i.e. doesnt chunk along core-dims)
+    if not getattr(chunks, "get", lambda x,y: False)(xdim, False) == -1 and (not chunks == {}):
+        log.warning(f"--> Adjusting defined chunks (`{chunks}`), to avoid chunks along core dimension ({xdim}).")
+        chunks = {dim: {True: -1, False: getattr(chunks, "get", lambda x,y: chunks)(dim, "auto")}[dim == xdim] for dim in ds.dims}
 
-    if not os.path.exists(folder):
-        os.makedirs(folder)
+    # Check if the ds is chunked correctly in case `chunks` is not set.
+    is_chunked = ds.chunksizes.get(xdim, False)
+    if is_chunked and (getattr(is_chunked, "__len__", lambda: 1)() != 1) and (chunks == {}):
+        chunks = {dim: {True: -1, False: "auto"}[dim == xdim] for dim in ds.dims}
+        log.warning(f"--> Adjusting chunks to (`{chunks}`), to avoid chunks along core dimension ({xdim}).")
 
-    while os.path.isfile(out_fh):
-        name, ext = os.path.splitext(out_fh)
-        out_fh = name + "_" + ext
+    # Chunk dataset.
+    ds = ds.chunk(chunks)
 
     # Add new x values.
     if not isinstance(new_x, type(None)) and getattr(xdim, '__len__', lambda: 0)() > 0:
-        ds = xr.merge([ds, xr.Dataset({xdim: new_x})]).sortby(xdim).chunk({xdim: -1})
+        ds = xr.concat([ds, xr.Dataset({xdim: new_x})], dim = xdim).drop_duplicates(xdim).chunk(chunks).sortby(xdim).chunk(chunks)
         if "sensor" in ds.data_vars:
-            sensor_id = np.max(np.unique(ds["sensor"])) + 1
-            ds["sensor"] = ds["sensor"].fillna(sensor_id).assign_attrs({str(sensor_id): "Interp."})
+            sensor_id = np.nanmax(np.unique(ds["sensor"])) + 1
+            ds["sensor"] = ds["sensor"].fillna(sensor_id).assign_attrs({str(int(sensor_id)): "Interp."})
+            if not isinstance(weights, type(None)):
+                weights["Interp."] = 0.0
 
-    ds = ds.assign_coords({"lmbda": lmbdas})
+    # Add lmbdas as coordinate.
+    ds = ds.assign_coords({"lmbda": {True: np.array([lmbdas]), False: lmbdas}[np.isscalar(lmbdas)]})
+
+    # Create weights.
+    if not isinstance(weights, type(None)) and ("sensor" in ds.data_vars):
+        u = make_weights(ds["sensor"], weights)
+        source_legend = {i: f"{x} [{weights.get(x, np.nan):.2f}]" for i, x in ds["sensor"].attrs.items()}
+        ds["sensor"].attrs = source_legend
+    else:
+        u = None
 
     # Only do this when more then one lmbda is provided.
-    if getattr(lmbdas, 'size', 1) > 1 or export_all:
-        ds["lmbda_sel"], ds["cves"] = cross_val_lmbda(ds[var], ds[xdim], lmbdas = lmbdas)
+    if np.any([getattr(lmbdas, 'size', 1) > 1, export_all, "plot_folder" in kwargs.keys()]):
+        if a != 0.5 and getattr(lmbdas, 'size', 1) > 1:
+            log.warning(f"--> Picking lambda when `a` != 0.5 (`a` = {a}) is unsupported and can result in unexpected behaviour.")
+        if not np.isinf(valid_drange[0]) and getattr(lmbdas, 'size', 1) > 1:
+            log.warning(f"--> Picking lambda with forces bounds (min = {valid_drange[0]}) is unsupported and can result in unexpected behaviour.")
+        if not np.isinf(valid_drange[1]) and getattr(lmbdas, 'size', 1) > 1:
+            log.warning(f"--> Picking lambda with forces bounds (max = {valid_drange[1]}) is unsupported and can result in unexpected behaviour.")
+        ds["cves"] = xr_cve(ds[var], ds[xdim], ds["lmbda"], u)
+        ds["lmbda_sel"] = ds["cves"].idxmin("lmbda")
         lmbdas = ds["lmbda_sel"]
 
     # Smooth the data.
-    ds[f"{var}_smoothed"] = whittaker(ds[var], ds[xdim], lmbdas = lmbdas)
+    ds[f"{var}_smoothed"] = xr_wt(ds[var], ds[xdim], lmbdas = lmbdas, u = u, a = a,
+                                      min_drange = valid_drange[0], max_drange = valid_drange[1],
+                                      max_iter = max_iter)
 
+    # Interpolate any data that was skipped because of stability issues.
+    ds[f"{var}_smoothed"] = ds[f"{var}_smoothed"].interpolate_na(dim = xdim)
+
+    # Mask values that are too far away from any measurement.
+    if not isinstance(max_dist, type(None)):
+        xdist = xr_dist_to_finite(ds[var], dim = xdim)
+        ds[f"{var}_smoothed"] = ds[f"{var}_smoothed"].where(xdist <= max_dist, drop = False)
+
+    # Create a plot
+    if "plot_folder" in kwargs.keys():
+        ds = ds.compute()
+        # NOTE kwargs are passed on to make_overview.
+        # kwargs = {"point_method": "equally_spaced", "n": 3, "offset": 0.1, "folder": r""}
+        # kwargs = {"point_method": "worst", "n": 5, "xdim": "time", "folder": r""}
+        plot_folder = kwargs.pop("plot_folder")
+        make_overview(ds, var, plot_folder, **kwargs)
+
+    # Drop irrelevant data.
     if not export_all:
-        ds = ds[[f"{var}_smoothed"]].rename({f"{var}_smoothed": var})
+        ds = ds[[f"{var}_smoothed"]]
         if not isinstance(new_x, type(None)) and getattr(xdim, '__len__', lambda: 0)() > 0:
-            ds = ds.sel({xdim:  new_x})
+            ds = ds.sel({xdim: new_x})
 
-    ds = save_ds(ds, out_fh, encoding = "initiate", scheduler = "synchronous")
+    if not isinstance(out_fh, type(None)):
+        ds = save_ds(ds, out_fh, encoding = "initiate", label = f"Applying whittaker smoothing ({var}).")
+
+    # Give warnings if data is outside of defined range.
+    if not np.isinf(valid_drange[0]):
+        min_bound = float(ds[f"{var}_smoothed"].min().values)
+        if min_bound < valid_drange[0]:
+            log.warning(f"--> Minimum of `{var}_smoothed` is smaller than `valid_drange` min ({min_bound:.2f} < {valid_drange[0]}).")
+
+    if not np.isinf(valid_drange[1]):
+        max_bound = float(ds[f"{var}_smoothed"].max().values)
+        if max_bound > valid_drange[1]:
+            log.warning(f"--> Maximum of `{var}_smoothed` is larger than `valid_drange` max ({max_bound:.2f} > {valid_drange[1]}).")
 
     return ds
 
-def make_plots(ds, folder, points, xdim, new_x, parallel = True):
-
-    if not os.path.exists(folder):
-        os.makedirs(folder)
-
-    if not parallel:
-        for i in tqdm.tqdm(np.arange(0, ds[xdim].size, 1)[~np.isin(ds[xdim], new_x)]):
-            plot_overview(ds, points, i, folder)
-    else:
-        _ = Parallel(n_jobs=4)(delayed(plot_overview)(ds, points, i, folder) for i in np.arange(0, ds[xdim].size, 1)[~np.isin(ds[xdim], new_x)])
-    files = np.sort(glob.glob(os.path.join(folder, "[0-9]" * 6 + ".png")))
-    video_fh = os.path.join(folder, "timeseries.mp4")
-    create_video(files, video_fh)
-    plot_stats(ds, folder)
-
-def create_points(ds, n, offset = 1):
-    lons = ds.x.isel(x=np.linspace(0+offset, ds.x.size-(1+offset), n, dtype=int)).values
-    lats = ds.y.isel(y=np.linspace(0+offset, ds.y.size-(1+offset), n, dtype=int)).values
-    ys, xs = np.meshgrid(lats, lons)
-    ys = ys.flatten().tolist()
-    xs = xs.flatten().tolist()
-    names = [f"P{i:>02}" for i in range(1, len(xs)+1)]
-    return (xs, ys, names)
-
 if __name__ == "__main__":
 
-    ts_fp =  r"/Users/hmcoerver/Local/input_test_series.nc"
+    import matplotlib.pyplot as plt
 
-    ls7_fp = r"/Users/hmcoerver/Local/long_timeseries/fayoum/LANDSAT/LE07_SR.nc"
-    ls8_fp = r"/Users/hmcoerver/Local/long_timeseries/fayoum/LANDSAT/LC08_SR.nc"
-    ls9_fp = r"/Users/hmcoerver/Local/long_timeseries/fayoum/LANDSAT/LC09_SR.nc"
-    mod13_fp = r"/Users/hmcoerver/Local/long_timeseries/fayoum/MODIS/MOD13Q1.061.nc"
-    myd13_fp = r"/Users/hmcoerver/Local/long_timeseries/fayoum/MODIS/MYD13Q1.061.nc"
+    ds = open_ds(r"/Users/hmcoerver/Desktop/test.nc")[["ndvi"]].drop_vars("lmbda")
 
-    fps = [
-        ls7_fp,
-        ls8_fp,
-        ls9_fp,
-        # mod13_fp,
-        # myd13_fp,
-    ]
-    
-#     # ds = xr.open_dataset(ts_fp, decode_coords="all")
-#     # ds = open_ts(fps).sel(x = slice(30.812, 30.825), y = slice(29.450, 29.44))#.isel(x = slice(200, 225), y = slice(200, 220))
-#     ds = open_ts(fps).isel(x = slice(300, 320), y = slice(500, 520))#.isel(x = slice(200, 225), y = slice(200, 220))
-#     # ds = open_ts(fps).isel(x = 310, y = 505)#.isel(x = slice(200, 225), y = slice(200, 220))
-    ds = open_ts(fps)
-    ds = ds.chunk({"time": -1, "x": -1, "y": -1})
+    var = "ndvi"
 
-    folder = r"/Users/hmcoerver/Local/test_02" #
-    out_fh = os.path.join(folder, "test_03.nc") #
-#     # lats = [29.46376753]
-#     # lons = [30.78233174]
-#     # names = ["P1"]
-#     # points = (lons, lats, names)
-#     points = create_points(ds, 2, offset = 1)
-#     # points = None
-#     lmbdas = np.logspace(1,4,4)
-#     new_x = pd.date_range(np.datetime_as_string(ds.time[0], "D") + " 12:00", 
-#                           np.datetime_as_string(ds.time[-1], "D") + " 12:00", freq="D")
-#     # new_x = None
-#     var = "ndvi"
-#     xdim = "time"
-#     export_all = True
-
-    # out = whittaker_smoothing(ds, var, lmbdas = lmbdas, out_fh = out_fh, new_x = new_x, points = points, export_all=export_all)
-
-    # make_plots(out, os.path.join(folder, "graphs"), points, xdim, new_x, parallel = True)
+    lmbdas = 100.
+    weights = None
+    a = 0.5
+    max_iter = 10
+    out_fh = None
+    xdim = "time"
+    max_dist = None
+    new_x = None
+    export_all = False
+    chunks = {}
+    valid_drange = [-np.inf, np.inf]

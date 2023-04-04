@@ -5,28 +5,40 @@ import warnings
 import numpy as np
 from matplotlib import ticker, colors
 import glob
+import xarray as xr
+import tqdm
+import glob
+from joblib import Parallel, delayed
 
-def plot_point(ax, point_ds, ylim = [-0.2, 1], t_idx = None, title = True, xtick = True):
+def plot_point(ax, point_ds, var, ylim = [-0.2, 1], t_idx = None, title = True, xtick = True):
     cmap = plt.cm.get_cmap('tab10')
     handles = []
-    for i, sensor_name in enumerate(np.unique(point_ds["sensor"].values)):
-        X = point_ds.time[point_ds.sensor == sensor_name]
-        Y = point_ds.ndvi[point_ds.sensor == sensor_name]
+    if "sensor" in point_ds.data_vars:
+        for i, sensor_name in enumerate(np.unique(point_ds["sensor"].values)):
+            X = point_ds.time[point_ds.sensor == sensor_name]
+            Y = point_ds[var][point_ds.sensor == sensor_name]
+            if Y.count("time").values > 0:
+                obj = ax.scatter(
+                        X, Y,
+                        color = cmap(i),
+                        label = point_ds.sensor.attrs[str(int(sensor_name))],
+                        )
+                handles.append(obj)
+    else:
+        X = point_ds.time
+        Y = point_ds[var]
+        i = 0 
         if Y.count("time").values > 0:
-            obj = ax.scatter(
-                    X, Y,
-                    color = cmap(i),
-                    label = point_ds.sensor.attrs[str(int(sensor_name))],
-                    )
+            obj = ax.scatter(X, Y, color = cmap(i), label = "measurements")
             handles.append(obj)
-    obj = ax.plot(point_ds["time"], point_ds["ndvi_smoothed"], label = "smoothed", color = cmap(i + 1))
+    obj = ax.plot(point_ds["time"], point_ds[f"{var}_smoothed"], label = "smoothed", color = cmap(i + 1), marker = "X")
     if not isinstance(ylim, type(None)):
         ax.set_ylim(ylim)
     if not isinstance(t_idx, type(None)):
         ax.plot([point_ds["time"][t_idx].values] * 2, ylim, color = "black", linewidth = 5, alpha = 0.3)
     handles.append(obj[0])
     ax.grid()
-    ax.set_ylabel("ndvi [-]")
+    ax.set_ylabel(f"{var}")
     ax.set_facecolor("lightgray")
     if not xtick:
         ax.set_xticklabels([])
@@ -50,8 +62,8 @@ def plot_point(ax, point_ds, ylim = [-0.2, 1], t_idx = None, title = True, xtick
             else:
                 cve = point_ds["cves"].values
             title_parts.append(f"CVE: {cve:.4f}")
-        if "a" in point_ds["ndvi_smoothed"].attrs.keys():
-            title_parts.append(f"a: {point_ds['ndvi_smoothed'].attrs['a']}")
+        if "a" in point_ds[f"{var}_smoothed"].attrs.keys():
+            title_parts.append(f"a: {point_ds[f'{var}_smoothed'].attrs['a']}")
         if "x" in point_ds.coords:
             lat = float(point_ds.y.values)
             title_parts.append(f"Lat.: {lat:.3f}")
@@ -88,7 +100,7 @@ def plot_map(ax, da, points = None, cmap = "RdBu_r", ylim = [-1.0, 1.0], ytick =
 
     return im
 
-def plot_overview(ds, points, t_idx, folder):
+def plot_video_frame(ds, points, var, t_idx, folder):
 
     if not os.path.exists(folder):
         os.makedirs(folder)
@@ -106,29 +118,36 @@ def plot_overview(ds, points, t_idx, folder):
         xtick = False if i+1 < len(points[0]) else True
         point_ds = ds.sel({"x": lon, "y": lat}, method = "nearest")
         point_ds = point_ds.assign_attrs({"pname": name})
-        _ = plot_point(axes[str(i)], point_ds, t_idx = t_idx, title = True, xtick = xtick)
+        _ = plot_point(axes[str(i)], point_ds, var, t_idx = t_idx, title = True, xtick = xtick)
 
     fig.colorbar(im1)
     fig.colorbar(im2)
-    fig.subplots_adjust(left=None, bottom=None, right=None, top=0.95, wspace=None, hspace=0.3)
+    fig.subplots_adjust(left=None, bottom=None, right=None, top=0.91, wspace=None, hspace=0.3)
     fig.suptitle(np.datetime_as_string(ds.time[t_idx], unit='m'))
     fig.savefig(os.path.join(folder, f"{t_idx:>06}.png"))
     plt.close(fig)
 
+def make_overview(ds, var, plot_folder, points = None, method = "equally_spaced", n = 3, offset = 0.1):
 
-def plot_stats(ds, folder):
+    if isinstance(points, type(None)):
+        if method == "equally_spaced":
+            points = create_points(ds, n = n, offset = offset)
+        elif method == "worst":
+            points = create_worst_points(ds, f"{var}_smoothed", "time", n = n)
 
-    if not os.path.exists(folder):
-        os.makedirs(folder)
+    if not os.path.exists(plot_folder):
+        os.makedirs(plot_folder)
 
-    npanels = np.sum(np.isin(["lmbda_sel", "ndvi", "cves"], ds.data_vars))
-    panels = list(string.ascii_uppercase[:npanels])
+    npanels = np.sum(np.isin(["lmbda_sel", var, "cves"], ds.data_vars))
+    panels = [list(string.ascii_uppercase[:npanels])]
+    for i in range(len(points[0])):
+        panels.append([str(i)] * len(panels[0]))
 
-    fig, axes = plt.subplot_mosaic([panels], figsize = (npanels * 5, 4), dpi = 300)
-    
-    if "ndvi" in ds.data_vars:
-        ds["counts"] = ds["ndvi"].count(dim = "time")
-        im1 = plot_map(axes[panels.pop(0)], ds["counts"], ylim = [None, None], cmap = "viridis")
+    fig, axes = plt.subplot_mosaic(panels, figsize = (12, (len(points[0]) + 1)*4), dpi = 16**2)
+
+    if var in ds.data_vars:
+        ds["counts"] = ds[var].count(dim = "time")
+        im1 = plot_map(axes[panels[0].pop(0)], ds["counts"], ylim = [None, None], cmap = "viridis", points = points)
         fig.colorbar(im1, label = "No. measurements [-]")
 
     if np.all(np.isin(["cves", "lmbda_sel"], ds.data_vars)):
@@ -136,17 +155,83 @@ def plot_stats(ds, folder):
             ds["cve"] = ds["cves"].sel(lmbda = ds["lmbda_sel"], method = "nearest")
         else:
             ds["cve"] = ds["cves"]
-        im2 = plot_map(axes["B"], ds["cve"], ylim = [None, None], cmap = "viridis", ytick = False)
+        im2 = plot_map(axes[panels[0].pop(0)], ds["cve"], ylim = [0, np.nanpercentile(ds["cve"], 95)], cmap = "viridis", ytick = False, points = points)
         fig.colorbar(im2, label = "Cross-val. Standard Error [-]")
     
     if "lmbda_sel" in ds.data_vars:
-        im3 = plot_map(axes["C"], ds["lmbda_sel"], ylim = [None, None], cmap = "viridis", ytick = False, norm = colors.LogNorm())
+        if ds["lmbda_sel"].ndim == 0:
+            ds["lmbda_sel"] = xr.ones_like(ds["counts"]) * ds["lmbda_sel"]
+        im3 = plot_map(axes[panels[0].pop(0)], ds["lmbda_sel"], ylim = [None, None], cmap = "viridis", ytick = False, norm = colors.LogNorm(), points = points)
         fig.colorbar(im3, label = "Lambda [-]")
 
-    fig.savefig(os.path.join(folder, f"stats.png"))
+    for i, (lon, lat, name) in enumerate(zip(*points)):
+        xtick = False if i+1 < len(points[0]) else True
+        point_ds = ds.sel({"x": lon, "y": lat}, method = "nearest")
+        point_ds = point_ds.assign_attrs({"pname": name})
+        _ = plot_point(axes[str(i)], point_ds, var, ylim = None, t_idx = None, title = True, xtick = xtick)
+
+    fig.subplots_adjust(left=None, bottom=None, right=None, top=0.95, wspace=None, hspace=0.3)
+    fig.savefig(os.path.join(plot_folder, f"{var}_overview.png"))
     plt.close(fig)
 
-def create_video(files, video_fh, fps = 5, remove_files = True):
+def make_video(ds, points, fh, var, xdim = "time", new_x = None, parallel = True):
+
+    folder = os.path.split(fh)[0]
+
+    if not os.path.exists(folder):
+        os.makedirs(folder)
+
+    idxs = np.arange(0, ds[xdim].size, 1)
+    if not isinstance(new_x, type(None)):
+        idxs = idxs[~np.isin(ds[xdim], new_x)]
+
+    if not parallel:
+        for i in tqdm.tqdm(idxs):
+            plot_video_frame(ds, points, var, i, folder)
+    else:
+        _ = Parallel(n_jobs=4)(delayed(plot_video_frame)(ds, points, var, i, folder) for i in idxs)
+    
+    files = np.sort(glob.glob(os.path.join(folder, "[0-9]" * 6 + ".png")))
+    
+    create_video(files, fh)
+
+def create_points(ds, n = 3, offset = 0.1):
+    
+    if isinstance(offset, float):
+        offsetx = np.floor(ds.x.size * offset).astype(int)
+        offsety = np.floor(ds.y.size * offset).astype(int)
+    elif isinstance(offset, int):
+        offsetx = offset.copy()
+        offsety = offset.copy()
+
+    offsetx = np.min([offsetx, np.floor((ds.x.size - n) / 2).astype(int)])
+    offsety = np.min([offsety, np.floor((ds.y.size - n) / 2).astype(int)])
+
+    lons_idxs = np.linspace(0+offsetx, ds.x.size-(1+offsetx), n, dtype=int)
+    lats_idxs = np.linspace(0+offsety, ds.y.size-(1+offsety), n, dtype=int)
+
+    lons = ds.x.isel(x=lons_idxs).values
+    lats = ds.y.isel(y=lats_idxs).values
+    
+    ys, xs = np.meshgrid(lats, lons)
+    
+    ys = ys.flatten().tolist()
+    xs = xs.flatten().tolist()
+    names = [f"P{i:>02}" for i in range(1, len(xs)+1)]
+    return (xs, ys, names)
+
+def create_worst_points(ds, var, dim, n = 8):
+
+    ds = np.abs(ds).max(dim = dim)
+
+    stacked_ds = ds.stack({"point": ds[var].dims})[var]
+
+    selected = stacked_ds.isel(point = stacked_ds.argsort().values).isel(point = slice(-n-1, -1))
+
+    points = (selected.x.values, selected.y.values, [f"P{i:>02}" for i in range(1, n+1)])
+    return points
+
+def create_video(files, video_fh, fps = 4, remove_files = True):
 
     try:
         import imageio.v2 as imageio
@@ -176,28 +261,3 @@ def create_video(files, video_fh, fps = 5, remove_files = True):
                 print(e)
         else:
             raise e
-
-# ffmpeg -f image2 -framerate 5 -i %03d.png -vcodec libx264 -crf 22 video.mp4
-
-# from PIL import Image
-# import glob
-
-# def make_gif(frame_folder, out_fh):
-#     frames = [Image.open(image) for image in np.sort(glob.glob(frame_folder))]
-#     frame_one = frames[0]
-#     frame_one.save(out_fh, format="mp4", append_images=frames,
-#                save_all=True, duration=int(len(frames)/2), loop=0)
-    
-# make_gif(r"/Users/hmcoerver/Local/test/*.png", r"/Users/hmcoerver/Local/test.mp4")
-
-# fileList = []
-# for file in os.listdir(path):
-#     if file.startswith(name):
-#         complete_path = path + file
-#         fileList.append(complete_path)
-
-# writer = imageio.get_writer('test.mp4', fps=20)
-
-# for im in fileList:
-#     writer.append_data(imageio.imread(im))
-# writer.close()
