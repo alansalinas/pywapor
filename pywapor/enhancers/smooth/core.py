@@ -1,3 +1,6 @@
+"""
+@author: Bert Coerver
+"""
 import numpy as np
 from numba import types, guvectorize, njit, float64, int64
 
