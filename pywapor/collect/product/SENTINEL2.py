@@ -422,21 +422,36 @@ def s2_processor(scene_folder, variables):
     ds = xr.merge(dss).drop_vars("band")
 
     meta_fps = glob.glob(os.path.join(scene_folder, "**", "MTD_MSIL2A.xml"), recursive = True)
+    
     if len(meta_fps) >= 1:
         tree = etree.parse(meta_fps[0])
         root = tree.getroot()
-        offsets = [float(x.text) for x in root.iter('BOA_ADD_OFFSET')]
-        scales = [float(x.text) for x in root.iter('BOA_QUANTIFICATION_VALUE')]
-        scale = np.median(scales)
-        offset = np.median(offsets)
+        baseline = [float(x.text) for x in root.iter('PROCESSING_BASELINE')][0]    
+        # NOTE https://sentinels.copernicus.eu/en/web/sentinel/-/copernicus-sentinel-2-major-products-upgrade-upcoming
+        # NOTE https://stackoverflow.com/questions/72566760/how-to-correct-sentinel-2-baseline-v0400-offset
+        if baseline >= 4.0:
+            offsets = [float(x.text) for x in root.iter('BOA_ADD_OFFSET')]
+            scales = [float(x.text) for x in root.iter('BOA_QUANTIFICATION_VALUE')]
+            scale = np.median(scales)
+            offset = np.median(offsets)
+            ds.attrs = {"scale_factor": scale, "offset_factor": offset}
+        else:
+            offsets = [0.]
+            offset = offsets[0]
+            scales = [float(x.text) for x in root.iter('BOA_QUANTIFICATION_VALUE')]
+            scale = np.median(scales)
+            ds.attrs = {"scale_factor": scale, "offset_factor": offset}
         if len(np.unique(offsets)) != 1:
-            log.warning(f"Multiple offsets found for `{scene_folder}`, using `{offset}`, check `{meta_fps[0]}` for more info.")
+            log.warning(f"--> Multiple offsets found for `{scene_folder}`, using `{offset}`, check `{meta_fps[0]}` for more info.")
         if len(scales) != 1:
-            log.warning(f"Multiple scales found for `{scene_folder}`, using `{scale}`, check `{meta_fps[0]}` for more info.")
-        ds.attrs = {"scale_factor": scale, "offset_factor": offset}
+            log.warning(f"--> Multiple scales found for `{scene_folder}`, using `{scale}`, check `{meta_fps[0]}` for more info.")
     else:
-        ds.attrs = {"scale_factor": 10000.0, "offset_factor": -1000.0}
-        log.warning(f"No scale/offset found for `{meta_fps[0]}`, using `{ds.attrs}`.")
+        t = time_func(os.path.split(scene_folder)[-1])
+        if t < np.datetime64("2022-01-25"):
+            ds.attrs = {"scale_factor": 10000.0, "offset_factor": 0.}
+        else:
+            ds.attrs = {"scale_factor": 10000.0, "offset_factor": -1000.0}
+        log.warning(f"--> No scale/offset found for `{meta_fps[0]}`, using `{ds.attrs}`.")
 
     return ds
 
@@ -510,7 +525,7 @@ def download(folder, latlim, lonlim, timelim, product_name,
         return np.any([x in fn for x in to_dl])
     # node_filter = None
 
-    scenes = sentinelapi.download(product_folder, latlim, lonlim, timelim, search_kwargs, node_filter = node_filter)
+    scenes = sentinelapi.download(product_folder, latlim, lonlim, timelim, search_kwargs, node_filter = node_filter, to_dl = variables.keys())
 
     ds = sentinelapi.process_sentinel(scenes, variables, "SENTINEL2", time_func, os.path.split(fn)[-1], post_processors, bb = bb)
 
@@ -534,3 +549,74 @@ def download(folder, latlim, lonlim, timelim, product_name,
 #                 variables = None,  post_processors = None,
 #                 extra_search_kwargs = extra_search_kwargs
 #                  )
+
+    # from pywapor.collect.protocol.sentinelapi import process_sentinel
+    # latlim = [29.4, 29.6]
+    # lonlim = [30.7, 30.9]
+    # bb = [lonlim[0], latlim[0], lonlim[1], latlim[1]]
+    # scenes = glob.glob("/Users/hmcoerver/Local/long_timeseries/fayoum/SENTINEL2/*.SAFE")
+    # variables = default_vars("S2MSI2A_R20m", ["ndvi"])
+    # source_name = "SENTINEL2", 
+    # post_processors = default_post_processors("S2MSI2A_R20m", ["ndvi"])
+    # final_fn = "test2.nc"
+    # source_name = "SENTINEL2"
+    # adjust_logger(True, "/Users/hmcoerver/Local/long_timeseries/fayoum", "INFO")
+    # out = process_sentinel(scenes, variables, source_name, time_func, final_fn, post_processors, bb = bb)
+
+    # import rasterio.crs
+    # dss1 = dict()
+
+    # log.info(f"--> Processing {len(scenes)} scenes.")
+
+    # target_crs = rasterio.crs.CRS.from_epsg(4326)
+
+    # for i, scene_folder in enumerate(scenes):
+        
+    #     folder, fn = os.path.split(scene_folder)
+
+    #     ext = os.path.splitext(scene_folder)[-1]
+        
+    #     fp = os.path.join(folder, os.path.splitext(fn)[0] + ".nc")
+    #     if os.path.isfile(fp):
+    #         ds = open_ds(fp)
+    #         dtime = ds.time.values[0]
+    #         if dtime in dss1.keys():
+    #             dss1[dtime].append(ds)
+    #         else:
+    #             dss1[dtime] = [ds]
+    #         continue
+    #     else:
+    #         print("PROBLEM!")
+
+        
+
+    # # Merge spatially.
+    # dss = [xr.concat(dss0, "stacked").median("stacked") for dss0 in dss1.values()]
+
+    # # Merge temporally.
+    # ds = xr.concat(dss, "time")
+
+    # # Define output path.
+    # fp = os.path.join(folder, final_fn)
+    
+    # # Apply general product functions.
+    # for var, funcs in post_processors.items():
+    #     for func in funcs:
+    #         ds, label = apply_enhancer(ds, var, func)
+    #         log.info(label)
+
+    # # Remove unrequested variables.
+    # ds = ds[list(post_processors.keys())]
+    
+    # for var in ds.data_vars:
+    #     ds[var].attrs = {}
+
+    # ds = ds.rio.write_crs(target_crs)
+
+    # ds = ds.sortby("time")
+
+    # # Save final netcdf.
+    # with warnings.catch_warnings():
+    #     warnings.filterwarnings("ignore", message="invalid value encountered in true_divide")
+    #     warnings.filterwarnings("ignore", message="divide by zero encountered in true_divide")
+    #     ds = save_ds(ds, fp, chunks = chunks, encoding = "initiate", label = f"Merging files.")

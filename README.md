@@ -9,7 +9,7 @@ This repository contains a Python implementation of the algorithm used to genera
 Its recommended to install in a clean [conda environment](https://docs.conda.io/projects/conda/en/latest/user-guide/concepts/environments.html) and use [conda](https://docs.conda.io/projects/conda/en/latest/user-guide/install/) to install all the important packages from the `conda-forge` channel.
 
 ```bash
-conda create -n my_pywapor_env --yes -c conda-forge python pip gdal pydap numpy pandas requests matplotlib pyproj scipy pycurl pyshp joblib bs4 rasterio xarray bottleneck geojson tqdm dask rioxarray pyvis shapely lxml cachetools cdsapi sentinelsat geopy numba
+conda create -n my_pywapor_env --yes -c conda-forge python pip gdal pydap numpy pandas requests matplotlib pyproj scipy pycurl pyshp joblib bs4 rasterio xarray bottleneck geojson tqdm dask rioxarray pyvis shapely lxml cachetools cdsapi sentinelsat geopy numba scikit-learn beautifulsoup4 libnetcdf=4.8
 
 conda activate my_pywapor_env
 ```
@@ -118,6 +118,14 @@ The code in the pywapor.et_look_v2_v3 module of this repository, containing all 
 For questions, requests or issues with this repository, please contact Bert Coerver at [bert.coerver@fao.org](mailto:bert.coerver@fao.org) or the WaPOR team at [wapor@fao.org](mailto:wapor@fao.org).
 
 ### Release Notes
+
+#### 3.3.0 (2023-04-05)
+<br>
+<ul>
+    <li> Option to smooth and interpolate data with a Whittaker smoother.</li>
+    <li> Downloading of Sentinel-3 data is now faster.
+    <li> Fixed an issue that could result in an incorrect scale-factor being applied to Sentinel-2 images.</li>
+</ul>
 
 #### 3.2.0 (2023-01-04)
 <br>

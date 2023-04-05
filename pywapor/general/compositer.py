@@ -3,23 +3,17 @@ Functions to prepare input for `pywapor.et_look`, more specifically to
 group various parameters in time to create composites. 
 """
 import os
+import dask
 import numpy as np
 import xarray as xr
 import pandas as pd
+import pywapor.general.levels as levels
 from itertools import chain
 from pywapor.general.logger import log
-import numpy as np
 from pywapor.general.processing_functions import save_ds, open_ds, remove_ds, adjust_timelim_dtype, log_example_ds
-import os
 from pywapor.general.reproject import align_pixels
 from pywapor.enhancers.apply_enhancers import apply_enhancer
-import xarray as xr
-import pandas as pd
-from datetime import datetime as dt
-import dask
-import types
-import functools
-import pywapor.general.levels as levels
+from pywapor.enhancers.smooth.whittaker import whittaker_smoothing
 
 dask.config.set(**{'array.slicing.split_large_chunks': True})
 
@@ -55,17 +49,29 @@ def add_times(ds, bins, composite_type):
         else:
             raise e
 
-    if composite_type == "mean":
-        new_t = [x.mid for x in empty_bins.values]
-    else:
-        new_t1 = [x.left + pd.Timedelta(seconds=1) for x in empty_bins.values]
-        new_t2 = [x.right - pd.Timedelta(seconds=1) for x in empty_bins.values]
-        new_t = new_t1 + new_t2
+    new_t = determine_new_x(empty_bins.values, composite_type, bins = None, dtype = None)
 
     if len(new_t) > 0:
-        ds = xr.merge([ds, xr.Dataset({"time": new_t})]).sortby("time")
+        ds = xr.concat([ds, xr.Dataset({"time": new_t})], dim = "time").sortby("time")
 
     return ds
+
+def determine_new_x(intervals, composite_type, bins = None, dtype = None):
+    
+    if not isinstance(bins, type(None)):
+        intervals = [pd.Interval(left = pd.Timestamp(l), right = pd.Timestamp(r)) for l, r in zip(bins[:-1], bins[1:])]
+    
+    if composite_type == "mean":
+        new_t = [x.mid for x in intervals]
+    else:
+        new_t1 = [x.left + pd.Timedelta(seconds=1) for x in intervals]
+        new_t2 = [x.right - pd.Timedelta(seconds=1) for x in intervals]
+        new_t = new_t1 + new_t2
+    
+    if not isinstance(dtype, type(None)):
+        new_t = [dtype(x) for x in new_t]
+
+    return new_t
 
 def time_bins(timelim, bin_length):
     """Based on the time limits and the bin length, create the bin boundaries.
@@ -125,7 +131,7 @@ def main(dss, sources, folder, general_enhancers, bins):
     xr.Dataset
         Dataset with variables grouped into composites.
     """
-    chunks = {"time": -1, "y": 500, "x": 500}
+    chunks = {"time": -1, "y": "auto", "x": "auto"}
 
     # Open unopened netcdf files.
     dss = {**{k: open_ds(v) for k, v in dss.items() if isinstance(v, str)}, 
@@ -151,8 +157,14 @@ def main(dss, sources, folder, general_enhancers, bins):
         temporal_interp = config["temporal_interp"]
         composite_type = config["composite_type"]
 
+        if isinstance(temporal_interp, dict):
+            kwargs = temporal_interp.copy()
+            temporal_interp = kwargs.pop("method")
+        else:
+            kwargs = {}
+
         log.info(f"--> ({i+1}/{len(sources)}) Compositing `{var}` ({composite_type}).").add()
-        
+
         # Align pixels of different products for a single variable together.
         dss_part = [ds[[var]] for ds in dss.values() if var in ds.data_vars]
         dss1, temp_files1 = align_pixels(dss_part, folder, spatial_interp, fn_append = "_step1")
@@ -160,13 +172,13 @@ def main(dss, sources, folder, general_enhancers, bins):
 
         # Combine different source_products (along time dimension).
         if np.all(["time" in x[var].dims for x in dss1]):
-            ds = xr.combine_nested(dss1, concat_dim = "time").sortby("time").chunk(chunks).squeeze()
+            ds = xr.combine_nested(dss1, concat_dim = "time").chunk(chunks).sortby("time").squeeze()
         elif np.all(["time" not in x[var].dims for x in dss1]):
             ds = xr.concat(dss1, "stacked").median("stacked")
             if len(dss1) > 1:
                 log.warning(f"--> Multiple ({len(dss1)}) sources for time-invariant `{var}` found, reducing those with 'median'.")
         else:
-            ds = xr.combine_nested([x for x in dss1 if "time" in x[var].dims], concat_dim = "time").sortby("time").chunk(chunks).squeeze()
+            ds = xr.combine_nested([x for x in dss1 if "time" in x[var].dims], concat_dim = "time").chunk(chunks).sortby("time").squeeze()
             log.warning(f"--> Both time-dependent and time-invariant data found for `{var}`, dropping time-invariant data.")
 
         if "time" in ds.dims:
@@ -180,11 +192,23 @@ def main(dss, sources, folder, general_enhancers, bins):
                 if np.unique(ds.time).size != ds.time.size:
                     groups = ds.groupby(ds["time"])
                     ds = groups.median(dim = "time")
-                    ds = ds.chunk({"time": -1, "y": "auto", "x": "auto"})
+                    ds = ds.chunk(chunks)
                     log.warning(f"--> Multiple `{var}` images for an identical datetime found, reducing those with 'median'.")
 
-                ds = add_times(ds, bins, composite_type = composite_type).chunk({"time": -1, "y": "auto", "x": "auto"})
-                ds = ds.interpolate_na(dim="time", method = temporal_interp)
+                if temporal_interp == "whittaker":
+                    log.info("--> Applying whittaker smoothing.")
+                    log.add().info(f"> shape: {ds[var].shape}, kwargs: {list(kwargs.keys())}.").sub()
+                    if "weights" in kwargs.keys():
+                        ds["sensor"] = xr.combine_nested([xr.ones_like(x.time.astype(int)) * i for i, x in enumerate(dss1)], concat_dim="time").sortby("time")
+                        source_legend = {str(i): os.path.split(x.encoding["source"])[-1].replace(".nc", "") for i, x in enumerate(dss1)}
+                        ds["sensor"] = ds["sensor"].assign_attrs(source_legend)
+                    new_x = determine_new_x(None, composite_type, bins = bins, dtype = np.datetime64)
+                    ds = whittaker_smoothing(ds, var, new_x = new_x, chunks = chunks, **kwargs)
+                    ds = ds.rename_vars({f"{var}_smoothed": var})
+                    temporal_interp = "linear"
+                else:
+                    ds = add_times(ds, bins, composite_type = composite_type).chunk(chunks)
+                    ds = ds.interpolate_na(dim = "time", method = temporal_interp, **kwargs)
 
             # Make composites.
             ds[var] = compositers[composite_type](ds[var].groupby_bins("time", bins, labels = bins[:-1]))
@@ -192,6 +216,9 @@ def main(dss, sources, folder, general_enhancers, bins):
         # Drop time coordinates.
         if "time" in ds.coords:
             ds = ds.drop_vars(["time"])
+
+        # Set dimension order.
+        ds = ds.transpose(*sorted(list(ds.dims.keys()), key = lambda e: ["time_bins", "y", "x"].index(e)))
 
         # Save output
         dst_path = os.path.join(folder, f"{var}_bin.nc")
@@ -214,8 +241,10 @@ def main(dss, sources, folder, general_enhancers, bins):
     if len(example_source) == 1:
         example_ds = dss[example_source[0]]
         log_example_ds(example_ds)
+    elif len(example_source) == 0:
+        example_ds = None
     else:
-        log.warning(f"--> Multiple example datasets found, selecting lowest resolution.")
+        log.warning(f"--> Multiple example datasets found, selecting finest resolution.")
         example_ds = None
 
     spatial_interps = [sources[list(x.data_vars)[0]]["spatial_interp"] for x in dss2.values()]

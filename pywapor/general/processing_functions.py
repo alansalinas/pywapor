@@ -229,7 +229,7 @@ def save_ds(ds, fp, decode_coords = "all", encoding = None, chunks = "auto", pre
     if not os.path.isdir(folder):
         os.makedirs(folder)
 
-    valid_coords = ["x", "y", "spatial_ref", "time", "time_bins"]
+    valid_coords = ["x", "y", "spatial_ref", "time", "time_bins", "lmbda"]
     for coord in ds.coords.values():
         if coord.name not in valid_coords:
             ds = ds.drop_vars([coord.name])

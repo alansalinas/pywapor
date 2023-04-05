@@ -439,7 +439,13 @@ def pre_et_look_levels(level = "level_1", bin_length = "DEKAD"):
                 },
             ],
             "composite_type": "mean",
-            "temporal_interp": "linear",
+            "temporal_interp":  {
+                                "method": "whittaker",
+                                # "plot_folder": r"",
+                                "valid_drange": [-1.0, 1.0],
+                                "max_dist": np.timedelta64(15, "D"),
+                                "lambdas": 100.,
+                    },
             "spatial_interp": "nearest",
             }
 
@@ -453,7 +459,13 @@ def pre_et_look_levels(level = "level_1", bin_length = "DEKAD"):
                 },
             ],
             "composite_type": "mean",
-            "temporal_interp": "linear",
+            "temporal_interp":  {
+                                "method": "whittaker",
+                                # "plot_folder": r"",
+                                "valid_drange": [0.0, 1.0],
+                                "max_dist": np.timedelta64(15, "D"),
+                                "lambdas": 100.,
+                    },
             "spatial_interp": "nearest",
             }
 
@@ -841,7 +853,13 @@ def pre_se_root_levels(level = "level_1"):
                 "is_example": True
             },
         ],
-        "temporal_interp": "linear",
+        "temporal_interp":  {
+                    "method": "whittaker",
+                    # "plot_folder": r"",
+                    "valid_drange": [-1.0, 1.0],
+                    "max_dist": np.timedelta64(15, "D"),
+                    "lambdas": 100.,
+        },
         "spatial_interp": "nearest"}
 
     for var in ["mndwi", "psri", "vari_red_edge", "bsi", "nmdi", "green", "nir"]:
@@ -863,7 +881,14 @@ def pre_se_root_levels(level = "level_1"):
             },
         ],
         'variable_enhancers': [sharpen],
-        'temporal_interp': None,
+        "temporal_interp":  {
+                    "method": "whittaker",
+                    # "plot_folder": r"",
+                    "a": 0.95,
+                    # "valid_drange": [-1.0, 1.0],
+                    "max_dist": np.timedelta64(15, "D"),
+                    "lambdas": 100.,
+        },
         'spatial_interp': 'nearest'}
 
     for var in ["u", "t_dew", "p_air_0", "p_air", "t_air", "wv"]:

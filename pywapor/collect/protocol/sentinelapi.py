@@ -17,9 +17,11 @@ import glob
 import rasterio.crs
 import types
 import logging
+import hashlib
+import json
 from sentinelsat.download import Downloader
 
-def download(folder, latlim, lonlim, timelim, search_kwargs, node_filter = None):
+def download(folder, latlim, lonlim, timelim, search_kwargs, node_filter = None, to_dl = None):
     """Download data using the SentinelSAT API.
 
     Parameters
@@ -73,24 +75,45 @@ def download(folder, latlim, lonlim, timelim, search_kwargs, node_filter = None)
     logger.addHandler(handler)
 
     footprint = create_wkt(latlim, lonlim)
-    products = api.query(footprint, date = tuple(timelim), **search_kwargs)
+
+    def _search_query(api, kwargs):
+        search_hash = hashlib.sha1(json.dumps({k:str(v) for k,v in kwargs.items()}, sort_keys=True).encode()).hexdigest()
+        fp = os.path.join(folder, search_hash + ".json")
+        if os.path.isfile(fp):
+            with open(fp) as f:
+                products = json.load(f)
+        else:
+            products = {k: v["title"] for k,v in api.query(**kwargs).items()}
+            with open(fp, "w") as f:
+                json.dump(products, f)
+        return products
+
+    def _check_scene(folder, v, to_dl):
+        fns = [os.path.split(x)[-1] for x in glob.glob(os.path.join(folder, v + "*", "**","*"), recursive=True)]
+        check = np.all([np.any([y in x for x in fns]) for y in to_dl])
+        return check
+
+    products = _search_query(api, {"area": footprint, "date": tuple(timelim), **search_kwargs})
     log.info(f"--> Found {len(products)} {search_kwargs['producttype']} scenes.")
+    
+    if not isinstance(to_dl, type(None)):
+        to_keep = {k: v for k, v in products.items() if not _check_scene(folder, v, to_dl)}
+    else:
+        to_keep = {k: v for k, v in products.items() if len(glob.glob(os.path.join(folder, v + "*"))) == 0}
+    log.info(f"--> {len(products) - len(to_keep)} scenes already downloaded, collecting remaining {len(to_keep)}.")
 
     dler = Downloader(api, node_filter = node_filter)
     dler._tqdm = types.MethodType(_progress_bar, dler)
 
-    statuses, exceptions, out = dler.download_all(products, folder)
+    statuses, exceptions, out = dler.download_all(to_keep, folder)
 
     if len(exceptions) > 0:
-        log.info(f"--> An exception occured, check `log_sentinelapi.txt` for more info.")
- 
-    log.info(f"--> Finished downloading {search_kwargs['producttype']} scenes.")
+        log.info(f"--> An exception occured for {len(exceptions)} scenes, check `log_sentinelapi.txt` for more info.")
 
-    if isinstance(node_filter, type(None)):
-        scenes = [x["path"] for x in out.values()]
-    else:
-        scenes = [os.path.join(folder, x["node_path"][2:]) for x in out.values()]
-    
+    scenes = [glob.glob(os.path.join(folder, v + "*"))[0] for k, v in products.items() if not k in exceptions.keys()]
+
+    log.info(f"--> Finished downloading {len(scenes)} {search_kwargs['producttype']} scenes.")
+
     return scenes
 
 def process_sentinel(scenes, variables, source_name, time_func, final_fn, post_processors, bb = None):
@@ -186,6 +209,7 @@ def process_sentinel(scenes, variables, source_name, time_func, final_fn, post_p
         dtime = time_func(fn)
         ds = ds.expand_dims({"time": 1})
         ds = ds.assign_coords({"time":[dtime]})
+        ds.attrs = {}
 
         # Save to netcdf
         ds = save_ds(ds, fp, chunks = chunks, encoding = "initiate", label = f"({i+1}/{len(scenes)}) Processing {fn} to netCDF.")
