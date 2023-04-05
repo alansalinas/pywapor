@@ -119,6 +119,14 @@ For questions, requests or issues with this repository, please contact Bert Coer
 
 ### Release Notes
 
+#### 3.3.0 (2023-04-05)
+<br>
+<ul>
+    <li> Option to smooth and interpolate data with a Whittaker smoother.</li>
+    <li> Downloading of Sentinel-3 data is now faster.
+    <li> Fixed an issue that could result in an incorrect scale-factor being applied to Sentinel-2 images.</li>
+</ul>
+
 #### 3.2.0 (2023-01-04)
 <br>
 <ul>

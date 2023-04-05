@@ -124,6 +124,15 @@ For questions, requests or issues with this repository, please contact Bert Coer
 #### Release Notes
 
 <p><details open>
+<summary><b>3.3.0 (2023-04-05)</b></summary>
+<ul>
+    <li> - Option to smooth and interpolate data with a Whittaker smoother.</li>
+    <li> - Downloading of Sentinel-3 data is now faster.
+    <li> - Fixed an issue that could result in an incorrect scale-factor being applied to Sentinel-2 images.</li>
+</ul>
+</details></p>
+
+<p><details>
 <summary><b>3.2.0 (2023-01-03)</b></summary>
 <ul>
     <li> - Full Landsat support, automatically download and process Landsat (5-9) data. </li>

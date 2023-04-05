@@ -9,7 +9,7 @@ This repository contains a Python implementation of the algorithm used to genera
 Its recommended to install in a clean [conda environment](https://docs.conda.io/projects/conda/en/latest/user-guide/concepts/environments.html) and use [conda](https://docs.conda.io/projects/conda/en/latest/user-guide/install/) to install all the important packages from the `conda-forge` channel.
 
 ```bash
-conda create -n my_pywapor_env --yes -c conda-forge python pip gdal pydap numpy pandas requests matplotlib pyproj scipy pycurl pyshp joblib bs4 rasterio xarray bottleneck geojson tqdm dask rioxarray pyvis shapely lxml cachetools cdsapi sentinelsat geopy numba
+conda create -n my_pywapor_env --yes -c conda-forge python pip gdal pydap numpy pandas requests matplotlib pyproj scipy pycurl pyshp joblib bs4 rasterio xarray bottleneck geojson tqdm dask rioxarray pyvis shapely lxml cachetools cdsapi sentinelsat geopy numba scikit-learn beautifulsoup4 netcdf4 libnetcdf=4.8
 
 conda activate my_pywapor_env
 ```
@@ -124,6 +124,15 @@ For questions, requests or issues with this repository, please contact Bert Coer
 #### Release Notes
 
 <p><details open>
+<summary><b>3.3.0 (2023-04-05)</b></summary>
+<ul>
+    <li> - Option to smooth and interpolate data with a Whittaker smoother.</li>
+    <li> - Downloading of Sentinel-3 data is now faster.
+    <li> - Fixed an issue that could result in an incorrect scale-factor being applied to Sentinel-2 images.</li>
+</ul>
+</details></p>
+
+<p><details>
 <summary><b>3.2.0 (2023-01-03)</b></summary>
 <ul>
     <li> - Full Landsat support, automatically download and process Landsat (5-9) data. </li>
