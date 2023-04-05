@@ -2,7 +2,7 @@ from setuptools import setup, find_packages
 
 setup(
     name = 'pywapor',
-    version = '3.2.5',
+    version = '3.3.1',
     url = 'https://www.fao.org/aquastat/py-wapor/',
     author = "FAO",
     author_email = "bert.coerver@fao.org",
@@ -18,14 +18,14 @@ setup(
         'pandas',
         'requests',
         'matplotlib',
-# - (fixed) NOTE otherwise opendap gives problem in colab, in conda env netcdf=1.6.0 
+# - NOTE otherwise opendap gives problem in colab, in conda env netcdf=1.6.0 
 # works fine -> https://github.com/Unidata/netcdf4-python/issues/1179
 # - (fixed) NOTE also, cant install netcdf4 with conda, because the conda-forge distribution cant open
 # the PROBAV HDF files. See issues https://github.com/Unidata/netcdf4-python/issues/1182 and
 # https://github.com/conda-forge/netcdf4-feedstock/issues/136
 # - NOTE set libnetcdf=4.8 in conda otherwise this happend:
 # https://github.com/pydata/xarray/issues/7549 (also see https://github.com/SciTools/iris/issues/5187)
-        'netcdf4', # 'netcdf4<1.6.0', 
+        'netcdf4<1.6.0', 
         'pyproj',
         'scipy',
         'pycurl',
