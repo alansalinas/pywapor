@@ -413,7 +413,7 @@ def time_func(fn):
     np.datetime64
         Date as described in the filename.
     """
-    dtime = np.datetime64(dt.strptime(fn.split("_")[2], "%Y%m%dT%H%M%S"))
+    dtime = np.datetime64(dt.strptime(fn.split("_")[2], "%Y%m%dT%H%M%S"), "ns")
     return dtime
 
 def s2_processor(scene_folder, variables):

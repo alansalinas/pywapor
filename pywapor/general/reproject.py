@@ -295,7 +295,7 @@ def reproject_chunk(src_ds, example_ds, dst_path, spatial_interp = "nearest", st
         new_src_ds = src_ds.sortby("y", ascending = False)
         new_src_ds = new_src_ds.rio.write_transform(new_src_ds.rio.transform(recalc=True))
         src_ds = save_ds(new_src_ds, src_path, encoding = "initiate", label = "Correcting src_ds.")
-        ncs.append(src_path)
+        ncs.append(src_ds)
     else:
         src_path = src_ds.encoding["source"]
 
@@ -340,7 +340,7 @@ def reproject_chunk(src_ds, example_ds, dst_path, spatial_interp = "nearest", st
             da = ds_part[var]
 
         das.append(da)
-        ncs.append(part_path)
+        ncs.append(ds_part)
         variables[var] = (None, var)
 
     ds = xr.merge(das)

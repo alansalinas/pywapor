@@ -277,23 +277,24 @@ def sharpen(dss, var, folder, make_plots = False, vars_for_sharpening = ['nmdi',
 
     log.sub()
 
-    ds = xr.open_mfdataset(out_fns, preprocess = preprocess, decode_coords = "all")
-    ds = ds.rename_dims({"lat": "y", "lon": "x"})
-    ds = ds.transpose("time", "y", "x")
-    ds = ds.rename_vars({"crs": "spatial_ref", "Band1": var, "lat": "y", "lon": "x"})
-    ds = ds.rio.write_grid_mapping("spatial_ref")
-    ds = ds.sortby("y", ascending = False)
-    ds = ds.sortby("x")
-    ds.attrs = {}
+    dss_ = [preprocess(open_ds(x)) for x in out_fns]
+    ds_ = xr.concat(dss_, dim = "time").sortby("time")
+    ds_ = ds_.rename_dims({"lat": "y", "lon": "x"})
+    ds_ = ds_.transpose("time", "y", "x")
+    ds_ = ds_.rename_vars({"crs": "spatial_ref", "Band1": var, "lat": "y", "lon": "x"})
+    ds_ = ds_.rio.write_grid_mapping("spatial_ref")
+    ds_ = ds_.sortby("y", ascending = False)
+    ds_ = ds_.sortby("x")
+    ds_.attrs = {}
 
     fp = os.path.join(workdir, f"{var}_i.nc")
 
-    ds = save_ds(ds, fp, encoding = "initiate", label = f"Merging sharpened `{var}` files.")
+    ds = save_ds(ds_, fp, encoding = "initiate", label = f"Merging sharpened `{var}` files.")
 
-    ds = ds.close()
+    ds_ = ds_.close()
     dss[var] = fp
 
-    for x in out_fns:
+    for x in dss_:
         remove_ds(x)
     
     if 'cos_solar_zangle' in dss.keys() and remove_cos_solar_zangle:

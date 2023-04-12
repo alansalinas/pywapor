@@ -37,7 +37,7 @@ if __name__ == "__main__":
 
     bins = compositer.time_bins([datetime.datetime(2022, 2, 1), datetime.datetime(2022, 3, 11)], "DEKAD")
 
-    ds = compositer.main(dss, sources, example_source, bins, folder, enhancers)
+    ds = compositer.main(dss, sources, folder, enhancers, bins)
     assert ds.rio.crs.to_epsg() == 4326
     assert np.all([{'x': 400, 'y': 400, 'time_bins': 4}[k] == v for k,v in ds.dims.items()])
     assert "time_bins" not in ds.t_opt.dims

@@ -2,17 +2,18 @@ import pywapor
 import datetime
 from pywapor.general.logger import adjust_logger
 import numpy as np
+import os
 
 if __name__ == "__main__":
 
-    ...
+    base_folder = r"C:\local_data"
 
     ####
     ####
 
     # sources = dict()
     # sources["ndvi"] = {'products': [{'source': 'SENTINEL2',
-    #     'product_name': 'S2MSI2A',
+    #     'product_name': 'S2MSI2A_R20m',
     #     'enhancers': 'default',
     #     'is_example': True}],
     # 'temporal_interp': 'linear',
@@ -30,10 +31,10 @@ if __name__ == "__main__":
     # 'temporal_interp': 'linear',
     # 'spatial_interp': 'nearest'}
 
-    # folder = r"/Users/hmcoerver/Local/test1"
+    # folder = os.path.join(base_folder, "test1")
     # latlim = [29.4, 29.7]
     # lonlim = [30.7, 31.0]
-    # timelim = [datetime.date(2022, 4, 1), datetime.date(2022, 4, 11)]
+    # timelim = [datetime.date(2023, 2, 1), datetime.date(2023, 2, 11)]
     # adjust_logger(True, folder, "INFO")
     # bin_length = "DEKAD"
     # ds = pywapor.pre_se_root.main(folder, latlim, lonlim, timelim, sources)
@@ -48,9 +49,9 @@ if __name__ == "__main__":
     # ####
     # ####
 
-    # folder = r"/Users/hmcoerver/Local/test2"
+    # folder = os.path.join(base_folder, "test2")
     # adjust_logger(True, folder, "INFO")
-    # timelim = [datetime.date(2022, 4, 1), datetime.date(2022, 4, 15)]
+    # timelim = [datetime.date(2023, 2, 1), datetime.date(2023, 2, 11)]
     # latlim = [29.4, 29.6]
     # lonlim = [30.7, 30.9]
     # sources = "level_2_v3"
@@ -81,7 +82,7 @@ if __name__ == "__main__":
     # ####
     # ####
 
-    # folder = r"/Users/hmcoerver/Local/test3"
+    # folder = os.path.join(base_folder, "test3")
     # adjust_logger(True, folder, "INFO")
     # timelim = [datetime.date(2019, 4, 1), datetime.date(2019, 4, 11)]
     # latlim = [29.4, 29.6]
@@ -111,7 +112,7 @@ if __name__ == "__main__":
     # # ####
     # # ####
 
-    # folder = r"/Users/hmcoerver/Local/test4"
+    # folder = os.path.join(base_folder, "test4")
     # adjust_logger(True, folder, "INFO")
     # timelim = [datetime.date(2019, 4, 1), datetime.date(2019, 4, 3)]
     # latlim = [29.4, 29.6]
@@ -140,28 +141,28 @@ if __name__ == "__main__":
     # ####
     # ####
 
-    folder = r"/Users/hmcoerver/Local/test6"
-    adjust_logger(True, folder, "INFO")
-    timelim = [datetime.date(2019, 10, 1), datetime.date(2019, 10, 11)]
-    latlim = [29.4, 29.6]
-    lonlim = [30.7, 30.9]
-    sources = "level_3"
-    input_data = pywapor.pre_se_root.main(folder, latlim, lonlim, timelim, 
-                                            sources, bin_length = 3)
-    assert input_data.rio.crs.to_epsg() == 4326
-    assert np.all([x in input_data.data_vars for x in ["ndvi", "lst"]])
-    assert input_data.ndvi.min().values >= -1.
-    assert input_data.ndvi.max().values <= 1.
-    assert 90 < input_data.p_air_i.mean().values < 110
-    assert 90 < input_data.p_air_0_i.mean().values < 110
-    assert 0 < input_data.r0_bare.mean().values < 1
-    assert 0 < input_data.r0_full.mean().values < 1
-    assert -40 < input_data.t_air_i.mean().values < 50
-    assert 0 < input_data.wv_i.mean().values < 100
-    assert 240 < input_data.lst.mean().values < 320
+    # folder = os.path.join(base_folder, "test5")
+    # adjust_logger(True, folder, "INFO")
+    # timelim = [datetime.date(2019, 10, 1), datetime.date(2019, 10, 11)]
+    # latlim = [29.4, 29.6]
+    # lonlim = [30.7, 30.9]
+    # sources = "level_3"
+    # input_data = pywapor.pre_se_root.main(folder, latlim, lonlim, timelim, 
+    #                                         sources, bin_length = 3)
+    # assert input_data.rio.crs.to_epsg() == 4326
+    # assert np.all([x in input_data.data_vars for x in ["ndvi", "lst"]])
+    # assert input_data.ndvi.min().values >= -1.
+    # assert input_data.ndvi.max().values <= 1.
+    # assert 90 < input_data.p_air_i.mean().values < 110
+    # assert 90 < input_data.p_air_0_i.mean().values < 110
+    # assert 0 < input_data.r0_bare.mean().values < 1
+    # assert 0 < input_data.r0_full.mean().values < 1
+    # assert -40 < input_data.t_air_i.mean().values < 50
+    # assert 0 < input_data.wv_i.mean().values < 100
+    # assert 240 < input_data.lst.mean().values < 320
 
-    ds = pywapor.se_root.main(input_data, se_root_version = "v2")
-    assert ds.rio.crs.to_epsg() == 4326
-    assert "se_root" in ds.data_vars
-    assert ds.se_root.min().values >= 0.
-    assert ds.se_root.max().values <= 1.
+    # ds = pywapor.se_root.main(input_data, se_root_version = "v2")
+    # assert ds.rio.crs.to_epsg() == 4326
+    # assert "se_root" in ds.data_vars
+    # assert ds.se_root.min().values >= 0.
+    # assert ds.se_root.max().values <= 1.

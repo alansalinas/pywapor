@@ -52,7 +52,7 @@ def add_times(ds, bins, composite_type):
     new_t = determine_new_x(empty_bins.values, composite_type, bins = None, dtype = None)
 
     if len(new_t) > 0:
-        ds = xr.concat([ds, xr.Dataset({"time": new_t})], dim = "time").sortby("time")
+        ds = xr.merge([ds, xr.Dataset({"time": new_t})]).sortby("time")
 
     return ds
 

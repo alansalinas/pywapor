@@ -83,8 +83,8 @@ def time_func(fn):
     np.datetime64
         Date as described in the filename.
     """
-    start_dtime = np.datetime64(dt.strptime(fn.split("_")[7], "%Y%m%dT%H%M%S"))
-    end_dtime = np.datetime64(dt.strptime(fn.split("_")[8], "%Y%m%dT%H%M%S"))
+    start_dtime = np.datetime64(dt.strptime(fn.split("_")[7], "%Y%m%dT%H%M%S"), "ns")
+    end_dtime = np.datetime64(dt.strptime(fn.split("_")[8], "%Y%m%dT%H%M%S"), "ns")
     dtime = start_dtime + (end_dtime - start_dtime)/2
     return dtime
 

@@ -118,7 +118,7 @@ def main(dss, sources, folder, general_enhancers, example_t_vars = ["lst"]):
             dst_path = os.path.join(folder, f"{var}_i.nc")
             ds = save_ds(ds, dst_path, chunks = chunks, encoding = "initiate", label = lbl)
             log.add().info(f"> shape: {ds[var].shape}, kwargs: {list(kwargs.keys())}.").sub()
-            # cleanup.append([ds])
+            cleanup.append([ds])
         else:
             ...
 

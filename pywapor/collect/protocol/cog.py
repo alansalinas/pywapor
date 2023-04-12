@@ -86,11 +86,11 @@ def download(fp, product_name, coords, variables, post_processors, url_func,
         temp_path = temp_path.replace(".nc", "_.nc")
 
     # Run gdal.Translate.
-    ds = gdal.Translate(temp_path, url, options = options)
+    ds_ = gdal.Translate(temp_path, url, options = options)
 
     # Reset the gdal.Dataset.
-    ds.FlushCache()
-    ds = None
+    ds_.FlushCache()
+    ds_ = None
 
     # Process the new netCDF.
     ds = open_ds(temp_path)
@@ -116,7 +116,6 @@ def download(fp, product_name, coords, variables, post_processors, url_func,
     out = save_ds(ds, fp, encoding = "initiate", label = f"Saving {fn}.")
 
     # Remove the temporary file.
-    ds = ds.close()
-    remove_ds(temp_path)
+    remove_ds(ds)
 
     return out
