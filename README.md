@@ -73,16 +73,11 @@ Go [here](https://www.fao.org/aquastat/py-wapor/) for the full pyWaPOR documenta
       </tr>
       <tr class="row-even">
          <td>4.</td>
-         <td>Sideloading</td>
-         <td style="text-align:center"><a href="https://colab.research.google.com/github/bertcoerver/pywapor_notebooks/blob/main/4_sideloading.ipynb"><img src="https://colab.research.google.com/assets/colab-badge.svg" alt="colab"/></a></td>
-      </tr>
-      <tr class="row-odd">
-         <td>5.</td>
          <td>Enhancers</td>
          <td style="text-align:center"><a href="https://colab.research.google.com/github/bertcoerver/pywapor_notebooks/blob/main/5_enhancers.ipynb"><img src="https://colab.research.google.com/assets/colab-badge.svg" alt="colab"/></a></td>
       </tr>
-      <tr class="row-even">
-         <td>6.</td>
+      <tr class="row-odd">
+         <td>5.</td>
          <td>pyWaPOR vs. WaPOR</td>
          <td style="text-align:center"><a href="https://colab.research.google.com/github/bertcoerver/pywapor_notebooks/blob/main/6_wapor_vs_pywapor.ipynb"><img src="https://colab.research.google.com/assets/colab-badge.svg" alt="colab"/></a></td>
       </tr>
