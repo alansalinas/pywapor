@@ -30,6 +30,6 @@ if __name__ == "__main__":
             "bt":   {"spatial_interp": "nearest", "temporal_interp": "linear"},
                 }
 
-    ds = aligner.main(dss, sources, example_source, folder, enhancers, example_t_vars = example_t_vars)
+    ds = aligner.main(dss, sources, folder, enhancers, example_t_vars = example_t_vars)
     assert ds.rio.crs.to_epsg() == 4326
     assert np.all([{'x': 500, 'y': 500, 'time': 26}[k] == v for k,v in ds.dims.items()])

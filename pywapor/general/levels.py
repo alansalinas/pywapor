@@ -28,7 +28,8 @@ def find_setting(sources, setting_str, max_length = np.inf, min_length = 0):
     """
     example_sources = list()
     for var, x in sources.items():
-        prod = [product for product in x["products"] if setting_str in product.keys()]
+        x_ = x.get("products", [])
+        prod = [product for product in x_ if setting_str in product.keys()]
         if len(prod) >= 1:
             for pro in prod:
                 if pro[setting_str]:

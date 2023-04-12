@@ -9,6 +9,7 @@ from osgeo import gdal
 from sklearn import tree, linear_model, ensemble
 import pywapor.enhancers.dms.pyDMS_utils as utils
 from pywapor.general.logger import log
+import warnings
 
 REG_sknn_ann = 0
 REG_sklearn_ann = 1
@@ -595,7 +596,9 @@ class DecisionTreeSharpener(object):
 
         if self.disaggregatingTemperature:
             if doCorrection:
-                corrected = (residual_HR + scene_HR.GetRasterBand(1).ReadAsArray()**4)**0.25
+                with warnings.catch_warnings():
+                    warnings.filterwarnings("ignore", message="invalid value encountered in power")                    
+                    corrected = (residual_HR + scene_HR.GetRasterBand(1).ReadAsArray()**4)**0.25
                 correctedImage = utils.saveImg(corrected,
                                                scene_HR.GetGeoTransform(),
                                                scene_HR.GetProjection(),
@@ -604,7 +607,9 @@ class DecisionTreeSharpener(object):
             else:
                 correctedImage = None
             # Convert residual back to temperature for easier visualisation
-            residual_LR = (residual_LR + 273.15**4)**0.25 - 273.15
+            with warnings.catch_warnings():
+                warnings.filterwarnings("ignore", message="invalid value encountered in power")            
+                residual_LR = (residual_LR + 273.15**4)**0.25 - 273.15
         else:
             if doCorrection:
                 corrected = residual_HR + scene_HR.GetRasterBand(1).ReadAsArray()
