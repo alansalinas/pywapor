@@ -5,12 +5,12 @@ import glob
 import numpy as np
 import os
 
-if __name__ == "__main__":
+def test_bulk_vs_chunk(tmp_path):
 
-    folder = r"/Users/hmcoerver/Local/reproject_test"
-    for fp in glob.glob(os.path.join(folder, "*.nc")):
-        os.remove(fp)
+    folder = tmp_path
+
     adjust_logger(True, folder, "INFO")
+    
     test = 0
 
     chunks = (1,500,500)

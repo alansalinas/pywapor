@@ -1,19 +1,16 @@
 import os
-import glob
 import numpy as np
 from pywapor.general import aligner
 from pywapor.general.processing_functions import create_dummy_ds
 from pywapor.general.logger import adjust_logger
 
-if __name__ == "__main__":
+def test_1(tmp_path):
 
-    folder = r"/Users/hmcoerver/Local/aligner_test"
-    for fp in glob.glob(os.path.join(folder, "*.nc")):
-        os.remove(fp)
-    adjust_logger(True, folder, "INFO")
+    folder = tmp_path
+
+    adjust_logger(True, folder, "INFO", testing = True)
 
     test = 0
-    example_source = ("source1", "productX")
     enhancers = []
     example_t_vars = ["lst", "bt"]
     chunks = (1, 500, 500)
@@ -31,5 +28,6 @@ if __name__ == "__main__":
                 }
 
     ds = aligner.main(dss, sources, folder, enhancers, example_t_vars = example_t_vars)
+
     assert ds.rio.crs.to_epsg() == 4326
     assert np.all([{'x': 500, 'y': 500, 'time': 26}[k] == v for k,v in ds.dims.items()])
