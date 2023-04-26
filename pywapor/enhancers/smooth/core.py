@@ -94,10 +94,13 @@ def dist_to_finite(y, x, axis = -1, extrapolate = False):
         part1 = np.expand_dims(np.extract(np.isfinite(y), x), 1)
         part2 = np.expand_dims(x, 0)
         distances = part2 - part1
-        dist = np.min(np.abs(distances), axis = 0, initial = x[-1]-x[0])
+        dist = np.min(np.abs(distances), axis = 0, initial = np.timedelta64(365, "D"))
         if not extrapolate and distances.size != 0:
-            mask = np.ptp(np.sign(distances), axis = 0).astype(int) > 0
-            dist = np.where(mask, dist, x[-1]-x[0])
+            if distances.shape[0] > 1:
+                mask = np.ptp(np.sign(distances), axis = 0).astype(int) > 0
+            else:
+                mask = np.isfinite(y)
+            dist = np.where(mask, dist, np.timedelta64(365, "D"))
         return dist
     out = np.apply_along_axis(_dtf, axis, y, x, extrapolate = extrapolate)
     return out
@@ -128,3 +131,34 @@ def cve1(lmbdas, Y, A, u, cves):
         y_hat = np.dot(H, Y_) # Eq. 10
         hii = np.diag(H)
         cves[i,...] = np.sqrt(np.nanmean(((Y - y_hat)/(1 - hii))**2)) # Eq. 9 + 11
+
+# if __name__ == "__main__":
+
+#     import xarray as xr
+#     from pywapor.general.processing_functions import open_ds
+
+#     # fh = r"/Users/hmcoerver/Local/tests/test_22/SENTINEL2/S2MSI2A_R60m.nc"
+#     fh = r"/Users/hmcoerver/Local/tests/test_22/VIIRSL1/VNP02IMG.nc"
+#     ds = open_ds(fh)
+
+#     y = ds.isel(y=30, x= 30).bt.values
+#     x = ds.time.values
+
+#     # Normalize x-coordinates
+#     x_ = (x - x.min()) / (x.max() - x.min()) * x.size
+
+#     # Create x-aware delta matrix.
+#     A = second_order_diff_matrix(x_)
+
+#     lmbdas = 100.
+#     min_drange = -np.inf
+#     max_drange = np.inf
+#     # min_drange = -1.
+#     # max_drange = 1.
+#     max_iter = 10
+#     u = np.ones(x.shape)
+#     a = 0.5
+
+#     z = wt(y, A, lmbdas, u, a, min_drange, max_drange, max_iter)
+
+#     xdist = dist_to_finite(y, x, axis = -1, extrapolate = False)

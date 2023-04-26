@@ -119,7 +119,7 @@ def regrid_VNP(workdir, latlim, lonlim, dx_dy = (0.0033, 0.0033)):
                 (ds.x <= bb[2] + buffer))
 
         # Apply the mask.
-        ds = ds.where(mask, drop = True)
+        ds = ds.where(mask.compute(), drop = True)
 
         # Stop with scene if no valid data is found inside bb.
         if ds.bt.count().values == 0:

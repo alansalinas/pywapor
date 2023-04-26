@@ -146,7 +146,7 @@ def main(folder, latlim, lonlim, timelim, sources = "level_1", bin_length = "DEK
     t2 = datetime.datetime.now()
     log.sub().info(f"< PRE_SE_ROOT ({str(t2 - t1)})")
 
-    files = remove_temp_files(folder)
+    _ = remove_temp_files(folder)
 
     return ds
 

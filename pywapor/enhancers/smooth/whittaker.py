@@ -270,6 +270,9 @@ def whittaker_smoothing(ds, var, lmbdas = 100., weights = None, a = 0.5,
         if not isinstance(new_x, type(None)) and getattr(xdim, '__len__', lambda: 0)() > 0:
             ds = ds.sel({xdim: new_x})
 
+    # Make sure the dimensions are in the correct order. TODO Maybe move this inside `save_ds`.
+    ds = ds.transpose("time", "y", "x", ...)
+
     if not isinstance(out_fh, type(None)):
         ds = save_ds(ds, out_fh, encoding = "initiate", label = f"Applying whittaker smoothing ({var}).")
 
@@ -290,18 +293,39 @@ if __name__ == "__main__":
 
     import matplotlib.pyplot as plt
 
-    ds = open_ds(r"/Users/hmcoerver/Desktop/test.nc")[["ndvi"]].drop_vars("lmbda")
+    ds = open_ds(r"/Users/hmcoerver/Local/poster_whit_data/consolidated_data.nc")
+
+    ds.sensor.attrs["3"] = 'MOD13Q1.061'
+    ds.sensor.attrs["4"] = 'MYD13Q1.061'
+
+    _new_x = ds["new_x"].values
+    ds = ds.drop_vars("new_x").unify_chunks()
 
     var = "ndvi"
-
     lmbdas = 100.
     weights = None
     a = 0.5
     max_iter = 10
-    out_fh = None
+    out_fh = r"/Users/hmcoerver/Local/poster_whit_data/out_data.nc"
     xdim = "time"
     max_dist = None
     new_x = None
-    export_all = False
+    export_all = True
     chunks = {}
-    valid_drange = [-np.inf, np.inf]
+    valid_drange = [-1.0, 1.0]
+    kwargs = {
+        "plot_folder": r"/Users/hmcoerver/Local/poster_whit_data/graphs",
+    }
+
+    out = whittaker_smoothing(ds, var, lmbdas = lmbdas, weights = weights, a = a, 
+                        max_iter = max_iter, out_fh = out_fh, xdim = xdim, max_dist = max_dist,
+                        new_x = new_x, export_all = export_all, chunks = chunks, make_plots = None,
+                        valid_drange = valid_drange, **kwargs)
+
+    import matplotlib.pyplot as plt
+    from pywapor.enhancers.smooth.plotters import plot_point
+
+    fig = plt.figure(figsize = (10, 5))
+    ax = fig.gca()
+    point_ds = out.sel(x = 30.725, y = 29.410, method = "nearest")
+    plot_point(ax, point_ds.compute(), var, ylim = [-0.2, 1], t_idx = None, title = True, xtick = True)

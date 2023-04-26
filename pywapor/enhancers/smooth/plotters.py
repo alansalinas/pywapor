@@ -127,7 +127,7 @@ def plot_video_frame(ds, points, var, t_idx, folder):
     fig.savefig(os.path.join(folder, f"{t_idx:>06}.png"))
     plt.close(fig)
 
-def make_overview(ds, var, plot_folder, points = None, point_method = "equally_spaced", n = 3, offset = 0.1):
+def make_overview(ds, var, plot_folder, points = None, point_method = "equally_spaced", n = 3, offset = 0.1, **kwargs):
 
     if isinstance(points, type(None)):
         if point_method == "equally_spaced":

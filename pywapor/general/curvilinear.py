@@ -81,7 +81,7 @@ def regrid(grid_ds, input_ds, max_px_dist = 10):
 
     # Create intermediate dataset without multi-index
     grid_adj_ds = output_ds.assign_coords({"i": ("grid_pixel", range(no_pixel))}).set_index(grid_pixel="i")
-    grid_adj_ds = grid_adj_ds.drop(["x", "y"]).assign({"x": ("grid_pixel", grid_adj_ds.x.values),
+    grid_adj_ds = grid_adj_ds.drop_vars(["x", "y"]).assign({"x": ("grid_pixel", grid_adj_ds.x.values),
                                                        "y": ("grid_pixel", grid_adj_ds.y.values)})
 
     # Determine bounding box of current chunk.
@@ -151,12 +151,12 @@ def regrid(grid_ds, input_ds, max_px_dist = 10):
     vtx_da = xr.DataArray(vtx, **kwargs)
 
     # --heavy-> Select relevant input data.
-    vls = data_pixel.drop(["x", "y"]).isel(pixel = vtx_da)
+    vls = data_pixel.drop_vars(["x", "y"]).isel(pixel = vtx_da)
 
     # Apply weights to input data.
     for var in vls.data_vars:
         da = xr.dot(vls[var], wts_da, dims = "j").where((wts_da > 0).all("j"))
-        output_ds[var] = da.reindex(grid_pixel = dists_pixel.grid_pixel).drop("grid_pixel")
+        output_ds[var] = da.reindex(grid_pixel = dists_pixel.grid_pixel).drop_vars("grid_pixel")
 
     return output_ds.unstack()
 

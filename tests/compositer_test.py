@@ -1,20 +1,17 @@
 import os
-import glob
 import numpy as np
 from pywapor.general import compositer
 from pywapor.general.processing_functions import create_dummy_ds
 from pywapor.general.logger import adjust_logger
 import datetime
 
-if __name__ == "__main__":
+def test_1(tmp_path):
 
-    folder = r"/Users/hmcoerver/Local/compositer_test"
-    for fp in glob.glob(os.path.join(folder, "*.nc")):
-        os.remove(fp)
-    adjust_logger(True, folder, "INFO")
+    folder = tmp_path
+
+    adjust_logger(True, folder, "INFO", testing = True)
 
     test = 0
-    example_source = ("source1", "productX")
     enhancers = []
     chunks = (1, 500, 500)
     

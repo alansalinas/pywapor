@@ -56,8 +56,7 @@ Thumbs.db
 *.wmv
 *.tif.aux.xml
 
-tests/test_data/input_ref/out_level_1
-tests/test_data/RAW
+tests/results/
 
 keys.json
 secret.txt
