@@ -15,7 +15,9 @@ setup(
         'xarray>=0.20',
         'numpy',
         'pydap',
-        'pandas',
+# - NOTE in pandas == 2.0.0, the buffering of timelim (e.g. in collect.product.MODIS.download) doesnt work correctly.
+# So fo now sticking to 1.5.3 and waiting for 2.x.x to become more stable.
+        'pandas<2.0.0',
         'requests',
         'matplotlib',
 # - NOTE otherwise opendap gives problem in colab, in conda env netcdf=1.6.0 
