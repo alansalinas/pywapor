@@ -8,6 +8,7 @@
       <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
       <link rel="stylesheet" href="../../_static/css/theme.css" type="text/css" />
       <link rel="stylesheet" href="../../_static/copybutton.css" type="text/css" />
+      <link rel="stylesheet" href="../../_static/nbsphinx-code-cells.css" type="text/css" />
       <link rel="stylesheet" href="../../_static/css/custom.css" type="text/css" />
   <!--[if lt IE 9]>
     <script src="../../_static/js/html5shiv.min.js"></script>
@@ -201,7 +202,7 @@
 </pre></div></div>
 </div>
 <p>Here you can see that after the composites for <code class="docutils literal notranslate"><span class="pre">t_air_24</span></code> have been calculated, another “enhancement” called <code class="docutils literal notranslate"><span class="pre">lapse_rate</span></code> is applied to it. This function applies a correction to the temperatures based on the difference between the local and local-mean altitude.</p>
-<p>Before we start adjusting the default enhancers, let’s first do a <code class="docutils literal notranslate"><span class="pre">pre_et_look</span></code> to have a point of reference. Instead of running <code class="docutils literal notranslate"><span class="pre">pre_et_look</span></code> for all variables, we will only process <code class="docutils literal notranslate"><span class="pre">ndvi</span></code>, <code class="docutils literal notranslate"><span class="pre">t_air_24</span></code> and <code class="docutils literal notranslate"><span class="pre">z</span></code> in order to save some time (i.e. the output will thus not be sufficient to run <code class="docutils literal notranslate"><span class="pre">et_look</span></code>) by passing a keyword argument called <code class="docutils literal notranslate"><span class="pre">process_vars</span></code>.</p>
+<p>Before we start adjusting the default enhancers, let’s first do a <code class="docutils literal notranslate"><span class="pre">pre_et_look</span></code> to have a point of reference. Instead of running <code class="docutils literal notranslate"><span class="pre">pre_et_look</span></code> for all variables, we will only process <code class="docutils literal notranslate"><span class="pre">ndvi</span></code>, <code class="docutils literal notranslate"><span class="pre">t_air_24</span></code> and <code class="docutils literal notranslate"><span class="pre">z</span></code> in order to save some time (i.e. the output will thus not be sufficient to run <code class="docutils literal notranslate"><span class="pre">et_look</span></code>) by passing a keyword argument called <code class="docutils literal notranslate"><span class="pre">process_vars</span></code>.</p>
 <div class="nbinput docutils container">
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[7]:
 </pre></div>
@@ -451,7 +452,7 @@ No scale/offset found for /Users/hmcoerver/pywapor_notebooks/my_landsat_folder/L
 </pre></div>
 </div>
 </div>
-<p>So, the function takes in the original <code class="docutils literal notranslate"><span class="pre">xr.Dataset</span></code> (i.e. <code class="docutils literal notranslate"><span class="pre">ds</span></code>), runs some calculations which create a new <code class="docutils literal notranslate"><span class="pre">xr.DataArray</span></code> (i.e. <code class="docutils literal notranslate"><span class="pre">new_data</span></code>) and finally puts that <code class="docutils literal notranslate"><span class="pre">new_data</span></code> back into the original <code class="docutils literal notranslate"><span class="pre">ds</span></code>, either overwriting the original <code class="docutils literal notranslate"><span class="pre">var</span></code> or adding a new variable (<code class="docutils literal notranslate"><span class="pre">out_var</span></code>), and returns it.</p>
+<p>So, the function takes in the original <code class="docutils literal notranslate"><span class="pre">xr.Dataset</span></code> (i.e. <code class="docutils literal notranslate"><span class="pre">ds</span></code>), runs some calculations which create a new <code class="docutils literal notranslate"><span class="pre">xr.DataArray</span></code> (i.e. <code class="docutils literal notranslate"><span class="pre">new_data</span></code>) and finally puts that <code class="docutils literal notranslate"><span class="pre">new_data</span></code> back into the original <code class="docutils literal notranslate"><span class="pre">ds</span></code>, either overwriting the original <code class="docutils literal notranslate"><span class="pre">var</span></code> or adding a new variable (<code class="docutils literal notranslate"><span class="pre">out_var</span></code>), and returns it.</p>
 <p>So what we need to do now is add some calculations to that template function.</p>
 <div class="nbinput nblast docutils container">
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[15]:

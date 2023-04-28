@@ -8,6 +8,7 @@
       <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
       <link rel="stylesheet" href="../../_static/css/theme.css" type="text/css" />
       <link rel="stylesheet" href="../../_static/copybutton.css" type="text/css" />
+      <link rel="stylesheet" href="../../_static/nbsphinx-code-cells.css" type="text/css" />
       <link rel="stylesheet" href="../../_static/css/custom.css" type="text/css" />
   <!--[if lt IE 9]>
     <script src="../../_static/js/html5shiv.min.js"></script>
@@ -201,7 +202,7 @@ MYD13 files:
 <li><p>Finally, <code class="docutils literal notranslate"><span class="pre">composite_type</span></code> and <code class="docutils literal notranslate"><span class="pre">temporal_interp</span></code> will be explained in more detail below.</p></li>
 </ul>
 <blockquote>
-<div><p>Also note that we’re passing <code class="docutils literal notranslate"><span class="pre">lean_output</span></code> as False, by doing so the output of this function will be a bit more extensive than normally, i.e. some temporary internal variables that normally get deleted, are stored and returned now, for the sake of this exercise.</p>
+<div><p>Also note that we’re passing <code class="docutils literal notranslate"><span class="pre">lean_output</span></code> as False, by doing so the output of this function will be a bit more extensive than normally, i.e. some temporary internal variables that normally get deleted, are stored and returned now, for the sake of this exercise.</p>
 </div></blockquote>
 <div class="nbinput nblast docutils container">
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[5]:
@@ -817,7 +818,7 @@ Attributes:
 </div>
 </div>
 <p>In the graph we have just created, you should see a couple of things. First of all, there are red-stars and green-dots that show available NDVI measurements at our POI, coming from MOD13 and MYD13 respectively. Then there are blue bars that show the composite pixel values at this location. Since our composites are dekadal, the width of the bars is about 10 days (check the x-axis).</p>
-<p>Each composite value is the mean of the available measurements within the respective epoch. For example, most of the bars match with some of the red-stars or green-dots. While the first bar, ranging from June 1st till June 11th is exactly in between two measurements, i.e. it’s the mean of the two available measurements.</p>
+<p>Each composite value is the mean of the available measurements within the respective epoch. For example, most of the bars match with some of the red-stars or green-dots. While the first bar, ranging from June 1st till June 11th is exactly in between two measurements, i.e. it’s the mean of the two available measurements.</p>
 <p>The composite type is defined using the keyword <code class="docutils literal notranslate"><span class="pre">composite_type</span></code> in the cmeta variable. Possible values are <code class="docutils literal notranslate"><span class="pre">&quot;mean&quot;</span></code>, <code class="docutils literal notranslate"><span class="pre">&quot;min&quot;</span></code>, <code class="docutils literal notranslate"><span class="pre">&quot;max&quot;</span></code> or a float value to calculate a percentile (the percentile option is significantly more computationally heavy than the others).</p>
 <p>Now let’s adjust our <code class="docutils literal notranslate"><span class="pre">composite_length</span></code> to create 6-day composites (instead of dekadal) and see what happens.</p>
 <div class="nbinput docutils container">
@@ -877,8 +878,8 @@ Composite 11 starts at 2021-07-31 00:00:00 and ends at 2021-08-06 00:00:00.
 <img alt="../../_images/notebooks_2.4.1_2_composites_25_0.png" src="../../_images/notebooks_2.4.1_2_composites_25_0.png" />
 </div>
 </div>
-<p>In the new graph, you’ll see that the blue bars have become smaller (i.e. less wide), since our epochs are now shorter. As a result, some composites could not be created, because no NDVI measurements were available during that respective epoch. For example, the fourth composite (ranging between 2021-06-19 00:00:00 and 2021-06-25 00:00:00) is missing.</p>
-<p>We solve this by applying a temporal interpolation between the available measurements. This is especially suitable for this data, because the MOD13 and MYD13 datasets itself are 16-daily composites, i.e. their measurements can be considered valid for a 16-day period.</p>
+<p>In the new graph, you’ll see that the blue bars have become smaller (i.e. less wide), since our epochs are now shorter. As a result, some composites could not be created, because no NDVI measurements were available during that respective epoch. For example, the fourth composite (ranging between 2021-06-19 00:00:00 and 2021-06-25 00:00:00) is missing.</p>
+<p>We solve this by applying a temporal interpolation between the available measurements. This is especially suitable for this data, because the MOD13 and MYD13 datasets itself are 16-daily composites, i.e. their measurements can be considered valid for a 16-day period.</p>
 <div class="nbinput docutils container">
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[12]:
 </pre></div>
