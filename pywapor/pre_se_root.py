@@ -74,7 +74,7 @@ def add_constants_new(ds, *args): # TODO make sure this only adds constants for 
             ds[var] = value
     return ds
 
-def main(folder, latlim, lonlim, timelim, sources = "level_1", bin_length = "DEKAD", enhancers = [], buffer_timelim = True, **kwargs):
+def main(folder, latlim, lonlim, timelim, sources = "level_1", bin_length = 1, enhancers = [], buffer_timelim = True, **kwargs):
     """Prepare input data for `se_root`.
 
     Parameters
