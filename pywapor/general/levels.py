@@ -482,7 +482,7 @@ def pre_et_look_levels(level = "level_1", bin_length = 1):
             "temporal_interp":  {
                                 "method": "whittaker",
                                 # "plot_folder": r"",
-                                "a": 0.8,
+                                # "a": 0.65,
                                 "valid_drange": [0.0, 1.0],
                                 "max_dist": np.timedelta64(15, "D"),
                                 "lambdas": 100.,
@@ -988,26 +988,26 @@ def pre_se_root_levels(level = "level_1"):
                     "enhancers": "default",
                     "is_example": True
                 },
-                {
-                    "source": "LANDSAT",
-                    "product_name": "LT05_SR",
-                    "enhancers": "default",
-                },
-                {
-                    "source": "LANDSAT",
-                    "product_name": "LE07_SR",
-                    "enhancers": "default",
-                },
-                {
-                    "source": "LANDSAT",
-                    "product_name": "LC08_SR",
-                    "enhancers": "default",
-                },
-                {
-                    "source": "LANDSAT",
-                    "product_name": "LC09_SR",
-                    "enhancers": "default",
-                },
+                # {
+                #     "source": "LANDSAT",
+                #     "product_name": "LT05_SR",
+                #     "enhancers": "default",
+                # },
+                # {
+                #     "source": "LANDSAT",
+                #     "product_name": "LE07_SR",
+                #     "enhancers": "default",
+                # },
+                # {
+                #     "source": "LANDSAT",
+                #     "product_name": "LC08_SR",
+                #     "enhancers": "default",
+                # },
+                # {
+                #     "source": "LANDSAT",
+                #     "product_name": "LC09_SR",
+                #     "enhancers": "default",
+                # },
             ]
 
     for var in ["ndvi", "mndwi", "psri", "vari_red_edge", "bsi", "nmdi", "green", "nir"]:
