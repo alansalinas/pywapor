@@ -11,6 +11,7 @@ from pywapor.enhancers.gap_fill import gap_fill
 from pywapor.general.processing_functions import open_ds, remove_ds, save_ds
 from lxml import etree
 import copy
+import warnings
 
 def apply_qa(ds, var):
     """Mask SENTINEL2 data using a qa variable.
@@ -100,7 +101,9 @@ def calc_normalized_difference(ds, var, bands = ["nir", "red"]):
         Output data.
     """
     if np.all([x in ds.data_vars for x in bands]):
-        da = (ds[bands[0]] - ds[bands[1]]) / (ds[bands[0]] + ds[bands[1]])
+        with warnings.catch_warnings():
+            warnings.filterwarnings("ignore", message="All-NaN slice encountered")
+            da = (ds[bands[0]] - ds[bands[1]]) / (ds[bands[0]] + ds[bands[1]])
         ds[var] = da.clip(-1, 1)
     else:
         log.warning(f"--> Couldn't calculate `{var}`, `{'` and `'.join([x for x in bands if x not in ds.data_vars])}` is missing.")
@@ -123,7 +126,9 @@ def calc_psri(ds, var):
     """
     reqs = ["red", "blue", "red_edge_740"]
     if np.all([x in ds.data_vars for x in reqs]):
-        da = (ds["red"] - ds["blue"]) / ds["red_edge_740"]
+        with warnings.catch_warnings():
+            warnings.filterwarnings("ignore", message="All-NaN slice encountered")
+            da = (ds["red"] - ds["blue"]) / ds["red_edge_740"]
         ds[var] = da.clip(-1, 1)
     else:
         log.warning(f"--> Couldn't calculate `{var}`, `{'` and `'.join([x for x in reqs if x not in ds.data_vars])}` is missing.")
@@ -195,9 +200,11 @@ def calc_vari_red_egde(ds, var):
     """
     reqs = ["red_edge_740", "blue", "red"]
     if np.all([x in ds.data_vars for x in reqs]):
-        n1 = ds["red_edge_740"] - 1.7 * ds["red"] + 0.7 * ds["blue"]
-        n2 = ds["red_edge_740"] + 2.3 * ds["red"] - 1.3 * ds["blue"]
-        da = n1 / n2
+        with warnings.catch_warnings():
+            warnings.filterwarnings("ignore", message="All-NaN slice encountered")
+            n1 = ds["red_edge_740"] - 1.7 * ds["red"] + 0.7 * ds["blue"]
+            n2 = ds["red_edge_740"] + 2.3 * ds["red"] - 1.3 * ds["blue"]
+            da = n1 / n2
         ds[var] = da.clip(-1, 1)
     else:
         log.warning(f"--> Couldn't calculate `{var}`, `{'` and `'.join([x for x in reqs if x not in ds.data_vars])}` is missing.")
@@ -229,10 +236,12 @@ def calc_r0(ds, var):
     
     reqs = ["blue", "green", "red", "nir"]
     if np.all([x in ds.data_vars for x in reqs]):
-        ds["offset"] = xr.ones_like(ds["blue"])
-        weights_da = xr.DataArray(data = list(weights.values()), 
-                                coords = {"band": list(weights.keys())})
-        ds["r0"] = ds[reqs + ["offset"]].to_array("band").weighted(weights_da).sum("band", skipna = False)
+        with warnings.catch_warnings():
+            warnings.filterwarnings("ignore", message="All-NaN slice encountered")
+            ds["offset"] = xr.ones_like(ds["blue"])
+            weights_da = xr.DataArray(data = list(weights.values()), 
+                                    coords = {"band": list(weights.keys())})
+            ds["r0"] = ds[reqs + ["offset"]].to_array("band").weighted(weights_da).sum("band", skipna = False)
     else:
         log.warning(f"--> Couldn't calculate `{var}`, `{'` and `'.join([x for x in reqs if x not in ds.data_vars])}` is missing.")
     return ds
