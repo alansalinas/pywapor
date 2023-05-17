@@ -30,6 +30,8 @@ devs/
 dist/
 build/
 collect_old/
+pywapor/gui/
+construct/
 pywapor_test.egg-info/
 pywapor.egg-info/
 
