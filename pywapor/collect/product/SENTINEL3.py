@@ -143,7 +143,7 @@ def download(folder, latlim, lonlim, timelim, product_name,
     """
     product_folder = os.path.join(folder, "SENTINEL3")
 
-    fn = os.path.join(folder, f"{product_name}.nc")
+    fn = os.path.join(product_folder, f"{product_name}.nc")
     req_vars_orig = copy.deepcopy(req_vars)
     if os.path.isfile(fn):
         existing_ds = open_ds(fn)
