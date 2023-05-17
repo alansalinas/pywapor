@@ -141,7 +141,7 @@ def start_session(base_url, selection, un_pw = [None, None]):
     if un_pw == [None, None]:
         warnings.filterwarnings("ignore", "password was not set. ")
     url_coords = base_url + urllib.parse.quote(",".join(selection.keys()))
-    session = setup_session(*un_pw, check_url = url_coords, verify = False)
+    session = setup_session(*un_pw, check_url = url_coords, verify = True)
     return session
 
 def download_xarray(url, fp, coords, variables, post_processors, 
