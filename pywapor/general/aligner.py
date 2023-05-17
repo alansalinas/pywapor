@@ -133,6 +133,12 @@ def main(dss, sources, folder, general_enhancers, example_t_vars = ["lst"]):
         for func in sources[var]["variable_enhancers"]:
             dss2 = func(dss2, var, folder)
 
+    # TODO this info needs to be moved to `sources`.
+    vars_for_sharpening = ['nmdi', 'bsi', 'mndwi', 'cos_solar_zangle', 'vari_red_edge', 'psri', 'nir', 'green']
+    for x in vars_for_sharpening:
+        if x in dss2.keys():
+            _ = dss2.pop(x)
+
     # Align all the variables together.
     example_source = levels.find_setting(sources, "is_example", min_length = 1)
     if len(example_source) == 1:

@@ -32,7 +32,7 @@ def gdal_stop_warnings_and_raise_errors():
 
 gdal_stop_warnings_and_raise_errors()
 
-def highres_inputs(workdir, temporal_hr_input_data, static_hr_input_data):
+def highres_inputs(workdir, temporal_hr_input_data, static_hr_input_data, filter_times = None):
     """Create VRT files with all highres inputs per datetime.
 
     Parameters
@@ -75,6 +75,8 @@ def highres_inputs(workdir, temporal_hr_input_data, static_hr_input_data):
 
     ds = xr.open_dataset(re.findall(r"NETCDF:(.*):.*", temporal_hr_input_data[0])[0])
     times = [x.strftime("%Y%m%d_%H%M%S") for x in pd.to_datetime(ds.time.values)]
+    if not isinstance(filter_times, type(None)):
+        times = [x for x in times if x in filter_times]
     ds = ds.close()
 
     with open(output_vrt, 'r') as f:
@@ -226,7 +228,7 @@ def sharpen(dss, var, folder, make_plots = False, vars_for_sharpening = ['nmdi',
             **{k:v for k,v in dss.items() if not isinstance(v, str)}}
 
     if 'cos_solar_zangle' in vars_for_sharpening and not 'cos_solar_zangle' in dss.keys():
-        dss = get_cos_solar_zangle(dss, "bt", folder)
+        dss = get_cos_solar_zangle(dss, var, folder)
         remove_cos_solar_zangle = True
     else:
         remove_cos_solar_zangle = False
@@ -239,11 +241,13 @@ def sharpen(dss, var, folder, make_plots = False, vars_for_sharpening = ['nmdi',
     temporal_hr_input_data = [f"NETCDF:{y.encoding['source']}:{x}" for x, y in dss.items() if "time" in y.dims and x in vars_for_sharpening]
     static_hr_input_data = [f"NETCDF:{y.encoding['source']}:{x}" for x, y in dss.items() if "time" not in y.dims and x in vars_for_sharpening]
 
-    highResFiles = sorted(highres_inputs(workdir, temporal_hr_input_data, static_hr_input_data))
     lowResFiles = sorted(lowres_inputs(workdir, temporal_lr_input_data))
-
-    highResDates = [os.path.split(x)[-1].split("_")[-2:] for x in highResFiles]
     lowResDates = [os.path.split(x)[-1].split("_")[-2:] for x in lowResFiles]
+    filter_times = [os.path.split(x)[-1].replace(".vrt", "").replace("lowres_input_", "") for x in lowResFiles]
+
+    highResFiles = sorted(highres_inputs(workdir, temporal_hr_input_data, static_hr_input_data, filter_times = filter_times))
+    highResDates = [os.path.split(x)[-1].split("_")[-2:] for x in highResFiles]
+    
     assert np.all([x == y for x,y in zip(highResDates, lowResDates)])
 
     missing_vars = [x for x in vars_for_sharpening if x not in dss.keys()]
@@ -299,10 +303,7 @@ def sharpen(dss, var, folder, make_plots = False, vars_for_sharpening = ['nmdi',
     
     if 'cos_solar_zangle' in dss.keys() and remove_cos_solar_zangle:
         remove_ds(dss['cos_solar_zangle'])
-
-    for x in vars_for_sharpening:
-        if x in dss.keys():
-            _ = dss.pop(x)
+        _ = dss.pop("cos_solar_zangle")
 
     return dss
 
