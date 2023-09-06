@@ -30,7 +30,7 @@ def setup(account):
 
     Parameters
     ----------
-    account : {"NASA" | "VITO" | "WAPOR" | "ECMWF" | "SENTINEL" | "VIIRSL1" | "EARTHEXPLORER"}
+    account : {"NASA" | "TERRA" | "WAPOR" | "ECMWF" | "SENTINEL" | "VIIRSL1" | "EARTHEXPLORER"}
         Which un/pw combination to store.
     """
 
@@ -67,7 +67,7 @@ def setup(account):
         succes, error = {
             "NASA": nasa_account,
             "EARTHEXPLORER": earthexplorer_account,
-            "VITO": vito_account,
+            "TERRA": terra_account,
             "WAPOR": wapor_account,
             "VIIRSL1": viirsl1_account,
             "ECMWF": ecmwf_account,
@@ -98,7 +98,7 @@ def get(account):
 
     Parameters
     ----------
-    account : {"NASA" | "VITO" | "WAPOR" | "ECMWF" | "SENTINEL" | "VIIRSL1" | "EARTHEXPLORER"}
+    account : {"NASA" | "TERRA" | "WAPOR" | "ECMWF" | "SENTINEL" | "VIIRSL1" | "EARTHEXPLORER"}
         Which un/pw combination to load.
     """
 
@@ -155,9 +155,9 @@ def create_key():
     with open(filehandle,"w+") as f:
         f.write(str(Fernet.generate_key().decode("utf-8")))
 
-def vito_account(user_pw):
-    """Check if the given or stored VITO username/password combination
-    is correct. Accounts can be created on https://www.vito-eodata.be.
+def terra_account(user_pw):
+    """Check if the given or stored TERA username/password combination
+    is correct. Accounts can be created on https://viewer.terrascope.be.
 
     Parameters
     ----------
@@ -171,38 +171,24 @@ def vito_account(user_pw):
         True if the password works, otherwise False.
     """
 
-    folder = os.path.dirname(os.path.realpath(pywapor.__path__[0]))
-    test_url = r"https://www.vito-eodata.be/PDF/datapool/Free_Data/PROBA-V_300m/S1_TOC_-_300_m_C1/2014/1/15/PV_S1_TOC-20140115_333M_V101/PROBAV_S1_TOC_20140115_333M_V101.VRG"
-    test_file = os.path.join(folder, "vito_test.vrg")
+    url = "https://sso.vgt.vito.be/auth/realms/terrascope/protocol/openid-connect/token"
+    params = {
+        "grant_type": "password",
+        "client_id": "public",
+        "username": user_pw[0],
+        "password": user_pw[1],
+    }
+    headers = {'content-type': 'application/x-www-form-urlencoded'}
 
-    if os.path.isfile(test_file):
-        try:
-            os.remove(test_file)
-        except PermissionError:
-            ...
-
-    username, password = user_pw
-
-    x = requests.get(test_url, auth = (username, password))
+    x = requests.post(url, data = params, headers = headers)
 
     error = ""
 
-    if x.ok:
-        with open(test_file, 'w+b') as z:
-            z.write(x.content)
-            statinfo = os.stat(test_file)
-            succes = statinfo.st_size == 15392
-            if not succes:
-                error = "something went wrong."
-    else:
-        error = "wrong username/password."
+    if not x.ok:
+        error = eval(x.text)["error_description"]
         succes = False
-
-    if os.path.isfile(test_file):
-        try:
-            os.remove(test_file)
-        except PermissionError:
-            ...
+    else:
+        succes = True
 
     return succes, error
 
@@ -444,13 +430,13 @@ def ecmwf_account(user_pw):
 
 if __name__ == "__main__":
     ...
-    # adjust_logger(True, r"/Users/hmcoerver/Desktop", "INFO")
+    adjust_logger(True, r"/Users/hmcoerver/Desktop", "INFO")
 
     # un_pw1= get("NASA")
     # check1 = nasa_account(un_pw1)
 
-    # un_pw2 = get("VITO")
-    # check2 = vito_account(un_pw2)
+    un_pw2 = get("TERRA")
+    check2 = terra_account(un_pw2)
 
     # un_pw3 = get("WAPOR")
     # check3 = wapor_account(un_pw3)

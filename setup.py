@@ -27,7 +27,7 @@ setup(
 # https://github.com/conda-forge/netcdf4-feedstock/issues/136
 # - NOTE set libnetcdf=4.8 in conda otherwise this happend:
 # https://github.com/pydata/xarray/issues/7549 (also see https://github.com/SciTools/iris/issues/5187)
-        'netcdf4<1.6.0', 
+        'netcdf4<1.6.0',
         'pyproj',
         'scipy',
         'pycurl',
@@ -52,6 +52,7 @@ setup(
         'scikit-learn',
         'numba',
         'xmltodict',
+        'terracatalogueclient=0.1.9 @ https://artifactory.vgt.vito.be/api/pypi/python-packages/terracatalogueclient/0.1.9/terracatalogueclient-0.1.9-py3-none-any.whl#md5=9bc5156b45852bdff582d8327b7fabf9',
 # - (fixed) NOTE Another fix for Colab... https://github.com/googlecolab/colabtools/issues/3134
         # 'importlib-metadata==4.13.0',
     ],

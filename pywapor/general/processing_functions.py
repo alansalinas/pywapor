@@ -102,7 +102,7 @@ def remove_ds(ds):
             fp = ds
 
     if not isinstance(fp, type(None)):
-        ds = xr.open_dataset(fp)
+        ds = xr.open_dataset(fp, chunks = "auto")
         ds = ds.close()
         try:
             os.remove(fp)

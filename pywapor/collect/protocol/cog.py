@@ -62,7 +62,7 @@ def download(fp, product_name, coords, variables, post_processors, url_func,
 
     if waitbar:
         # Create waitbar.
-        waitbar = tqdm.tqdm(position = 0, total = 100, bar_format='{l_bar}{bar}|', delay = 20)
+        waitbar = tqdm.tqdm(position = 0, total = 100, bar_format='{l_bar}{bar}|', delay = 30)
 
         # Define callback function for waitbar progress.
         def _callback_func(info, *args):
@@ -95,13 +95,6 @@ def download(fp, product_name, coords, variables, post_processors, url_func,
     # Process the new netCDF.
     ds = open_ds(temp_path)
 
-    # TODO Also check COPERNICUS and GLOBCOVER...
-    if int(gdal.__version__.split(".")[0]) < 3 and "WaPOR" in product_name:
-        # NOTE this is terrible, but Google Colab uses a 7 year old GDAL version in 
-        # which gdal.Translate does not apply scale-factors...
-        log.warning("--> You are using a very old GDAL version, applying a `0.01` scale factor manually.")
-        ds = ds * 0.01
-
     ds = ds.rename_vars({k: f"Band{v}" for k,v in zip(list(ds.data_vars), bands)})
 
     ds = process_ds(ds, coords, variables)
@@ -110,7 +103,7 @@ def download(fp, product_name, coords, variables, post_processors, url_func,
     for var, funcs in post_processors.items():
         for func in funcs:
             ds, label = apply_enhancer(ds, var, func)
-            # log.info(label)
+            log.info(label)
 
     # Save final output.
     out = save_ds(ds, fp, encoding = "initiate", label = f"Saving {fn}.")

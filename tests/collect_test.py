@@ -38,9 +38,10 @@ def get_source_details(mod):
 
     return req_dl_vars, products
 
-def download_mod(mod, workdir, timelim, latlim, lonlim):
+def download_mod(mod, workdir, timelim, latlim, lonlim, products = None, req_dl_vars = None):
 
-    req_dl_vars, products = get_source_details(mod)
+    if isinstance(products, type(None)) or isinstance(req_dl_vars, type(None)):
+        req_dl_vars, products = get_source_details(mod)
 
     args = {
         "folder": workdir,
@@ -90,12 +91,13 @@ sources = {
     'GLOBCOVER':    [pywapor.collect.product.GLOBCOVER, None], # cog.download
     'CHIRPS':       [pywapor.collect.product.CHIRPS,    [datetime.date(2022, 3, 1), datetime.date(2022, 3, 3)]], # opendap.download
     'SRTM':         [pywapor.collect.product.SRTM,      None], # opendap.download
-    'PROBAV':       [pywapor.collect.product.PROBAV,    [datetime.date(2021, 7, 1), datetime.date(2021, 7, 11)]],
     'ERA5':         [pywapor.collect.product.ERA5,      [datetime.date(2022, 3, 1), datetime.date(2022, 3, 3)]], # cds.download
     'SENTINEL2':    [pywapor.collect.product.SENTINEL2, [datetime.date(2023, 3, 1), datetime.date(2023, 3, 5)]],    
     'SENTINEL3':    [pywapor.collect.product.SENTINEL3, [datetime.date(2023, 3, 1), datetime.date(2023, 3, 3)]],
     'VIIRSL1':      [pywapor.collect.product.VIIRSL1,   [datetime.date(2022, 3, 1), datetime.date(2022, 3, 2)]],
     'COPERNICUS':   [pywapor.collect.product.COPERNICUS, None], # cog.download
+    'TERRA':        [pywapor.collect.product.TERRA,     [datetime.date(2020, 7, 2), datetime.date(2020, 7, 9)]],
+    # 'LANDSAT': [pywapor.collect.product.LANDSAT, [datetime.date(2022, 3, 1), datetime.date(2022, 3, 12)]]
 }
 
 @pytest.mark.parametrize("product_name", list(sources.keys()))
@@ -111,7 +113,14 @@ def test_dl(product_name, tmp_path):
     latlim = [29.4, 29.7]
     lonlim = [30.7, 31.0]
 
-    dss = download_mod(mod, workdir, timelim, latlim, lonlim)
+    if product_name == "LANDSAT":
+        products = ["LT05_SR", "LE07_SR", "LC08_SR", "LC09_SR"]
+        req_dl_vars = {k: {"ndvi":None} for k in products}
+    else:
+        req_dl_vars = None
+        products = None
+
+    dss = download_mod(mod, workdir, timelim, latlim, lonlim, req_dl_vars=req_dl_vars, products=products)
     
     for ds in dss.values():
         assert ds.rio.crs.to_epsg() == 4326

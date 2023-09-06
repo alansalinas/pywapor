@@ -338,8 +338,8 @@ def pre_et_look_levels(level = "level_1", bin_length = 1):
 
             "products": [
                 {
-                    "source": "PROBAV",
-                    "product_name": "S5_TOC_100_m_C1",
+                    "source": "TERRA",
+                    "product_name": "urn:eop:VITO:PROBAV_S5_TOC_100M_COG_V2",
                     "enhancers": "default",
                     "is_example": True
                 },
@@ -353,8 +353,8 @@ def pre_et_look_levels(level = "level_1", bin_length = 1):
 
             "products": [
                 {
-                    "source": "PROBAV",
-                    "product_name": "S5_TOC_100_m_C1",
+                    "source": "TERRA",
+                    "product_name": "urn:eop:VITO:PROBAV_S5_TOC_100M_COG_V2",
                     "enhancers": "default",
                 },
             ],
@@ -822,8 +822,8 @@ def pre_se_root_levels(level = "level_1"):
 
             "products": [
                 {
-                    "source": "PROBAV",
-                    "product_name": "S5_TOC_100_m_C1",
+                    "source": "TERRA",
+                    "product_name": "urn:eop:VITO:PROBAV_S5_TOC_100M_COG_V2",
                     "enhancers": "default",
                     "is_example": True
                 },
