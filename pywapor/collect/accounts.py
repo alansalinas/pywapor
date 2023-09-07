@@ -4,10 +4,9 @@ import pywapor
 import getpass
 import sys
 import requests
-import time
+import cdsapi
 from pywapor.general.logger import log, adjust_logger
 from cryptography.fernet import Fernet
-import cdsapi
 from sentinelsat import SentinelAPI
 from pywapor.collect.product.LANDSAT import espa_api
 
@@ -397,7 +396,8 @@ def ecmwf_account(user_pw):
     url, key = user_pw
 
     try:
-        c = cdsapi.Client(url = url, key = key, verify = True, quiet = True)
+        vrfy = {"NO": False, "YES": True}.get(os.environ.get("PYWAPOR_VERIFY_SSL", "YES"), True)
+        c = cdsapi.Client(url = url, key = key, verify = vrfy, quiet = True)
         fp = os.path.join(pywapor.__path__[0], "test.zip")
         _ = c.retrieve(
             'sis-agrometeorological-indicators',

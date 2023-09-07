@@ -117,13 +117,13 @@ def download(fp, product_name, coords, variables, post_processors,
 
     return ds
 
-def find_idxs(base_url, selection, session, verify = True):
+def find_idxs(base_url, selection, session):
     def _find_idxs(ds, k, search_range):
         all_idxs = np.where((ds[k] >= search_range[0]) & (ds[k] <= search_range[1]))[0]
         return [np.min(all_idxs), np.max(all_idxs)]
     fp = tempfile.NamedTemporaryFile(suffix=".nc").name
     url_coords = base_url + urllib.parse.quote(",".join(selection.keys()))
-    fp = download_url(url_coords, fp, session, waitbar = False, verify = verify)
+    fp = download_url(url_coords, fp, session, waitbar = False)
     ds = xr.open_dataset(fp, decode_coords = "all")
     idxs = {k: _find_idxs(ds, k, v) for k, v in selection.items()}
     return idxs
@@ -141,7 +141,8 @@ def start_session(base_url, selection, un_pw = [None, None]):
     if un_pw == [None, None]:
         warnings.filterwarnings("ignore", "password was not set. ")
     url_coords = base_url + urllib.parse.quote(",".join(selection.keys()))
-    session = setup_session(*un_pw, check_url = url_coords, verify = True)
+    vrfy = {"NO": False, "YES": True}.get(os.environ.get("PYWAPOR_VERIFY_SSL", "YES"), True)
+    session = setup_session(*un_pw, check_url = url_coords, verify = vrfy)
     return session
 
 def download_xarray(url, fp, coords, variables, post_processors, 
