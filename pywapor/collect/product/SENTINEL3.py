@@ -1,13 +1,13 @@
 import os
-import pywapor.collect.protocol.sentinelapi as sentinelapi
-from pywapor.general.curvilinear import regrid, create_grid
-from pywapor.general.logger import log, adjust_logger
 import glob
-import xarray as xr
 import copy
+import xarray as xr
 import numpy as np
+import pywapor.collect.protocol.sentinelapi as sentinelapi
 from datetime import datetime as dt
-from pywapor.general.processing_functions import open_ds, remove_ds, save_ds
+from pywapor.general.curvilinear import create_grid, curvi_to_recto
+from pywapor.general.logger import log, adjust_logger
+from pywapor.general.processing_functions import open_ds, remove_ds
 
 def default_vars(product_name, req_vars):
     """Given a `product_name` and a list of requested variables, returns a dictionary
@@ -98,15 +98,39 @@ def s3_processor(scene_folder, variables, bb = None, **kwargs):
     ds = ds.rename_vars({"longitude_in": "x", "latitude_in": "y"})
     ds = ds.rename_dims({"rows": "ny", "columns": "nx"})
     ds = ds[["LST", "LST_uncertainty"]]
-
-    ds = ds.where(ds.LST_uncertainty < 2.5)
+    ds = ds.where(ds["LST_uncertainty"] < 2.5)
     ds = ds.drop_vars("LST_uncertainty")
-
-    grid_ds = create_grid(ds, 0.01, 0.01, bb = bb)
-    ds = regrid(grid_ds, ds)
-    ds = ds.rio.write_crs(4326)
-
     ds = ds.rename_vars({"LST": "lst"})
+    ds["x"].attrs = {}
+    ds["y"].attrs = {}
+
+    combined_fn = os.path.join(scene_folder, "combined.nc")
+    _ = ds.to_netcdf(combined_fn, 
+                encoding = {
+                            "lst": {"_FillValue": -9999}, 
+                            "x": {"_FillValue": -9999, "scale_factor": 1}, 
+                            "y": {"_FillValue": -9999, "scale_factor": 1}})
+
+    bb_, nx, ny = create_grid(bb[1::2], bb[0::2], dx_dy = (0.01, 0.01))
+    warp_kwargs = {"outputBounds": bb_, "width": nx, "height": ny}
+    lats = f'NETCDF:"{combined_fn}":y'
+    lons = f'NETCDF:"{combined_fn}":x'
+    data = {"lst": f'NETCDF:"{combined_fn}":lst'}
+    out_fn = os.path.join(scene_folder, "warped.nc")
+    _ = curvi_to_recto(lats, lons, data, out_fn, warp_kwargs = warp_kwargs)
+
+    ds = open_ds(out_fn)
+    ds = ds.rename({"lat": "y", "lon": "x", "Band1": "lst"})
+    ds = ds.drop("crs")
+    ds.attrs = {}
+    for var in ds.data_vars:
+        ds[var].attrs = {}
+    ds = ds.rio.write_grid_mapping("spatial_ref")
+    ds = ds.rio.write_crs("epsg:4326")
+    ds = ds.sortby("y", ascending = False)
+    ds = ds.rio.write_transform(ds.rio.transform(recalc=True))
+
+    remove_ds(combined_fn)
 
     return ds
 
@@ -188,9 +212,9 @@ def download(folder, latlim, lonlim, timelim, product_name,
 
 if __name__ == "__main__":
 
-    folder = r"/Users/hmcoerver/Local/s3_test"
+    folder = r"/Users/hmcoerver/Local/s3_new"
     adjust_logger(True, folder, "INFO")
-    timelim = ["2022-03-25", "2022-04-15"]
+    timelim = ["2023-08-29", "2023-09-02"]
     latlim = [29.4, 29.7]
     lonlim = [30.7, 31.0]
 
@@ -201,6 +225,8 @@ if __name__ == "__main__":
     variables = None
     extra_search_kwargs = {}
 
+    # source_name = "SENTINEL3"
+    # scene_folder = "/Users/hmcoerver/Local/s3_new/SENTINEL3/S3A_SL_2_LST____20230829T075655_20230829T075955_20230829T100445_0179_102_363_2520_PS1_O_NR_004.SEN3"
     ds = download(folder, latlim, lonlim, timelim, product_name, 
                 req_vars, variables = variables,  post_processors = post_processors)
 

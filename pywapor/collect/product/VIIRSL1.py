@@ -12,7 +12,7 @@ from pywapor.enhancers.apply_enhancers import apply_enhancer
 from pywapor.general.processing_functions import save_ds, remove_ds, open_ds
 from pywapor.general.logger import log, adjust_logger
 from pywapor.enhancers.other import drop_empty_times
-from pywapor.general.curvilinear import curvi_to_recto
+from pywapor.general.curvilinear import curvi_to_recto, create_grid
 gdal.UseExceptions()
 
 def get_token():
@@ -229,13 +229,6 @@ def combine_unprojected_data(nc02_file, ncqa_file, lut_file, unproj_fn):
     ).rename("bt").to_dataset()
 
     _ = save_ds(bt, unproj_fn, encoding = "initiate", label = "Combining data.").close()
-
-def create_grid(latlim, lonlim, dx_dy = (0.0033, 0.0033)):
-    dx, dy = dx_dy
-    nx = np.ceil((lonlim[1] - lonlim[0]) / dx)
-    ny = np.ceil((latlim[1] - latlim[0]) / dy)
-    bb = [lonlim[0], latlim[0], lonlim[0] + nx * dx, latlim[0] + ny * dy]
-    return bb, nx, ny
 
 def download(folder, latlim, lonlim, timelim, product_name, req_vars,
                 variables = None, post_processors = None):
