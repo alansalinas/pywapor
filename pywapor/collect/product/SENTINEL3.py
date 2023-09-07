@@ -178,6 +178,12 @@ def download(folder, latlim, lonlim, timelim, product_name,
         else:
             return existing_ds[req_vars_orig]
 
+    spatial_buffer = True
+    if spatial_buffer:
+        dx = dy = 0.01
+        latlim = [latlim[0] - dy, latlim[1] + dy]
+        lonlim = [lonlim[0] - dx, lonlim[1] + dx]
+
     if isinstance(variables, type(None)):
         variables = default_vars(product_name, req_vars)
 
