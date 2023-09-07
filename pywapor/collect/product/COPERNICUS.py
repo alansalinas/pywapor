@@ -207,7 +207,11 @@ def download(folder, latlim, lonlim, product_name = "GLO30", req_vars = ["z"],
 
     coords = {"x": ("lon", lonlim), "y": ("lat", latlim)}
 
-    gdal_config_options = {'AWS_REGION': 'eu-central-1', 'AWS_NO_SIGN_REQUEST': ''}
+    gdal_config_options = {
+                        'AWS_REGION': 'eu-central-1', 
+                        'AWS_NO_SIGN_REQUEST': '',
+                        'GDAL_DISABLE_READDIR_ON_OPEN': 'EMPTY_DIR',
+                        }
 
     dss = list()
 

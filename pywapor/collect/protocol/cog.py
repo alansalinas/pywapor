@@ -43,54 +43,60 @@ def download(fp, product_name, coords, variables, post_processors, url_func,
     if not os.path.isdir(folder):
         os.makedirs(folder)
 
-    for k, v in gdal_config_options.items():
-        gdal.SetConfigOption(k, v)
+    try:
+        for k, v in gdal_config_options.items():
+            gdal.SetConfigOption(k, v)
 
-    bands = [int(k.replace("Band", "")) for k in variables.keys() if "Band" in k]
+        bands = [int(k.replace("Band", "")) for k in variables.keys() if "Band" in k]
 
-    # Define bounding-box.
-    bb = [coords["x"][1][0], coords["y"][1][1], 
-            coords["x"][1][1], coords["y"][1][0]]
+        # Define bounding-box.
+        bb = [coords["x"][1][0], coords["y"][1][1], 
+                coords["x"][1][1], coords["y"][1][0]]
 
-    options_dict = {
-            "projWin": bb,
-            "format": "netCDF",
-            "creationOptions": ["COMPRESS=DEFLATE", "FORMAT=NC4"],
-            "noData": ndv,
-            "bandList": bands,
-    }
+        options_dict = {
+                "projWin": bb,
+                "format": "netCDF",
+                "creationOptions": ["COMPRESS=DEFLATE", "FORMAT=NC4"],
+                "noData": ndv,
+                "bandList": bands,
+        }
 
-    if waitbar:
-        # Create waitbar.
-        waitbar = tqdm.tqdm(position = 0, total = 100, bar_format='{l_bar}{bar}|', delay = 30)
+        if waitbar:
+            # Create waitbar.
+            waitbar = tqdm.tqdm(position = 0, total = 100, bar_format='{l_bar}{bar}|', delay = 30)
 
-        # Define callback function for waitbar progress.
-        def _callback_func(info, *args):
-            waitbar.update(info * 100 - waitbar.n)
+            # Define callback function for waitbar progress.
+            def _callback_func(info, *args):
+                waitbar.update(info * 100 - waitbar.n)
 
-        # Add callback to gdal.Translate options.
-        options_dict.update({"callback": _callback_func})
+            # Add callback to gdal.Translate options.
+            options_dict.update({"callback": _callback_func})
 
-    # Set gdal.Translate options.
-    options = gdal.TranslateOptions(**options_dict)
+        # Set gdal.Translate options.
+        options = gdal.TranslateOptions(**options_dict)
 
-    # Check if url is local or online path.
-    url = url_func(product_name)
-    is_not_local = urllib.parse.urlparse(url).scheme in ('http', 'https',)
-    if is_not_local:
-        url = f"/vsicurl/{url}"
+        # Check if url is local or online path.
+        url = url_func(product_name)
+        is_not_local = urllib.parse.urlparse(url).scheme in ('http', 'https',)
+        if is_not_local:
+            url = f"/vsicurl/{url}"
 
-    # Check if path is free.
-    temp_path = fp.replace(".nc", "_temp.nc")
-    while os.path.isfile(temp_path):
-        temp_path = temp_path.replace(".nc", "_.nc")
+        # Check if path is free.
+        temp_path = fp.replace(".nc", "_temp.nc")
+        while os.path.isfile(temp_path):
+            temp_path = temp_path.replace(".nc", "_.nc")
 
-    # Run gdal.Translate.
-    ds_ = gdal.Translate(temp_path, url, options = options)
+        # Run gdal.Translate.
+        ds_ = gdal.Translate(temp_path, url, options = options)
 
-    # Reset the gdal.Dataset.
-    ds_.FlushCache()
-    ds_ = None
+        # Reset the gdal.Dataset.
+        ds_.FlushCache()
+        ds_ = None
+    except Exception as e:
+        raise e
+    finally:
+        for k in gdal_config_options.keys():
+            gdal.SetConfigOption(k, None)
 
     # Process the new netCDF.
     ds = open_ds(temp_path)
