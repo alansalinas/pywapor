@@ -3,10 +3,12 @@ import tempfile
 import xarray as xr
 from osgeo import gdal, osr
 from pywapor.general.logger import log
-from pywapor.general.processing_functions import save_ds
+from pywapor.general.processing_functions import save_ds, remove_ds
 gdal.UseExceptions()
 
 def calc_slope_or_aspect(ds, var, write_init = True):
+
+    log.add()
 
     # Get filepath from xr.Dataset.
     fp = ds.encoding.get("source", None)
@@ -17,7 +19,11 @@ def calc_slope_or_aspect(ds, var, write_init = True):
     # Write data to file if necessary.
     if write_init or isinstance(fp, type(None)):
         fp = os.path.join(tempfile.gettempdir(), f"temp_{var}.nc")
-        ds = save_ds(ds, fp)
+        if os.path.isfile(fp):
+            remove_ds(fp)
+        while os.path.isfile(fp):
+            fp = fp.replace(".nc", "_.nc")
+        ds = save_ds(ds, fp, label = f"Generating {var} input file.")
 
     fp_out = f"/vsimem/temp_{var}.tif"
 
@@ -72,5 +78,7 @@ def calc_slope_or_aspect(ds, var, write_init = True):
     for var in ds_new.data_vars:
         ds_new[var].attrs = {}
     ds[var] = ds_new[var]
+
+    log.sub()
 
     return ds

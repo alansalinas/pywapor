@@ -34,8 +34,9 @@ def test_small_et_look(tmp_path):
 
     latlim = [29.4, 29.7]
     lonlim = [30.7, 31.0]
-    timelim = [datetime.date(2023, 2, 1), datetime.date(2023, 2, 11)]
-    bin_length = "DEKAD"
+    today = datetime.datetime.now().date()
+    timelim = [today - datetime.timedelta(25), today - datetime.timedelta(20)]
+    bin_length = 2
     ds = pywapor.pre_et_look.main(folder, latlim, lonlim, timelim, sources, bin_length = bin_length)
     assert ds.rio.crs.to_epsg() == 4326
     assert "ndvi" in ds.data_vars
@@ -50,13 +51,13 @@ def test_et_look_level_2_v3(tmp_path):
     adjust_logger(True, folder, "INFO", testing = True)
 
     today = datetime.datetime.now().date()
-    timelim = [today - datetime.timedelta(70), today - datetime.timedelta(60)]
+    timelim = [today - datetime.timedelta(35), today - datetime.timedelta(30)]
     # timelim = [datetime.date(2023, 2, 1), datetime.date(2023, 2, 11)]
 
     latlim = [29.4, 29.6]
     lonlim = [30.7, 30.9]
     sources = "level_2_v3"
-    bin_length = 4
+    bin_length = 2
     input_data = pywapor.pre_et_look.main(folder, latlim, lonlim, timelim, 
                                             sources, bin_length = bin_length)
     assert input_data.rio.crs.to_epsg() == 4326
@@ -80,13 +81,13 @@ def test_et_look_level_3_v3(tmp_path):
     adjust_logger(True, folder, "INFO", testing = True)
 
     today = datetime.datetime.now().date()
-    timelim = [today - datetime.timedelta(70), today - datetime.timedelta(60)]
+    timelim = [today - datetime.timedelta(35), today - datetime.timedelta(30)]
     # timelim = [datetime.date(2023, 2, 1), datetime.date(2023, 2, 11)]
 
     latlim = [29.4, 29.6]
     lonlim = [30.7, 30.9]
     sources = "level_3_v3"
-    bin_length = 4
+    bin_length = 2
     input_data = pywapor.pre_et_look.main(folder, latlim, lonlim, timelim, 
                                             sources, bin_length = bin_length)
     assert input_data.rio.crs.to_epsg() == 4326
