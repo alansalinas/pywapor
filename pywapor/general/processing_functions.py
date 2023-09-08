@@ -398,59 +398,6 @@ def transform_bb(src_crs, dst_crs, bb):
     bb =rasterio.warp.transform_bounds(src_crs, dst_crs, *bb, densify_pts=21)
     return bb
 
-def calc_dlat_dlon(geo_out, size_X, size_Y, lat_lon = None):
-    """
-    Calculated the dimensions of each pixel in meter.
-
-    Parameters
-    ----------
-    geo_out: list
-        Geotransform function of the array.
-    size_X: int
-        Number of pixels in x-direction.
-    size_Y: int
-        Number of pixels in y-direction.
-    lat_lon : tuple, optional
-        Tuple with two rasters, one for latitudes, another for longitudes, by default None.
-
-    Returns
-    -------
-    tuple
-        Tuple with two arrays with teh size of each pixel in the x and y direction in meters.
-    """
-    if isinstance(lat_lon, type(None)):
-        # Create the lat/lon rasters
-        lon = np.arange(size_X + 1)*geo_out[1]+geo_out[0] - 0.5 * geo_out[1]
-        lat = np.arange(size_Y + 1)*geo_out[5]+geo_out[3] - 0.5 * geo_out[5]
-    else:
-        lat, lon = lat_lon
-
-    dlat_2d = np.array([lat,]*int(np.size(lon,0))).transpose()
-    dlon_2d =  np.array([lon,]*int(np.size(lat,0)))
-
-    # Radius of the earth in meters
-    R_earth = 6371000
-
-    # Calculate the lat and lon in radians
-    lonRad = dlon_2d * np.pi/180
-    latRad = dlat_2d * np.pi/180
-
-    # Calculate the difference in lat and lon
-    lonRad_dif = abs(lonRad[:,1:] - lonRad[:,:-1])
-    latRad_dif = abs(latRad[:-1] - latRad[1:])
-
-    # Calculate the distance between the upper and lower pixel edge
-    a = np.sin(latRad_dif[:,:-1]/2) * np.sin(latRad_dif[:,:-1]/2)
-    clat = 2 * np.arctan2(np.sqrt(a), np.sqrt(1-a))
-    dlat = R_earth * clat
-
-    # Calculate the distance between the eastern and western pixel edge
-    b = np.cos(latRad[1:,:-1]) * np.cos(latRad[:-1,:-1]) * np.sin(lonRad_dif[:-1,:]/2) * np.sin(lonRad_dif[:-1,:]/2)
-    clon = 2 * np.arctan2(np.sqrt(b), np.sqrt(1-b))
-    dlon = R_earth * clon
-
-    return(dlat, dlon)
-
 if __name__ == "__main__":
 
     folder = r"/Users/hmcoerver/Local/dummy_ds_test"
