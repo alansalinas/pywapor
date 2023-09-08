@@ -95,7 +95,7 @@ def search_stac(params, endpoint = 'https://cmr.earthdata.nasa.gov/stac/LAADS'):
     query.raise_for_status()
     out = query.json()
     if out["context"]["returned"] < out["context"]["matched"]:
-        log.warning("Number of matched features exceeds limit.") # TODO: make warning
+        log.warning("Number of matched features exceeds limit.")
     return out["features"]
 
 def create_stac_summary(bb, timelim):
@@ -230,6 +230,26 @@ def combine_unprojected_data(nc02_file, ncqa_file, lut_file, unproj_fn):
 
     _ = save_ds(bt, unproj_fn, encoding = "initiate", label = "Combining data.").close()
 
+def get_info(url) -> dict:
+    creds = get_token()
+    gdal_config_options = {
+        "AWS_ACCESS_KEY_ID": creds["accessKeyId"],
+        "AWS_SESSION_TOKEN": creds["sessionToken"],
+        "AWS_SECRET_ACCESS_KEY": creds["secretAccessKey"],
+        "GDAL_DISABLE_READDIR_ON_OPEN": "EMPTY_DIR",
+    }
+    try:
+        for k, v in gdal_config_options.items():
+            gdal.SetConfigOption(k, v)
+        info = gdal.Info(url, format = "json")
+    except Exception as e:
+        raise e
+    finally:
+        for k in gdal_config_options.keys():
+            gdal.SetConfigOption(k, None)
+
+    return info
+
 def download(folder, latlim, lonlim, timelim, product_name, req_vars,
                 variables = None, post_processors = None):
     """Download VIIRSL1 data and store it in a single netCDF file.
@@ -310,6 +330,13 @@ def download(folder, latlim, lonlim, timelim, product_name, req_vars,
             log.sub()
             continue
 
+        info = get_info(nc02)
+        flag = info.get("metadata", {}).get("", {}).get("DayNightFlag", "n/a")
+        if flag != "Day":
+            log.info(f"--> Skipping scene, `DayNightFlag = {flag}`.")
+            log.sub()
+            continue
+
         lats_file = download_arrays(nc03, ["/geolocation_data/latitude"], folder, path_appendix="_lat.nc")
         lons_file = download_arrays(nc03, ["/geolocation_data/longitude"], folder, path_appendix="_lon.nc")
         nc02_file = download_arrays(nc02, ["/observation_data/I05_quality_flags", "/observation_data/I05"], folder)
@@ -323,7 +350,7 @@ def download(folder, latlim, lonlim, timelim, product_name, req_vars,
         _ = curvi_to_recto(lats_file, lons_file, {"bt": unproj_fn}, proj_fn, warp_kwargs = warp_kwargs)
         all_proj_files.append(proj_fn)
 
-        for x in [nc02_file, ncqa_file, lut_file, unproj_fn]:
+        for x in [nc02_file, ncqa_file, lut_file, unproj_fn, lats_file, lons_file]:
             remove_ds(x)
 
         log.sub()
