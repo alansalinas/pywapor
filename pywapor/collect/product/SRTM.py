@@ -6,14 +6,14 @@ import os
 import json
 import pywapor.collect
 import xarray as xr
-from pywapor.general.processing_functions import open_ds, remove_ds, save_ds
+from pywapor.general.processing_functions import open_ds
 import pywapor.collect.accounts as accounts
 from shapely.geometry.polygon import Polygon
 from shapely.geometry import shape
 import copy
 from functools import partial
 import pywapor.collect.protocol.opendap as opendap
-from pywapor.enhancers.dem import calc_slope, calc_aspect, calc_slope_or_aspect
+from pywapor.enhancers.dem import calc_slope_or_aspect
 import numpy as np
 
 def tiles_intersect(latlim, lonlim):

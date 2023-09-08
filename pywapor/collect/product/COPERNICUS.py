@@ -8,7 +8,7 @@ from pywapor.collect.protocol import cog
 from functools import partial
 from pywapor.general.processing_functions import open_ds, save_ds, remove_ds
 from pywapor.enhancers.apply_enhancers import apply_enhancer
-from pywapor.enhancers.dem import calc_slope, calc_aspect, calc_slope_or_aspect
+from pywapor.enhancers.dem import calc_slope_or_aspect
 from pywapor.general.logger import log, adjust_logger
 from pywapor.collect.protocol.crawler import download_urls
 
