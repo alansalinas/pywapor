@@ -1,17 +1,19 @@
 import glob
 import os
-import xarray as xr
-import numpy as np
-from datetime import datetime as dt
-from pywapor.general.logger import log, adjust_logger
-import pywapor.collect.protocol.sentinelapi as sentinelapi
-import numpy as np
-from functools import partial
-from pywapor.enhancers.gap_fill import gap_fill
-from pywapor.general.processing_functions import open_ds, remove_ds, save_ds
-from lxml import etree
 import copy
 import warnings
+import xarray as xr
+import numpy as np
+import pywapor.collect.protocol.copernicus_odata as copernicus_odata
+import numpy as np
+from datetime import datetime as dt
+from pywapor.general.logger import log
+from functools import partial
+from pywapor.enhancers.gap_fill import gap_fill
+from pywapor.general.processing_functions import open_ds, adjust_timelim_dtype
+from pywapor.general.logger import adjust_logger
+from lxml import etree
+
 
 def apply_qa(ds, var):
     """Mask SENTINEL2 data using a qa variable.
@@ -426,7 +428,7 @@ def time_func(fn):
     dtime = np.datetime64(dt.strptime(fn.split("_")[2], "%Y%m%dT%H%M%S"), "ns")
     return dtime
 
-def s2_processor(scene_folder, variables):
+def s2_processor(scene_folder, variables, **kwargs):
 
     dss = [open_ds(glob.glob(os.path.join(scene_folder, "**", "*" + k), recursive = True)[0], decode_coords=None).isel(band=0).rename({"band_data": v[1]}) for k, v in variables.items()]
     ds = xr.merge(dss).drop_vars("band")
@@ -519,46 +521,36 @@ def download(folder, latlim, lonlim, timelim, product_name,
         default_processors = default_post_processors(product_name, req_vars)
         post_processors = {k: {True: default_processors[k], False: v}[v == "default"] for k,v in post_processors.items() if k in req_vars}
 
+    timelim = adjust_timelim_dtype(timelim)
     bb = [lonlim[0], latlim[0], lonlim[1], latlim[1]]
 
-    search_kwargs = {
-                        "platformname": "Sentinel-2",
-                        "producttype": "S2MSI2A",
-                        # "limit": 10,
-    }
-
-    search_kwargs = {**search_kwargs, **extra_search_kwargs}
-
     def node_filter(node_info):
-        fn = os.path.split(node_info["node_path"])[-1]
+        fn = os.path.split(node_info)[-1]
         to_dl = list(variables.keys()) + ["MTD_MSIL2A.xml"]
         return np.any([x in fn for x in to_dl])
-    # node_filter = None
 
-    scenes = sentinelapi.download(product_folder, latlim, lonlim, timelim, search_kwargs, node_filter = node_filter, to_dl = variables.keys())
-
-    ds = sentinelapi.process_sentinel(scenes, variables, "SENTINEL2", time_func, os.path.split(fn)[-1], post_processors, bb = bb)
+    scenes = copernicus_odata.download(product_folder, latlim, lonlim, timelim, "SENTINEL2", product_name.split("_")[0], node_filter = node_filter)
+    ds = copernicus_odata.process_sentinel(scenes, variables, time_func, os.path.split(fn)[-1], post_processors, s2_processor, bb = bb)
 
     return ds[req_vars_orig]
 
-# if __name__ == "__main__":
+if __name__ == "__main__":
 
-#     folder = r"/Users/hmcoerver/Local/s2_test"
-#     adjust_logger(True, folder, "INFO")
-#     timelim = ["2022-03-29", "2022-04-25"]
-#     latlim = [28.9, 29.7]
-#     lonlim = [30.2, 31.2]
+    folder = r"/Users/hmcoerver/Local/s2_test"
+    adjust_logger(True, folder, "INFO")
+    timelim = ["2022-03-29", "2022-03-31"]
+    latlim = [28.9, 29.7]
+    lonlim = [30.2, 31.2]
 
-#     product_name = 'S2MSI2A_R60m'
-#     req_vars = ["mndwi", "psri", "vari_red_edge", "bsi", "nmdi", "green", "nir"]
-#     post_processors = None
-#     variables = None
+    product_name = 'S2MSI2A_R60m'
+    req_vars = ["mndwi", "psri", "vari_red_edge", "bsi", "nmdi", "green", "nir"]
+    post_processors = None
+    variables = None
 #     extra_search_kwargs = {"cloudcoverpercentage": (0, 30)}
 
-#     ds = download(folder, latlim, lonlim, timelim, product_name, req_vars, 
-#                 variables = None,  post_processors = None,
-#                 extra_search_kwargs = extra_search_kwargs
-#                  )
+    # ds = download(folder, latlim, lonlim, timelim, product_name, req_vars, 
+    #             variables = None,  post_processors = None
+    #              )
 
     # from pywapor.collect.protocol.sentinelapi import process_sentinel
     # latlim = [29.4, 29.6]

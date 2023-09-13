@@ -7,7 +7,6 @@ import requests
 import cdsapi
 from pywapor.general.logger import log, adjust_logger
 from cryptography.fernet import Fernet
-from sentinelsat import SentinelAPI
 from pywapor.collect.product.LANDSAT import espa_api
 
 def ask_pw(account):
@@ -29,7 +28,7 @@ def setup(account):
 
     Parameters
     ----------
-    account : {"NASA" | "TERRA" | "WAPOR" | "ECMWF" | "SENTINEL" | "VIIRSL1" | "EARTHEXPLORER"}
+    account : {"NASA" | "TERRA" | "WAPOR" | "ECMWF" | "COPERNICUS_DATA_SPACE" | "VIIRSL1" | "EARTHEXPLORER"}
         Which un/pw combination to store.
     """
 
@@ -70,7 +69,7 @@ def setup(account):
             "WAPOR": wapor_account,
             "VIIRSL1": viirsl1_account,
             "ECMWF": ecmwf_account,
-            "SENTINEL": sentinel_account,
+            "COPERNICUS_DATA_SPACE": copernicus_data_space_account,
         }[account]((account_name, pwd))
 
         if succes:
@@ -97,7 +96,7 @@ def get(account):
 
     Parameters
     ----------
-    account : {"NASA" | "TERRA" | "WAPOR" | "ECMWF" | "SENTINEL" | "VIIRSL1" | "EARTHEXPLORER"}
+    account : {"NASA" | "TERRA" | "WAPOR" | "ECMWF" | "COPERNICUS_DATA_SPACE" | "VIIRSL1" | "EARTHEXPLORER"}
         Which un/pw combination to load.
     """
 
@@ -345,33 +344,48 @@ def viirsl1_account(user_pw):
 
     return succes, error
 
-def sentinel_account(user_pw):
-    """Check if the given or stored SENTINEL username and password is 
-    correct. Accounts can be created on https://scihub.copernicus.eu/userguide/SelfRegistration.
+def copernicus_data_space_account(user_pw):
+    """Check if the given or stored COPERNICUS_DATA_SPACE account is
+    correct. Accounts can be created on https://dataspace.copernicus.eu
 
     Parameters
     ----------
-    user_pw : tuple, optional
-        ("", "token") to check, if `None` will try to load the 
-        password from the keychain, by default None.
+    user_pw : tuple
+        ("username", "password") to check.
 
     Returns
     -------
-    bool
-        True if the password works, otherwise False.
+    tuple
+        First item is `True` if the password works, otherwise `False`,
+        seconds item is a error message.
     """
 
     username, password = user_pw
 
     try:
-        api = SentinelAPI(username, password, 'https://apihub.copernicus.eu/apihub')
-        _ = api.count(
-                    platformname = 'Sentinel-2',
-                    producttype = 'S2MSI2A')
-        succes = True
-        error = ""
+
+        data = {
+            "client_id": "cdse-public",
+            "username": username,
+            "password": password,
+            "grant_type": "password",
+            }
+        
+        r = requests.post("https://identity.dataspace.copernicus.eu/auth/realms/CDSE/protocol/openid-connect/token",
+                            data=data,
+                            )
+        r.raise_for_status()
+        token = r.json()
+
+        if "access_token" in token.keys():
+            succes = True
+            error = ""
+        else:
+            succes = False
+            error = "Invalid username/password"
+
     except Exception as e:
-        exception_args = getattr(e, "args", ["wrong_token"])
+        exception_args = getattr(e, "args", ["Invalid username/password"])
         error = exception_args[0]
         succes = False
 
@@ -383,14 +397,14 @@ def ecmwf_account(user_pw):
 
     Parameters
     ----------
-    user_pw : tuple, optional
-        ("", "key") to check, if `None` will try to load the 
-        password from the keychain, by default None.
+    user_pw : tuple
+        ("username", "password") to check.
 
     Returns
     -------
-    bool
-        True if the password works, otherwise False.
+    tuple
+        First item is `True` if the password works, otherwise `False`,
+        seconds item is a error message.
     """
 
     url, key = user_pw
@@ -435,8 +449,8 @@ if __name__ == "__main__":
     # un_pw1= get("NASA")
     # check1 = nasa_account(un_pw1)
 
-    un_pw2 = get("TERRA")
-    check2 = terra_account(un_pw2)
+    # un_pw2 = get("TERRA")
+    # check2 = terra_account(un_pw2)
 
     # un_pw3 = get("WAPOR")
     # check3 = wapor_account(un_pw3)
@@ -449,3 +463,6 @@ if __name__ == "__main__":
 
     # un_pw6 = get("EARTHEXPLORER")
     # check6 = earthexplorer_account(un_pw6)
+
+    un_pw7 = get("COPERNICUS_DATA_SPACE")
+    check7 = copernicus_data_space_account(un_pw7)

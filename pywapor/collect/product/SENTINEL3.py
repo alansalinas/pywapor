@@ -3,11 +3,11 @@ import glob
 import copy
 import xarray as xr
 import numpy as np
-import pywapor.collect.protocol.sentinelapi as sentinelapi
+import pywapor.collect.protocol.copernicus_odata as copernicus_odata
 from datetime import datetime as dt
 from pywapor.general.curvilinear import create_grid, curvi_to_recto
 from pywapor.general.logger import log, adjust_logger
-from pywapor.general.processing_functions import open_ds, remove_ds
+from pywapor.general.processing_functions import open_ds, remove_ds, adjust_timelim_dtype
 
 def default_vars(product_name, req_vars):
     """Given a `product_name` and a list of requested variables, returns a dictionary
@@ -165,7 +165,7 @@ def download(folder, latlim, lonlim, timelim, product_name,
     xr.Dataset
         Downloaded data.
     """
-    product_folder = os.path.join(folder, "SENTINEL3")
+    product_folder = os.path.join(folder, "SENTINEL-3")
 
     fn = os.path.join(product_folder, f"{product_name}.nc")
     req_vars_orig = copy.deepcopy(req_vars)
@@ -193,26 +193,16 @@ def download(folder, latlim, lonlim, timelim, product_name,
         default_processors = default_post_processors(product_name, req_vars)
         post_processors = {k: {True: default_processors[k], False: v}[v == "default"] for k,v in post_processors.items() if k in req_vars}
 
+    timelim = adjust_timelim_dtype(timelim)
     bb = [lonlim[0], latlim[0], lonlim[1], latlim[1]]
 
-    search_kwargs = {
-                        "platformname": "Sentinel-3",
-                        "producttype": product_name,
-                        # "limit": 10,
-                        }
-
-    search_kwargs = {**search_kwargs, **extra_search_kwargs}
-
     def node_filter(node_info):
-        fn = os.path.split(node_info["node_path"])[-1]
-        to_dl = list(variables.keys())
-        return np.any([x in fn for x in to_dl])    
-    # node_filter = None
+        fn = os.path.split(node_info)[-1]
+        to_dl = list(variables.keys()) + ["MTD_MSIL2A.xml"]
+        return np.any([x in fn for x in to_dl])
 
-    scenes = sentinelapi.download(product_folder, latlim, lonlim, timelim, 
-                                    search_kwargs, node_filter = node_filter, to_dl = variables.keys())
-
-    ds = sentinelapi.process_sentinel(scenes, variables, "SENTINEL3", time_func, os.path.split(fn)[-1], post_processors, bb = bb)
+    scenes = copernicus_odata.download(folder, latlim, lonlim, timelim, "SENTINEL3", product_name, node_filter = node_filter)
+    ds = copernicus_odata.process_sentinel(scenes, variables, time_func, os.path.split(fn)[-1], post_processors, s3_processor, bb = bb)
 
     return ds[req_vars_orig]
 
@@ -233,7 +223,7 @@ if __name__ == "__main__":
 
     # source_name = "SENTINEL3"
     # scene_folder = "/Users/hmcoerver/Local/s3_new/SENTINEL3/S3A_SL_2_LST____20230829T075655_20230829T075955_20230829T100445_0179_102_363_2520_PS1_O_NR_004.SEN3"
-    ds = download(folder, latlim, lonlim, timelim, product_name, 
-                req_vars, variables = variables,  post_processors = post_processors)
+    # ds = download(folder, latlim, lonlim, timelim, product_name, 
+    #             req_vars, variables = variables,  post_processors = post_processors)
 
 
