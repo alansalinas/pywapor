@@ -222,7 +222,6 @@ def main(input_data, et_look_version = "v2", export_vars = "default", chunks = {
     fp, fn = os.path.split(input_data)
 
     ds = g.variables.fill_attrs(ds)
-    # g.network.create_network(ds, f"et_look_{et_look_version}.html")
 
     if export_vars == "all":
         ...
