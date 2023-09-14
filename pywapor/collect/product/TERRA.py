@@ -244,7 +244,7 @@ def download(folder, latlim, lonlim, timelim, product_name, req_vars = ["ndvi", 
         log.info(f"--> ({i+1}/{len(products)}) Downloading `{product['properties']['title']}`.").add()
 
         ds = cog.download(out_fp, product_name, coords, variables_, post_processors=post_processors, url_func=lambda x: out_fp.replace(".nc", ".vrt"))
-        ds = ds.expand_dims({"time": 1}).assign_coords({"time": [datetime.datetime.strptime(product.properties["date"], "%Y-%m-%dT%H:%M:%SZ")]})
+        ds = ds.expand_dims({"time": 1}).assign_coords({"time": [datetime.datetime.strptime(product["properties"]["datetime"], "%Y-%m-%dT%H:%M:%SZ")]})
 
         dss.append(ds)
 
