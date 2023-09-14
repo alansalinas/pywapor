@@ -1,17 +1,17 @@
-from terracatalogueclient import Catalogue
 import datetime
 import requests
 import os
-import numpy as np
-import pywapor.general.bitmasks as bm
-import pywapor.collect.accounts as accounts
 import copy
-from functools import partial
-from osgeo import gdal
-from pywapor.general.logger import log, adjust_logger
+import numpy as np
 import xarray as xr
 import pywapor.collect.protocol.cog as cog
-from pywapor.general.processing_functions import save_ds, open_ds, remove_ds
+import pywapor.general.bitmasks as bm
+import pywapor.collect.accounts as accounts
+from functools import partial
+from osgeo import gdal
+from cachetools import cached, TTLCache
+from pywapor.general.logger import log, adjust_logger
+from pywapor.general.processing_functions import save_ds, open_ds, remove_ds, adjust_timelim_dtype
 
 def default_post_processors(product_name, req_vars = ["ndvi", "r0"]):
     """Given a `product_name` and a list of requested variables, returns a dictionary with a 
@@ -119,6 +119,7 @@ def calc_r0(ds, *args):
     ds["r0"] = 0.429 * ds["blue"] + 0.333 * ds["red"] + 0.133 * ds["nir"] + 0.105 * ds["swir"]
     return ds
 
+@cached(cache=TTLCache(maxsize=2048, ttl=280))
 def create_header(folder):
 
     un, pw = accounts.get("TERRA")
@@ -146,8 +147,7 @@ def create_header(folder):
     return header_file
 
 def download(folder, latlim, lonlim, timelim, product_name, req_vars = ["ndvi", "r0"],
-                variables = None, post_processors = None, timedelta = np.timedelta64(60, "h"),
-                cloudcover = "[0,50["):
+                variables = None, post_processors = None, timedelta = np.timedelta64(60, "h")):
     """Download MODIS data and store it in a single netCDF file.
 
     Parameters
@@ -174,7 +174,6 @@ def download(folder, latlim, lonlim, timelim, product_name, req_vars = ["ndvi", 
     xr.Dataset
         Downloaded data.
     """
-
     folder = os.path.join(folder, "TERRA")
 
     if not os.path.isdir(folder):
@@ -197,6 +196,8 @@ def download(folder, latlim, lonlim, timelim, product_name, req_vars = ["ndvi", 
         latlim = [latlim[0] - dy, latlim[1] + dy]
         lonlim = [lonlim[0] - dx, lonlim[1] + dx]
 
+    timelim = adjust_timelim_dtype(timelim)
+
     if isinstance(variables, type(None)):
         variables = default_vars(product_name, req_vars)
 
@@ -210,13 +211,16 @@ def download(folder, latlim, lonlim, timelim, product_name, req_vars = ["ndvi", 
 
     coords = {"x": ["lon", lonlim], "y": ["lat", latlim]}
 
-    products = list(Catalogue().get_products(
-                                    product_name,
-                                    start = timelim[0], 
-                                    end = timelim[1],
-                                    bbox = bb,
-                                    cloudCover = cloudcover,
-                                  ))
+    sd = datetime.datetime.strftime(timelim[0], "%Y-%m-%dT00:00:00Z")
+    ed = datetime.datetime.strftime(timelim[1], "%Y-%m-%dT23:59:59Z")
+    search_dates = f"{sd}/{ed}"
+    params = dict()
+    params['limit'] = 250
+    params['bbox'] = bb
+    params['datetime'] = search_dates
+    params['collections'] = [product_name]
+
+    products = search_stac(params)
 
     dss = list()
 
@@ -224,10 +228,10 @@ def download(folder, latlim, lonlim, timelim, product_name, req_vars = ["ndvi", 
 
     for i, product in enumerate(products):
 
-        out_fp = os.path.join(folder, f"{product.properties['title']}.nc")
+        out_fp = os.path.join(folder, f"{product['properties']['title']}.nc")
 
-        header_file = create_header(folder) # NOTE header is only valid for 300s, so better to keep it in the loop.
-        all_cog_urls = [x.href for x in product.data]
+        header_file = create_header(folder)
+        all_cog_urls = [v.get("href") for k, v in product["assets"].items()]
         cog_urls = [all_cog_urls[np.argmax([key in x for x in all_cog_urls])] for key in variables.keys()]
         dl_urls = [f"/vsicurl?header_file={header_file}&url={cog_url}" for cog_url in cog_urls]
 
@@ -237,7 +241,7 @@ def download(folder, latlim, lonlim, timelim, product_name, req_vars = ["ndvi", 
 
         variables_ = {f"Band{np.argmax([key in x for x in dl_urls]) + 1}": variables[key] for key in variables.keys()}
 
-        log.info(f"--> ({i+1}/{len(products)}) Downloading `{product.properties['title']}`.").add()
+        log.info(f"--> ({i+1}/{len(products)}) Downloading `{product['properties']['title']}`.").add()
 
         ds = cog.download(out_fp, product_name, coords, variables_, post_processors=post_processors, url_func=lambda x: out_fp.replace(".nc", ".vrt"))
         ds = ds.expand_dims({"time": 1}).assign_coords({"time": [datetime.datetime.strptime(product.properties["date"], "%Y-%m-%dT%H:%M:%SZ")]})
@@ -263,6 +267,27 @@ def download(folder, latlim, lonlim, timelim, product_name, req_vars = ["ndvi", 
 
     return ds[req_vars_orig]
 
+def search_stac(params):
+    endpoint = 'https://services.terrascope.be/stac'
+    stac_response = requests.get(endpoint)
+    stac_response.raise_for_status()
+    catalog_links = stac_response.json()['links']
+    search = [l['href'] for l in catalog_links if l['rel'] == 'search'][0]
+
+    all_scenes = list()
+
+    links = [{"body": params, "rel": "next"}]
+
+    while "next" in [x.get("rel", None) for x in links]:
+        params_ = [x.get("body") for x in links if x.get("rel") == "next"][0]
+        query = requests.post(search, json = params_)
+        query.raise_for_status()
+        out = query.json()
+        all_scenes += out["features"]
+        links = out["links"]
+
+    return all_scenes
+    
 if __name__ == "__main__":
 
     product_name = "urn:eop:VITO:PROBAV_S5_TOC_100M_COG_V2"
@@ -277,6 +302,3 @@ if __name__ == "__main__":
     variables = None
     post_processors = None
     req_vars = ["r0", "ndvi"]
-
-    ds = download(folder, latlim, lonlim, timelim, product_name, req_vars = ["ndvi", "r0"],
-                variables = None, post_processors = None, timedelta = np.timedelta64(60, "h"))
