@@ -86,17 +86,35 @@ def download_arrays(path, subdss, folder, path_appendix = ".nc", creation_option
         
     return path_local
 
-def search_stac(params, endpoint = 'https://cmr.earthdata.nasa.gov/stac/LAADS'):
+def search_stac(params, endpoint = 'https://cmr.earthdata.nasa.gov/stac/LAADS', extra_filters = {"day_night_flag": "DAY"}):
     stac_response = requests.get(endpoint)
     stac_response.raise_for_status()
     catalog_links = stac_response.json()['links']
     search = [l['href'] for l in catalog_links if l['rel'] == 'search'][0]
-    query = requests.post(search, json=params)
-    query.raise_for_status()
-    out = query.json()
-    if out["context"]["returned"] < out["context"]["matched"]:
-        log.warning("Number of matched features exceeds limit.")
-    return out["features"]
+
+    all_scenes = list()
+
+    links = [{"body": params, "rel": "next"}]
+
+    while "next" in [x.get("rel", None) for x in links]:
+        params_ = [x.get("body") for x in links if x.get("rel") == "next"][0]
+        query = requests.post(search, json = params_)
+        query.raise_for_status()
+        out = query.json()
+        all_scenes += out["features"]
+        links = out["links"]
+
+    def _check(ftr, extra_filters):
+        links = [x for x in ftr.get("links", []) if x["rel"] == "via"]
+        link = links[0].get("href", None) if len(links) > 0 else None
+        metadata_resp = requests.get(link)
+        metadata_resp.raise_for_status()
+        metadata = metadata_resp.json()
+        return all([metadata[k] == v for k,v in extra_filters.items()])
+
+    final = [x for x in all_scenes if _check(x, extra_filters)]
+
+    return final
 
 def create_stac_summary(bb, timelim):
     
@@ -230,26 +248,6 @@ def combine_unprojected_data(nc02_file, ncqa_file, lut_file, unproj_fn):
 
     _ = save_ds(bt, unproj_fn, encoding = "initiate", label = "Combining data.").close()
 
-def get_info(url) -> dict:
-    creds = get_token()
-    gdal_config_options = {
-        "AWS_ACCESS_KEY_ID": creds["accessKeyId"],
-        "AWS_SESSION_TOKEN": creds["sessionToken"],
-        "AWS_SECRET_ACCESS_KEY": creds["secretAccessKey"],
-        "GDAL_DISABLE_READDIR_ON_OPEN": "EMPTY_DIR",
-    }
-    try:
-        for k, v in gdal_config_options.items():
-            gdal.SetConfigOption(k, v)
-        info = gdal.Info(url, format = "json")
-    except Exception as e:
-        raise e
-    finally:
-        for k in gdal_config_options.keys():
-            gdal.SetConfigOption(k, None)
-
-    return info
-
 def download(folder, latlim, lonlim, timelim, product_name, req_vars,
                 variables = None, post_processors = None):
     """Download VIIRSL1 data and store it in a single netCDF file.
@@ -330,13 +328,6 @@ def download(folder, latlim, lonlim, timelim, product_name, req_vars,
             log.sub()
             continue
 
-        info = get_info(nc02)
-        flag = info.get("metadata", {}).get("", {}).get("DayNightFlag", "n/a")
-        if flag != "Day":
-            log.info(f"--> Skipping scene, `DayNightFlag = {flag}`.")
-            log.sub()
-            continue
-
         lats_file = download_arrays(nc03, ["/geolocation_data/latitude"], folder, path_appendix="_lat.nc")
         lons_file = download_arrays(nc03, ["/geolocation_data/longitude"], folder, path_appendix="_lon.nc")
         nc02_file = download_arrays(nc02, ["/observation_data/I05_quality_flags", "/observation_data/I05"], folder)
@@ -382,7 +373,9 @@ if __name__ == "__main__":
 
     adjust_logger(True, folder, "INFO")
 
-    ds = download(folder, latlim, lonlim, timelim, product_name, req_vars,
-                    variables = variables, post_processors = post_processors)
+    endpoint = 'https://cmr.earthdata.nasa.gov/stac/LAADS'
+
+    # ds = download(folder, latlim, lonlim, timelim, product_name, req_vars,
+    #                 variables = variables, post_processors = post_processors)
         
         
