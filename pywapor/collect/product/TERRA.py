@@ -9,7 +9,6 @@ import pywapor.general.bitmasks as bm
 import pywapor.collect.accounts as accounts
 from functools import partial
 from osgeo import gdal
-from cachetools import cached, TTLCache
 from pywapor.general.logger import log, adjust_logger
 from pywapor.general.processing_functions import save_ds, open_ds, remove_ds, adjust_timelim_dtype
 
@@ -119,7 +118,6 @@ def calc_r0(ds, *args):
     ds["r0"] = 0.429 * ds["blue"] + 0.333 * ds["red"] + 0.133 * ds["nir"] + 0.105 * ds["swir"]
     return ds
 
-@cached(cache=TTLCache(maxsize=2048, ttl=280))
 def create_header(folder):
 
     un, pw = accounts.get("TERRA")
