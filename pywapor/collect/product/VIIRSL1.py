@@ -3,11 +3,13 @@ import datetime
 import base64
 import copy
 import os
+import multiprocessing
 import xarray as xr
 import numpy as np
 from osgeo import gdal
 from functools import partial
 from pywapor.collect import accounts
+from joblib import Parallel, delayed
 from pywapor.enhancers.apply_enhancers import apply_enhancer
 from pywapor.general.processing_functions import save_ds, remove_ds, open_ds
 from pywapor.general.logger import log, adjust_logger
@@ -328,11 +330,23 @@ def download(folder, latlim, lonlim, timelim, product_name, req_vars,
             log.sub()
             continue
 
-        lats_file = download_arrays(nc03, ["/geolocation_data/latitude"], folder, path_appendix="_lat.nc")
-        lons_file = download_arrays(nc03, ["/geolocation_data/longitude"], folder, path_appendix="_lon.nc")
-        nc02_file = download_arrays(nc02, ["/observation_data/I05_quality_flags", "/observation_data/I05"], folder)
-        lut_file = download_arrays(nc02, ["/observation_data/I05_brightness_temperature_lut"], folder, path_appendix = "_lut.nc")
-        ncqa_file = download_arrays(nc_cloud, ["/geophysical_data/Integer_Cloud_Mask"], folder)
+        parallel = True
+        if parallel:
+            inputs = [
+                {"path": nc03, "subdss": ["/geolocation_data/latitude"], "folder": folder, "path_appendix": "_lat.nc"},
+                {"path": nc03, "subdss": ["/geolocation_data/longitude"], "folder": folder, "path_appendix": "_lon.nc"},
+                {"path": nc02, "subdss": ["/observation_data/I05_quality_flags", "/observation_data/I05"], "folder": folder},
+                {"path": nc02, "subdss": ["/observation_data/I05_brightness_temperature_lut"], "folder": folder, "path_appendix": "_lut.nc"},
+                {"path": nc_cloud, "subdss": ["/geophysical_data/Integer_Cloud_Mask"], "folder": folder},
+            ]
+            n_jobs = min(5, multiprocessing.cpu_count())
+            lats_file, lons_file, nc02_file, lut_file, ncqa_file = Parallel(n_jobs=n_jobs)(delayed(download_arrays)(**i) for i in inputs)
+        else:
+            lats_file = download_arrays(nc03, ["/geolocation_data/latitude"], folder, path_appendix="_lat.nc")
+            lons_file = download_arrays(nc03, ["/geolocation_data/longitude"], folder, path_appendix="_lon.nc")
+            nc02_file = download_arrays(nc02, ["/observation_data/I05_quality_flags", "/observation_data/I05"], folder)
+            lut_file = download_arrays(nc02, ["/observation_data/I05_brightness_temperature_lut"], folder, path_appendix = "_lut.nc")
+            ncqa_file = download_arrays(nc_cloud, ["/geophysical_data/Integer_Cloud_Mask"], folder)
 
         if not os.path.isfile(unproj_fn):
             combine_unprojected_data(nc02_file, ncqa_file, lut_file, unproj_fn)
