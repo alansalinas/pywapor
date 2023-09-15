@@ -509,7 +509,10 @@ def check_availabilty(product_folder, product_name, scene_ids):
 
 def update_order_statuses(scene_ids, product_folder, product_name, to_download, to_wait, to_request, uauth, image_extents, verbose = True):
 
-    all_orders = espa_api(f"item-status", uauth = uauth)
+    all_orders__ = espa_api(f"item-status", uauth = uauth)
+    all_orders_ = {k: [x for x in v if x.get("status") not in ("purged", "cancelled")] for k, v in all_orders__.items()}
+    all_orders = {k: v for k, v in all_orders_.items() if len(v) != 0}
+
     available_scenes = check_availabilty(product_folder, product_name, scene_ids)
     
     for order_id, order in all_orders.items():
@@ -763,8 +766,6 @@ def download(folder, latlim, lonlim, timelim, product_name,
     ValueError
         Raised when not all found scenes could be downloaded within the max_attempts.
     """
-
-
     adjust_logger(True, folder, "INFO")
 
     product_folder = os.path.join(folder, "LANDSAT")
@@ -849,6 +850,6 @@ if __name__ == "__main__":
     max_attempts = 24
     wait_time = 300
 
-    ds = download(folder, latlim, lonlim, timelim, product_name, 
-                    req_vars, variables = variables, post_processors = post_processors, 
-                    extra_search_kwargs = extra_search_kwargs)
+    # ds = download(folder, latlim, lonlim, timelim, product_name, 
+    #                 req_vars, variables = variables, post_processors = post_processors, 
+    #                 extra_search_kwargs = extra_search_kwargs)
