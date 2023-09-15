@@ -165,7 +165,7 @@ def download(folder, latlim, lonlim, timelim, product_name,
     xr.Dataset
         Downloaded data.
     """
-    product_folder = os.path.join(folder, "SENTINEL-3")
+    product_folder = os.path.join(folder, "SENTINEL3")
 
     fn = os.path.join(product_folder, f"{product_name}.nc")
     req_vars_orig = copy.deepcopy(req_vars)
@@ -201,7 +201,7 @@ def download(folder, latlim, lonlim, timelim, product_name,
         to_dl = list(variables.keys()) + ["MTD_MSIL2A.xml"]
         return np.any([x in fn for x in to_dl])
 
-    scenes = copernicus_odata.download(folder, latlim, lonlim, timelim, "SENTINEL3", product_name, node_filter = node_filter)
+    scenes = copernicus_odata.download(product_folder, latlim, lonlim, timelim, "SENTINEL3", product_name, node_filter = node_filter)
     ds = copernicus_odata.process_sentinel(scenes, variables, time_func, os.path.split(fn)[-1], post_processors, s3_processor, bb = bb)
 
     return ds[req_vars_orig]
