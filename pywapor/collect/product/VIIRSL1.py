@@ -6,12 +6,14 @@ import os
 import multiprocessing
 import xarray as xr
 import numpy as np
+import warnings
 from osgeo import gdal
 from functools import partial
 from pywapor.collect import accounts
 from joblib import Parallel, delayed
+from rasterio.errors import NotGeoreferencedWarning
 from pywapor.enhancers.apply_enhancers import apply_enhancer
-from pywapor.general.processing_functions import save_ds, remove_ds, open_ds
+from pywapor.general.processing_functions import save_ds, remove_ds, open_ds, adjust_timelim_dtype
 from pywapor.general.logger import log, adjust_logger
 from pywapor.enhancers.other import drop_empty_times
 from pywapor.general.curvilinear import curvi_to_recto, create_grid
@@ -51,7 +53,11 @@ def get_token():
 
     return results.json()
     
-def download_arrays(path, subdss, folder, path_appendix = ".nc", creation_options = ["ARRAY:COMPRESS=DEFLATE"]):
+def download_arrays(path, subdss, folder, path_appendix = ".nc", creation_options = ["ARRAY:COMPRESS=DEFLATE"], dtype_is_8bit = False):
+
+    # NOTE see https://github.com/OSGeo/gdal/issues/8421
+    if gdal.__version__ in ("3.7.0", "3.7.1", "3.7.2") and dtype_is_8bit:
+        path_appendix = path_appendix.replace(".nc", ".tif")
 
     fn = os.path.splitext(os.path.split(path)[-1])[0]
     path_local = os.path.join(folder, fn + path_appendix)
@@ -73,7 +79,6 @@ def download_arrays(path, subdss, folder, path_appendix = ".nc", creation_option
                 gdal.SetConfigOption(k, v)
 
             md_options = gdal.MultiDimTranslateOptions(
-                    format = "netCDF",
                     arraySpecs = subdss,
                     creationOptions = creation_options
             )
@@ -85,7 +90,20 @@ def download_arrays(path, subdss, folder, path_appendix = ".nc", creation_option
         finally:
             for k, v in gdal_config_options.items():
                 gdal.SetConfigOption(k, None)
-        
+
+        # NOTE see https://github.com/OSGeo/gdal/issues/8421
+        if gdal.__version__ in ("3.7.0", "3.7.1", "3.7.2") and dtype_is_8bit:
+            log.info(f"--> Applying extra conversion because GDAL=={gdal.__version__} in ('3.7.0', '3.7.1', '3.7.2').")
+            with warnings.catch_warnings():
+                warnings.filterwarnings("ignore", category = NotGeoreferencedWarning)
+                ds = xr.open_dataset(path_local, chunks = "auto", drop_variables = ["spatial_ref", "x", "y"])
+            ds = ds["band_data"].to_dataset("band")
+            ds = ds.rename({i+1: os.path.split(x)[-1] for i, x in enumerate(subdss)})
+            ds = ds.rename({"x": "number_of_pixels","y": "number_of_lines"})
+            ds = save_ds(ds, path_local.replace(path_appendix, ".nc"))
+            ds = remove_ds(path_local)
+            path_local = path_local.replace(path_appendix, ".nc")
+
     return path_local
 
 def search_stac(params, endpoint = 'https://cmr.earthdata.nasa.gov/stac/LAADS', extra_filters = {"day_night_flag": "DAY"}):
@@ -292,6 +310,8 @@ def download(folder, latlim, lonlim, timelim, product_name, req_vars,
             existing_ds = existing_ds.close()
         else:
             return existing_ds[req_vars_orig]
+        
+    timelim = adjust_timelim_dtype(timelim)
 
     spatial_buffer = True
     if spatial_buffer:
@@ -337,7 +357,7 @@ def download(folder, latlim, lonlim, timelim, product_name, req_vars,
                 {"path": nc03, "subdss": ["/geolocation_data/longitude"], "folder": folder, "path_appendix": "_lon.nc"},
                 {"path": nc02, "subdss": ["/observation_data/I05_quality_flags", "/observation_data/I05"], "folder": folder},
                 {"path": nc02, "subdss": ["/observation_data/I05_brightness_temperature_lut"], "folder": folder, "path_appendix": "_lut.nc"},
-                {"path": nc_cloud, "subdss": ["/geophysical_data/Integer_Cloud_Mask"], "folder": folder},
+                {"path": nc_cloud, "subdss": ["/geophysical_data/Integer_Cloud_Mask"], "folder": folder, "creation_options":["COMPRESS=DEFLATE"], "dtype_is_8bit": True},
             ]
             n_jobs = min(5, multiprocessing.cpu_count())
             lats_file, lons_file, nc02_file, lut_file, ncqa_file = Parallel(n_jobs=n_jobs)(delayed(download_arrays)(**i) for i in inputs)
@@ -346,7 +366,7 @@ def download(folder, latlim, lonlim, timelim, product_name, req_vars,
             lons_file = download_arrays(nc03, ["/geolocation_data/longitude"], folder, path_appendix="_lon.nc")
             nc02_file = download_arrays(nc02, ["/observation_data/I05_quality_flags", "/observation_data/I05"], folder)
             lut_file = download_arrays(nc02, ["/observation_data/I05_brightness_temperature_lut"], folder, path_appendix = "_lut.nc")
-            ncqa_file = download_arrays(nc_cloud, ["/geophysical_data/Integer_Cloud_Mask"], folder)
+            ncqa_file = download_arrays(nc_cloud, ["/geophysical_data/Integer_Cloud_Mask"], folder, creation_options=["COMPRESS=DEFLATE"], dtype_is_8bit=True)
 
         if not os.path.isfile(unproj_fn):
             combine_unprojected_data(nc02_file, ncqa_file, lut_file, unproj_fn)
@@ -376,9 +396,14 @@ def download(folder, latlim, lonlim, timelim, product_name, req_vars,
 
 if __name__ == "__main__":
 
-    timelim = [datetime.datetime(2021, 3, 4), datetime.datetime(2021, 3, 5)]
-    lonlim = [22.78125, 32.48438]
-    latlim = [23.72777, 32.1612]
+    timelim = [np.datetime64 ('2023-07-03T00:00:00.000000000'), 
+               np.datetime64('2023-07-10T00:00:00.000000000')]
+    latlim = [29.4, 29.6]
+    lonlim = [30.7, 30.9]
+
+    # timelim = [datetime.datetime(2021, 3, 4), datetime.datetime(2021, 3, 5)]
+    # lonlim = [22.78125, 32.48438]
+    # latlim = [23.72777, 32.1612]
     folder = workdir = r"/Users/hmcoerver/Local/viirs"
     product_name = "VNP02IMG"
     req_vars = ["bt"]
@@ -387,9 +412,13 @@ if __name__ == "__main__":
 
     adjust_logger(True, folder, "INFO")
 
-    endpoint = 'https://cmr.earthdata.nasa.gov/stac/LAADS'
+    # endpoint = 'https://cmr.earthdata.nasa.gov/stac/LAADS'
 
     # ds = download(folder, latlim, lonlim, timelim, product_name, req_vars,
     #                 variables = variables, post_processors = post_processors)
         
-        
+    date = datetime.datetime(2023, 7, 4, 10, 18)
+    nc02, nc03, nc_cloud = ('/vsis3/prod-lads/VNP02IMG/VNP02IMG.A2023185.1018.002.2023185191251.nc',
+    '/vsis3/prod-lads/VNP03IMG/VNP03IMG.A2023185.1018.002.2023185185504.nc',
+    '/vsis3/prod-lads/CLDMSK_L2_VIIRS_SNPP/CLDMSK_L2_VIIRS_SNPP.A2023185.1018.001.2023233195526.nc')
+    i = 0
