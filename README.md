@@ -9,7 +9,7 @@ This repository contains a Python implementation of the algorithm used to genera
 Its recommended to install in a clean [conda environment](https://docs.conda.io/projects/conda/en/latest/user-guide/concepts/environments.html) and use [conda](https://docs.conda.io/projects/conda/en/latest/user-guide/install/) to install all the important packages from the `conda-forge` channel.
 
 ```bash
-conda create -n my_pywapor_env --yes -c conda-forge python pip gdal pydap numpy "pandas<2.0.0" requests matplotlib pyproj scipy pycurl pyshp joblib bs4 rasterio xarray bottleneck geojson tqdm dask rioxarray pyvis shapely lxml cachetools cdsapi sentinelsat geopy numba scikit-learn beautifulsoup4 "libnetcdf=4.8"
+conda create -n my_pywapor_env --yes -c conda-forge python pip gdal xarray numpy pandas requests matplotlib netcdf4 pyproj scipy pycurl joblib bs4 rasterio bottleneck tqdm dask rioxarray cryptography cachetools cdsapi shapely lxml scikit-learn numba xmltodict 
 
 conda activate my_pywapor_env
 ```
@@ -113,6 +113,19 @@ The code in the pywapor.et_look_v2_v3 module of this repository, containing all 
 For questions, requests or issues with this repository, please contact Bert Coerver at [bert.coerver@fao.org](mailto:bert.coerver@fao.org) or the WaPOR team at [wapor@fao.org](mailto:wapor@fao.org).
 
 ### Release Notes
+
+#### 3.4.0 (2023-09-15)
+<br>
+<ul>
+    <li> Rewritten code to download and process VIIRSL1 data, which is now available from an S3 bucket.</li>
+    <li> Rewritten code to download PROBA-V data, which now comes from the new Terrascope platform (the old portal was deprecated). </li>
+    <li> Rewritten Sentinel downloader, which now uses the new Copernicus Data Space Ecosystem. Most importantly this means that all images are available instantly (so no more tedious requesting from the Long Term Archive for older scenes).
+    <li> Projecting of curvilinear data (VIIRSL1 and Sentinel-3) is now done using gdal-warp. </li>
+    <li> Calculation of terrain slope and aspect is now done using gdal-dem. </li>
+    <li> It is now possible turn off SSL-verification when downloading certain products. Run 'import os; os.environ["PYWAPOR_VERIFY_SSL"] = "NO"' to do so. </li>
+    <li> Available options in `pywapor.pre_et_look.main` for `sources` are now "level_1", "level_2", "level_3", "level_2_v3" (new default value) and "level_3_v3". The `bin_length' is now set to 1 by default (was `"DEKAD"`).
+    <li> Various other smaller bug fixes.</li>
+</ul>
 
 #### 3.3.0 (2023-04-05)
 <br>
