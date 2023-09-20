@@ -196,6 +196,8 @@ def whittaker_smoothing(ds, var, lmbdas = 100., weights = None, a = 0.5,
     xr.Dataset
         Dataset containing at least (depending on `export_all`) a variable called `{var}_smoothed`.
     """
+    crs = ds.rio.crs
+    
     # Check if the chunk overwriter is correct (i.e. doesnt chunk along core-dims)
     if not getattr(chunks, "get", lambda x,y: False)(xdim, False) == -1 and (not chunks == {}):
         log.warning(f"--> Adjusting defined chunks (`{chunks}`), to avoid chunks along core dimension ({xdim}).")
@@ -272,6 +274,9 @@ def whittaker_smoothing(ds, var, lmbdas = 100., weights = None, a = 0.5,
 
     # Make sure the dimensions are in the correct order. TODO Maybe move this inside `save_ds`.
     ds = ds.transpose("time", "y", "x", ...)
+
+    if not isinstance(crs, type(None)):
+        ds = ds.rio.write_crs(crs)
 
     if not isinstance(out_fh, type(None)):
         ds = save_ds(ds, out_fh, encoding = "initiate", label = f"Applying whittaker smoothing ({var}).")
