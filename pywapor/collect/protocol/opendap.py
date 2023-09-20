@@ -401,15 +401,3 @@ def create_selection(coords, target_crs = None, source_crs = CRS.from_epsg(4326)
             selection[name] = lim
 
     return selection
-
-if __name__ == "__main__":
-
-    selection = {'longitude': [30.15, 31.25],
-                'latitude': [28.849999999999998, 29.75],
-                'time': [np.datetime64('2023-08-16'), np.datetime64('2023-08-21')]}
-                    
-    un_pw = ('broodj3ham', 'N0tmyrealpassword')
-
-    base_url = 'https://coastwatch.pfeg.noaa.gov/erddap/griddap/chirps20GlobalDailyP05.nc?'
-
-    check_url = 'https://coastwatch.pfeg.noaa.gov/erddap/griddap/chirps20GlobalDailyP05.nc?longitude%2Clatitude%2Ctime'
