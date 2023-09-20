@@ -202,7 +202,7 @@ def main(dss, sources, folder, general_enhancers, bins):
                         ds["sensor"] = xr.combine_nested([xr.ones_like(x.time.astype(int)) * i for i, x in enumerate(dss1)], concat_dim="time").sortby("time")
                         source_legend = {str(i): os.path.split(x.encoding["source"])[-1].replace(".nc", "") for i, x in enumerate(dss1)}
                         ds["sensor"] = ds["sensor"].assign_attrs(source_legend)
-                    new_x = determine_new_x(None, composite_type, bins = bins, dtype = np.datetime64)
+                    new_x = determine_new_x(None, composite_type, bins = bins, dtype = lambda x: np.datetime64(x, "ns"))
                     ds = whittaker_smoothing(ds, var, new_x = new_x, chunks = chunks, **kwargs)
                     ds = ds.rename_vars({f"{var}_smoothed": var})
                     temporal_interp = "linear"

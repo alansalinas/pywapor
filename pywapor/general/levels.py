@@ -445,7 +445,7 @@ def pre_et_look_levels(level = "level_1", bin_length = 1):
                                 # "plot_folder": r"",
                                 "valid_drange": [-1.0, 1.0],
                                 "max_dist": np.timedelta64(15, "D"),
-                                "lambdas": 100.,
+                                "lmbdas": 100.,
                     },
             "spatial_interp": "nearest",
             }
@@ -465,7 +465,7 @@ def pre_et_look_levels(level = "level_1", bin_length = 1):
                                 # "plot_folder": r"",
                                 "valid_drange": [0.0, 1.0],
                                 "max_dist": np.timedelta64(15, "D"),
-                                "lambdas": 100.,
+                                "lmbdas": 100.,
                     },
             "spatial_interp": "nearest",
             }
@@ -485,7 +485,7 @@ def pre_et_look_levels(level = "level_1", bin_length = 1):
                                 # "a": 0.65,
                                 "valid_drange": [0.0, 1.0],
                                 "max_dist": np.timedelta64(15, "D"),
-                                "lambdas": 100.,
+                                "lmbdas": 100.,
                     },
             "spatial_interp": "bilinear",
         }
@@ -924,18 +924,6 @@ def pre_se_root_levels(level = "level_1"):
             {
                 'source': 'VIIRSL1',
                 'product_name': 'VNP02IMG',
-                'enhancers': 'default'
-            },
-        ],
-        'variable_enhancers': [sharpen],
-        "temporal_interp": None,
-        'spatial_interp': 'nearest'}
-
-    level_2_v3["lst"] = {
-        'products': [
-            {
-                'source': 'SENTINEL3',
-                'product_name': 'SL_2_LST___',
                 'enhancers': 'default'
             },
         ],

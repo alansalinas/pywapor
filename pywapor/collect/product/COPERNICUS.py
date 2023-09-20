@@ -232,6 +232,8 @@ def download(folder, latlim, lonlim, product_name = "GLO30", req_vars = ["z"],
     for nc in dss:
         remove_ds(nc)
 
+    remove_ds(final_fp.replace(".nc", "_stitched.nc"))
+
     return ds[req_vars_orig]
 
 if __name__ == "__main__":
