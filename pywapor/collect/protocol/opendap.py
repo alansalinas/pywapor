@@ -1,17 +1,20 @@
-import xarray as xr
-import numpy as np
 import os
 import rasterio
 import rioxarray.merge
 import tempfile
-from pydap.cas.urs import setup_session
+import warnings
+import requests
+import copy
 import urllib.parse
+import xarray as xr
+import numpy as np
 from pywapor.general.logger import log
 from rasterio.crs import CRS
-from pywapor.general.processing_functions import save_ds, process_ds, remove_ds
-import warnings
+from bs4 import BeautifulSoup
+from urllib.parse import urlsplit, urlunsplit
 from pywapor.enhancers.apply_enhancers import apply_enhancer
 from pywapor.collect.protocol.crawler import download_url, download_urls
+from pywapor.general.processing_functions import save_ds, process_ds, remove_ds
 
 def download(fp, product_name, coords, variables, post_processors, 
                 fn_func, url_func, un_pw = None, tiles = None,  
@@ -118,14 +121,18 @@ def download(fp, product_name, coords, variables, post_processors,
     return ds
 
 def find_idxs(base_url, selection, session):
-    def _find_idxs(ds, k, search_range):
-        all_idxs = np.where((ds[k] >= search_range[0]) & (ds[k] <= search_range[1]))[0]
-        return [np.min(all_idxs), np.max(all_idxs)]
     fp = tempfile.NamedTemporaryFile(suffix=".nc").name
     url_coords = base_url + urllib.parse.quote(",".join(selection.keys()))
     fp = download_url(url_coords, fp, session, waitbar = False)
     ds = xr.open_dataset(fp, decode_coords = "all")
-    idxs = {k: _find_idxs(ds, k, v) for k, v in selection.items()}
+    idxs = dict()
+    for k, v in selection.items():
+        all_idxs = np.where((ds[k] >= v[0]) & (ds[k] <= v[1]))[0]
+        if len(all_idxs) == 0:
+            msg = f"--> No data found for `{k}` in range [{v[0]}, ...,{v[1]}]. Data is available between [{ds[k][0].values}, ..., {ds[k][-1].values}]."
+            log.error(msg)
+            raise ValueError(msg)
+        idxs[k] = [np.min(all_idxs), np.max(all_idxs)]
     return idxs
 
 def create_url(base_url, idxs, variables, request_dims = True):
@@ -142,8 +149,156 @@ def start_session(base_url, selection, un_pw = [None, None]):
         warnings.filterwarnings("ignore", "password was not set. ")
     url_coords = base_url + urllib.parse.quote(",".join(selection.keys()))
     vrfy = {"NO": False, "YES": True}.get(os.environ.get("PYWAPOR_VERIFY_SSL", "YES"), True)
-    session = setup_session(*un_pw, check_url = url_coords, verify = vrfy)
+    session = setup_session('https://urs.earthdata.nasa.gov', username = un_pw[0], password = un_pw[1], check_url=url_coords, verify=vrfy)
     return session
+
+def setup_session(uri,
+                  username=None,
+                  password=None,
+                  check_url=None,
+                  session=None,
+                  verify=True,
+                  username_field='username',
+                  password_field='password'):
+    '''
+    A general function to set-up requests session with cookies
+    using beautifulsoup and by calling the right url.
+    '''
+
+    if session is None:
+        # Connections must be closed since some CAS
+        # will cough when connections are kept alive:
+        headers = [
+            # ('User-agent', 'pydap/{}'.format(lib.__version__)),
+                   ('Connection', 'close')]
+        session = requests.Session()
+        session.headers.update(headers)
+
+    if uri is None:
+        return session
+
+    if not verify:
+        verify_flag = session.verify
+        session.verify = False
+
+    if isinstance(uri, str):
+        url = uri
+    else:
+        url = uri(check_url)
+
+    if password is None or password == '':
+        warnings.warn('password was not set. '
+                      'this was likely unintentional '
+                      'but will result is much fewer datasets.')
+        if not verify:
+            session.verify = verify_flag
+        return session
+
+    # Allow for several subsequent security layers:
+    full_url = copy.copy(url)
+    if isinstance(full_url, list):
+        url = full_url[0]
+
+    with warnings.catch_warnings():
+
+        response = soup_login(session, url, username, password,
+                              username_field=username_field,
+                              password_field=password_field)
+
+        # If there are further security levels.
+        # At the moment only used for CEDA OPENID:
+        if (isinstance(full_url, list) and
+           len(full_url) > 1):
+            for url in full_url[1:]:
+                response = soup_login(session, response.url,
+                                      username, password,
+                                      username_field=None,
+                                      password_field=None)
+        response.close()
+
+        if check_url:
+            if (username is not None and
+               password is not None):
+                res = session.get(check_url, auth=(username, password))
+                if res.status_code == 401:
+                    res = session.get(res.url, auth=(username, password))
+                res.close()
+            raise_if_form_exists(check_url, session)
+
+    if not verify:
+        session.verify = verify_flag
+    return session
+
+def raise_if_form_exists(url, session):
+    """
+    This function raises a UserWarning if the link has forms
+    """
+
+    user_warning = ('Navigate to {0}, '.format(url) +
+                    'login and follow instructions. '
+                    'It is likely that you have to perform some one-time '
+                    'registration steps before acessing this data.')
+
+    resp = session.get(url)
+    soup = BeautifulSoup(resp.content, 'lxml')
+    if len(soup.select('form')) > 0:
+        raise UserWarning(user_warning)
+
+
+def soup_login(session, url, username, password,
+               username_field='username',
+               password_field='password'):
+    resp = session.get(url)
+
+    soup = BeautifulSoup(resp.content, 'lxml')
+    login_form = soup.select('form')[0]
+
+    def get_to_url(current_url, to_url):
+        split_current = urlsplit(current_url)
+        split_to = urlsplit(to_url)
+        comb = [val2 if val1 == '' else val1
+                for val1, val2 in zip(split_to, split_current)]
+        return urlunsplit(comb)
+    to_url = get_to_url(resp.url, login_form.get('action'))
+
+    session.headers['Referer'] = resp.url
+
+    payload = {}
+    if username_field is not None:
+        if len(login_form.findAll('input', {'name': username_field})) > 0:
+            payload.update({username_field: username})
+
+    if password_field is not None:
+        if len(login_form.findAll('input', {'name': password_field})) > 0:
+            payload.update({password_field: password})
+        else:
+            # If there is no password_field, it might be because
+            # something should be handled in the browser
+            # for the first attempt. This is common when using
+            # pydap with the ESGF for the first time.
+            raise Exception('Navigate to {0}. '
+                            'If you are unable to '
+                            'login, you must either '
+                            'wait or use authentication '
+                            'from another service.'
+                            .format(url))
+
+    # Replicate all other fields:
+    for input in login_form.findAll('input'):
+        if (input.get('name') not in payload and
+           input.get('name') is not None):
+            payload.update({input.get('name'): input.get('value')})
+
+    # Remove other submit fields:
+    submit_type = 'submit'
+    submit_names = [input.get('name') for input
+                    in login_form.findAll('input', {'type': submit_type})]
+    for input in login_form.findAll('input', {'type': submit_type}):
+        if ('submit' in submit_names and
+           input.get('name').lower() != 'submit'):
+            payload.pop(input.get('name'), None)
+
+    return session.post(to_url, data=payload)
 
 def download_xarray(url, fp, coords, variables, post_processors, 
                     data_source_crs = None, timedelta = None):
@@ -246,3 +401,15 @@ def create_selection(coords, target_crs = None, source_crs = CRS.from_epsg(4326)
             selection[name] = lim
 
     return selection
+
+if __name__ == "__main__":
+
+    selection = {'longitude': [30.15, 31.25],
+                'latitude': [28.849999999999998, 29.75],
+                'time': [np.datetime64('2023-08-16'), np.datetime64('2023-08-21')]}
+                    
+    un_pw = ('broodj3ham', 'N0tmyrealpassword')
+
+    base_url = 'https://coastwatch.pfeg.noaa.gov/erddap/griddap/chirps20GlobalDailyP05.nc?'
+
+    check_url = 'https://coastwatch.pfeg.noaa.gov/erddap/griddap/chirps20GlobalDailyP05.nc?longitude%2Clatitude%2Ctime'
