@@ -446,23 +446,23 @@ if __name__ == "__main__":
     ...
     adjust_logger(True, r"/Users/hmcoerver/Desktop", "INFO")
 
-    # un_pw1= get("NASA")
-    # check1 = nasa_account(un_pw1)
+    un_pw1= get("NASA")
+    check1 = nasa_account(un_pw1)
 
-    # un_pw2 = get("TERRA")
-    # check2 = terra_account(un_pw2)
+    un_pw2 = get("TERRA")
+    check2 = terra_account(un_pw2)
 
-    # un_pw3 = get("WAPOR")
-    # check3 = wapor_account(un_pw3)
+    un_pw3 = get("WAPOR")
+    check3 = wapor_account(un_pw3)
 
-    # un_pw4 = get("ECMWF")
-    # check4 = ecmwf_account(un_pw4)
+    un_pw4 = get("ECMWF")
+    check4 = ecmwf_account(un_pw4)
 
-    # un_pw5 = get("VIIRSL1")
-    # check5 = viirsl1_account(un_pw5)
+    un_pw5 = get("VIIRSL1")
+    check5 = viirsl1_account(un_pw5)
 
-    # un_pw6 = get("EARTHEXPLORER")
-    # check6 = earthexplorer_account(un_pw6)
+    un_pw6 = get("EARTHEXPLORER")
+    check6 = earthexplorer_account(un_pw6)
 
     un_pw7 = get("COPERNICUS_DATA_SPACE")
     check7 = copernicus_data_space_account(un_pw7)
