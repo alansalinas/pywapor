@@ -65,3 +65,4 @@ secret.txt
 docs/*.diff
 docs/notebooks
 docs/notebooks.diff
+conda_install_notes.txt
