@@ -22,7 +22,7 @@ pip install pywapor
 
 ### Usage
 
-To run the model for one dekad (from 2021-07-01 to 2021-07-11 in this case) for the Fayoum irrigation scheme in Egypt (but feel free to change the [boundingbox](http://bboxfinder.com) defined by `latlim` and `lonlim`) using mainly MODIS data, run the following code (run `python` in your console to activate Python and `exit()` to deactivate). 
+To run the model for one dekad (from 2021-07-01 to 2021-07-11 in this case) for the Fayoum irrigation scheme in Egypt (but feel free to change the [boundingbox](http://bboxfinder.com) defined by `latlim` and `lonlim`) using mainly VIIRS and Sentinel-2 data, run the following code (run `python` in your console to activate Python and `exit()` to deactivate). 
 
 ```python
 import pywapor
@@ -123,6 +123,7 @@ For questions, requests or issues with this repository, please contact Bert Coer
     <li> Projecting of curvilinear data (VIIRSL1 and Sentinel-3) is now done using gdal-warp. </li>
     <li> Calculation of terrain slope and aspect is now done using gdal-dem. </li>
     <li> It is now possible turn off SSL-verification when downloading certain products. Run 'import os; os.environ["PYWAPOR_VERIFY_SSL"] = "NO"' to do so. </li>
+    <li> Simplified installation requirements. </li>
     <li> Available options in `pywapor.pre_et_look.main` for `sources` are now "level_1", "level_2", "level_3", "level_2_v3" (new default value) and "level_3_v3". The `bin_length' is now set to 1 by default (was `"DEKAD"`).
     <li> Various other smaller bug fixes.</li>
 </ul>
