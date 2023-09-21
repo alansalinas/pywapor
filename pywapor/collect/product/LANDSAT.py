@@ -419,22 +419,6 @@ def search_stac(latlim, lonlim, timelim, product_name, extra_search_kwargs):
 
     bb = [lonlim[0], latlim[0], lonlim[1], latlim[1]]
 
-    # TODO this doesnt work, so filtering manually later, doc example: `'platform': {'or':['LANDSAT_8','LANDSAT_9']}`.
-    # platform = {
-    #             "LC08_SR": "LANDSAT_8",
-    #             "LC09_SR": "LANDSAT_9",
-    #             "LE07_SR": "LANDSAT_7",
-    #             "LT05_SR": "LANDSAT_5",
-
-    #             "LC08_ST": "LANDSAT_8",
-    #             "LC09_ST": "LANDSAT_9",
-    #             "LE07_ST": "LANDSAT_7",
-    #             "LT05_ST": "LANDSAT_5",
-    #             }[product_name]
-    # search_kwargs = {   
-    #                     **{'platform': {'or':[platform]}},
-    #                     **extra_search_kwargs
-    #                 }
     search_kwargs = extra_search_kwargs
 
     stac = 'https://landsatlook.usgs.gov/stac-server' # Landsat STAC API Endpoint
@@ -599,6 +583,7 @@ def download_scenes(scene_ids, product_folder, product_name, latlim, lonlim, max
 
         if attempt > 0:
             log.info(f"--> Waiting {wait_time} seconds before trying again.")
+            log.info(f"--> For more info on order status, go to `https://espa.cr.usgs.gov/ordering/status`.")
             time.sleep(wait_time)
 
         # Update statutes
