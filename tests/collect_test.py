@@ -92,12 +92,12 @@ sources = {
     'CHIRPS':       [pywapor.collect.product.CHIRPS,    [datetime.date(2022, 3, 1), datetime.date(2022, 3, 3)]], # opendap.download
     'SRTM':         [pywapor.collect.product.SRTM,      None], # opendap.download
     'ERA5':         [pywapor.collect.product.ERA5,      [datetime.date(2022, 3, 1), datetime.date(2022, 3, 3)]], # cds.download
-    'SENTINEL2':    [pywapor.collect.product.SENTINEL2, [datetime.date(2023, 3, 1), datetime.date(2023, 3, 5)]],    
+    'SENTINEL2':    [pywapor.collect.product.SENTINEL2, [datetime.date(2023, 3, 1), datetime.date(2023, 3, 3)]],    
     'SENTINEL3':    [pywapor.collect.product.SENTINEL3, [datetime.date(2023, 3, 1), datetime.date(2023, 3, 3)]],
     'VIIRSL1':      [pywapor.collect.product.VIIRSL1,   [datetime.date(2022, 3, 1), datetime.date(2022, 3, 2)]],
     'COPERNICUS':   [pywapor.collect.product.COPERNICUS, None], # cog.download
     'TERRA':        [pywapor.collect.product.TERRA,     [datetime.date(2020, 7, 2), datetime.date(2020, 7, 9)]],
-    # 'LANDSAT': [pywapor.collect.product.LANDSAT, [datetime.date(2022, 3, 1), datetime.date(2022, 3, 12)]]
+    'LANDSAT': [pywapor.collect.product.LANDSAT, [datetime.date(2022, 3, 1), datetime.date(2022, 3, 12)]]
 }
 
 @pytest.mark.parametrize("product_name", list(sources.keys()))
@@ -131,3 +131,7 @@ def test_dl(product_name, tmp_path):
             assert strictly_increasing(ds.time.values)
         assert has_geotransform(ds)
         assert np.all([int(ds[var].notnull().sum().values) > 0 for var in ds.data_vars])
+
+if __name__ == "__main__":
+
+    tmp_path = r"/Users/hmcoerver/Local/test_dl_LANDSAT_0"
