@@ -4,17 +4,6 @@
 """
 import numpy as np
 import xarray as xr
-from pywapor.general.processing_functions import calc_dlat_dlon
-from pywapor.enhancers.dem import calc_slope
-
-def orographic_roughness(z, x, y):
-
-    dlat, dlon = calc_dlat_dlon(None, None, None, (y.values, x.values))            
-    dem_resolution = np.nanmedian(np.nanmean([dlat, dlon], axis = 0))
-    slope_per = np.tan(calc_slope(z.to_dataset(), "slope")["slope"])
-    z_oro = 0.002 * (((dem_resolution * slope_per)**2) / dem_resolution)
-
-    return z_oro
 
 def roughness_length(lai, z_oro, z_obst, z_obst_max, land_mask=1):
     r"""

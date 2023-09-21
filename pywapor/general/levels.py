@@ -49,7 +49,7 @@ def find_setting(sources, setting_str, max_length = np.inf, min_length = 0):
         log.warning(f"--> Didn't find any products for `{setting_str}`.")
     return example_sources
 
-def pre_et_look_levels(level = "level_1", bin_length = "DEKAD"):
+def pre_et_look_levels(level = "level_1", bin_length = 1):
     """Create a default `pre_et_look` `sources` dictionary.
 
     Parameters
@@ -338,8 +338,8 @@ def pre_et_look_levels(level = "level_1", bin_length = "DEKAD"):
 
             "products": [
                 {
-                    "source": "PROBAV",
-                    "product_name": "S5_TOC_100_m_C1",
+                    "source": "TERRA",
+                    "product_name": "urn:eop:VITO:PROBAV_S5_TOC_100M_COG_V2",
                     "enhancers": "default",
                     "is_example": True
                 },
@@ -353,8 +353,8 @@ def pre_et_look_levels(level = "level_1", bin_length = "DEKAD"):
 
             "products": [
                 {
-                    "source": "PROBAV",
-                    "product_name": "S5_TOC_100_m_C1",
+                    "source": "TERRA",
+                    "product_name": "urn:eop:VITO:PROBAV_S5_TOC_100M_COG_V2",
                     "enhancers": "default",
                 },
             ],
@@ -445,7 +445,7 @@ def pre_et_look_levels(level = "level_1", bin_length = "DEKAD"):
                                 # "plot_folder": r"",
                                 "valid_drange": [-1.0, 1.0],
                                 "max_dist": np.timedelta64(15, "D"),
-                                "lambdas": 100.,
+                                "lmbdas": 100.,
                     },
             "spatial_interp": "nearest",
             }
@@ -465,7 +465,7 @@ def pre_et_look_levels(level = "level_1", bin_length = "DEKAD"):
                                 # "plot_folder": r"",
                                 "valid_drange": [0.0, 1.0],
                                 "max_dist": np.timedelta64(15, "D"),
-                                "lambdas": 100.,
+                                "lmbdas": 100.,
                     },
             "spatial_interp": "nearest",
             }
@@ -478,8 +478,15 @@ def pre_et_look_levels(level = "level_1", bin_length = "DEKAD"):
                     "enhancers": "default",
                 },
             ],
-            "composite_type": "max",
-            "temporal_interp": None,
+            "composite_type": "mean",
+            "temporal_interp":  {
+                                "method": "whittaker",
+                                # "plot_folder": r"",
+                                # "a": 0.65,
+                                "valid_drange": [0.0, 1.0],
+                                "max_dist": np.timedelta64(15, "D"),
+                                "lmbdas": 100.,
+                    },
             "spatial_interp": "bilinear",
         }
 
@@ -574,8 +581,52 @@ def pre_et_look_levels(level = "level_1", bin_length = "DEKAD"):
         'composite_type': None,
         'temporal_interp': None,
         'spatial_interp': 'bilinear'}
-    
 
+    level_3_v3 = copy.deepcopy(level_2_v3)
+
+    SRs = [
+                {
+                    "source": "SENTINEL2",
+                    "product_name": "S2MSI2A_R20m",
+                    "enhancers": "default",
+                    "is_example": True
+                },
+                {
+                    "source": "LANDSAT",
+                    "product_name": "LT05_SR",
+                    "enhancers": "default",
+                },
+                {
+                    "source": "LANDSAT",
+                    "product_name": "LE07_SR",
+                    "enhancers": "default",
+                },
+                {
+                    "source": "LANDSAT",
+                    "product_name": "LC08_SR",
+                    "enhancers": "default",
+                },
+                {
+                    "source": "LANDSAT",
+                    "product_name": "LC09_SR",
+                    "enhancers": "default",
+                },
+            ]
+    
+    level_3_v3["ndvi"]["products"] = SRs
+    level_3_v3["r0"]["products"] = SRs
+    level_3_v3["z"] = {
+        "products": [
+            {
+                "source": "COPERNICUS",
+                "product_name": "GLO30",
+                "enhancers": "default",
+            },
+        ],
+        "composite_type": None,
+        "temporal_interp": None,
+        "spatial_interp": "bilinear",
+        }
 
 
     levels = {
@@ -583,7 +634,8 @@ def pre_et_look_levels(level = "level_1", bin_length = "DEKAD"):
             "level_2": level_2,
             "level_3": level_3,
 
-            "level_2_v3": level_2_v3
+            "level_2_v3": level_2_v3,
+            "level_3_v3": level_3_v3,
                 }
 
     return levels[level]
@@ -770,8 +822,8 @@ def pre_se_root_levels(level = "level_1"):
 
             "products": [
                 {
-                    "source": "PROBAV",
-                    "product_name": "S5_TOC_100_m_C1",
+                    "source": "TERRA",
+                    "product_name": "urn:eop:VITO:PROBAV_S5_TOC_100M_COG_V2",
                     "enhancers": "default",
                     "is_example": True
                 },
@@ -854,13 +906,7 @@ def pre_se_root_levels(level = "level_1"):
                 "is_example": True
             },
         ],
-        "temporal_interp":  {
-                    "method": "whittaker",
-                    # "plot_folder": r"",
-                    "valid_drange": [-1.0, 1.0],
-                    "max_dist": np.timedelta64(15, "D"),
-                    "lambdas": 100.,
-        },
+        "temporal_interp": "linear",
         "spatial_interp": "nearest"}
 
     for var in ["mndwi", "psri", "vari_red_edge", "bsi", "nmdi", "green", "nir"]:
@@ -882,14 +928,7 @@ def pre_se_root_levels(level = "level_1"):
             },
         ],
         'variable_enhancers': [sharpen],
-        "temporal_interp":  {
-                    "method": "whittaker",
-                    # "plot_folder": r"",
-                    "a": 0.95,
-                    # "valid_drange": [-1.0, 1.0],
-                    "max_dist": np.timedelta64(15, "D"),
-                    "lambdas": 100.,
-        },
+        "temporal_interp": None,
         'spatial_interp': 'nearest'}
 
     for var in ["u", "t_dew", "p_air_0", "p_air", "t_air", "wv"]:
@@ -928,25 +967,93 @@ def pre_se_root_levels(level = "level_1"):
         'temporal_interp': "linear",
         'spatial_interp': 'bilinear'}
 
+    level_3_v3 = copy.deepcopy(level_2_v3)
+
+    SRs = [
+                {
+                    "source": "SENTINEL2",
+                    "product_name": "S2MSI2A_R20m",
+                    "enhancers": "default",
+                    "is_example": True
+                },
+                # {
+                #     "source": "LANDSAT",
+                #     "product_name": "LT05_SR",
+                #     "enhancers": "default",
+                # },
+                # {
+                #     "source": "LANDSAT",
+                #     "product_name": "LE07_SR",
+                #     "enhancers": "default",
+                # },
+                # {
+                #     "source": "LANDSAT",
+                #     "product_name": "LC08_SR",
+                #     "enhancers": "default",
+                # },
+                # {
+                #     "source": "LANDSAT",
+                #     "product_name": "LC09_SR",
+                #     "enhancers": "default",
+                # },
+            ]
+
+    for var in ["ndvi", "mndwi", "psri", "vari_red_edge", "bsi", "nmdi", "green", "nir"]:
+        level_3_v3[var]["products"] = SRs
+
+    level_3_v3["lst"] = {
+        'products': [
+                {
+                    "source": "LANDSAT",
+                    "product_name": "LT05_ST",
+                    "enhancers": "default",
+                },
+                {
+                    "source": "LANDSAT",
+                    "product_name": "LE07_ST",
+                    "enhancers": "default",
+                },
+                {
+                    "source": "LANDSAT",
+                    "product_name": "LC08_ST",
+                    "enhancers": "default",
+                },
+                {
+                    "source": "LANDSAT",
+                    "product_name": "LC09_ST",
+                    "enhancers": "default",
+                },
+        ],
+        'variable_enhancers': [sharpen],
+        "temporal_interp": None,
+        'spatial_interp': 'nearest'}
+
     levels = {
                 "level_1": level_1,
                 "level_2": level_2,
                 "level_3": level_3,
+                "level_1_v2": level_1,
+                "level_2_v2": level_2,
+                "level_3_v2": level_3,
+
                 "level_2_v3": level_2_v3,
+                "level_3_v3": level_3_v3,
                 }
 
     return levels[level]
 
 if __name__ == "__main__":
 
-    et_look_sources_lvl1 = pre_et_look_levels(level = "level_1", bin_length = "DEKAD")
-    et_look_sources_lvl2 = pre_et_look_levels(level = "level_2", bin_length = "DEKAD")
-    et_look_sources_lvl3 = pre_et_look_levels(level = "level_3", bin_length = "DEKAD")
-    et_look_sources_lvl2_v3 = pre_et_look_levels(level = "level_2_v3", bin_length = "DEKAD")
+    et_look_sources_lvl1 = pre_et_look_levels(level = "level_1")
+    et_look_sources_lvl2 = pre_et_look_levels(level = "level_2")
+    et_look_sources_lvl3 = pre_et_look_levels(level = "level_3")
+    et_look_sources_lvl2_v3 = pre_et_look_levels(level = "level_2_v3")
+    et_look_sources_lvl3_v3 = pre_et_look_levels(level = "level_3_v3")
 
     se_root_sources_lvl1 = pre_se_root_levels(level = "level_1")
     se_root_sources_lvl2 = pre_se_root_levels(level = "level_2")
     se_root_sources_lvl3 = pre_se_root_levels(level = "level_3")
     se_root_sources_lvl2_v3 = pre_se_root_levels(level = "level_2_v3")
+    se_root_sources_lvl3_v3 = pre_se_root_levels(level = "level_3_v3")
 
     

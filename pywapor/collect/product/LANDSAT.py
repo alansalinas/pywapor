@@ -33,6 +33,7 @@ import numpy as np
 import xarray as xr
 import datetime
 import rasterio
+import urllib3
 from pywapor.general.logger import log, adjust_logger
 from pywapor.general.processing_functions import open_ds, save_ds, remove_ds, adjust_timelim_dtype, make_example_ds
 from pywapor.collect.protocol.crawler import download_urls
@@ -316,71 +317,71 @@ def default_post_processors(product_name, req_vars):
 
     post_processors = {
         "LT05_SR": {
-            'coastal': [],
-            'blue': [],
-            'green': [],
-            'red': [],
-            'nir': [],
-            'swir1': [],
-            'swir2': [],
+            'coastal': [gap_fill],
+            'blue': [gap_fill],
+            'green': [gap_fill],
+            'red': [gap_fill],
+            'nir': [gap_fill],
+            'swir1': [gap_fill],
+            'swir2': [gap_fill],
             'pixel_qa': [],
             'radsat_qa': [],
-            'ndvi': [calc_normalized_difference],
-            'r0': [partial(calc_r0, product_name = "LT05_SR")],
+            'ndvi': [calc_normalized_difference, gap_fill],
+            'r0': [partial(calc_r0, product_name = "LT05_SR"), gap_fill],
             },
         "LT05_ST": {
-            'lst': [mask_uncertainty],
+            'lst': [mask_uncertainty, gap_fill],
             'lst_qa': [],
         },
         "LE07_SR": {
-            'coastal': [],
-            'blue': [],
-            'green': [],
-            'red': [],
-            'nir': [],
-            'swir1': [],
-            'swir2': [],
+            'coastal': [gap_fill],
+            'blue': [gap_fill],
+            'green': [gap_fill],
+            'red': [gap_fill],
+            'nir': [gap_fill],
+            'swir1': [gap_fill],
+            'swir2': [gap_fill],
             'pixel_qa': [],
             'radsat_qa': [],
-            'ndvi': [calc_normalized_difference],
-            'r0': [partial(calc_r0, product_name = "LE07_SR")],
+            'ndvi': [calc_normalized_difference, gap_fill],
+            'r0': [partial(calc_r0, product_name = "LE07_SR"), gap_fill],
             },
         "LE07_ST": {
-            'lst': [mask_uncertainty, ],
+            'lst': [mask_uncertainty, gap_fill],
             'lst_qa': [],
         },
         "LC08_SR": {
-            'coastal': [],
-            'blue': [],
-            'green': [],
-            'red': [],
-            'nir': [],
-            'swir1': [],
-            'swir2': [],
+            'coastal': [gap_fill],
+            'blue': [gap_fill],
+            'green': [gap_fill],
+            'red': [gap_fill],
+            'nir': [gap_fill],
+            'swir1': [gap_fill],
+            'swir2': [gap_fill],
             'pixel_qa': [],
             'radsat_qa': [],
-            'ndvi': [calc_normalized_difference],
-            'r0': [partial(calc_r0, product_name = "LC08_SR")],
+            'ndvi': [calc_normalized_difference, gap_fill],
+            'r0': [partial(calc_r0, product_name = "LC08_SR"), gap_fill],
             },
         "LC08_ST": {
-            'lst': [mask_uncertainty],
+            'lst': [mask_uncertainty, gap_fill],
             'lst_qa': [],
         },
         "LC09_SR": {
-            'coastal': [],
-            'blue': [],
-            'green': [],
-            'red': [],
-            'nir': [],
-            'swir1': [],
-            'swir2': [],
+            'coastal': [gap_fill],
+            'blue': [gap_fill],
+            'green': [gap_fill],
+            'red': [gap_fill],
+            'nir': [gap_fill],
+            'swir1': [gap_fill],
+            'swir2': [gap_fill],
             'pixel_qa': [],
             'radsat_qa': [],
-            'ndvi': [calc_normalized_difference],
-            'r0': [partial(calc_r0, product_name = "LC09_SR")],
+            'ndvi': [calc_normalized_difference, gap_fill],
+            'r0': [partial(calc_r0, product_name = "LC09_SR"), gap_fill],
             },
         "LC09_ST": {
-            'lst': [mask_uncertainty],
+            'lst': [mask_uncertainty, gap_fill],
             'lst_qa': [],
         }
     }
@@ -393,7 +394,9 @@ def espa_api(endpoint, verb='get', body=None, uauth=None):
     """ Suggested simple way to interact with the ESPA JSON REST API """
     # auth_tup = uauth if uauth else (username, password)
     host = 'https://espa.cr.usgs.gov/api/v1/'
-    response = getattr(r, verb)(host + endpoint, auth=uauth, json=body)
+    with warnings.catch_warnings():
+        warnings.filterwarnings("ignore", category=urllib3.exceptions.InsecureRequestWarning)
+        response = getattr(r, verb)(host + endpoint, auth=uauth, json=body, verify=False)
     data = response.json()
     if isinstance(data, dict):
         messages = data.pop("messages", None)  
@@ -416,22 +419,6 @@ def search_stac(latlim, lonlim, timelim, product_name, extra_search_kwargs):
 
     bb = [lonlim[0], latlim[0], lonlim[1], latlim[1]]
 
-    # TODO this doesnt work, so filtering manually later, doc example: `'platform': {'or':['LANDSAT_8','LANDSAT_9']}`.
-    # platform = {
-    #             "LC08_SR": "LANDSAT_8",
-    #             "LC09_SR": "LANDSAT_9",
-    #             "LE07_SR": "LANDSAT_7",
-    #             "LT05_SR": "LANDSAT_5",
-
-    #             "LC08_ST": "LANDSAT_8",
-    #             "LC09_ST": "LANDSAT_9",
-    #             "LE07_ST": "LANDSAT_7",
-    #             "LT05_ST": "LANDSAT_5",
-    #             }[product_name]
-    # search_kwargs = {   
-    #                     **{'platform': {'or':[platform]}},
-    #                     **extra_search_kwargs
-    #                 }
     search_kwargs = extra_search_kwargs
 
     stac = 'https://landsatlook.usgs.gov/stac-server' # Landsat STAC API Endpoint
@@ -506,7 +493,10 @@ def check_availabilty(product_folder, product_name, scene_ids):
 
 def update_order_statuses(scene_ids, product_folder, product_name, to_download, to_wait, to_request, uauth, image_extents, verbose = True):
 
-    all_orders = espa_api(f"item-status", uauth = uauth)
+    all_orders__ = espa_api(f"item-status", uauth = uauth)
+    all_orders_ = {k: [x for x in v if x.get("status") not in ("purged", "cancelled")] for k, v in all_orders__.items()}
+    all_orders = {k: v for k, v in all_orders_.items() if len(v) != 0}
+
     available_scenes = check_availabilty(product_folder, product_name, scene_ids)
     
     for order_id, order in all_orders.items():
@@ -593,6 +583,7 @@ def download_scenes(scene_ids, product_folder, product_name, latlim, lonlim, max
 
         if attempt > 0:
             log.info(f"--> Waiting {wait_time} seconds before trying again.")
+            log.info(f"--> For more info on order status, go to `https://espa.cr.usgs.gov/ordering/status`.")
             time.sleep(wait_time)
 
         # Update statutes
@@ -760,8 +751,6 @@ def download(folder, latlim, lonlim, timelim, product_name,
     ValueError
         Raised when not all found scenes could be downloaded within the max_attempts.
     """
-
-
     adjust_logger(True, folder, "INFO")
 
     product_folder = os.path.join(folder, "LANDSAT")
@@ -814,70 +803,38 @@ def download(folder, latlim, lonlim, timelim, product_name,
 
     return ds[req_vars_orig]
 
-# if __name__ == "__main__":
+if __name__ == "__main__":
 
-#     # tests = {
-#     #     # "LT05_SR": ["2010-03-29", "2010-04-25"], 
-#     #     # "LE07_SR": ["2010-03-29", "2010-04-25"], 
-#     #     # "LC08_SR": ["2022-03-29", "2022-04-25"], 
-#     #     # "LC09_SR": ["2022-03-29", "2022-04-25"]
-#     #     "LC08_ST": ["2022-03-29", "2022-04-25"],
-#     # }
+    sources = "level_3"
+    period = 0
+    area = "fayoum"
 
-#     sources = "level_3"
-#     period = 3
-#     area = "pakistan_south"
+    lonlim, latlim = {
+        "fayoum":           ([30.2,  31.2],  [28.9,  29.7]),
+        "pakistan_south":   ([67.70, 67.90], [26.35, 26.55]),
+        "pakistan_hydera":  ([68.35, 68.71], [25.49, 25.73]),
+    }[area]
 
-#     lonlim, latlim = {
-#         "fayoum":           ([30.2,  31.2],  [28.9,  29.7]),
-#         "pakistan_south":   ([67.70, 67.90], [26.35, 26.55]),
-#         "pakistan_hydera":  ([68.35, 68.71], [25.49, 25.73]),
-#     }[area]
+    timelim = {
+        0: [datetime.date(2019, 10, 1), datetime.date(2019, 10, 11)],
+        1: [datetime.date(2022, 5, 1), datetime.date(2022, 5, 11)],
+        2: [datetime.date(2022, 10, 1), datetime.date(2022, 10, 11)],
+        3: [datetime.date(2022, 8, 1), datetime.date(2022, 10, 1)],
+        4: [datetime.date(2021, 8, 1), datetime.date(2021, 10, 1)],
+    }[period]
 
-#     timelim = {
-#         0: [datetime.date(2019, 10, 1), datetime.date(2019, 10, 11)],
-#         1: [datetime.date(2022, 5, 1), datetime.date(2022, 5, 11)],
-#         2: [datetime.date(2022, 10, 1), datetime.date(2022, 10, 11)],
-#         3: [datetime.date(2022, 8, 1), datetime.date(2022, 10, 1)],
-#         4: [datetime.date(2021, 8, 1), datetime.date(2021, 10, 1)],
-#     }[period]
+    folder = f"/Users/hmcoerver/Local/{area}_{sources}_{period}" #
 
-#     folder = f"/Users/hmcoerver/Local/{area}_{sources}_{period}" #
+    adjust_logger(True, folder, "INFO")
 
-#     adjust_logger(True, folder, "INFO")
+    product_name = "LC08_SR"
+    req_vars = ["ndvi"]
+    variables = None
+    post_processors = None
+    extra_search_kwargs = {'eo:cloud_cover': {'gte': 0, 'lt': 30}}
+    max_attempts = 24
+    wait_time = 300
 
-#     bin_length = "DEKAD"
-
-#     from pywapor.general import compositer
-#     bins = compositer.time_bins(timelim, bin_length)
-
-#     adjusted_timelim = [bins[0], bins[-1]]
-#     timelim = [adjusted_timelim[0] - np.timedelta64(3, "D"), 
-#                         adjusted_timelim[1] + np.timedelta64(3, "D")]
-
-#     product_name = "LE07_SR"
-
-#     variables = None
-#     post_processors = None
-#     extra_search_kwargs = {'eo:cloud_cover': {'gte': 0, 'lt': 30}}
-#     max_attempts = 24
-#     wait_time = 300
-    # folder = f"/Users/hmcoerver/Local/landsat_test2"
-    # adjust_logger(True, folder, "INFO")
-    # for product_name, timelim in tests.items():
-    #     print(product_name, timelim)
-        
-    #     latlim = [28.9, 29.7]
-    #     lonlim = [30.2, 31.2]
-    #     # timelim = ["2022-03-29", "2022-04-25"]
-    #     # product_name = "LC08"
-    #     req_vars = ["lst"]
-    #     # req_vars = ["r0"]
-    #     variables = None
-    #     post_processors = None
-    #     # example_ds = None
-    #     extra_search_kwargs = {'eo:cloud_cover': {'gte': 0, 'lt': 30}}
-    #     ds = download(folder, latlim, lonlim, timelim, product_name, 
-    #                     req_vars, variables = variables, post_processors = post_processors, 
-    #                     extra_search_kwargs = extra_search_kwargs)
-
+    # ds = download(folder, latlim, lonlim, timelim, product_name, 
+    #                 req_vars, variables = variables, post_processors = post_processors, 
+    #                 extra_search_kwargs = extra_search_kwargs)

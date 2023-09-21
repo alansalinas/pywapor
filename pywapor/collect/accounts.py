@@ -4,11 +4,9 @@ import pywapor
 import getpass
 import sys
 import requests
-import time
+import cdsapi
 from pywapor.general.logger import log, adjust_logger
 from cryptography.fernet import Fernet
-import cdsapi
-from sentinelsat import SentinelAPI
 from pywapor.collect.product.LANDSAT import espa_api
 
 def ask_pw(account):
@@ -30,7 +28,7 @@ def setup(account):
 
     Parameters
     ----------
-    account : {"NASA" | "VITO" | "WAPOR" | "ECMWF" | "SENTINEL" | "VIIRSL1" | "EARTHEXPLORER"}
+    account : {"NASA" | "TERRA" | "WAPOR" | "ECMWF" | "COPERNICUS_DATA_SPACE" | "VIIRSL1" | "EARTHEXPLORER"}
         Which un/pw combination to store.
     """
 
@@ -67,11 +65,11 @@ def setup(account):
         succes, error = {
             "NASA": nasa_account,
             "EARTHEXPLORER": earthexplorer_account,
-            "VITO": vito_account,
+            "TERRA": terra_account,
             "WAPOR": wapor_account,
             "VIIRSL1": viirsl1_account,
             "ECMWF": ecmwf_account,
-            "SENTINEL": sentinel_account,
+            "COPERNICUS_DATA_SPACE": copernicus_data_space_account,
         }[account]((account_name, pwd))
 
         if succes:
@@ -98,7 +96,7 @@ def get(account):
 
     Parameters
     ----------
-    account : {"NASA" | "VITO" | "WAPOR" | "ECMWF" | "SENTINEL" | "VIIRSL1" | "EARTHEXPLORER"}
+    account : {"NASA" | "TERRA" | "WAPOR" | "ECMWF" | "COPERNICUS_DATA_SPACE" | "VIIRSL1" | "EARTHEXPLORER"}
         Which un/pw combination to load.
     """
 
@@ -111,7 +109,10 @@ def get(account):
         create_key()
         if os.path.exists(json_file):
             print("removing old/invalid json file")
-            os.remove(json_file)
+            try:
+                os.remove(json_file)
+            except PermissionError:
+                log.warning("--> Unable to remove existing `keys.json` file (PermissionError), please remove the file manually before proceeding.")
     
     if not os.path.exists(json_file):
         setup(account)
@@ -150,14 +151,17 @@ def create_key():
     filehandle = os.path.join(folder, filename)
 
     if os.path.exists(filehandle):
-        os.remove(filehandle)
-    
+        try:
+            os.remove(filehandle)
+        except PermissionError:
+            log.warning("--> Unable to remove existing `secret.txt` file (PermissionError), please remove the file manually before proceeding.")
+        
     with open(filehandle,"w+") as f:
         f.write(str(Fernet.generate_key().decode("utf-8")))
 
-def vito_account(user_pw):
-    """Check if the given or stored VITO username/password combination
-    is correct. Accounts can be created on https://www.vito-eodata.be.
+def terra_account(user_pw):
+    """Check if the given or stored TERA username/password combination
+    is correct. Accounts can be created on https://viewer.terrascope.be.
 
     Parameters
     ----------
@@ -171,38 +175,24 @@ def vito_account(user_pw):
         True if the password works, otherwise False.
     """
 
-    folder = os.path.dirname(os.path.realpath(pywapor.__path__[0]))
-    test_url = r"https://www.vito-eodata.be/PDF/datapool/Free_Data/PROBA-V_300m/S1_TOC_-_300_m_C1/2014/1/15/PV_S1_TOC-20140115_333M_V101/PROBAV_S1_TOC_20140115_333M_V101.VRG"
-    test_file = os.path.join(folder, "vito_test.vrg")
+    url = "https://sso.vgt.vito.be/auth/realms/terrascope/protocol/openid-connect/token"
+    params = {
+        "grant_type": "password",
+        "client_id": "public",
+        "username": user_pw[0],
+        "password": user_pw[1],
+    }
+    headers = {'content-type': 'application/x-www-form-urlencoded'}
 
-    if os.path.isfile(test_file):
-        try:
-            os.remove(test_file)
-        except PermissionError:
-            ...
-
-    username, password = user_pw
-
-    x = requests.get(test_url, auth = (username, password))
+    x = requests.post(url, data = params, headers = headers)
 
     error = ""
 
-    if x.ok:
-        with open(test_file, 'w+b') as z:
-            z.write(x.content)
-            statinfo = os.stat(test_file)
-            succes = statinfo.st_size == 15392
-            if not succes:
-                error = "something went wrong."
-    else:
-        error = "wrong username/password."
+    if not x.ok:
+        error = eval(x.text)["error_description"]
         succes = False
-
-    if os.path.isfile(test_file):
-        try:
-            os.remove(test_file)
-        except PermissionError:
-            ...
+    else:
+        succes = True
 
     return succes, error
 
@@ -360,33 +350,48 @@ def viirsl1_account(user_pw):
 
     return succes, error
 
-def sentinel_account(user_pw):
-    """Check if the given or stored SENTINEL username and password is 
-    correct. Accounts can be created on https://scihub.copernicus.eu/userguide/SelfRegistration.
+def copernicus_data_space_account(user_pw):
+    """Check if the given or stored COPERNICUS_DATA_SPACE account is
+    correct. Accounts can be created on https://dataspace.copernicus.eu
 
     Parameters
     ----------
-    user_pw : tuple, optional
-        ("", "token") to check, if `None` will try to load the 
-        password from the keychain, by default None.
+    user_pw : tuple
+        ("username", "password") to check.
 
     Returns
     -------
-    bool
-        True if the password works, otherwise False.
+    tuple
+        First item is `True` if the password works, otherwise `False`,
+        seconds item is a error message.
     """
 
     username, password = user_pw
 
     try:
-        api = SentinelAPI(username, password, 'https://apihub.copernicus.eu/apihub')
-        _ = api.count(
-                    platformname = 'Sentinel-2',
-                    producttype = 'S2MSI2A')
-        succes = True
-        error = ""
+
+        data = {
+            "client_id": "cdse-public",
+            "username": username,
+            "password": password,
+            "grant_type": "password",
+            }
+        
+        r = requests.post("https://identity.dataspace.copernicus.eu/auth/realms/CDSE/protocol/openid-connect/token",
+                            data=data,
+                            )
+        r.raise_for_status()
+        token = r.json()
+
+        if "access_token" in token.keys():
+            succes = True
+            error = ""
+        else:
+            succes = False
+            error = "Invalid username/password"
+
     except Exception as e:
-        exception_args = getattr(e, "args", ["wrong_token"])
+        exception_args = getattr(e, "args", ["Invalid username/password"])
         error = exception_args[0]
         succes = False
 
@@ -398,20 +403,21 @@ def ecmwf_account(user_pw):
 
     Parameters
     ----------
-    user_pw : tuple, optional
-        ("", "key") to check, if `None` will try to load the 
-        password from the keychain, by default None.
+    user_pw : tuple
+        ("username", "password") to check.
 
     Returns
     -------
-    bool
-        True if the password works, otherwise False.
+    tuple
+        First item is `True` if the password works, otherwise `False`,
+        seconds item is a error message.
     """
 
     url, key = user_pw
 
     try:
-        c = cdsapi.Client(url = url, key = key, verify = True, quiet = True)
+        vrfy = {"NO": False, "YES": True}.get(os.environ.get("PYWAPOR_VERIFY_SSL", "YES"), True)
+        c = cdsapi.Client(url = url, key = key, verify = vrfy, quiet = True)
         fp = os.path.join(pywapor.__path__[0], "test.zip")
         _ = c.retrieve(
             'sis-agrometeorological-indicators',
@@ -444,22 +450,25 @@ def ecmwf_account(user_pw):
 
 if __name__ == "__main__":
     ...
-    # adjust_logger(True, r"/Users/hmcoerver/Desktop", "INFO")
+    adjust_logger(True, r"/Users/hmcoerver/Desktop", "INFO")
 
-    # un_pw1= get("NASA")
-    # check1 = nasa_account(un_pw1)
+    un_pw1= get("NASA")
+    check1 = nasa_account(un_pw1)
 
-    # un_pw2 = get("VITO")
-    # check2 = vito_account(un_pw2)
+    un_pw2 = get("TERRA")
+    check2 = terra_account(un_pw2)
 
-    # un_pw3 = get("WAPOR")
-    # check3 = wapor_account(un_pw3)
+    un_pw3 = get("WAPOR")
+    check3 = wapor_account(un_pw3)
 
-    # un_pw4 = get("ECMWF")
-    # check4 = ecmwf_account(un_pw4)
+    un_pw4 = get("ECMWF")
+    check4 = ecmwf_account(un_pw4)
 
-    # un_pw5 = get("VIIRSL1")
-    # check5 = viirsl1_account(un_pw5)
+    un_pw5 = get("VIIRSL1")
+    check5 = viirsl1_account(un_pw5)
 
-    # un_pw6 = get("EARTHEXPLORER")
-    # check6 = earthexplorer_account(un_pw6)
+    un_pw6 = get("EARTHEXPLORER")
+    check6 = earthexplorer_account(un_pw6)
+
+    un_pw7 = get("COPERNICUS_DATA_SPACE")
+    check7 = copernicus_data_space_account(un_pw7)

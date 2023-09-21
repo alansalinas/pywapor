@@ -6,13 +6,14 @@ import os
 import json
 import pywapor.collect
 import xarray as xr
-from pywapor.general.processing_functions import open_ds, remove_ds, save_ds
+from pywapor.general.processing_functions import open_ds
 import pywapor.collect.accounts as accounts
 from shapely.geometry.polygon import Polygon
 from shapely.geometry import shape
 import copy
+from functools import partial
 import pywapor.collect.protocol.opendap as opendap
-from pywapor.enhancers.dem import calc_slope, calc_aspect
+from pywapor.enhancers.dem import calc_slope_or_aspect
 import numpy as np
 
 def tiles_intersect(latlim, lonlim):
@@ -102,8 +103,8 @@ def default_post_processors(product_name, req_vars = ["z"]):
     post_processors = {
         "30M": {
             "z": [],
-            "aspect": [calc_aspect],
-            "slope": [calc_slope],
+            "aspect": [calc_slope_or_aspect],
+            "slope": [calc_slope_or_aspect],
         }
     }
 
@@ -228,13 +229,16 @@ if __name__ == "__main__":
     latlim = [28.9, 29.7]
     lonlim = [30.2, 31.2]
     timelim = [datetime.date(2020, 7, 1), datetime.date(2020, 7, 11)]
-    req_vars = ["z", "aspect"]
+    req_vars = ["z", "aspect", "slope"]
+
+    variables = None
+    post_processors = None
 
     # fn = os.path.join(os.path.join(folder, "SRTM"), "30M.nc")
     # if os.path.isfile(fn):
     #     os.remove(fn)
 
-    # # SRTM.
+    # SRTM.
     ds = download(folder, latlim, lonlim, req_vars = req_vars)
     print(ds.rio.crs, ds.rio.grid_mapping)
 

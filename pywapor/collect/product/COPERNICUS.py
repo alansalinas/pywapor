@@ -1,15 +1,16 @@
-import functools
 import os
-import numpy as np
-from itertools import product
-import xarray as xr
 import pywapor
-from pywapor.collect.protocol import cog
 import copy
+import numpy as np
+import xarray as xr
+from itertools import product
+from pywapor.collect.protocol import cog
+from functools import partial
 from pywapor.general.processing_functions import open_ds, save_ds, remove_ds
 from pywapor.enhancers.apply_enhancers import apply_enhancer
-from pywapor.enhancers.dem import calc_slope, calc_aspect
-from pywapor.general.logger import log
+from pywapor.enhancers.dem import calc_slope_or_aspect
+from pywapor.general.logger import log, adjust_logger
+from pywapor.collect.protocol.crawler import download_urls
 
 def tiles_intersect(latlim, lonlim, product_name):
     """Creates a list of server-side filenames for tiles that intersect with `latlim` and
@@ -60,8 +61,8 @@ def url_func(product_name, fn):
         The url.
     """
     url = {
-            "GLO30": f"/vsis3/copernicus-dem-30m/{fn}/{fn}.tif",
-            "GLO90": f"/vsis3/copernicus-dem-90m/{fn}/{fn}.tif",
+            "GLO30": f"https://copernicus-dem-30m.s3.amazonaws.com/{fn}/{fn}.tif",
+            "GLO90": f"https://copernicus-dem-90m.s3.amazonaws.com/{fn}/{fn}.tif",
             }[product_name]
     return url
 
@@ -132,13 +133,13 @@ def default_post_processors(product_name, req_vars = ["z"]):
     post_processors = {
         "GLO30": {
             "z": [],
-            "slope": [calc_slope],
-            "aspect": [calc_aspect],
+            "slope": [partial(calc_slope_or_aspect, write_init = False)],
+            "aspect": [partial(calc_slope_or_aspect, write_init = False)],
         },
         "GLO90": {
             "z": [],
-            "slope": [calc_slope],
-            "aspect": [calc_aspect],
+            "slope": [partial(calc_slope_or_aspect, write_init = False)],
+            "aspect": [partial(calc_slope_or_aspect, write_init = False)],
         },
     }
 
@@ -187,7 +188,7 @@ def download(folder, latlim, lonlim, product_name = "GLO30", req_vars = ["z"],
             existing_ds = existing_ds.close()
         else:
             return existing_ds[req_vars_orig]
-            
+
     spatial_buffer = True
     if spatial_buffer:
         dx = dy = 0.00027778
@@ -207,27 +208,14 @@ def download(folder, latlim, lonlim, product_name = "GLO30", req_vars = ["z"],
 
     coords = {"x": ("lon", lonlim), "y": ("lat", latlim)}
 
-    gdal_config_options = {'AWS_REGION': 'eu-central-1', 'AWS_NO_SIGN_REQUEST': ''}
+    urls = [url_func(product_name, x) for x in dl_tiles]
+    fns = download_urls(urls, folder)
 
-    dss = list()
+    dss = [xr.open_dataset(x, chunks = {"y":-1, "x":-1}).isel(band = 0, drop = True) for x in fns]
+    ds = xr.combine_by_coords(dss).rename({"band_data": "z"})
+    ds = ds.rio.clip_box(coords["x"][1][0], coords["y"][1][0], coords["x"][1][1], coords["y"][1][1])
 
-    log.info(f"--> Downloading {len(dl_tiles)} {product_name} tiles.").add()
-
-    for fn in dl_tiles:
-
-        url_func_part = functools.partial(url_func, fn = fn)
-        fp = os.path.join(folder, f"{fn}.nc")
-
-        if os.path.isfile(fp):
-            ds = open_ds(fp)
-        else:
-            ds = cog.download(fp, product_name, coords, variables, {}, url_func_part, gdal_config_options = gdal_config_options, waitbar = False)
-
-        dss.append(ds)
-
-    log.sub()
-
-    ds = xr.concat(dss, "stack").median("stack")
+    ds = save_ds(ds, final_fp.replace(".nc", "_stitched.nc"), encoding="initiate", label = "Merging tiles.")
 
     # Apply product specific functions.
     for var, funcs in post_processors.items():
@@ -244,6 +232,8 @@ def download(folder, latlim, lonlim, product_name = "GLO30", req_vars = ["z"],
     for nc in dss:
         remove_ds(nc)
 
+    remove_ds(final_fp.replace(".nc", "_stitched.nc"))
+
     return ds[req_vars_orig]
 
 if __name__ == "__main__":
@@ -252,9 +242,14 @@ if __name__ == "__main__":
     product_name = r"GLO90" # r"GLO90" r"GLO30
     latlim = [28.9, 29.7]
     lonlim = [30.2, 31.2]
+    # latlim = [24.2, 30.2]
+    # lonlim = [24.8, 33.7]
+
     req_vars = ["z", "slope", "aspect"]
     variables = None
     post_processors = None
+
+    adjust_logger(True, folder, "INFO")
 
     ds = download(folder, latlim, lonlim, product_name = product_name, req_vars = req_vars,
                     variables = variables, post_processors = post_processors)

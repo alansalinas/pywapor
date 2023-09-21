@@ -223,7 +223,7 @@ def download_urls(urls, folder, session = None, fps = None, parallel = 0,
     return relevant_fps
 
 
-def _download_url(url, fp, session = None, waitbar = True, headers = None, verify = True):
+def _download_url(url, fp, session = None, waitbar = True, headers = None):
 
     if os.path.isfile(fp):
         return fp
@@ -238,7 +238,8 @@ def _download_url(url, fp, session = None, waitbar = True, headers = None, verif
     if isinstance(session, type(None)):
         session = requests.Session()
 
-    file_object = session.get(url, stream = True, headers = headers, verify = verify)
+    vrfy = {"NO": False, "YES": True}.get(os.environ.get("PYWAPOR_VERIFY_SSL", "YES"), True)
+    file_object = session.get(url, stream = True, headers = headers, verify = vrfy)
     file_object.raise_for_status()
 
     if "Content-Length" in file_object.headers.keys():
@@ -261,7 +262,7 @@ def _download_url(url, fp, session = None, waitbar = True, headers = None, verif
     return fp
 
 def download_url(url, fp, session = None, waitbar = True, headers = None, 
-                    max_tries = 3, wait_sec = 15, verify = True):
+                    max_tries = 3, wait_sec = 15):
     """Download a URL to a file.
 
     Parameters
@@ -299,7 +300,7 @@ def download_url(url, fp, session = None, waitbar = True, headers = None,
             log.info(f"--> Trying to download {fp}, attempt {try_n+1} of {max_tries} in {waiter} seconds.")
             time.sleep(waiter)
         try:
-            fp = _download_url(url, fp, session = session, waitbar = waitbar, headers = headers, verify = verify)
+            fp = _download_url(url, fp, session = session, waitbar = waitbar, headers = headers)
             succes = True
         except socket.timeout as e:
             log.info(f"--> Server connection timed out.")

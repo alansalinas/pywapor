@@ -4,7 +4,7 @@ from pywapor.general.logger import adjust_logger
 import numpy as np
 import os
 
-def test_1(tmp_path):
+def test_small_se_root(tmp_path):
 
     folder = tmp_path
     adjust_logger(True, folder, "INFO", testing = True)
@@ -42,16 +42,19 @@ def test_1(tmp_path):
     assert ds.ndvi.max().values <= 1.
     assert 240 < ds.lst.mean().values < 330
 
-def test_2(tmp_path):
+def test_se_root_level_2_v3(tmp_path):
 
     folder = tmp_path
     adjust_logger(True, folder, "INFO", testing = True)
 
-    timelim = [datetime.date(2023, 2, 1), datetime.date(2023, 2, 11)]
+    today = datetime.datetime.now().date()
+    timelim = [today - datetime.timedelta(30), today - datetime.timedelta(20)]
+    # timelim = [datetime.date(2023, 2, 1), datetime.date(2023, 2, 11)]
+
     latlim = [29.4, 29.6]
     lonlim = [30.7, 30.9]
     sources = "level_2_v3"
-    bin_length = 3
+    bin_length = 1
     enhancers = []
     buffer_timelim = True
     input_data = pywapor.pre_se_root.main(folder, latlim, lonlim, timelim, 
@@ -77,7 +80,45 @@ def test_2(tmp_path):
     assert ds.se_root.min().values >= 0.
     assert ds.se_root.max().values <= 1.
 
-def test_3(tmp_path):
+def test_se_root_level_3_v3(tmp_path):
+
+    folder = tmp_path
+    adjust_logger(True, folder, "INFO", testing = True)
+
+    today = datetime.datetime.now().date()
+    timelim = [today - datetime.timedelta(30), today - datetime.timedelta(20)]
+    # timelim = [datetime.date(2023, 2, 1), datetime.date(2023, 2, 11)]
+
+    latlim = [29.4, 29.6]
+    lonlim = [30.7, 30.9]
+    sources = "level_3_v3"
+    bin_length = 1
+    enhancers = []
+    buffer_timelim = True
+    input_data = pywapor.pre_se_root.main(folder, latlim, lonlim, timelim, 
+                                            sources, bin_length = bin_length, 
+                                            enhancers = enhancers, buffer_timelim = buffer_timelim)
+    assert input_data.rio.crs.to_epsg() == 4326
+    assert np.all([x in input_data.data_vars for x in ["ndvi", "p_air_i", "p_air_0_i", "r0_bare", "r0_full", "t_air_i", "t_dew_i", "u_i", "wv_i", "lst"]])
+    assert input_data.ndvi.min().values >= -1.
+    assert input_data.ndvi.max().values <= 1.
+    assert 90 < input_data.p_air_i.mean().values < 110
+    assert 90 < input_data.p_air_0_i.mean().values < 110
+    assert 0 < input_data.r0_bare.mean().values < 1
+    assert 0 < input_data.r0_full.mean().values < 1
+    assert -40 < input_data.t_air_i.mean().values < 50
+    assert -40 < input_data.t_dew_i.mean().values < 50
+    assert 0 < input_data.u_i.mean().values < 150
+    assert 0 < input_data.wv_i.mean().values < 100
+    assert 240 < input_data.lst.mean().values < 320
+
+    ds = pywapor.se_root.main(input_data, se_root_version = "v3")
+    assert ds.rio.crs.to_epsg() == 4326
+    assert "se_root" in ds.data_vars
+    assert ds.se_root.min().values >= 0.
+    assert ds.se_root.max().values <= 1.
+
+def test_se_root_level_1_v2(tmp_path):
 
     folder = tmp_path
     adjust_logger(True, folder, "INFO", testing = True)
@@ -108,7 +149,7 @@ def test_3(tmp_path):
     assert ds.se_root.min().values >= 0.
     assert ds.se_root.max().values <= 1.
 
-def test_4(tmp_path):
+def test_se_root_level_2_v2(tmp_path):
 
     folder = tmp_path
     adjust_logger(True, folder, "INFO", testing = True)
@@ -137,7 +178,7 @@ def test_4(tmp_path):
     assert ds.se_root.min().values >= 0. 
     assert ds.se_root.max().values <= 1.
 
-def test_5(tmp_path):
+def test_se_root_level_3_v2(tmp_path):
 
     folder = tmp_path
     adjust_logger(True, folder, "INFO", testing = True)

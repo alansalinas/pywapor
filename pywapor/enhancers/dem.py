@@ -1,79 +1,84 @@
-import numpy as np
-import pywapor.general.processing_functions as pf
+import os
+import tempfile
 import xarray as xr
+from osgeo import gdal, osr
 from pywapor.general.logger import log
+from pywapor.general.processing_functions import save_ds, remove_ds
+gdal.UseExceptions()
 
-def calc_slope(ds, var):
-    """Calculate the gradient of `z`.
+def calc_slope_or_aspect(ds, var, write_init = True):
 
-    Parameters
-    ----------
-    ds : xr.Dataset
-        Dataset containing var.
-    var : str
-        Variable name.
+    log.add()
 
-    Returns
-    -------
-    xr.Dataset
-        Enhanced dataset.
-    """
-    reqs = ["z", "y", "x"]
-    if np.all([x in ds.variables for x in reqs]):
+    # Get filepath from xr.Dataset.
+    fp = ds.encoding.get("source", None)
 
-        dlat, dlon = pf.calc_dlat_dlon(None, None, None, (ds.y.values, ds.x.values))            
-        new_x_coords = np.append([0], np.cumsum(np.repeat(np.nanmean(dlon), ds["z"].sizes["x"]-1)))
-        new_y_coords = np.append([0], np.cumsum(np.repeat(np.nanmean(dlat), ds["z"].sizes["y"]-1)))
-        temp_ds = ds.drop_vars(["x", "y"]).assign_coords({"x": new_x_coords, "y": new_y_coords})
+    if not var in ["slope", "aspect"]:
+        raise ValueError("Please set `var` to either `'slope'` or `'aspect'`.")
 
-        y = temp_ds["z"].differentiate("x")
-        x = temp_ds["z"].differentiate("y")
+    # Write data to file if necessary.
+    if write_init or isinstance(fp, type(None)):
+        fp = os.path.join(tempfile.gettempdir(), f"temp_{var}.nc")
+        if os.path.isfile(fp):
+            remove_ds(fp)
+        while os.path.isfile(fp):
+            fp = fp.replace(".nc", "_.nc")
+        ds = save_ds(ds, fp, label = f"Generating {var} input file.")
 
-        y = xr.where((y >= -1e-10) & (y <= 1e-10), 0, y)
-        x = xr.where((x >= -1e-10) & (x <= 1e-10), 0, x)
+    fp_out = f"/vsimem/temp_{var}.tif"
 
-        hypot = np.hypot(x,y)
-        slope = np.arctan(hypot) * 180.0 / np.pi
+    ds_ = gdal.Open(fp)
+    subdss_ = ds_.GetSubDatasets()
 
-        ds[var] = slope.drop_vars(["x", "y"])
+    if len(subdss_) > 0:
+        fp = [x[0] for x in subdss_ if x[0].split(":")[-1] == "z"][0]
+        ds_ = gdal.Open(fp)
+
+    if ds_.RasterCount > 1:
+        var_names = [ds_.GetRasterBand(i+1).GetMetadata().get("NETCDF_VARNAME", "unknown") for i in range(ds_.RasterCount)]
+        band_select = var_names.find("z") if "z" in var_names else None
+        if isinstance(band_select, type(None)):
+            log.warning(f"--> Multiple bands found in `{fp}` and none is named `z`, using first band.")
+            band_select = 1
+    elif ds_.RasterCount == 1:
+        band_select = 1
     else:
-        log.warning(f"--> Couldn't calculate `{var}`, `{'` and `'.join([x for x in reqs if x not in ds.data_vars])}` is missing.")
+        raise ValueError(f"No bands found in `{fp}`.")
 
-    return ds
+    band = ds_.GetRasterBand(band_select)
+    wkt = ds_.GetProjection()
+    src = osr.SpatialReference()
+    src.ImportFromWkt(wkt)
+    auth = src.GetAuthorityName(None)
+    code = src.GetAuthorityCode(None)
 
-def calc_aspect(ds, var):
-    """Calculate the aspect of `z`.
-
-    Parameters
-    ----------
-    ds : xr.Dataset
-        Dataset containing var.
-    var : str
-        Variable name.
-
-    Returns
-    -------
-    xr.Dataset
-        Enhanced dataset.
-    """
-    reqs = ["z", "y", "x"]
-    if np.all([x in ds.variables for x in reqs]):
-
-        dlat, dlon = pf.calc_dlat_dlon(None, None, None, (ds.y.values, ds.x.values))            
-        new_x_coords = np.append([0], np.cumsum(np.repeat(np.nanmean(dlon), ds["z"].sizes["x"]-1)))
-        new_y_coords = np.append([0], np.cumsum(np.repeat(np.nanmean(dlat), ds["z"].sizes["y"]-1)))
-        temp_ds = ds.drop_vars(["x", "y"]).assign_coords({"x": new_x_coords, "y": new_y_coords})
-
-        y = temp_ds["z"].differentiate("x")
-        x = temp_ds["z"].differentiate("y")
-
-        y = xr.where((y >= -1e-10) & (y <= 1e-10), 0, y)
-        x = xr.where((x >= -1e-10) & (x <= 1e-10), 0, x)
-
-        aspect = np.arctan2(y/np.nanmean(dlat), -x/np.nanmean(dlon))  * 180.0 / np.pi + 180.0
-
-        ds[var] = aspect.drop_vars(["x", "y"])
+    if f"{auth}:{code}" == "EPSG:4326":
+        scale = band.GetScale()
+        scale_ = {True: 1, False: scale}[isinstance(scale, type(None))] # NOTE in case there is no scale-factor, we set it to 1.
+        scale_factor = int(111120 / scale_)
     else:
-        log.warning(f"--> Couldn't calculate `{var}`, `{'` and `'.join([x for x in reqs if x not in ds.data_vars])}` is missing.")
+        scale_factor = 1
+        log.warning("--> Dataset has different projection than `EPSG:4326`,\
+                    slope scaling might be incorrect if CRS unit is not meters.")
+
+    options = gdal.DEMProcessingOptions(
+        slopeFormat = "degree",
+        scale = scale_factor,
+        computeEdges = True,
+        zeroForFlat = True,
+    )
+
+    ds__ = gdal.DEMProcessing(fp_out, fp, var, options = options)
+    ds__.FlushCache()
+    ds__ = None
+
+    ds_new = xr.open_dataset(fp_out).isel(band=0, drop=True).drop_vars(["x", "y"])
+    ds_new = ds_new.rename({"band_data": var})
+    ds_new.attrs = {}
+    for var in ds_new.data_vars:
+        ds_new[var].attrs = {}
+    ds[var] = ds_new[var]
+
+    log.sub()
 
     return ds

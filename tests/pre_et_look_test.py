@@ -4,7 +4,7 @@ from pywapor.general.logger import adjust_logger
 import numpy as np
 import xarray as xr
 
-def test_1(tmp_path):
+def test_small_et_look(tmp_path):
 
     folder = tmp_path
     adjust_logger(True, folder, "INFO", testing = True)
@@ -34,8 +34,9 @@ def test_1(tmp_path):
 
     latlim = [29.4, 29.7]
     lonlim = [30.7, 31.0]
-    timelim = [datetime.date(2023, 2, 1), datetime.date(2023, 2, 11)]
-    bin_length = "DEKAD"
+    today = datetime.datetime.now().date()
+    timelim = [today - datetime.timedelta(21), today - datetime.timedelta(21)]
+    bin_length = 1
     ds = pywapor.pre_et_look.main(folder, latlim, lonlim, timelim, sources, bin_length = bin_length)
     assert ds.rio.crs.to_epsg() == 4326
     assert "ndvi" in ds.data_vars
@@ -44,16 +45,18 @@ def test_1(tmp_path):
     assert ds.ndvi.min().values >= -1.
     assert ds.ndvi.max().values <= 1.
 
-def test_2(tmp_path):
+def test_et_look_level_2_v3(tmp_path):
 
     folder = tmp_path
     adjust_logger(True, folder, "INFO", testing = True)
 
-    timelim = [datetime.date(2022, 11, 5), datetime.date(2022, 11, 9)]
+    today = datetime.datetime.now().date()
+    timelim = [today - datetime.timedelta(71), today - datetime.timedelta(71)]
+
     latlim = [29.4, 29.6]
     lonlim = [30.7, 30.9]
     sources = "level_2_v3"
-    bin_length = 4
+    bin_length = 1
     input_data = pywapor.pre_et_look.main(folder, latlim, lonlim, timelim, 
                                             sources, bin_length = bin_length)
     assert input_data.rio.crs.to_epsg() == 4326
@@ -71,7 +74,37 @@ def test_2(tmp_path):
     assert ds.et_24_mm.min().values >= 0.
     assert ds.et_24_mm.max().values <= 16.
 
-def test_3(tmp_path):
+def test_et_look_level_3_v3(tmp_path):
+
+    folder = tmp_path
+    adjust_logger(True, folder, "INFO", testing = True)
+
+    today = datetime.datetime.now().date()
+    timelim = [today - datetime.timedelta(35), today - datetime.timedelta(30)]
+    # timelim = [datetime.date(2023, 2, 1), datetime.date(2023, 2, 11)]
+
+    latlim = [29.4, 29.6]
+    lonlim = [30.7, 30.9]
+    sources = "level_3_v3"
+    bin_length = 2
+    input_data = pywapor.pre_et_look.main(folder, latlim, lonlim, timelim, 
+                                            sources, bin_length = bin_length)
+    assert input_data.rio.crs.to_epsg() == 4326
+    assert np.all([x in input_data.data_vars for x in ["ndvi", "r0", "se_root"]])
+    assert input_data.ndvi.min().values >= -1.
+    assert input_data.ndvi.max().values <= 1.
+    assert input_data.r0.min().values >= 0.
+    assert input_data.r0.max().values <= 1.
+    assert input_data.se_root.min().values >= 0.
+    assert input_data.se_root.max().values <= 1.
+
+    ds = pywapor.et_look.main(input_data, et_look_version = "v3")
+    assert ds.rio.crs.to_epsg() == 4326
+    assert "et_24_mm" in ds.data_vars
+    assert ds.et_24_mm.min().values >= 0.
+    assert ds.et_24_mm.max().values <= 16.
+
+def test_et_look_level_1_v2(tmp_path):
 
     folder = tmp_path
     adjust_logger(True, folder, "INFO", testing = True)
@@ -97,7 +130,7 @@ def test_3(tmp_path):
     assert ds.et_24_mm.min().values >= 0.
     assert ds.et_24_mm.max().values <= 16.
 
-def test_4(tmp_path):
+def test_et_look_level_2_v2(tmp_path):
 
     folder = tmp_path
     adjust_logger(True, folder, "INFO", testing = True)
@@ -123,7 +156,7 @@ def test_4(tmp_path):
     assert ds.et_24_mm.min().values >= 0.
     assert ds.et_24_mm.max().values <= 16.
 
-def test_5(tmp_path):
+def test_et_look_level_3_v2(tmp_path):
 
     folder = tmp_path
     adjust_logger(True, folder, "INFO", testing = True)
@@ -168,3 +201,7 @@ def test_appending(tmp_path):
     ds2, _ = pywapor.collect.downloader.collect_sources(folder,sources2,latlim, lonlim, timelim)
 
     assert "qv" in xr.open_dataset(ds2[('GEOS5', 'inst3_2d_asm_Nx')]).data_vars
+
+if __name__ == "__main__":
+
+    tmp_path = r"/Users/hmcoerver/Local/test_et_look_level_2_v30"

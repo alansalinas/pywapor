@@ -1,7 +1,7 @@
 """Importing `log` from this module starts a logging handler, which can be logged to 
 with `log.info("log this info")` etc.
 """
-from python_log_indenter import IndentedLoggerAdapter
+from pywapor.general.log_indenter import IndentedLoggerAdapter
 import logging
 import os
 from tqdm.contrib.logging import logging_redirect_tqdm
@@ -52,3 +52,7 @@ def adjust_logger(log_write, folder, log_level, testing = False):
         log.warning = fancy_warning
 
     log_settings.setLevel(log_level)
+
+    if testing:
+        from osgeo import gdal
+        log.info(f"--> Using GDAL ({gdal.__version__}) from `{gdal.__file__}`.")

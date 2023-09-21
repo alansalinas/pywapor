@@ -6,7 +6,7 @@ import os
 import xarray as xr
 import numpy as np
 import copy
-from pywapor.general.processing_functions import open_ds, remove_ds, save_ds
+from pywapor.general.processing_functions import open_ds
 
 def default_vars(product_name, req_vars = ["p"]):
     """Given a `product_name` and a list of requested variables, returns a dictionary

@@ -162,7 +162,8 @@ def download(folder, product_name, latlim, lonlim, timelim, variables, post_proc
     _ = log.info("--> Directing CDS logging to file.")
 
     # Connect to server.
-    c = cdsapi.Client(url = url, key = key, verify = True, 
+    vrfy = {"NO": False, "YES": True}.get(os.environ.get("PYWAPOR_VERIFY_SSL", "YES"), True)
+    c = cdsapi.Client(url = url, key = key, verify = vrfy, 
                         info_callback=info_callback,
                         warning_callback=warning_callback,
                         error_callback=error_callback,

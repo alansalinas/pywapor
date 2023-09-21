@@ -106,7 +106,7 @@ def add_constants_new(ds, *args): # TODO make sure this only adds constants for 
             ds[var] = value
     return ds
 
-def main(folder, latlim, lonlim, timelim, sources = "level_1", bin_length = "DEKAD", enhancers = [lapse_rate]):
+def main(folder, latlim, lonlim, timelim, sources = "level_2_v3", bin_length = 1, enhancers = [lapse_rate]):
     """Prepare input data for `et_look`.
 
     Parameters

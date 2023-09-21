@@ -30,6 +30,8 @@ devs/
 dist/
 build/
 collect_old/
+pywapor/gui/
+construct/
 pywapor_test.egg-info/
 pywapor.egg-info/
 
@@ -63,3 +65,4 @@ secret.txt
 docs/*.diff
 docs/notebooks
 docs/notebooks.diff
+conda_install_notes.txt

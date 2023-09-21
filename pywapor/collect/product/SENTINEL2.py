@@ -1,15 +1,19 @@
 import glob
 import os
+import copy
+import warnings
 import xarray as xr
 import numpy as np
-from datetime import datetime as dt
-from pywapor.general.logger import log, adjust_logger
-import pywapor.collect.protocol.sentinelapi as sentinelapi
+import pywapor.collect.protocol.copernicus_odata as copernicus_odata
 import numpy as np
+from datetime import datetime as dt
+from pywapor.general.logger import log
 from functools import partial
-from pywapor.general.processing_functions import open_ds, remove_ds, save_ds
+from pywapor.enhancers.gap_fill import gap_fill
+from pywapor.general.processing_functions import open_ds, adjust_timelim_dtype
+from pywapor.general.logger import adjust_logger
 from lxml import etree
-import copy
+
 
 def apply_qa(ds, var):
     """Mask SENTINEL2 data using a qa variable.
@@ -99,7 +103,9 @@ def calc_normalized_difference(ds, var, bands = ["nir", "red"]):
         Output data.
     """
     if np.all([x in ds.data_vars for x in bands]):
-        da = (ds[bands[0]] - ds[bands[1]]) / (ds[bands[0]] + ds[bands[1]])
+        with warnings.catch_warnings():
+            warnings.filterwarnings("ignore", message="All-NaN slice encountered")
+            da = (ds[bands[0]] - ds[bands[1]]) / (ds[bands[0]] + ds[bands[1]])
         ds[var] = da.clip(-1, 1)
     else:
         log.warning(f"--> Couldn't calculate `{var}`, `{'` and `'.join([x for x in bands if x not in ds.data_vars])}` is missing.")
@@ -122,7 +128,9 @@ def calc_psri(ds, var):
     """
     reqs = ["red", "blue", "red_edge_740"]
     if np.all([x in ds.data_vars for x in reqs]):
-        da = (ds["red"] - ds["blue"]) / ds["red_edge_740"]
+        with warnings.catch_warnings():
+            warnings.filterwarnings("ignore", message="All-NaN slice encountered")
+            da = (ds["red"] - ds["blue"]) / ds["red_edge_740"]
         ds[var] = da.clip(-1, 1)
     else:
         log.warning(f"--> Couldn't calculate `{var}`, `{'` and `'.join([x for x in reqs if x not in ds.data_vars])}` is missing.")
@@ -194,9 +202,11 @@ def calc_vari_red_egde(ds, var):
     """
     reqs = ["red_edge_740", "blue", "red"]
     if np.all([x in ds.data_vars for x in reqs]):
-        n1 = ds["red_edge_740"] - 1.7 * ds["red"] + 0.7 * ds["blue"]
-        n2 = ds["red_edge_740"] + 2.3 * ds["red"] - 1.3 * ds["blue"]
-        da = n1 / n2
+        with warnings.catch_warnings():
+            warnings.filterwarnings("ignore", message="All-NaN slice encountered")
+            n1 = ds["red_edge_740"] - 1.7 * ds["red"] + 0.7 * ds["blue"]
+            n2 = ds["red_edge_740"] + 2.3 * ds["red"] - 1.3 * ds["blue"]
+            da = n1 / n2
         ds[var] = da.clip(-1, 1)
     else:
         log.warning(f"--> Couldn't calculate `{var}`, `{'` and `'.join([x for x in reqs if x not in ds.data_vars])}` is missing.")
@@ -228,10 +238,12 @@ def calc_r0(ds, var):
     
     reqs = ["blue", "green", "red", "nir"]
     if np.all([x in ds.data_vars for x in reqs]):
-        ds["offset"] = xr.ones_like(ds["blue"])
-        weights_da = xr.DataArray(data = list(weights.values()), 
-                                coords = {"band": list(weights.keys())})
-        ds["r0"] = ds[reqs + ["offset"]].to_array("band").weighted(weights_da).sum("band", skipna = False)
+        with warnings.catch_warnings():
+            warnings.filterwarnings("ignore", message="All-NaN slice encountered")
+            ds["offset"] = xr.ones_like(ds["blue"])
+            weights_da = xr.DataArray(data = list(weights.values()), 
+                                    coords = {"band": list(weights.keys())})
+            ds["r0"] = ds[reqs + ["offset"]].to_array("band").weighted(weights_da).sum("band", skipna = False)
     else:
         log.warning(f"--> Couldn't calculate `{var}`, `{'` and `'.join([x for x in reqs if x not in ds.data_vars])}` is missing.")
     return ds
@@ -354,45 +366,45 @@ def default_post_processors(product_name, req_vars):
     
     post_processors = {
         "S2MSI2A_R20m": {
-            "coastal_aerosol":  [],
-            "blue":             [],
-            "green":            [],
-            "red":              [],
-            "red_edge_703":     [],
-            "red_edge_740":     [],
-            "red_edge_782":     [],
-            "nir":              [],
+            "coastal_aerosol":  [gap_fill],
+            "blue":             [gap_fill],
+            "green":            [gap_fill],
+            "red":              [gap_fill],
+            "red_edge_703":     [gap_fill],
+            "red_edge_740":     [gap_fill],
+            "red_edge_782":     [gap_fill],
+            "nir":              [gap_fill],
             "qa":               [],
-            "swir1":            [],
-            "swir2":            [],
+            "swir1":            [gap_fill],
+            "swir2":            [gap_fill],
             "psri":             [calc_psri],
-            "ndvi":             [calc_normalized_difference],
-            "nmdi":             [calc_nmdi],
-            "vari_red_edge":    [calc_vari_red_egde],
-            "bsi":              [calc_bsi],
-            "mndwi":            [partial(calc_normalized_difference, bands = ["swir1", "green"])],
-            "r0":               [calc_r0],
+            "ndvi":             [calc_normalized_difference, gap_fill],
+            "nmdi":             [calc_nmdi, gap_fill],
+            "vari_red_edge":    [calc_vari_red_egde, gap_fill],
+            "bsi":              [calc_bsi, gap_fill],
+            "mndwi":            [partial(calc_normalized_difference, bands = ["swir1", "green"]), gap_fill],
+            "r0":               [calc_r0, gap_fill],
             },
 
         "S2MSI2A_R60m": {
-            "coastal_aerosol":  [],
-            "blue":             [],
-            "green":            [],
-            "red":              [],
-            "red_edge_703":     [],
-            "red_edge_740":     [],
-            "red_edge_782":     [],
-            "nir":              [],
+            "coastal_aerosol":  [gap_fill],
+            "blue":             [gap_fill],
+            "green":            [gap_fill],
+            "red":              [gap_fill],
+            "red_edge_703":     [gap_fill],
+            "red_edge_740":     [gap_fill],
+            "red_edge_782":     [gap_fill],
+            "nir":              [gap_fill],
             "qa":               [],
-            "swir1":            [],
-            "swir2":            [],
-            "psri":             [calc_psri],
-            "ndvi":             [calc_normalized_difference],
-            "nmdi":             [calc_nmdi],
-            "vari_red_edge":    [calc_vari_red_egde],
-            "bsi":              [calc_bsi],
-            "mndwi":            [partial(calc_normalized_difference, bands = ["swir1", "green"])],
-            "r0":               [calc_r0],
+            "swir1":            [gap_fill],
+            "swir2":            [gap_fill],
+            "psri":             [calc_psri, gap_fill],
+            "ndvi":             [calc_normalized_difference, gap_fill],
+            "nmdi":             [calc_nmdi, gap_fill],
+            "vari_red_edge":    [calc_vari_red_egde, gap_fill],
+            "bsi":              [calc_bsi, gap_fill],
+            "mndwi":            [partial(calc_normalized_difference, bands = ["swir1", "green"]), gap_fill],
+            "r0":               [calc_r0, gap_fill],
             },
     }
 
@@ -416,7 +428,7 @@ def time_func(fn):
     dtime = np.datetime64(dt.strptime(fn.split("_")[2], "%Y%m%dT%H%M%S"), "ns")
     return dtime
 
-def s2_processor(scene_folder, variables):
+def s2_processor(scene_folder, variables, **kwargs):
 
     dss = [open_ds(glob.glob(os.path.join(scene_folder, "**", "*" + k), recursive = True)[0], decode_coords=None).isel(band=0).rename({"band_data": v[1]}) for k, v in variables.items()]
     ds = xr.merge(dss).drop_vars("band")
@@ -509,46 +521,36 @@ def download(folder, latlim, lonlim, timelim, product_name,
         default_processors = default_post_processors(product_name, req_vars)
         post_processors = {k: {True: default_processors[k], False: v}[v == "default"] for k,v in post_processors.items() if k in req_vars}
 
+    timelim = adjust_timelim_dtype(timelim)
     bb = [lonlim[0], latlim[0], lonlim[1], latlim[1]]
 
-    search_kwargs = {
-                        "platformname": "Sentinel-2",
-                        "producttype": "S2MSI2A",
-                        # "limit": 10,
-    }
-
-    search_kwargs = {**search_kwargs, **extra_search_kwargs}
-
     def node_filter(node_info):
-        fn = os.path.split(node_info["node_path"])[-1]
+        fn = os.path.split(node_info)[-1]
         to_dl = list(variables.keys()) + ["MTD_MSIL2A.xml"]
         return np.any([x in fn for x in to_dl])
-    # node_filter = None
 
-    scenes = sentinelapi.download(product_folder, latlim, lonlim, timelim, search_kwargs, node_filter = node_filter, to_dl = variables.keys())
-
-    ds = sentinelapi.process_sentinel(scenes, variables, "SENTINEL2", time_func, os.path.split(fn)[-1], post_processors, bb = bb)
+    scenes = copernicus_odata.download(product_folder, latlim, lonlim, timelim, "SENTINEL2", product_name.split("_")[0], node_filter = node_filter)
+    ds = copernicus_odata.process_sentinel(scenes, variables, time_func, os.path.split(fn)[-1], post_processors, s2_processor, bb = bb)
 
     return ds[req_vars_orig]
 
-# if __name__ == "__main__":
+if __name__ == "__main__":
 
-#     folder = r"/Users/hmcoerver/Local/s2_test"
-#     adjust_logger(True, folder, "INFO")
-#     timelim = ["2022-03-29", "2022-04-25"]
-#     latlim = [28.9, 29.7]
-#     lonlim = [30.2, 31.2]
+    folder = r"/Users/hmcoerver/Local/s2_test"
+    adjust_logger(True, folder, "INFO")
+    timelim = ["2022-03-29", "2022-03-31"]
+    latlim = [28.9, 29.7]
+    lonlim = [30.2, 31.2]
 
-#     product_name = 'S2MSI2A_R60m'
-#     req_vars = ["mndwi", "psri", "vari_red_edge", "bsi", "nmdi", "green", "nir"]
-#     post_processors = None
-#     variables = None
+    product_name = 'S2MSI2A_R60m'
+    req_vars = ["mndwi", "psri", "vari_red_edge", "bsi", "nmdi", "green", "nir"]
+    post_processors = None
+    variables = None
 #     extra_search_kwargs = {"cloudcoverpercentage": (0, 30)}
 
-#     ds = download(folder, latlim, lonlim, timelim, product_name, req_vars, 
-#                 variables = None,  post_processors = None,
-#                 extra_search_kwargs = extra_search_kwargs
-#                  )
+    # ds = download(folder, latlim, lonlim, timelim, product_name, req_vars, 
+    #             variables = None,  post_processors = None
+    #              )
 
     # from pywapor.collect.protocol.sentinelapi import process_sentinel
     # latlim = [29.4, 29.6]

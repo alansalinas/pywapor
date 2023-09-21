@@ -1,389 +1,175 @@
-# https://gitlab.ssec.wisc.edu/sips/OrbNavClient
-# https://sips.ssec.wisc.edu/orbnav#/
-
-import json
-import fnmatch
-import os
+import requests
 import datetime
-import glob
-import warnings
-from functools import partial
-import geopy.distance
-import xarray as xr
-import pandas as pd
-import numpy as np
-import hashlib
-import json
-from datetime import datetime as dt
-from itertools import chain
+import base64
 import copy
-from pywapor.general.logger import log
+import os
+import multiprocessing
+import xarray as xr
+import numpy as np
+import warnings
+from osgeo import gdal
+from functools import partial
 from pywapor.collect import accounts
+from joblib import Parallel, delayed
+from rasterio.errors import NotGeoreferencedWarning
 from pywapor.enhancers.apply_enhancers import apply_enhancer
-from pywapor.general.processing_functions import save_ds, open_ds, remove_ds, adjust_timelim_dtype
-from pywapor.general.curvilinear import create_grid, regrid
-from pywapor.collect.protocol.crawler import download_url, download_urls
+from pywapor.general.processing_functions import save_ds, remove_ds, open_ds, adjust_timelim_dtype
 from pywapor.general.logger import log, adjust_logger
 from pywapor.enhancers.other import drop_empty_times
+from pywapor.general.curvilinear import curvi_to_recto, create_grid
+gdal.UseExceptions()
 
-def regrid_VNP(workdir, latlim, lonlim, dx_dy = (0.0033, 0.0033)):
-    """Process VIIRS images from curvilinear to rectolinear grid, applies cloud masks, quality masks 
-    and convert data to Brightness Temperature.
-
-    Parameters
-    ----------
-    workdir : str
-        Folder to search for scenes.
-    latlim : list
-        Latitude limits of area of interest.
-    lonlim : list
-        Longitude limits of area of interest.
-    dx_dy : tuple, optional
-        Output pixel size, by default (0.0033, 0.0033).
+def get_token():
+    """_summary_
 
     Returns
     -------
-    xr.Dataset
-        Output dataset.
+    _type_
+        _description_
     """
+    s3_endpoint = "https://data.laadsdaac.earthdatacloud.nasa.gov/s3credentials"
+    
+    login_resp = requests.get(s3_endpoint, allow_redirects=False)
+    login_resp.raise_for_status()
 
-    # Reformat bounding-box.
-    bb = [lonlim[0], latlim[0], lonlim[1], latlim[1]]
+    un, pw = accounts.get("NASA")
+    auth = f"{un}:{pw}"
+    encoded_auth  = base64.b64encode(auth.encode('ascii'))
 
-    # Search for VNP02 images in workdir.
-    ncs02 = glob.glob(os.path.join(workdir, "VNP02IMG.A*.nc"))
+    auth_redirect = requests.post(
+        login_resp.headers['location'],
+        data = {"credentials": encoded_auth},
+        headers= {"Origin": s3_endpoint},
+        allow_redirects=False
+    )
+    auth_redirect.raise_for_status()
+    if "currently unavailable" in auth_redirect.text:
+        log.warning(f"The Earthdata Service is currently unavailable. Check {login_resp.headers['location']}.")
+        raise ConnectionError(f"Earthdata Service is currently unavailable. Check {login_resp.headers['location']}.")
 
-    # Make inventory of complete scenes in workdir.
-    scenes = dict()
-    for nc02 in ncs02:
-        dt_str = ".".join(os.path.split(nc02)[-1].split(".")[1:3])
-        ncs03 = glob.glob(os.path.join(workdir, f"VNP03IMG.{dt_str}*.nc"))
-        ncs_cloud = glob.glob(os.path.join(workdir, f"CLDMSK_L2_VIIRS_SNPP.{dt_str}*.nc"))
-        if len(ncs03) != 1 or len(ncs_cloud) != 1:
-            continue
-        else:
-            nc03 = ncs03[0]
-            nc_cloud = ncs_cloud[0]
-        dt_obj = dt.strptime(dt_str, "A%Y%j.%H%M")
-        scenes[dt_obj] = (nc02, nc03, nc_cloud)
+    final = requests.get(auth_redirect.headers['location'], allow_redirects=False)
+    results = requests.get(s3_endpoint, cookies={'accessToken': final.cookies['accessToken']})
+    results.raise_for_status()
 
-    # Create list to store xr.Datasets from a single scene.
-    dss = list()
+    return results.json()
+    
+def download_arrays(path, subdss, folder, path_appendix = ".nc", creation_options = ["ARRAY:COMPRESS=DEFLATE"], dtype_is_8bit = False):
 
-    log.info(f"--> Processing {len(scenes)} scenes.").add()
+    # NOTE see https://github.com/OSGeo/gdal/issues/8421
+    if gdal.__version__ in ("3.7.0", "3.7.1", "3.7.2") and dtype_is_8bit:
+        path_appendix = path_appendix.replace(".nc", ".tif")
 
-    # Loop over the scenes.
-    for i, (dt_obj, (nc02, nc03, nc_cloud)) in enumerate(scenes.items()):
+    fn = os.path.splitext(os.path.split(path)[-1])[0]
+    path_local = os.path.join(folder, fn + path_appendix)
 
-        # Define tile output path.
-        fp = os.path.join(workdir, f"VNP_{dt_obj:%Y%j%H%M}.nc")
+    if os.path.isfile(path_local):
+        ...
+    else:
+        creds = get_token()
 
-        if os.path.isfile(fp):
-            dss.append(open_ds(fp))
-            continue
+        gdal_config_options = {
+            "AWS_ACCESS_KEY_ID": creds["accessKeyId"],
+            "AWS_SESSION_TOKEN": creds["sessionToken"],
+            "AWS_SECRET_ACCESS_KEY": creds["secretAccessKey"],
+            "GDAL_DISABLE_READDIR_ON_OPEN": "EMPTY_DIR",
+        }
 
-        # Open the datasets.
-        ds1 = xr.open_dataset(nc02, group = "observation_data", decode_cf = False)
-        ds2 = xr.open_dataset(nc03, group = "geolocation_data", decode_cf = False, chunks = "auto")
-        ds3 = xr.open_dataset(nc_cloud, group = "geophysical_data", decode_cf = False, chunks = "auto")
+        try:
+            for k, v in gdal_config_options.items():
+                gdal.SetConfigOption(k, v)
 
-        # Create cloud mask. (0=cloudy, 1=probably cloudy, 2=probably clear, 3=confident clear, -1=no result)
-        cmask = ds3.Integer_Cloud_Mask.interp({
-                        "number_of_lines": np.linspace(0-0.25, (ds3.number_of_lines.size-1)+0.25, ds3.number_of_lines.size*2),
-                        "number_of_pixels": np.linspace(0-0.25, (ds3.number_of_pixels.size-1)+0.25, ds3.number_of_pixels.size*2)
-                        }, kwargs = {"fill_value": "extrapolate"}).drop_vars(["number_of_lines", "number_of_pixels"])
+            md_options = gdal.MultiDimTranslateOptions(
+                    arraySpecs = subdss,
+                    creationOptions = creation_options
+            )
 
-        # Convert DN to Brightness Temperature using the provided loopup table.
-        bt_da = ds1.I05_brightness_temperature_lut.isel(number_of_LUT_values = ds1.I05)
-
-        # Rename some things.
-        ds = ds2[["latitude", "longitude"]].rename({"latitude": "y", "longitude": "x"})
-
-        # Chunk and mask invalid pixels.
-        ds["bt"] = bt_da.chunk("auto").where((bt_da >= bt_da.valid_min) & 
-                                            (bt_da <= bt_da.valid_max) & 
-                                            (bt_da != bt_da._FillValue) &
-                                            (ds1.I05_quality_flags == 0) &
-                                            (ds2.quality_flag == 0) &
-                                            (cmask == 3)
-        )
-
-        # Move `x` and `y` from variables to coordinates
-        ds = ds.set_coords(["x", "y"])
-
-        # Create mask for selecting the bounding-box in the data.
-        buffer = 0.2
-        mask = ((ds.y >= bb[1] - buffer) &
-                (ds.y <= bb[3] + buffer) & 
-                (ds.x >= bb[0] - buffer) & 
-                (ds.x <= bb[2] + buffer))
-
-        # Apply the mask.
-        ds = ds.where(mask.compute(), drop = True)
-
-        # Stop with scene if no valid data is found inside bb.
-        if ds.bt.count().values == 0:
-            log.warning(f"--> ({i+1}/{len(scenes)}) Skipping scene `{os.path.split(fp)[-1]}`, no valid data found inside bounding-box.")
-            continue
-
-        # Save intermediate file.
-        fp_temp = os.path.join(workdir, f"VNP_{dt_obj:%Y%j%H%M}_temp.nc")
-        ds = save_ds(ds, fp_temp, label = f"({i+1}/{len(scenes)}) Creating intermediate file.")
-
-        # Create rectolinear grid.
-        grid_ds = create_grid(ds, dx_dy[0], dx_dy[1], bb = bb)
-
-        # Regrid from curvilinear to rectolinear grid.
-        out = regrid(grid_ds, ds, max_px_dist = 3)
-
-        # Set some metadata.
-        out = out.rio.write_crs(4326)
-        with warnings.catch_warnings():
-            warnings.filterwarnings("ignore", category = FutureWarning)
-            out = out.rio.clip_box(*bb)
-        out.bt.attrs = {k: v for k, v in ds.bt.attrs.items() if k in ["long_name", "units"]}
-
-        # Add time dimension.
-        out = out.expand_dims({"time": 1}).assign_coords({"time": [dt_obj]})
-
-        # Save regridded tile.
-        out = save_ds(out, fp, encoding = "initiate", label = f"({i+1}/{len(scenes)}) Regridding `VNP_{dt_obj:%Y%j%H%M}.nc` to rectolinear grid.")
-
-        dss.append(out)
-
-        # Remove intermediate file.
-        remove_ds(ds)
-
-    log.sub()
-
-    ds = xr.merge(dss)
-
-    return ds
-
-def boxtimes(latlim, lonlim, timelim, folder):
-    """Check in which 6-min periods SUOMI NPPs swatch crosses a AOI
-    defined by `latlim` and `lonlim` and remove night recordings.
-
-    Parameters
-    ----------
-    latlim : list
-        Latitude limits.
-    lonlim : list
-        Longitude limits.
-    timelim : list
-        Time limits.
-
-    Returns
-    -------
-    list
-        List containing year, doy and time at which SUOMI NPP passes over
-        the bb during the day (night is filtered out).
-    """
-
-    # Convert to datetime object if necessary
-    timelim = adjust_timelim_dtype(timelim)
-
-    # Expand bb with 1500km (is half of SUOMI NPP swath width).
-    ur = (latlim[1], lonlim[1])
-    ll = (latlim[0], lonlim[0])
-    very_ur = geopy.distance.distance(kilometers=1500).destination(ur, bearing=45)
-    very_ll = geopy.distance.distance(kilometers=1500).destination(ll, bearing=45+180)
-
-    # Define search kwargs.
-    kwargs = {
-        "sat" : '37849',
-        "start" : timelim[0].strftime("%Y-%m-%dT%H:%M:%SZ"),
-        "end" : timelim[1].strftime("%Y-%m-%dT%H:%M:%SZ"),
-        "ur" : f"{int(np.ceil(very_ur.latitude))},{int(np.ceil(very_ur.longitude))}",
-        "ll" : f"{int(np.floor(very_ll.latitude))},{int(np.floor(very_ll.longitude))}",
-    }
-
-    # Create a hash for the search kwargs to create a filename for this specific search, allowing
-    # to reuse the file later if a similar search is made.
-    search_hash = hashlib.sha1(json.dumps(kwargs, sort_keys=True).encode()).hexdigest()
-
-    # Search boxtimes.
-    base_url = "https://sips.ssec.wisc.edu/orbnav/api/v1/boxtimes.json"
-    url = base_url + "?&" + "&".join([f"{k}={v}" for k, v in kwargs.items()])
-    fp = os.path.join(folder, f"boxtimes_{search_hash}.json")
-    _ = download_url(url, fp)
-    with open(fp) as f:
-        data = json.load(f)
-
-    # Group to SUOMI NPP 6 minute tiles.
-    dates = [dt.strptime(x[0], "%Y-%m-%dT%H:%M:%SZ") for x in chain.from_iterable(data["data"]) if x[3] > 40.]
-    df = pd.DataFrame({"date": dates}).set_index("date")
-    count = df.groupby(pd.Grouper(freq = "6min")).apply(lambda x: len(x))
-    to_dl = count[count >= 1].index.values
-
-    # Create list with relevant year/doy/times tuples.
-    year_doy_time = [[pd.to_datetime(x).strftime("%Y"), pd.to_datetime(x).strftime("%j"), pd.to_datetime(x).strftime("%H%M")] for x in to_dl]
-
-    return year_doy_time
-
-def find_VIIRSL1_urls(year_doy_time, product, workdir, 
-                        server_folders = {"VNP02IMG": 5110, "VNP03IMG": 5200, "CLDMSK_L2_VIIRS_SNPP": 5110}):
-    """Given a list of year/doy/time tuples returns the exact urls for that
-    datetime. Also check if the linked file already exists in workdir, in which
-    case the url is omitted from the returned list.
-
-    Parameters
-    ----------
-    year_doy_time : list
-        List containing year, doy and time at which SUOMI NPP passes over
-        the bb during the day (night is filtered out).
-    product : str
-        Name of the product to search.
-    workdir : str
-        Path to folder in which to store data.
-    server_folder : dict
-        Which server side folder to use per product, by default {"VNP02IMG": 5110, "VNP03IMG": 5200, "CLDMSK_L2_VIIRS_SNPP": 5110}.
-
-    Returns
-    -------
-    list
-        URLs linking to the product.
-    """
-    # Make empty url list.
-    urls = list()
-
-    # Loop over year/doy/times.
-    for year, doy, t in year_doy_time:
-
-        # Define url at which to find the json with the exact tile urls.
-        url = f"https://ladsweb.modaps.eosdis.nasa.gov/archive/allData/{server_folders[product]}/{product}/{year}/{doy}.json"
-
-        # Download the json.
-        fp = os.path.join(workdir, f"{product}_{year}{doy}.json")
-        if not os.path.isfile(fp):
-            fp = download_url(url, fp)
-
-        # Open the json and find the exact url of the required scene.
-        all_scenes = [x["name"] for x in json.load(open(fp))["content"]]
-        req_scenes = fnmatch.filter(all_scenes, f"{product}.A{year}{doy}.{t}.*.*.nc")
-
-        # Check if a corrct url is found.
-        if len(req_scenes) == 1:
-            fn = req_scenes[0]
-        else:
-            continue
-
-        # Check if the file already exists in workdir, otherwise add it to `urls`.
-        url = f"https://ladsweb.modaps.eosdis.nasa.gov/archive/allData/{server_folders[product]}/{product}/{year}/{doy}/{fn}"
-        fp = os.path.join(workdir, fn)
-        if os.path.exists(fp):
-            continue
-        urls.append(url)
-
-    return urls
-
-def check_tiles(year_doy_time, latlim, lonlim, workdir, product = "VNP03IMG"):
-    """Check if downloaded tiles actually contain data for the given AOI. If not
-    removes its year/doy/time from the list.
-
-    Parameters
-    ----------
-    year_doy_time : list
-        List containing year, doy and time at which SUOMI NPP passes over
-        the bb during the day (night is filtered out).
-    latlim : list
-        Latitude limits.
-    lonlim : list
-        Longitude limits.
-    workdir : str
-        Path to working directory
-    product : str, optional
-        name of the product to check, by default "VNP03IMG"
-
-    Returns
-    -------
-    tuple
-        Two lists, the first an updated `year_date_time`, the other contains the 
-        values dropped from `year_date_time`.
-    """
-    # Create empty list to store dropped `year/doy/times`.
-    dropped = list()
-
-    # Reformat bounding-box.
-    bb = [lonlim[0], latlim[0], lonlim[1], latlim[1]]
-
-    # Loop over `year/doy/times`.
-    for year, doy, time in year_doy_time:
-
-        # Search for the relevant .nc file.
-        fps = glob.glob(os.path.join(workdir, f"{product}.A{year}{doy}.{time}.*.nc"))
-        assert len(fps) == 1
-        fp = fps[0]
-
-        # Open the geolocation data.
-        ds = xr.open_dataset(fp, group = "geolocation_data", chunks = "auto")
-
-        # Mask the irrelevant pixels.
-        buffer = 0.2
-        mask = ((ds.latitude >= bb[1] - buffer) &
-                (ds.latitude <= bb[3] + buffer) & 
-                (ds.longitude >= bb[0] - buffer) & 
-                (ds.longitude <= bb[2] + buffer))
-
-        # Check if there is relevant data in this tile.
-        if mask.sum().values < 100:
-            year_doy_time.remove([year, doy, time])
-            dropped.append([year, doy, time])
-
-    return year_doy_time, dropped
-
-def check_geoloc_tile(fp, bb, min_pixels = 100):
-    """Checks if there is relevant data in the dataset.
-
-    Parameters
-    ----------
-    fp : str
-        Path to input file.
-    bb : list
-        Boundingbox, [xmin, ymin, xmax, ymax].
-    min_pixels : int, optional
-        Threshold value, by default 100.
-
-    Returns
-    -------
-    bool
-        True if there are more than `min_pixels` inside the `bb`.
-    """
-
-    # Open the geolocation data.
-    try: 
-        ds = xr.open_dataset(fp, group = "geolocation_data", chunks = "auto")
-    except OSError as e:
-        if "HDF error" in str(e):
-            log.info(f"--> {os.path.split(fp)[-1]} is corrupted, removing it.")
-            os.remove(fp)
-            return None
-        else:
+            ds = gdal.MultiDimTranslate(path_local, path, options = md_options)
+            ds = ds.FlushCache()
+        except Exception as e:
             raise e
+        finally:
+            for k, v in gdal_config_options.items():
+                gdal.SetConfigOption(k, None)
 
-    # Mask the irrelevant pixels.
-    buffer = 0.2
-    mask = ((ds.latitude >= bb[1] - buffer) &
-            (ds.latitude <= bb[3] + buffer) & 
-            (ds.longitude >= bb[0] - buffer) & 
-            (ds.longitude <= bb[2] + buffer))
+        # NOTE see https://github.com/OSGeo/gdal/issues/8421
+        if gdal.__version__ in ("3.7.0", "3.7.1", "3.7.2") and dtype_is_8bit:
+            log.info(f"--> Applying extra conversion because GDAL=={gdal.__version__} in ('3.7.0', '3.7.1', '3.7.2').")
+            with warnings.catch_warnings():
+                warnings.filterwarnings("ignore", category = NotGeoreferencedWarning)
+                ds = xr.open_dataset(path_local, chunks = "auto", drop_variables = ["spatial_ref", "x", "y"])
+            ds = ds["band_data"].to_dataset("band")
+            ds = ds.rename({i+1: os.path.split(x)[-1] for i, x in enumerate(subdss)})
+            ds = ds.rename({"x": "number_of_pixels","y": "number_of_lines"})
+            ds = save_ds(ds, path_local.replace(path_appendix, ".nc"))
+            ds = remove_ds(path_local)
+            path_local = path_local.replace(path_appendix, ".nc")
 
-    # Check if there is relevant data in this tile.
-    return mask.sum().values > min_pixels
+    return path_local
 
-def check_nc(fp, group = "observation_data"):
+def search_stac(params, endpoint = 'https://cmr.earthdata.nasa.gov/stac/LAADS', extra_filters = {"day_night_flag": "DAY"}):
+    stac_response = requests.get(endpoint)
+    stac_response.raise_for_status()
+    catalog_links = stac_response.json()['links']
+    search = [l['href'] for l in catalog_links if l['rel'] == 'search'][0]
 
-    try: 
-        _ = xr.open_dataset(fp, group = group, chunks = "auto")
-    except OSError as e:
-        if "HDF error" in str(e):
-            log.info(f"--> {os.path.split(fp)[-1]} is corrupted, removing it.")
-            os.remove(fp)
-            return None
-        else:
-            raise e
+    all_scenes = list()
 
-    return True
+    links = [{"body": params, "rel": "next"}]
+
+    while "next" in [x.get("rel", None) for x in links]:
+        params_ = [x.get("body") for x in links if x.get("rel") == "next"][0]
+        query = requests.post(search, json = params_)
+        query.raise_for_status()
+        out = query.json()
+        all_scenes += out["features"]
+        links = out["links"]
+
+    def _check(ftr, extra_filters):
+        links = [x for x in ftr.get("links", []) if x["rel"] == "via"]
+        link = links[0].get("href", None) if len(links) > 0 else None
+        metadata_resp = requests.get(link)
+        metadata_resp.raise_for_status()
+        metadata = metadata_resp.json()
+        return all([metadata[k] == v for k,v in extra_filters.items()])
+
+    final = [x for x in all_scenes if _check(x, extra_filters)]
+
+    return final
+
+def create_stac_summary(bb, timelim):
+    
+    sd = datetime.datetime.strftime(timelim[0], "%Y-%m-%dT00:00:00Z")
+    ed = datetime.datetime.strftime(timelim[1], "%Y-%m-%dT23:59:59Z")
+    search_dates = f"{sd}/{ed}"
+
+    params = dict()
+    params['limit'] = 250
+    params['bbox'] = bb
+    params['datetime'] = search_dates
+
+    params['collections'] = ['VNP02IMG.v2']
+    results02 = search_stac(params)
+    params['collections'] = ['VNP03IMG.v2']
+    results03 = search_stac(params)
+    params['collections'] = ['CLDMSK_L2_VIIRS_SNPP.v1']
+    resultsqa = search_stac(params)
+
+    get_fns = lambda results: [os.path.split(x["assets"]["data"]["href"])[-1] for x in results]
+    get_dts = lambda files: {datetime.datetime.strptime(".".join(x.split(".")[1:3]), "A%Y%j.%H%M"): x for x in files}
+    files02 = get_fns(results02)
+    files03 = get_fns(results03)
+    filesqa = get_fns(resultsqa)
+
+    dates02 = get_dts(files02)
+    dates03 = get_dts(files03)
+    datesqa = get_dts(filesqa)
+
+    unique_dates = set(dates02.keys()).union(set(dates03.keys())).union(set(datesqa.keys()))
+
+    summary = {k: (dates02.get(k, None), dates03.get(k, None), datesqa.get(k, None)) for k in unique_dates}
+    filtered_summary = {k: v for k, v in summary.items() if not None in  v}
+
+    return filtered_summary
 
 def default_vars(product_name, req_vars):
     """Given a `product_name` and a list of requested variables, returns a dictionary
@@ -444,6 +230,44 @@ def default_post_processors(product_name, req_vars = None):
 
     return out
 
+def preproc(ds):
+    ds = ds.rename({"lat": "y", "lon": "x", "Band1": "bt"})
+    ds = ds.drop("crs")
+    ds.attrs = {}
+    for var in ds.data_vars:
+        ds[var].attrs = {}
+    ds = ds.rio.write_grid_mapping("spatial_ref")
+    ds = ds.rio.write_crs("epsg:4326")
+    ds = ds.rio.write_transform(ds.rio.transform(recalc=True))
+    fn = os.path.split(ds.encoding["source"])[-1]
+    date = np.datetime64(fn[3:13] + " " + fn[14:22].replace("_", ":"))
+    return ds.expand_dims("time").assign_coords({"time": [date]})
+
+def combine_unprojected_data(nc02_file, ncqa_file, lut_file, unproj_fn):
+
+    ds1 = xr.open_dataset(nc02_file, mask_and_scale=False)
+    ds2 = xr.open_dataset(lut_file, mask_and_scale=False)
+    ds3 = xr.open_dataset(ncqa_file, chunks = "auto")
+
+    # Create cloud mask. (0=cloudy, 1=probably cloudy, 2=probably clear, 3=confident clear, -1=no result)
+    cmask = ds3["Integer_Cloud_Mask"].interp({
+                    "number_of_lines": np.linspace(0-0.25, (ds3["number_of_lines"].size-1)+0.25, ds3["number_of_lines"].size*2),
+                    "number_of_pixels": np.linspace(0-0.25, (ds3["number_of_pixels"].size-1)+0.25, ds3["number_of_pixels"].size*2)
+                    }, kwargs = {"fill_value": "extrapolate"}).drop_vars(["number_of_lines", "number_of_pixels"])
+
+    # Convert DN to Brightness Temperature using the provided lookup table.
+    bt_da = ds2["I05_brightness_temperature_lut"].isel(number_of_LUT_values = ds1["I05"])
+
+    # Chunk and mask invalid pixels.
+    bt = bt_da.chunk("auto").where((bt_da >= bt_da.attrs["valid_min"]) & 
+                                        (bt_da <= bt_da.attrs["valid_max"]) & 
+                                        (bt_da != bt_da.attrs["_FillValue"]) &
+                                        (ds1["I05_quality_flags"] == 0) &
+                                        (cmask == 3), bt_da.attrs["_FillValue"]
+    ).rename("bt").to_dataset()
+
+    _ = save_ds(bt, unproj_fn, encoding = "initiate", label = "Combining data.").close()
+
 def download(folder, latlim, lonlim, timelim, product_name, req_vars,
                 variables = None, post_processors = None):
     """Download VIIRSL1 data and store it in a single netCDF file.
@@ -486,6 +310,14 @@ def download(folder, latlim, lonlim, timelim, product_name, req_vars,
             existing_ds = existing_ds.close()
         else:
             return existing_ds[req_vars_orig]
+        
+    timelim = adjust_timelim_dtype(timelim)
+
+    spatial_buffer = True
+    if spatial_buffer:
+        dx = dy = 0.0033
+        latlim = [latlim[0] - dy, latlim[1] + dy]
+        lonlim = [lonlim[0] - dx, lonlim[1] + dx]
 
     if isinstance(variables, type(None)):
         variables = default_vars(product_name, req_vars)
@@ -496,44 +328,61 @@ def download(folder, latlim, lonlim, timelim, product_name, req_vars,
         default_processors = default_post_processors(product_name, req_vars)
         post_processors = {k: {True: default_processors[k], False: v}[v == "default"] for k,v in post_processors.items() if k in req_vars}
 
-    # Reformat bounding-box.
-    bb = [lonlim[0], latlim[0], lonlim[1], latlim[1]]
+    bb, nx, ny = create_grid(latlim, lonlim, dx_dy = (0.0033, 0.0033))
+    filtered_summary = create_stac_summary(bb, timelim)
 
-    # Find SUOMI NPP overpass times.
-    year_doy_time = boxtimes(latlim, lonlim, timelim, folder)
+    log.info(f"--> Found {len(filtered_summary)} VIIRS scenes.").add()
 
-    # Search for valid urls at overpass times for geolocation files.
-    urls = find_VIIRSL1_urls(year_doy_time, "VNP03IMG", folder)
+    buckets = ("VNP02IMG", "VNP03IMG","CLDMSK_L2_VIIRS_SNPP")
+    all_urls = {k: tuple(f"/vsis3/prod-lads/{buckets[i]}/{v[i]}" for i in range(3)) for k, v in filtered_summary.items()}
+    all_proj_files = list()
 
-    # Create authentication header.
-    _, token = accounts.get('VIIRSL1')
-    headers = {'Authorization': 'Bearer ' + token}
+    for i, (date, (nc02, nc03, nc_cloud)) in enumerate(all_urls.items()):
 
-    # Try to download the geolocation data.
-    checker_function = partial(check_geoloc_tile, bb = bb)
-    relevant_fps = download_urls(urls, folder, headers = headers, checker_function = checker_function)
+        date_str = str(date).replace(" ", "_").replace(":","_")
+        unproj_fn = os.path.join(folder, f"bt_{date_str}_unprojected.nc")
+        proj_fn = os.path.join(folder, f"bt_{date_str}_projected.nc")
 
-    # Check relevance of files that were already downloaded.
-    fns = [os.path.split(x)[-1] for x in glob.glob(os.path.join(folder, "VNP03IMG*.nc"))]
-    for fp in [os.path.join(folder, x) for x in fns if x not in [os.path.split(x)[-1] for x in urls]]:
-        if check_geoloc_tile(fp, bb):
-            relevant_fps.append(fp)
+        log.info(f"--> ({i+1}/{len(all_urls)}) Processing '{os.path.split(nc02)[-1]}'.").add()
 
-    # Convert the relevant netcdf names to year/doy/time entries.
-    year_doy_time = [[os.path.split(x)[-1][{0:slice(10,14), 1:slice(14,17), 2:slice(18,22)}[y]] for y in range(3)] for x in relevant_fps]
+        if os.path.isfile(proj_fn):
+            all_proj_files.append(proj_fn)
+            log.sub()
+            continue
 
-    # Find urls of the cloudmask for the given year/doy/time.
-    cloud_urls = find_VIIRSL1_urls(year_doy_time, "CLDMSK_L2_VIIRS_SNPP", folder)
-    # Download the cloudmasks.
-    _ =  download_urls(cloud_urls, folder, headers = headers, checker_function = partial(check_nc, group = "geophysical_data"))
+        parallel = True
+        if parallel:
+            inputs = [
+                {"path": nc03, "subdss": ["/geolocation_data/latitude"], "folder": folder, "path_appendix": "_lat.nc"},
+                {"path": nc03, "subdss": ["/geolocation_data/longitude"], "folder": folder, "path_appendix": "_lon.nc"},
+                {"path": nc02, "subdss": ["/observation_data/I05_quality_flags", "/observation_data/I05"], "folder": folder},
+                {"path": nc02, "subdss": ["/observation_data/I05_brightness_temperature_lut"], "folder": folder, "path_appendix": "_lut.nc"},
+                {"path": nc_cloud, "subdss": ["/geophysical_data/Integer_Cloud_Mask"], "folder": folder, "creation_options":["COMPRESS=DEFLATE"], "dtype_is_8bit": True},
+            ]
+            n_jobs = min(5, multiprocessing.cpu_count())
+            lats_file, lons_file, nc02_file, lut_file, ncqa_file = Parallel(n_jobs=n_jobs)(delayed(download_arrays)(**i) for i in inputs)
+        else:
+            lats_file = download_arrays(nc03, ["/geolocation_data/latitude"], folder, path_appendix="_lat.nc")
+            lons_file = download_arrays(nc03, ["/geolocation_data/longitude"], folder, path_appendix="_lon.nc")
+            nc02_file = download_arrays(nc02, ["/observation_data/I05_quality_flags", "/observation_data/I05"], folder)
+            lut_file = download_arrays(nc02, ["/observation_data/I05_brightness_temperature_lut"], folder, path_appendix = "_lut.nc")
+            ncqa_file = download_arrays(nc_cloud, ["/geophysical_data/Integer_Cloud_Mask"], folder, creation_options=["COMPRESS=DEFLATE"], dtype_is_8bit=True)
 
-    # Find urls of the actual data for the given year/doy/time.
-    product_urls = find_VIIRSL1_urls(year_doy_time, product_name, folder)
-    # Download the data product.
-    _ =  download_urls(product_urls, folder, headers = headers, checker_function = check_nc)
+        if not os.path.isfile(unproj_fn):
+            combine_unprojected_data(nc02_file, ncqa_file, lut_file, unproj_fn)
 
-    # Combine geolocations and data in rectilinear grid.
-    ds = regrid_VNP(folder, latlim, lonlim, dx_dy = (0.0033, 0.0033))
+        warp_kwargs = {"outputBounds": bb, "width": nx, "height": ny}
+        _ = curvi_to_recto(lats_file, lons_file, {"bt": unproj_fn}, proj_fn, warp_kwargs = warp_kwargs)
+        all_proj_files.append(proj_fn)
+
+        for x in [nc02_file, ncqa_file, lut_file, unproj_fn, lats_file, lons_file]:
+            remove_ds(x)
+
+        log.sub()
+
+    log.sub()
+
+    ds = xr.open_mfdataset(all_proj_files, preprocess = preproc)
 
     # Apply product specific functions.
     for var, funcs in post_processors.items():
@@ -547,20 +396,29 @@ def download(folder, latlim, lonlim, timelim, product_name, req_vars,
 
 if __name__ == "__main__":
 
-    folder = "/Users/hmcoerver/Local/20220325_20220415_test_data"
-    adjust_logger(True, folder, "INFO")
-    # latlim = [28.9, 29.7]
-    # lonlim = [30.2, 31.2]
-    # timelim = ["2022-06-01", "2022-06-02"]
+    timelim = [np.datetime64 ('2023-07-03T00:00:00.000000000'), 
+               np.datetime64('2023-07-10T00:00:00.000000000')]
+    latlim = [29.4, 29.6]
+    lonlim = [30.7, 30.9]
 
-    timelim = [datetime.date(2022, 3, 25), datetime.date(2022, 4, 15)]
-    latlim = [29.4, 29.7]
-    lonlim = [30.7, 31.0]
-
+    # timelim = [datetime.datetime(2021, 3, 4), datetime.datetime(2021, 3, 5)]
+    # lonlim = [22.78125, 32.48438]
+    # latlim = [23.72777, 32.1612]
+    folder = workdir = r"/Users/hmcoerver/Local/viirs"
     product_name = "VNP02IMG"
     req_vars = ["bt"]
-
     variables = None
     post_processors = None
 
-    ds = download(folder, latlim, lonlim, timelim, product_name, req_vars)
+    adjust_logger(True, folder, "INFO")
+
+    # endpoint = 'https://cmr.earthdata.nasa.gov/stac/LAADS'
+
+    # ds = download(folder, latlim, lonlim, timelim, product_name, req_vars,
+    #                 variables = variables, post_processors = post_processors)
+        
+    date = datetime.datetime(2023, 7, 4, 10, 18)
+    nc02, nc03, nc_cloud = ('/vsis3/prod-lads/VNP02IMG/VNP02IMG.A2023185.1018.002.2023185191251.nc',
+    '/vsis3/prod-lads/VNP03IMG/VNP03IMG.A2023185.1018.002.2023185185504.nc',
+    '/vsis3/prod-lads/CLDMSK_L2_VIIRS_SNPP/CLDMSK_L2_VIIRS_SNPP.A2023185.1018.001.2023233195526.nc')
+    i = 0
