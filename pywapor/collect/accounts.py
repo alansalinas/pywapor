@@ -109,7 +109,10 @@ def get(account):
         create_key()
         if os.path.exists(json_file):
             print("removing old/invalid json file")
-            os.remove(json_file)
+            try:
+                os.remove(json_file)
+            except PermissionError:
+                log.warning("--> Unable to remove existing `keys.json` file (PermissionError), please remove the file manually before proceeding.")
     
     if not os.path.exists(json_file):
         setup(account)
@@ -148,8 +151,11 @@ def create_key():
     filehandle = os.path.join(folder, filename)
 
     if os.path.exists(filehandle):
-        os.remove(filehandle)
-    
+        try:
+            os.remove(filehandle)
+        except PermissionError:
+            log.warning("--> Unable to remove existing `secret.txt` file (PermissionError), please remove the file manually before proceeding.")
+        
     with open(filehandle,"w+") as f:
         f.write(str(Fernet.generate_key().decode("utf-8")))
 

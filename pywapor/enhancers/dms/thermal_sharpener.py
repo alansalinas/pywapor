@@ -68,7 +68,11 @@ def highres_inputs(workdir, temporal_hr_input_data, static_hr_input_data, filter
     buildvrt_options = gdal.BuildVRTOptions(outputBounds = bounds, xRes = xres, yRes = yres, separate = True)
     output_vrt = os.path.join(workdir, "highres_input_template.vrt")
     if os.path.isfile(output_vrt):
-        os.remove(output_vrt)
+        try:
+            os.remove(output_vrt)
+        except PermissionError:
+            log.info(f"--> Unable to delete temporary file `{output_vrt}`.")
+
     ds = gdal.BuildVRT(output_vrt, temporal_hr_input_data + static_hr_input_data, options = buildvrt_options)
     ds.FlushCache()
     ds = None
@@ -97,7 +101,10 @@ def highres_inputs(workdir, temporal_hr_input_data, static_hr_input_data, filter
             output.write(ET.tostring(tree))
         fps.append(fp_out)
 
-    os.remove(output_vrt)
+    try:
+        os.remove(output_vrt)
+    except PermissionError:
+        log.info(f"--> Unable to delete temporary file `{output_vrt}`.")
 
     return fps
 
@@ -129,7 +136,10 @@ def lowres_inputs(workdir, temporal_lr_input_data):
         buildvrt_options = gdal.BuildVRTOptions(resolution = "highest", bandList = [time_index + 1])
         output_vrt = os.path.join(workdir, f"lowres_input_{dt}.vrt")
         if os.path.isfile(output_vrt):
-            os.remove(output_vrt)
+            try:
+                os.remove(output_vrt)
+            except PermissionError:
+                log.info(f"--> Unable to delete temporary file `{output_vrt}`.")
         ds = gdal.BuildVRT(output_vrt, [temporal_lr_input_data], options = buildvrt_options)
         ds.FlushCache()
         ds = None
@@ -275,9 +285,13 @@ def sharpen(dss, var, folder, make_plots = False, vars_for_sharpening = ['nmdi',
 
         try:
             os.remove(highResFilename)
+        except PermissionError:
+            log.info(f"--> Unable to delete temporary file `{highResFilename}`.")
+
+        try:
             os.remove(lowResFilename)
-        except PermissionError as e:
-            ... # NOTE windows...
+        except PermissionError:
+            log.info(f"--> Unable to delete temporary file `{lowResFilename}`.")
 
     log.sub()
 

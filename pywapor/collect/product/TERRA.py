@@ -137,7 +137,11 @@ def create_header(folder):
 
     header_file = os.path.join(folder, "token.txt")
     if os.path.isfile(header_file):
-        os.remove(header_file)
+        try:
+            os.remove(header_file)
+        except PermissionError:
+            log.warning("--> Unable to remove `token.txt` file (PermissionError).")
+
 
     with open(header_file, "w") as text_file:
         text_file.write(f"Authorization: Bearer {token}")

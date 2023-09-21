@@ -322,7 +322,10 @@ def create_dummy_ds(varis, fp = None, shape = (10, 1000, 1000), chunks = (-1, 50
     check = False
     if not isinstance(fp, type(None)):
         if os.path.isfile(fp):
-            os.remove(fp)
+            try:
+                os.remove(fp)
+            except PermissionError:
+                ...
     if not check:
         nt, ny, nx = shape
         dates = pd.date_range(sdate, edate, periods = nt)
