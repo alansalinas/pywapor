@@ -137,6 +137,10 @@ def main(folder, latlim, lonlim, timelim, sources = "level_2_v3", bin_length = 1
 
     _ = adjust_logger(True, folder, "INFO")
 
+    log.info(f"--> lonlim: {lonlim}")
+    log.info(f"--> latlim: {latlim}")
+    log.info(f"--> timelim: {timelim}")
+
     t1 = datetime.datetime.now()
     log.info("> PRE_ET_LOOK").add()
 
