@@ -1,3 +1,3 @@
-[submodule "pywapor_notebooks"]
+[submodule "docs/notebooks"]
 	path = docs/notebooks
-	url = https://github.com/bertcoerver/pywapor_notebooks.git
+	url = https://github.com/un-fao/FAO-Water-Applications.git

@@ -28,7 +28,7 @@ def setup(account):
 
     Parameters
     ----------
-    account : {"NASA" | "TERRA" | "WAPOR" | "ECMWF" | "COPERNICUS_DATA_SPACE" | "VIIRSL1" | "EARTHEXPLORER"}
+    account : {"NASA" | "TERRA" | "ECMWF" | "COPERNICUS_DATA_SPACE" | "EARTHEXPLORER"}
         Which un/pw combination to store.
     """
 
@@ -66,8 +66,6 @@ def setup(account):
             "NASA": nasa_account,
             "EARTHEXPLORER": earthexplorer_account,
             "TERRA": terra_account,
-            "WAPOR": wapor_account,
-            "VIIRSL1": viirsl1_account,
             "ECMWF": ecmwf_account,
             "COPERNICUS_DATA_SPACE": copernicus_data_space_account,
         }[account]((account_name, pwd))
@@ -96,7 +94,7 @@ def get(account):
 
     Parameters
     ----------
-    account : {"NASA" | "TERRA" | "WAPOR" | "ECMWF" | "COPERNICUS_DATA_SPACE" | "VIIRSL1" | "EARTHEXPLORER"}
+    account : {"NASA" | "TERRA" | "ECMWF" | "COPERNICUS_DATA_SPACE" | "EARTHEXPLORER"}
         Which un/pw combination to load.
     """
 
@@ -289,67 +287,6 @@ def earthexplorer_account(user_pw):
 
     return succes, error
 
-def wapor_account(user_pw):
-    """Check if the given or stored WAPOR token is 
-    correct. Accounts can be created on https://wapor.apps.fao.org/home/WAPOR_2/1.
-
-    Parameters
-    ----------
-    user_pw : tuple, optional
-        ("", "token") to check, if `None` will try to load the 
-        password from the keychain, by default None.
-
-    Returns
-    -------
-    bool
-        True if the password works, otherwise False.
-    """
-
-    _, pw = user_pw
-
-    sign_in= 'https://io.apps.fao.org/gismgr/api/v1/iam/sign-in'
-    resp_vp=requests.post(sign_in,headers={'X-GISMGR-API-KEY': pw})
-    
-    if resp_vp.ok:
-        succes = True
-        error = ""
-    else:
-        error = "wrong token."
-        succes = False
-
-    return succes, error
-
-def viirsl1_account(user_pw):
-    """Check if the given or stored VIIRSL1 token is 
-    correct. Accounts can be created on https://ladsweb.modaps.eosdis.nasa.gov/.
-
-    Parameters
-    ----------
-    user_pw : tuple, optional
-        ("", "token") to check, if `None` will try to load the 
-        password from the keychain, by default None.
-
-    Returns
-    -------
-    bool
-        True if the password works, otherwise False.
-    """
-
-    _, token = user_pw
-
-    headers = {'Authorization': 'Bearer ' + token}
-    test_url = "https://ladsweb.modaps.eosdis.nasa.gov/archive/allData/5110/VNP02IMG/2018/008/VNP02IMG.A2018008.2348.001.2018061005026.nc"
-    response = requests.Session().get(test_url, headers=headers, stream = True)
-    for data in response.iter_content(chunk_size=1024):
-        succes = b'DOCTYPE' not in data
-        if not succes:
-            error = "wrong token."
-        else:
-            error = ""
-        break
-
-    return succes, error
-
 def copernicus_data_space_account(user_pw):
     """Check if the given or stored COPERNICUS_DATA_SPACE account is
     correct. Accounts can be created on https://dataspace.copernicus.eu
@@ -458,14 +395,8 @@ if __name__ == "__main__":
     un_pw2 = get("TERRA")
     check2 = terra_account(un_pw2)
 
-    un_pw3 = get("WAPOR")
-    check3 = wapor_account(un_pw3)
-
     un_pw4 = get("ECMWF")
     check4 = ecmwf_account(un_pw4)
-
-    un_pw5 = get("VIIRSL1")
-    check5 = viirsl1_account(un_pw5)
 
     un_pw6 = get("EARTHEXPLORER")
     check6 = earthexplorer_account(un_pw6)

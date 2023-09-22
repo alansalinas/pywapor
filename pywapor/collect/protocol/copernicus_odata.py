@@ -106,10 +106,29 @@ def download(folder, latlim, lonlim, timelim, product_name, product_type, node_f
         results = out.json()
         scenes += results["value"]
 
-    log.info(f"--> Searching nodes for {len(scenes)} `{product_name}.{product_type}` scenes.")
+    # Drop identical scenes.
+    scene_names = {x["Name"]: i for i, x in enumerate(scenes)}
+    scenes = [scenes[i] for i in scene_names.values()]
+
+    # Filter reprocessed scenes (select newest).
+    overview = dict()
+    for i, scene in enumerate(scenes):
+        mission_id, level, stime, baseline, rel_orbit, tile_number, rest = scene["Name"].split("_")
+        key = "_".join([mission_id, level, stime, rel_orbit, tile_number])
+        baseline_int = int(baseline[1:])
+        if not key in list(overview.keys()):
+            overview[key] = (baseline_int, scene)
+        else:
+            if baseline_int > overview[key][0]:
+                overview[key] = (baseline_int, scene)
+
+    scenes = [x[1] for x in overview.values()]
+
+    log.info(f"--> Searching nodes for {len(scenes)} `{product_name_}.{product_type}` scenes.")
 
     urls = list()
     fps = list()
+    fp_checks = list()
 
     for scene in tqdm.tqdm(scenes, leave = False):
         nodes = get_scene_nodes(scene["Id"])
@@ -122,11 +141,13 @@ def download(folder, latlim, lonlim, timelim, product_name, product_type, node_f
             node_path_rel = re.findall("Nodes\((.*?)\)", node)
             fp = os.path.join(folder, *node_path_rel)
             url = node + "/$value"
+            fp_checks.append(fp)
             if not os.path.isfile(fp):
                 urls.append(url)
                 fps.append(fp)
 
-    log.info(f"--> Downloading {len(urls)} nodes.").add()
+    log.info(f"--> {len(fp_checks)} nodes required.")
+    log.info(f"--> Downloading {len(urls)} missing nodes.").add()
 
     block_size = 10
     dled_fps = list()
@@ -140,10 +161,14 @@ def download(folder, latlim, lonlim, timelim, product_name, product_type, node_f
 
     log.sub()
 
+    for fp_ in fp_checks:
+        if not os.path.isfile(fp_):
+            log.warning(f"--> `{fp}` missing.")
+
     if "3" in product_name: # NOTE this is lazy...
-        dled_scenes = glob.glob(os.path.join(folder, "*.SEN3"))
+        dled_scenes = sorted(list(set([re.compile(".*\.SEN3").search(x).group() for x in fp_checks])))
     if "2" in product_name:
-        dled_scenes = glob.glob(os.path.join(folder, "*.SAFE"))
+        dled_scenes = sorted(list(set([re.compile(".*\.SAFE").search(x).group() for x in fp_checks])))
 
     return list(dled_scenes)
 
