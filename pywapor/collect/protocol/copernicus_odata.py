@@ -106,7 +106,25 @@ def download(folder, latlim, lonlim, timelim, product_name, product_type, node_f
         results = out.json()
         scenes += results["value"]
 
-    log.info(f"--> Searching nodes for {len(scenes)} `{product_name}.{product_type}` scenes.")
+    # Drop identical scenes.
+    scene_names = {x["Name"]: i for i, x in enumerate(scenes)}
+    scenes = [scenes[i] for i in scene_names.values()]
+
+    # Filter reprocessed scenes (select newest).
+    overview = dict()
+    for i, scene in enumerate(scenes):
+        mission_id, level, stime, baseline, rel_orbit, tile_number, rest = scene["Name"].split("_")
+        key = "_".join([mission_id, level, stime, rel_orbit, tile_number])
+        baseline_int = int(baseline[1:])
+        if not key in overview.keys():
+            overview[key] = (baseline_int, scene)
+        else:
+            if baseline_int > overview[key][0]:
+                overview[key] = (baseline_int, scene)
+
+    scenes = [x[1] for x in overview.values()]
+
+    log.info(f"--> Searching nodes for {len(scenes)} `{product_name_}.{product_type}` scenes.")
 
     urls = list()
     fps = list()
