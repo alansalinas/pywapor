@@ -14,3 +14,4 @@ pywapor.enhancers
    enhancers/pressure
    enhancers/wind
    enhancers/dms
+   enhancers/smooth

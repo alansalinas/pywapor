@@ -70,7 +70,8 @@
 <li class="toctree-l4"><a class="reference internal" href="GLOBCOVER.html">GLOBCOVER</a></li>
 <li class="toctree-l4"><a class="reference internal" href="MERRA2.html">MERRA2</a></li>
 <li class="toctree-l4"><a class="reference internal" href="MODIS.html">MODIS</a></li>
-<li class="toctree-l4"><a class="reference internal" href="PROBAV.html">PROBAV</a></li>
+<li class="toctree-l4"><a class="reference internal" href="TERRA.html">TERRA</a></li>
+<li class="toctree-l4"><a class="reference internal" href="LANDSAT.html">TERRA</a></li>
 <li class="toctree-l4"><a class="reference internal" href="SENTINEL2.html">SENTINEL2</a></li>
 <li class="toctree-l4"><a class="reference internal" href="SENTINEL3.html">SENTINEL3</a></li>
 <li class="toctree-l4"><a class="reference internal" href="SRTM.html">SRTM</a></li>
@@ -118,119 +119,15 @@
   <section id="module-pywapor.collect.product.VIIRSL1">
 <span id="viirsl1"></span><h1>VIIRSL1<a class="headerlink" href="#module-pywapor.collect.product.VIIRSL1" title="Permalink to this heading"></a></h1>
 <dl class="py function">
-<dt class="sig sig-object py" id="pywapor.collect.product.VIIRSL1.regrid_VNP">
-<span class="sig-name descname"><span class="pre">regrid_VNP</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">workdir</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">latlim</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">lonlim</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dx_dy</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">(0.0033,</span> <span class="pre">0.0033)</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pywapor.collect.product.VIIRSL1.regrid_VNP" title="Permalink to this definition"></a></dt>
-<dd><p>Process VIIRS images from curvilinear to rectolinear grid, applies cloud masks, quality masks
-and convert data to Brightness Temperature.</p>
+<dt class="sig sig-object py" id="pywapor.collect.product.VIIRSL1.get_token">
+<span class="sig-name descname"><span class="pre">get_token</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#pywapor.collect.product.VIIRSL1.get_token" title="Permalink to this definition"></a></dt>
+<dd><p>_summary_</p>
 <dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
-<dd class="field-odd"><ul class="simple">
-<li><p><strong>workdir</strong> (<em>str</em>) – Folder to search for scenes.</p></li>
-<li><p><strong>latlim</strong> (<em>list</em>) – Latitude limits of area of interest.</p></li>
-<li><p><strong>lonlim</strong> (<em>list</em>) – Longitude limits of area of interest.</p></li>
-<li><p><strong>dx_dy</strong> (<em>tuple</em><em>, </em><em>optional</em>) – Output pixel size, by default (0.0033, 0.0033).</p></li>
-</ul>
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>_description_</p>
 </dd>
-<dt class="field-even">Returns</dt>
-<dd class="field-even"><p>Output dataset.</p>
-</dd>
-<dt class="field-odd">Return type</dt>
-<dd class="field-odd"><p>xr.Dataset</p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py function">
-<dt class="sig sig-object py" id="pywapor.collect.product.VIIRSL1.boxtimes">
-<span class="sig-name descname"><span class="pre">boxtimes</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">latlim</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">lonlim</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">timelim</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">folder</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pywapor.collect.product.VIIRSL1.boxtimes" title="Permalink to this definition"></a></dt>
-<dd><p>Check in which 6-min periods SUOMI NPPs swatch crosses a AOI
-defined by <cite>latlim</cite> and <cite>lonlim</cite> and remove night recordings.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
-<dd class="field-odd"><ul class="simple">
-<li><p><strong>latlim</strong> (<em>list</em>) – Latitude limits.</p></li>
-<li><p><strong>lonlim</strong> (<em>list</em>) – Longitude limits.</p></li>
-<li><p><strong>timelim</strong> (<em>list</em>) – Time limits.</p></li>
-</ul>
-</dd>
-<dt class="field-even">Returns</dt>
-<dd class="field-even"><p>List containing year, doy and time at which SUOMI NPP passes over
-the bb during the day (night is filtered out).</p>
-</dd>
-<dt class="field-odd">Return type</dt>
-<dd class="field-odd"><p>list</p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py function">
-<dt class="sig sig-object py" id="pywapor.collect.product.VIIRSL1.find_VIIRSL1_urls">
-<span class="sig-name descname"><span class="pre">find_VIIRSL1_urls</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">year_doy_time</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">product</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">workdir</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">server_folders</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">{'CLDMSK_L2_VIIRS_SNPP':</span> <span class="pre">5110,</span> <span class="pre">'VNP02IMG':</span> <span class="pre">5110,</span> <span class="pre">'VNP03IMG':</span> <span class="pre">5200}</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pywapor.collect.product.VIIRSL1.find_VIIRSL1_urls" title="Permalink to this definition"></a></dt>
-<dd><p>Given a list of year/doy/time tuples returns the exact urls for that
-datetime. Also check if the linked file already exists in workdir, in which
-case the url is omitted from the returned list.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
-<dd class="field-odd"><ul class="simple">
-<li><p><strong>year_doy_time</strong> (<em>list</em>) – List containing year, doy and time at which SUOMI NPP passes over
-the bb during the day (night is filtered out).</p></li>
-<li><p><strong>product</strong> (<em>str</em>) – Name of the product to search.</p></li>
-<li><p><strong>workdir</strong> (<em>str</em>) – Path to folder in which to store data.</p></li>
-<li><p><strong>server_folder</strong> (<em>dict</em>) – Which server side folder to use per product, by default {“VNP02IMG”: 5110, “VNP03IMG”: 5200, “CLDMSK_L2_VIIRS_SNPP”: 5110}.</p></li>
-</ul>
-</dd>
-<dt class="field-even">Returns</dt>
-<dd class="field-even"><p>URLs linking to the product.</p>
-</dd>
-<dt class="field-odd">Return type</dt>
-<dd class="field-odd"><p>list</p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py function">
-<dt class="sig sig-object py" id="pywapor.collect.product.VIIRSL1.check_tiles">
-<span class="sig-name descname"><span class="pre">check_tiles</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">year_doy_time</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">latlim</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">lonlim</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">workdir</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">product</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'VNP03IMG'</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pywapor.collect.product.VIIRSL1.check_tiles" title="Permalink to this definition"></a></dt>
-<dd><p>Check if downloaded tiles actually contain data for the given AOI. If not
-removes its year/doy/time from the list.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
-<dd class="field-odd"><ul class="simple">
-<li><p><strong>year_doy_time</strong> (<em>list</em>) – List containing year, doy and time at which SUOMI NPP passes over
-the bb during the day (night is filtered out).</p></li>
-<li><p><strong>latlim</strong> (<em>list</em>) – Latitude limits.</p></li>
-<li><p><strong>lonlim</strong> (<em>list</em>) – Longitude limits.</p></li>
-<li><p><strong>workdir</strong> (<em>str</em>) – Path to working directory</p></li>
-<li><p><strong>product</strong> (<em>str</em><em>, </em><em>optional</em>) – name of the product to check, by default “VNP03IMG”</p></li>
-</ul>
-</dd>
-<dt class="field-even">Returns</dt>
-<dd class="field-even"><p>Two lists, the first an updated <cite>year_date_time</cite>, the other contains the
-values dropped from <cite>year_date_time</cite>.</p>
-</dd>
-<dt class="field-odd">Return type</dt>
-<dd class="field-odd"><p>tuple</p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py function">
-<dt class="sig sig-object py" id="pywapor.collect.product.VIIRSL1.check_geoloc_tile">
-<span class="sig-name descname"><span class="pre">check_geoloc_tile</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">fp</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">bb</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">min_pixels</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">100</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pywapor.collect.product.VIIRSL1.check_geoloc_tile" title="Permalink to this definition"></a></dt>
-<dd><p>Checks if there is relevant data in the dataset.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
-<dd class="field-odd"><ul class="simple">
-<li><p><strong>fp</strong> (<em>str</em>) – Path to input file.</p></li>
-<li><p><strong>bb</strong> (<em>list</em>) – Boundingbox, [xmin, ymin, xmax, ymax].</p></li>
-<li><p><strong>min_pixels</strong> (<em>int</em><em>, </em><em>optional</em>) – Threshold value, by default 100.</p></li>
-</ul>
-</dd>
-<dt class="field-even">Returns</dt>
-<dd class="field-even"><p>True if there are more than <cite>min_pixels</cite> inside the <cite>bb</cite>.</p>
-</dd>
-<dt class="field-odd">Return type</dt>
-<dd class="field-odd"><p>bool</p>
+<dt class="field-even">Return type</dt>
+<dd class="field-even"><p>_type_</p>
 </dd>
 </dl>
 </dd></dl>

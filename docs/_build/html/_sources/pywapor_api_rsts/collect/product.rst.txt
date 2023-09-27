@@ -12,7 +12,8 @@ product
    product/GLOBCOVER
    product/MERRA2
    product/MODIS
-   product/PROBAV
+   product/TERRA
+   product/LANDSAT
    product/SENTINEL2
    product/SENTINEL3
    product/SRTM

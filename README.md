@@ -1,6 +1,6 @@
 ## pyWaPOR
 
-![downloads](https://img.shields.io/pypi/dw/pywapor) [![version](https://img.shields.io/pypi/v/pywapor)](https://pypi.org/project/pywapor/) [![Open In Colab](https://colab.research.google.com/github/un-fao/FAO-Water-Applications/blob/main/pyWaPOR/introduction.ipynb) [<img src="https://camo.githubusercontent.com/418aa0f16e95e967f0f615c71388a2b9a1a23a2dfe37532bf83ffc54c85fb7d7/68747470733a2f2f6564656e742e6769746875622e696f2f537570657254696e7949636f6e732f696d616765732f7376672f7273732e737667" height="20" style="border-radius: 15%;">](https://pypi.org/rss/project/pywapor/releases.xml)
+![downloads](https://img.shields.io/pypi/dw/pywapor) [![version](https://img.shields.io/pypi/v/pywapor)](https://pypi.org/project/pywapor/) [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/un-fao/FAO-Water-Applications/blob/main/pyWaPOR/introduction.ipynb)
 
 This repository contains a Python implementation of the algorithm used to generate the [WaPOR](http://www.fao.org/in-action/remote-sensing-for-water-productivity/en/) [datasets](https://wapor.apps.fao.org/home/WAPOR_2/1). It can be used to calculate evaporation, transpiration and biomass production maps.
 

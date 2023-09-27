@@ -58,11 +58,7 @@
 <li class="toctree-l2"><a class="reference internal" href="../pre_se_root.html">pywapor.pre_se_root</a></li>
 <li class="toctree-l2"><a class="reference internal" href="../se_root.html">pywapor.se_root</a></li>
 <li class="toctree-l2 current"><a class="reference internal" href="../enhancers.html">pywapor.enhancers</a><ul class="current">
-<li class="toctree-l3 current"><a class="current reference internal" href="#">dem</a><ul>
-<li class="toctree-l4"><a class="reference internal" href="#pywapor.enhancers.dem.calc_slope"><code class="docutils literal notranslate"><span class="pre">calc_slope()</span></code></a></li>
-<li class="toctree-l4"><a class="reference internal" href="#pywapor.enhancers.dem.calc_aspect"><code class="docutils literal notranslate"><span class="pre">calc_aspect()</span></code></a></li>
-</ul>
-</li>
+<li class="toctree-l3 current"><a class="current reference internal" href="#">dem</a></li>
 <li class="toctree-l3"><a class="reference internal" href="gap_fill.html">gap_fill</a></li>
 <li class="toctree-l3"><a class="reference internal" href="lulc.html">lulc</a></li>
 <li class="toctree-l3"><a class="reference internal" href="temperature.html">temperature</a></li>
@@ -71,6 +67,7 @@
 <li class="toctree-l3"><a class="reference internal" href="pressure.html">pressure</a></li>
 <li class="toctree-l3"><a class="reference internal" href="wind.html">wind</a></li>
 <li class="toctree-l3"><a class="reference internal" href="dms.html">dms</a></li>
+<li class="toctree-l3"><a class="reference internal" href="smooth.html">smooth</a></li>
 </ul>
 </li>
 <li class="toctree-l2"><a class="reference internal" href="../general.html">pywapor.general</a></li>
@@ -110,46 +107,6 @@
              
   <section id="module-pywapor.enhancers.dem">
 <span id="dem"></span><h1>dem<a class="headerlink" href="#module-pywapor.enhancers.dem" title="Permalink to this heading"></a></h1>
-<dl class="py function">
-<dt class="sig sig-object py" id="pywapor.enhancers.dem.calc_slope">
-<span class="sig-name descname"><span class="pre">calc_slope</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">ds</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">var</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pywapor.enhancers.dem.calc_slope" title="Permalink to this definition"></a></dt>
-<dd><p>Calculate the gradient of <cite>z</cite>.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
-<dd class="field-odd"><ul class="simple">
-<li><p><strong>ds</strong> (<em>xr.Dataset</em>) – Dataset containing var.</p></li>
-<li><p><strong>var</strong> (<em>str</em>) – Variable name.</p></li>
-</ul>
-</dd>
-<dt class="field-even">Returns</dt>
-<dd class="field-even"><p>Enhanced dataset.</p>
-</dd>
-<dt class="field-odd">Return type</dt>
-<dd class="field-odd"><p>xr.Dataset</p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py function">
-<dt class="sig sig-object py" id="pywapor.enhancers.dem.calc_aspect">
-<span class="sig-name descname"><span class="pre">calc_aspect</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">ds</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">var</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pywapor.enhancers.dem.calc_aspect" title="Permalink to this definition"></a></dt>
-<dd><p>Calculate the aspect of <cite>z</cite>.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
-<dd class="field-odd"><ul class="simple">
-<li><p><strong>ds</strong> (<em>xr.Dataset</em>) – Dataset containing var.</p></li>
-<li><p><strong>var</strong> (<em>str</em>) – Variable name.</p></li>
-</ul>
-</dd>
-<dt class="field-even">Returns</dt>
-<dd class="field-even"><p>Enhanced dataset.</p>
-</dd>
-<dt class="field-odd">Return type</dt>
-<dd class="field-odd"><p>xr.Dataset</p>
-</dd>
-</dl>
-</dd></dl>
-
 </section>
 
 

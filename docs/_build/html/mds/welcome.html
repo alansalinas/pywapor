@@ -83,12 +83,12 @@
 <h1>pyWaPOR<a class="headerlink" href="#pywapor" title="Permalink to this heading"></a></h1>
 <a class="reference external image-reference" href="https://img.shields.io/pypi/dw/pywapor"><img alt="downloads" src="https://img.shields.io/pypi/dw/pywapor" /></a>
 <a class="reference external image-reference" href="https://pypi.org/project/pywapor/"><img alt="version" src="https://img.shields.io/pypi/v/pywapor" /></a>
-<a class="reference external image-reference" href="https://colab.research.google.com/github/bertcoerver/pywapor_notebooks/blob/main/1_introduction.ipynb"><img alt="Open In Colab" src="https://colab.research.google.com/assets/colab-badge.svg" /></a>
+<a class="reference external image-reference" href="https://colab.research.google.com/github/un-fao/FAO-Water-Applications/blob/main/pyWaPOR/introduction.ipynb"><img alt="Open In Colab" src="https://colab.research.google.com/assets/colab-badge.svg" /></a>
 <p>This repository contains a Python implementation of the algorithm used to generate the <a class="reference external" href="http://www.fao.org/in-action/remote-sensing-for-water-productivity/en/">WaPOR</a> <a class="reference external" href="https://wapor.apps.fao.org/home/WAPOR_2/1">datasets</a>. It can be used to calculate evaporation, transpiration and biomass production maps.</p>
 <section id="installation">
 <h2>Installation<a class="headerlink" href="#installation" title="Permalink to this heading"></a></h2>
 <p>Its recommended to install in a clean <a class="reference external" href="https://docs.conda.io/projects/conda/en/latest/user-guide/concepts/environments.html">conda environment</a> and use <a class="reference external" href="https://docs.conda.io/projects/conda/en/latest/user-guide/install/">conda</a> to install all the important packages from the <code class="docutils literal notranslate"><span class="pre">conda-forge</span></code> channel.</p>
-<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>conda<span class="w"> </span>create<span class="w"> </span>-n<span class="w"> </span>my_pywapor_env<span class="w"> </span>--yes<span class="w"> </span>-c<span class="w"> </span>conda-forge<span class="w"> </span>python<span class="w"> </span>pip<span class="w"> </span>gdal<span class="w"> </span>pydap<span class="w"> </span>numpy<span class="w"> </span><span class="s2">&quot;pandas&lt;2.0.0&quot;</span><span class="w"> </span>requests<span class="w"> </span>matplotlib<span class="w"> </span>pyproj<span class="w"> </span>scipy<span class="w"> </span>pycurl<span class="w"> </span>pyshp<span class="w"> </span>joblib<span class="w"> </span>bs4<span class="w"> </span>rasterio<span class="w"> </span>xarray<span class="w"> </span>bottleneck<span class="w"> </span>geojson<span class="w"> </span>tqdm<span class="w"> </span>dask<span class="w"> </span>rioxarray<span class="w"> </span>pyvis<span class="w"> </span>shapely<span class="w"> </span>lxml<span class="w"> </span>cachetools<span class="w"> </span>cdsapi<span class="w"> </span>sentinelsat<span class="w"> </span>geopy<span class="w"> </span>numba<span class="w"> </span>scikit-learn<span class="w"> </span>beautifulsoup4<span class="w"> </span><span class="s2">&quot;libnetcdf=4.8&quot;</span>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>conda<span class="w"> </span>create<span class="w"> </span>-n<span class="w"> </span>my_pywapor_env<span class="w"> </span>--yes<span class="w"> </span>-c<span class="w"> </span>conda-forge<span class="w"> </span>python<span class="w"> </span>pip<span class="w"> </span>gdal<span class="w"> </span>xarray<span class="w"> </span>numpy<span class="w"> </span>pandas<span class="w"> </span>requests<span class="w"> </span>matplotlib<span class="w"> </span>netcdf4<span class="w"> </span>pyproj<span class="w"> </span>scipy<span class="w"> </span>pycurl<span class="w"> </span>joblib<span class="w"> </span>bs4<span class="w"> </span>rasterio<span class="w"> </span>bottleneck<span class="w"> </span>tqdm<span class="w"> </span>dask<span class="w"> </span>rioxarray<span class="w"> </span>cryptography<span class="w"> </span>cachetools<span class="w"> </span>cdsapi<span class="w"> </span>shapely<span class="w"> </span>lxml<span class="w"> </span>scikit-learn<span class="w"> </span>numba<span class="w"> </span>xmltodict
 
 conda<span class="w"> </span>activate<span class="w"> </span>my_pywapor_env
 </pre></div>
@@ -100,17 +100,21 @@ conda<span class="w"> </span>activate<span class="w"> </span>my_pywapor_env
 </section>
 <section id="usage">
 <h2>Usage<a class="headerlink" href="#usage" title="Permalink to this heading"></a></h2>
-<p>To run the model for one dekad (from 2021-07-01 to 2021-07-11 in this case) for the Fayoum irrigation scheme in Egypt (but feel free to change the <a class="reference external" href="http://bboxfinder.com">boundingbox</a> defined by <code class="docutils literal notranslate"><span class="pre">latlim</span></code> and <code class="docutils literal notranslate"><span class="pre">lonlim</span></code>) using mainly MODIS data, run the following code  (run <code class="docutils literal notranslate"><span class="pre">python</span></code> in your console to activate Python and <code class="docutils literal notranslate"><span class="pre">exit()</span></code> to deactivate).</p>
+<p>To run the model for one dekad (from 2021-07-01 to 2021-07-11 in this case) for the Fayoum irrigation scheme in Egypt (but feel free to change the <a class="reference external" href="http://bboxfinder.com">boundingbox</a> defined by <code class="docutils literal notranslate"><span class="pre">latlim</span></code> and <code class="docutils literal notranslate"><span class="pre">lonlim</span></code>) using mainly VIIRS and Sentinel-2 data, run the following code (run <code class="docutils literal notranslate"><span class="pre">python</span></code> in your console to activate Python and <code class="docutils literal notranslate"><span class="pre">exit()</span></code> to deactivate).</p>
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">pywapor</span>
 
 <span class="c1"># User inputs.</span>
-<span class="n">timelim</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;2021-07-01&quot;</span><span class="p">,</span> <span class="s2">&quot;2021-07-11&quot;</span><span class="p">]</span>
+<span class="n">timelim</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;2021-07-01&quot;</span><span class="p">,</span> <span class="s2">&quot;2021-07-03&quot;</span><span class="p">]</span>
 <span class="n">latlim</span> <span class="o">=</span> <span class="p">[</span><span class="mf">28.9</span><span class="p">,</span> <span class="mf">29.7</span><span class="p">]</span>
 <span class="n">lonlim</span> <span class="o">=</span> <span class="p">[</span><span class="mf">30.2</span><span class="p">,</span> <span class="mf">31.2</span><span class="p">]</span>
 <span class="n">project_folder</span> <span class="o">=</span> <span class="sa">r</span><span class="s2">&quot;/my_first_ETLook_run/&quot;</span>
+<span class="n">level</span> <span class="o">=</span> <span class="s2">&quot;level_2_v3&quot;</span>
+
+<span class="c1"># Load a model configuration.</span>
+<span class="n">configuration</span> <span class="o">=</span> <span class="n">pywapor</span><span class="o">.</span><span class="n">general</span><span class="o">.</span><span class="n">levels</span><span class="o">.</span><span class="n">pre_et_look_levels</span><span class="p">(</span><span class="n">level</span> <span class="o">=</span> <span class="n">level</span><span class="p">)</span>
 
 <span class="c1"># Download and prepare input data.</span>
-<span class="n">ds_in</span>  <span class="o">=</span> <span class="n">pywapor</span><span class="o">.</span><span class="n">pre_et_look</span><span class="o">.</span><span class="n">main</span><span class="p">(</span><span class="n">project_folder</span><span class="p">,</span> <span class="n">latlim</span><span class="p">,</span> <span class="n">lonlim</span><span class="p">,</span> <span class="n">timelim</span><span class="p">)</span>
+<span class="n">ds_in</span>  <span class="o">=</span> <span class="n">pywapor</span><span class="o">.</span><span class="n">pre_et_look</span><span class="o">.</span><span class="n">main</span><span class="p">(</span><span class="n">project_folder</span><span class="p">,</span> <span class="n">latlim</span><span class="p">,</span> <span class="n">lonlim</span><span class="p">,</span> <span class="n">timelim</span><span class="p">,</span> <span class="n">sources</span> <span class="o">=</span> <span class="n">configuration</span><span class="p">)</span>
 
 <span class="c1"># Run the model.</span>
 <span class="n">ds_out</span> <span class="o">=</span> <span class="n">pywapor</span><span class="o">.</span><span class="n">et_look</span><span class="o">.</span><span class="n">main</span><span class="p">(</span><span class="n">ds_in</span><span class="p">)</span>
@@ -135,27 +139,22 @@ conda<span class="w"> </span>activate<span class="w"> </span>my_pywapor_env
       <tr class="row-odd">
          <td>1.</td>
          <td>Introduction</td>
-         <td style="text-align:center"><a href="https://colab.research.google.com/github/bertcoerver/pywapor_notebooks/blob/main/1_introduction.ipynb"><img src="https://colab.research.google.com/assets/colab-badge.svg" alt="colab"/></a></td>
+         <td style="text-align:center"><a href="https://colab.research.google.com/github/un-fao/FAO-Water-Applications/blob/main/pyWaPOR/introduction.ipynb"><img src="https://colab.research.google.com/assets/colab-badge.svg" alt="colab"/></a></td>
       </tr>
       <tr class="row-even">
          <td>2.</td>
-         <td>Levels</td>
-         <td style="text-align:center"><a href="https://colab.research.google.com/github/bertcoerver/pywapor_notebooks/blob/main/2_levels.ipynb"><img src="https://colab.research.google.com/assets/colab-badge.svg" alt="colab"/></a></td>
+         <td>Passwords</td>
+         <td style="text-align:center"><a href="https://colab.research.google.com/github/un-fao/FAO-Water-Applications/blob/main/pyWaPOR/passwords.ipynb"><img src="https://colab.research.google.com/assets/colab-badge.svg" alt="colab"/></a></td>
       </tr>
       <tr class="row-odd">
          <td>3.</td>
-         <td>Composites</td>
-         <td style="text-align:center"><a href="https://colab.research.google.com/github/bertcoerver/pywapor_notebooks/blob/main/3_composites.ipynb"><img src="https://colab.research.google.com/assets/colab-badge.svg" alt="colab"/></a></td>
+         <td>Enhancers</td>
+         <td style="text-align:center"><a href="https://colab.research.google.com/github/un-fao/FAO-Water-Applications/blob/main/pyWaPOR/enhancers.ipynb"><img src="https://colab.research.google.com/assets/colab-badge.svg" alt="colab"/></a></td>
       </tr>
       <tr class="row-even">
          <td>4.</td>
-         <td>Enhancers</td>
-         <td style="text-align:center"><a href="https://colab.research.google.com/github/bertcoerver/pywapor_notebooks/blob/main/5_enhancers.ipynb"><img src="https://colab.research.google.com/assets/colab-badge.svg" alt="colab"/></a></td>
-      </tr>
-      <tr class="row-odd">
-         <td>5.</td>
-         <td>pyWaPOR vs. WaPOR</td>
-         <td style="text-align:center"><a href="https://colab.research.google.com/github/bertcoerver/pywapor_notebooks/blob/main/6_wapor_vs_pywapor.ipynb"><img src="https://colab.research.google.com/assets/colab-badge.svg" alt="colab"/></a></td>
+         <td>Sideloading</td>
+         <td style="text-align:center"><a href="https://colab.research.google.com/github/un-fao/FAO-Water-Applications/blob/main/pyWaPOR/sideload.ipynb"><img src="https://colab.research.google.com/assets/colab-badge.svg" alt="colab"/></a></td>
       </tr>
    </tbody>
 </table>
@@ -190,6 +189,19 @@ conda<span class="w"> </span>activate<span class="w"> </span>my_pywapor_env
 <section id="release-notes">
 <h2>Release Notes<a class="headerlink" href="#release-notes" title="Permalink to this heading"></a></h2>
 <p><details open>
+<summary><b>3.4.0 (2023-09-15)</b></summary>
+<ul>
+    <li> Rewritten code to download and process VIIRSL1 data, which is now available from an S3 bucket.</li>
+    <li> Rewritten code to download PROBA-V data, which now comes from the new Terrascope platform (the old portal was deprecated). </li>
+    <li> Rewritten Sentinel downloader, which now uses the new Copernicus Data Space Ecosystem. Most importantly this means that all images are available instantly (so no more tedious requesting from the Long Term Archive for older scenes).
+    <li> Projecting of curvilinear data (VIIRSL1 and Sentinel-3) is now done using gdal-warp. </li>
+    <li> Calculation of terrain slope and aspect is now done using gdal-dem. </li>
+    <li> It is now possible turn off SSL-verification when downloading certain products. Run 'import os; os.environ["PYWAPOR_VERIFY_SSL"] = "NO"' to do so. </li>
+    <li> Simplified installation requirements. </li>
+    <li> Available options in `pywapor.pre_et_look.main` for `sources` are now "level_1", "level_2", "level_3", "level_2_v3" (new default value) and "level_3_v3". The `bin_length' is now set to 1 by default (was `"DEKAD"`).
+    <li> Various other smaller bug fixes.</li>
+</ul>
+</details></p><p><details>
 <summary><b>3.3.0 (2023-04-05)</b></summary>
 <ul>
     <li> - Option to smooth and interpolate data with a Whittaker smoother.</li>

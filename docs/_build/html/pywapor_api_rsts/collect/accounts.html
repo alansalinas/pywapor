@@ -64,12 +64,10 @@
 <li class="toctree-l4"><a class="reference internal" href="#pywapor.collect.accounts.setup"><code class="docutils literal notranslate"><span class="pre">setup()</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="#pywapor.collect.accounts.get"><code class="docutils literal notranslate"><span class="pre">get()</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="#pywapor.collect.accounts.create_key"><code class="docutils literal notranslate"><span class="pre">create_key()</span></code></a></li>
-<li class="toctree-l4"><a class="reference internal" href="#pywapor.collect.accounts.vito_account"><code class="docutils literal notranslate"><span class="pre">vito_account()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#pywapor.collect.accounts.terra_account"><code class="docutils literal notranslate"><span class="pre">terra_account()</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="#pywapor.collect.accounts.nasa_account"><code class="docutils literal notranslate"><span class="pre">nasa_account()</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="#pywapor.collect.accounts.earthexplorer_account"><code class="docutils literal notranslate"><span class="pre">earthexplorer_account()</span></code></a></li>
-<li class="toctree-l4"><a class="reference internal" href="#pywapor.collect.accounts.wapor_account"><code class="docutils literal notranslate"><span class="pre">wapor_account()</span></code></a></li>
-<li class="toctree-l4"><a class="reference internal" href="#pywapor.collect.accounts.viirsl1_account"><code class="docutils literal notranslate"><span class="pre">viirsl1_account()</span></code></a></li>
-<li class="toctree-l4"><a class="reference internal" href="#pywapor.collect.accounts.sentinel_account"><code class="docutils literal notranslate"><span class="pre">sentinel_account()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#pywapor.collect.accounts.copernicus_data_space_account"><code class="docutils literal notranslate"><span class="pre">copernicus_data_space_account()</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="#pywapor.collect.accounts.ecmwf_account"><code class="docutils literal notranslate"><span class="pre">ecmwf_account()</span></code></a></li>
 </ul>
 </li>
@@ -119,7 +117,7 @@
 <dd><p>Asks, saves and tests a username/password combination for <cite>account</cite>.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
-<dd class="field-odd"><p><strong>account</strong> (<em>{&quot;NASA&quot;</em><em> | </em><em>&quot;VITO&quot;</em><em> | </em><em>&quot;WAPOR&quot;</em><em> | </em><em>&quot;ECMWF&quot;</em><em> | </em><em>&quot;SENTINEL&quot;</em><em> | </em><em>&quot;VIIRSL1&quot;</em><em> | </em><em>&quot;EARTHEXPLORER&quot;}</em>) – Which un/pw combination to store.</p>
+<dd class="field-odd"><p><strong>account</strong> (<em>{&quot;NASA&quot;</em><em> | </em><em>&quot;TERRA&quot;</em><em> | </em><em>&quot;ECMWF&quot;</em><em> | </em><em>&quot;COPERNICUS_DATA_SPACE&quot;</em><em> | </em><em>&quot;EARTHEXPLORER&quot;}</em>) – Which un/pw combination to store.</p>
 </dd>
 </dl>
 </dd></dl>
@@ -130,7 +128,7 @@
 <dd><p>Loads a required username/password.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
-<dd class="field-odd"><p><strong>account</strong> (<em>{&quot;NASA&quot;</em><em> | </em><em>&quot;VITO&quot;</em><em> | </em><em>&quot;WAPOR&quot;</em><em> | </em><em>&quot;ECMWF&quot;</em><em> | </em><em>&quot;SENTINEL&quot;</em><em> | </em><em>&quot;VIIRSL1&quot;</em><em> | </em><em>&quot;EARTHEXPLORER&quot;}</em>) – Which un/pw combination to load.</p>
+<dd class="field-odd"><p><strong>account</strong> (<em>{&quot;NASA&quot;</em><em> | </em><em>&quot;TERRA&quot;</em><em> | </em><em>&quot;ECMWF&quot;</em><em> | </em><em>&quot;COPERNICUS_DATA_SPACE&quot;</em><em> | </em><em>&quot;EARTHEXPLORER&quot;}</em>) – Which un/pw combination to load.</p>
 </dd>
 </dl>
 </dd></dl>
@@ -142,10 +140,10 @@
 </dd></dl>
 
 <dl class="py function">
-<dt class="sig sig-object py" id="pywapor.collect.accounts.vito_account">
-<span class="sig-name descname"><span class="pre">vito_account</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">user_pw</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pywapor.collect.accounts.vito_account" title="Permalink to this definition"></a></dt>
-<dd><p>Check if the given or stored VITO username/password combination
-is correct. Accounts can be created on <a class="reference external" href="https://www.vito-eodata.be">https://www.vito-eodata.be</a>.</p>
+<dt class="sig sig-object py" id="pywapor.collect.accounts.terra_account">
+<span class="sig-name descname"><span class="pre">terra_account</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">user_pw</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pywapor.collect.accounts.terra_account" title="Permalink to this definition"></a></dt>
+<dd><p>Check if the given or stored TERA username/password combination
+is correct. Accounts can be created on <a class="reference external" href="https://viewer.terrascope.be">https://viewer.terrascope.be</a>.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><p><strong>user_pw</strong> (<em>tuple</em><em>, </em><em>optional</em>) – (“username”, “password”) to check, if <cite>None</cite> will try to load the
@@ -199,58 +197,20 @@ password from the keychain, by default None.</p>
 </dd></dl>
 
 <dl class="py function">
-<dt class="sig sig-object py" id="pywapor.collect.accounts.wapor_account">
-<span class="sig-name descname"><span class="pre">wapor_account</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">user_pw</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pywapor.collect.accounts.wapor_account" title="Permalink to this definition"></a></dt>
-<dd><p>Check if the given or stored WAPOR token is
-correct. Accounts can be created on <a class="reference external" href="https://wapor.apps.fao.org/home/WAPOR_2/1">https://wapor.apps.fao.org/home/WAPOR_2/1</a>.</p>
+<dt class="sig sig-object py" id="pywapor.collect.accounts.copernicus_data_space_account">
+<span class="sig-name descname"><span class="pre">copernicus_data_space_account</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">user_pw</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pywapor.collect.accounts.copernicus_data_space_account" title="Permalink to this definition"></a></dt>
+<dd><p>Check if the given or stored COPERNICUS_DATA_SPACE account is
+correct. Accounts can be created on <a class="reference external" href="https://dataspace.copernicus.eu">https://dataspace.copernicus.eu</a></p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
-<dd class="field-odd"><p><strong>user_pw</strong> (<em>tuple</em><em>, </em><em>optional</em>) – (“”, “token”) to check, if <cite>None</cite> will try to load the
-password from the keychain, by default None.</p>
+<dd class="field-odd"><p><strong>user_pw</strong> (<em>tuple</em>) – (“username”, “password”) to check.</p>
 </dd>
 <dt class="field-even">Returns</dt>
-<dd class="field-even"><p>True if the password works, otherwise False.</p>
+<dd class="field-even"><p>First item is <cite>True</cite> if the password works, otherwise <cite>False</cite>,
+seconds item is a error message.</p>
 </dd>
 <dt class="field-odd">Return type</dt>
-<dd class="field-odd"><p>bool</p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py function">
-<dt class="sig sig-object py" id="pywapor.collect.accounts.viirsl1_account">
-<span class="sig-name descname"><span class="pre">viirsl1_account</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">user_pw</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pywapor.collect.accounts.viirsl1_account" title="Permalink to this definition"></a></dt>
-<dd><p>Check if the given or stored VIIRSL1 token is
-correct. Accounts can be created on <a class="reference external" href="https://ladsweb.modaps.eosdis.nasa.gov/">https://ladsweb.modaps.eosdis.nasa.gov/</a>.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
-<dd class="field-odd"><p><strong>user_pw</strong> (<em>tuple</em><em>, </em><em>optional</em>) – (“”, “token”) to check, if <cite>None</cite> will try to load the
-password from the keychain, by default None.</p>
-</dd>
-<dt class="field-even">Returns</dt>
-<dd class="field-even"><p>True if the password works, otherwise False.</p>
-</dd>
-<dt class="field-odd">Return type</dt>
-<dd class="field-odd"><p>bool</p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py function">
-<dt class="sig sig-object py" id="pywapor.collect.accounts.sentinel_account">
-<span class="sig-name descname"><span class="pre">sentinel_account</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">user_pw</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pywapor.collect.accounts.sentinel_account" title="Permalink to this definition"></a></dt>
-<dd><p>Check if the given or stored SENTINEL username and password is
-correct. Accounts can be created on <a class="reference external" href="https://scihub.copernicus.eu/userguide/SelfRegistration">https://scihub.copernicus.eu/userguide/SelfRegistration</a>.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
-<dd class="field-odd"><p><strong>user_pw</strong> (<em>tuple</em><em>, </em><em>optional</em>) – (“”, “token”) to check, if <cite>None</cite> will try to load the
-password from the keychain, by default None.</p>
-</dd>
-<dt class="field-even">Returns</dt>
-<dd class="field-even"><p>True if the password works, otherwise False.</p>
-</dd>
-<dt class="field-odd">Return type</dt>
-<dd class="field-odd"><p>bool</p>
+<dd class="field-odd"><p>tuple</p>
 </dd>
 </dl>
 </dd></dl>
@@ -262,14 +222,14 @@ password from the keychain, by default None.</p>
 correct. Accounts can be created on <a class="reference external" href="https://cds.climate.copernicus.eu/#!/home">https://cds.climate.copernicus.eu/#!/home</a>.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
-<dd class="field-odd"><p><strong>user_pw</strong> (<em>tuple</em><em>, </em><em>optional</em>) – (“”, “key”) to check, if <cite>None</cite> will try to load the
-password from the keychain, by default None.</p>
+<dd class="field-odd"><p><strong>user_pw</strong> (<em>tuple</em>) – (“username”, “password”) to check.</p>
 </dd>
 <dt class="field-even">Returns</dt>
-<dd class="field-even"><p>True if the password works, otherwise False.</p>
+<dd class="field-even"><p>First item is <cite>True</cite> if the password works, otherwise <cite>False</cite>,
+seconds item is a error message.</p>
 </dd>
 <dt class="field-odd">Return type</dt>
-<dd class="field-odd"><p>bool</p>
+<dd class="field-odd"><p>tuple</p>
 </dd>
 </dl>
 </dd></dl>
