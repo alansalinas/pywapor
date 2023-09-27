@@ -4,14 +4,12 @@
 User Guide
 **********
 
-.. mdinclude:: notebooks/README.md
+.. mdinclude:: notebooks/pyWaPOR/README.md
 
 .. toctree::
     :hidden:
 
-    notebooks/1_introduction
-    notebooks/2_levels
-    notebooks/3_composites
-    .. notebooks/4_sideloading
-    notebooks/5_enhancers
-    notebooks/6_wapor_vs_pywapor
+    notebooks/pyWaPOR/introduction
+    notebooks/pyWaPOR/passwords
+    notebooks/pyWaPOR/sideload
+    notebooks/pyWaPOR/enhancers

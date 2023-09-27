@@ -1,0 +1,913 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17: http://docutils.sourceforge.net/" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>&lt;no title&gt; &mdash; pyWaPOR  documentation</title>
+      <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="../../_static/css/theme.css" type="text/css" />
+      <link rel="stylesheet" href="../../_static/copybutton.css" type="text/css" />
+      <link rel="stylesheet" href="../../_static/nbsphinx-code-cells.css" type="text/css" />
+      <link rel="stylesheet" href="../../_static/css/custom.css" type="text/css" />
+  <!--[if lt IE 9]>
+    <script src="../../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script data-url_root="../../" id="documentation_options" src="../../_static/documentation_options.js"></script>
+        <script src="../../_static/jquery.js"></script>
+        <script src="../../_static/underscore.js"></script>
+        <script src="../../_static/_sphinx_javascript_frameworks_compat.js"></script>
+        <script src="../../_static/doctools.js"></script>
+        <script src="../../_static/sphinx_highlight.js"></script>
+        <script src="../../_static/clipboard.min.js"></script>
+        <script src="../../_static/copybutton.js"></script>
+        <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+        <script>window.MathJax = {"tex": {"inlineMath": [["$", "$"], ["\\(", "\\)"]], "processEscapes": true}, "options": {"ignoreHtmlClass": "tex2jax_ignore|mathjax_ignore|document", "processHtmlClass": "tex2jax_process|mathjax_process|math|output_area"}}</script>
+        <script defer="defer" src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+    <script src="../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search"  style="background: #004747" >
+
+          
+          
+          <a href="../../index.html" class="icon icon-home">
+            pyWaPOR
+              <img src="../../_static/logo.png" class="logo" alt="Logo"/>
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="../../data_sources.html">Data</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../_user_guide.html">User Guide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../_pywapor_api.html">pyWaPOR API</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../_etlook.html">ETLook</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../bibliography.html">Bibliography</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu"  style="background: #004747" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../index.html">pyWaPOR</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+      <li class="breadcrumb-item active">&lt;no title&gt;</li>
+      <li class="wy-breadcrumbs-aside">
+              <a href="https://bitbucket.org///src/notebooks/Transhumance/Transhumance.ipynb?mode=view" class="fa fa-bitbucket"> Edit on Bitbucket</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <p><a class="reference external" href="https://colab.research.google.com/github/un-fao/FAO-Water-Applications/blob/main/Transhumance/Transhumance.ipynb"><img alt="Open In Colab" src="https://colab.research.google.com/assets/colab-badge.svg" /></a></p>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[17]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1">### Import libraries</span>
+<span class="kn">import</span> <span class="nn">ee</span>
+<span class="kn">import</span> <span class="nn">datetime</span>
+<span class="kn">import</span> <span class="nn">ipywidgets</span> <span class="k">as</span> <span class="nn">widgets</span>
+<span class="kn">from</span> <span class="nn">ipywidgets</span> <span class="kn">import</span> <span class="n">Layout</span><span class="p">,</span> <span class="n">AppLayout</span><span class="p">,</span> <span class="n">Dropdown</span><span class="p">,</span> <span class="n">Output</span><span class="p">,</span> <span class="n">Textarea</span><span class="p">,</span> <span class="n">VBox</span><span class="p">,</span> <span class="n">Label</span><span class="p">,</span> <span class="n">DatePicker</span><span class="p">,</span> <span class="n">HBox</span>
+<span class="kn">import</span> <span class="nn">pandas</span> <span class="k">as</span> <span class="nn">pd</span>
+<span class="kn">from</span> <span class="nn">pandas</span> <span class="kn">import</span> <span class="n">date_range</span>
+<span class="kn">import</span> <span class="nn">geemap</span>
+<span class="kn">import</span> <span class="nn">bqplot</span> <span class="k">as</span> <span class="nn">bq</span>
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<span class="kn">import</span> <span class="nn">os</span>
+<span class="kn">import</span> <span class="nn">ipyleaflet</span>
+<span class="kn">import</span> <span class="nn">matplotlib.pyplot</span> <span class="k">as</span> <span class="nn">plt</span>
+<span class="kn">from</span> <span class="nn">IPython.display</span> <span class="kn">import</span> <span class="n">display</span><span class="p">,</span> <span class="n">Javascript</span>
+</pre></div>
+</div>
+</div>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[18]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1">##### initialize, path to shapes</span>
+<span class="n">Map</span> <span class="o">=</span> <span class="n">geemap</span><span class="o">.</span><span class="n">Map</span><span class="p">()</span>
+<span class="n">ee</span><span class="o">.</span><span class="n">Initialize</span><span class="p">()</span>
+<span class="n">WDPA</span> <span class="o">=</span> <span class="n">ee</span><span class="o">.</span><span class="n">FeatureCollection</span><span class="p">(</span><span class="s2">&quot;WCMC/WDPA/current/polygons&quot;</span><span class="p">)</span>
+<span class="n">Ia</span> <span class="o">=</span> <span class="n">WDPA</span><span class="o">.</span><span class="n">filter</span><span class="p">(</span><span class="n">ee</span><span class="o">.</span><span class="n">Filter</span><span class="o">.</span><span class="n">eq</span><span class="p">(</span><span class="s2">&quot;IUCN_CAT&quot;</span><span class="p">,</span> <span class="s1">&#39;Ia&#39;</span><span class="p">))</span>
+<span class="n">Ib</span> <span class="o">=</span> <span class="n">WDPA</span><span class="o">.</span><span class="n">filter</span><span class="p">(</span><span class="n">ee</span><span class="o">.</span><span class="n">Filter</span><span class="o">.</span><span class="n">eq</span><span class="p">(</span><span class="s2">&quot;IUCN_CAT&quot;</span><span class="p">,</span> <span class="s1">&#39;Ib&#39;</span><span class="p">))</span>
+<span class="n">II</span> <span class="o">=</span> <span class="n">WDPA</span><span class="o">.</span><span class="n">filter</span><span class="p">(</span><span class="n">ee</span><span class="o">.</span><span class="n">Filter</span><span class="o">.</span><span class="n">eq</span><span class="p">(</span><span class="s2">&quot;IUCN_CAT&quot;</span><span class="p">,</span> <span class="s1">&#39;II&#39;</span><span class="p">))</span>
+<span class="n">WDPA</span> <span class="o">=</span> <span class="n">Ia</span><span class="o">.</span><span class="n">merge</span><span class="p">(</span><span class="n">Ib</span><span class="p">)</span><span class="o">.</span><span class="n">merge</span><span class="p">(</span><span class="n">II</span><span class="p">)</span>
+<span class="n">countries</span> <span class="o">=</span> <span class="n">ee</span><span class="o">.</span><span class="n">FeatureCollection</span><span class="p">(</span><span class="s2">&quot;FAO/GAUL_SIMPLIFIED_500m/2015/level0&quot;</span><span class="p">)</span>
+<span class="n">MLI</span> <span class="o">=</span> <span class="n">countries</span><span class="o">.</span><span class="n">filter</span><span class="p">(</span><span class="n">ee</span><span class="o">.</span><span class="n">Filter</span><span class="o">.</span><span class="n">eq</span><span class="p">(</span><span class="s2">&quot;ADM0_NAME&quot;</span><span class="p">,</span> <span class="s1">&#39;Mali&#39;</span><span class="p">))</span>
+<span class="n">BFA</span> <span class="o">=</span> <span class="n">countries</span><span class="o">.</span><span class="n">filter</span><span class="p">(</span><span class="n">ee</span><span class="o">.</span><span class="n">Filter</span><span class="o">.</span><span class="n">eq</span><span class="p">(</span><span class="s2">&quot;ADM0_NAME&quot;</span><span class="p">,</span><span class="s1">&#39;Burkina Faso&#39;</span><span class="p">))</span>
+<span class="n">countries</span> <span class="o">=</span> <span class="n">MLI</span><span class="o">.</span><span class="n">merge</span><span class="p">(</span><span class="n">BFA</span><span class="p">)</span>
+<span class="n">Map</span><span class="o">.</span><span class="n">addLayer</span><span class="p">(</span><span class="n">countries</span><span class="p">,</span> <span class="p">{},</span> <span class="s1">&#39;Domaine&#39;</span><span class="p">);</span>
+<span class="n">Buffer_BF</span> <span class="o">=</span> <span class="n">ee</span><span class="o">.</span><span class="n">FeatureCollection</span><span class="p">(</span><span class="s2">&quot;users/jeanhounkpe/Clip_Data/Buffer_15_BF&quot;</span><span class="p">)</span>
+<span class="n">Buffer_ML</span> <span class="o">=</span> <span class="n">ee</span><span class="o">.</span><span class="n">FeatureCollection</span><span class="p">(</span><span class="s2">&quot;users/jeanhounkpe/Clip_Data/Buffer_15_ML&quot;</span><span class="p">)</span>
+<span class="n">buffer</span> <span class="o">=</span> <span class="n">Buffer_BF</span><span class="o">.</span><span class="n">merge</span><span class="p">(</span><span class="n">Buffer_ML</span><span class="p">)</span>
+<span class="n">Cattle</span> <span class="o">=</span> <span class="n">ee</span><span class="o">.</span><span class="n">Image</span><span class="p">(</span><span class="s2">&quot;users/yira8y/da_glw_ha&quot;</span><span class="p">)</span>
+<span class="n">Map</span><span class="o">.</span><span class="n">centerObject</span><span class="p">(</span><span class="n">countries</span><span class="p">)</span>
+
+<span class="n">Mali</span> <span class="o">=</span> <span class="n">ee</span><span class="o">.</span><span class="n">FeatureCollection</span><span class="p">(</span><span class="s2">&quot;users/yira8y/mli_adm3&quot;</span><span class="p">)</span>
+<span class="n">Protected_Area</span> <span class="o">=</span> <span class="n">ee</span><span class="o">.</span><span class="n">FeatureCollection</span><span class="p">(</span><span class="s2">&quot;WCMC/WDPA/current/polygons&quot;</span><span class="p">)</span>
+<span class="n">BFA</span> <span class="o">=</span> <span class="n">ee</span><span class="o">.</span><span class="n">FeatureCollection</span><span class="p">(</span><span class="s2">&quot;users/yira8y/BFA&quot;</span><span class="p">)</span>
+<span class="n">Boundary</span> <span class="o">=</span> <span class="n">ee</span><span class="o">.</span><span class="n">FeatureCollection</span><span class="p">(</span><span class="s2">&quot;FAO/GAUL_SIMPLIFIED_500m/2015/level2&quot;</span><span class="p">)</span>
+<span class="n">Accessibility</span> <span class="o">=</span> <span class="n">ee</span><span class="o">.</span><span class="n">Image</span><span class="p">(</span><span class="s2">&quot;Oxford/MAP/accessibility_to_cities_2015_v1_0&quot;</span><span class="p">)</span>
+<span class="n">Coul_Transh_BF</span> <span class="o">=</span> <span class="n">ee</span><span class="o">.</span><span class="n">FeatureCollection</span><span class="p">(</span><span class="s2">&quot;users/jeanhounkpe/Clip_Data/Couloirs_Transh_BF&quot;</span><span class="p">)</span>
+<span class="n">Coul_Transh_ML</span> <span class="o">=</span> <span class="n">ee</span><span class="o">.</span><span class="n">FeatureCollection</span><span class="p">(</span><span class="s2">&quot;users/jeanhounkpe/Clip_Data/Couloirs_Transh_ML&quot;</span><span class="p">)</span>
+<span class="n">couloir</span> <span class="o">=</span> <span class="n">Coul_Transh_BF</span><span class="o">.</span><span class="n">merge</span><span class="p">(</span><span class="n">Coul_Transh_ML</span><span class="p">)</span>
+<span class="n">Marches_BF</span> <span class="o">=</span> <span class="n">ee</span><span class="o">.</span><span class="n">FeatureCollection</span><span class="p">(</span><span class="s2">&quot;users/jeanhounkpe/Clip_Data/Marches_BF&quot;</span><span class="p">)</span>
+<span class="n">Marches_ML</span> <span class="o">=</span> <span class="n">ee</span><span class="o">.</span><span class="n">FeatureCollection</span><span class="p">(</span><span class="s2">&quot;users/jeanhounkpe/Clip_Data/Marches_ML&quot;</span><span class="p">)</span>
+<span class="n">marche</span> <span class="o">=</span> <span class="n">Marches_BF</span><span class="o">.</span><span class="n">merge</span><span class="p">(</span><span class="n">Marches_ML</span><span class="p">)</span>
+<span class="n">Post_Veteri_BF</span> <span class="o">=</span> <span class="n">ee</span><span class="o">.</span><span class="n">FeatureCollection</span><span class="p">(</span><span class="s2">&quot;users/jeanhounkpe/Clip_Data/Postes_veterinaires_BF1&quot;</span><span class="p">)</span>
+<span class="n">Post_Veteri_ML</span> <span class="o">=</span> <span class="n">ee</span><span class="o">.</span><span class="n">FeatureCollection</span><span class="p">(</span><span class="s2">&quot;users/jeanhounkpe/Clip_Data/Postes_veterinaires_ML1&quot;</span><span class="p">)</span>
+<span class="n">veto</span><span class="o">=</span> <span class="n">Post_Veteri_BF</span><span class="o">.</span><span class="n">merge</span><span class="p">(</span><span class="n">Post_Veteri_ML</span><span class="p">)</span>
+<span class="n">Quai_Embq_BF</span> <span class="o">=</span> <span class="n">ee</span><span class="o">.</span><span class="n">FeatureCollection</span><span class="p">(</span><span class="s2">&quot;users/jeanhounkpe/Clip_Data/Quai_Embaquement_BF&quot;</span><span class="p">)</span>
+<span class="n">Cheptel_Max</span> <span class="o">=</span> <span class="n">ee</span><span class="o">.</span><span class="n">FeatureCollection</span><span class="p">(</span><span class="s2">&quot;users/jeanhounkpe/Clip_Data/Effectif_Cheptel_Max_BF&quot;</span><span class="p">)</span>
+<span class="n">Cheptel_Mean</span> <span class="o">=</span> <span class="n">ee</span><span class="o">.</span><span class="n">FeatureCollection</span><span class="p">(</span><span class="s2">&quot;users/jeanhounkpe/Clip_Data/Effectif_Cheptel_Mean_BF&quot;</span><span class="p">)</span>
+<span class="n">Cheptel_Min</span> <span class="o">=</span> <span class="n">ee</span><span class="o">.</span><span class="n">FeatureCollection</span><span class="p">(</span><span class="s2">&quot;users/jeanhounkpe/Clip_Data/Effectif_Cheptel_Min_BF&quot;</span><span class="p">)</span>
+<span class="n">Road_BF</span> <span class="o">=</span> <span class="n">ee</span><span class="o">.</span><span class="n">FeatureCollection</span><span class="p">(</span><span class="s2">&quot;users/jeanhounkpe/Clip_Data/Routes_BF&quot;</span><span class="p">)</span>
+<span class="n">Villages_BF</span> <span class="o">=</span> <span class="n">ee</span><span class="o">.</span><span class="n">FeatureCollection</span><span class="p">(</span><span class="s2">&quot;users/jeanhounkpe/Clip_Data/Villages_BF&quot;</span><span class="p">)</span>
+<span class="n">Countries_Bounda</span> <span class="o">=</span> <span class="n">ee</span><span class="o">.</span><span class="n">FeatureCollection</span><span class="p">(</span><span class="s2">&quot;FAO/GAUL_SIMPLIFIED_500m/2015/level0&quot;</span><span class="p">)</span>
+<span class="c1"># Animal spatial repartition</span>
+<span class="n">Cattle</span> <span class="o">=</span> <span class="n">ee</span><span class="o">.</span><span class="n">Image</span><span class="p">(</span><span class="s2">&quot;users/jeanhounkpe/Clip_Data/6_Ct_2015_Aw2_ML_BF&quot;</span><span class="p">)</span>
+<span class="n">Goats</span> <span class="o">=</span> <span class="n">ee</span><span class="o">.</span><span class="n">Image</span><span class="p">(</span><span class="s2">&quot;users/jeanhounkpe/Clip_Data/6_Gt_2015_Aw_ML_BF&quot;</span><span class="p">)</span>
+<span class="n">Sheep</span> <span class="o">=</span> <span class="n">ee</span><span class="o">.</span><span class="n">Image</span><span class="p">(</span><span class="s2">&quot;users/jeanhounkpe/Clip_Data/6_Sh_2015_Aw_ML_BF&quot;</span><span class="p">)</span>
+<span class="n">pointEauBF</span><span class="o">=</span><span class="n">ee</span><span class="o">.</span><span class="n">FeatureCollection</span><span class="p">(</span><span class="s2">&quot;users/jeanhounkpe/Points_dEau_BF&quot;</span><span class="p">)</span>
+<span class="n">pointEauMLI</span><span class="o">=</span><span class="n">ee</span><span class="o">.</span><span class="n">FeatureCollection</span><span class="p">(</span><span class="s2">&quot;users/jeanhounkpe/Points_dEau_ML&quot;</span><span class="p">)</span>
+<span class="n">pointEau</span> <span class="o">=</span> <span class="n">pointEauBF</span><span class="o">.</span><span class="n">merge</span><span class="p">(</span><span class="n">pointEauMLI</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[19]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1">##########Widgets</span>
+
+<span class="c1">#bouton</span>
+<span class="n">style</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;description_width&#39;</span><span class="p">:</span> <span class="s1">&#39;max-content&#39;</span><span class="p">}</span>
+
+<span class="n">Obtressources</span> <span class="o">=</span> <span class="n">widgets</span><span class="o">.</span><span class="n">Button</span><span class="p">(</span>
+    <span class="n">description</span><span class="o">=</span><span class="s2">&quot;Obtenir ressources&quot;</span><span class="p">,</span>
+    <span class="n">button_style</span><span class="o">=</span><span class="s1">&#39;info&#39;</span><span class="p">,</span>
+    <span class="n">tooltip</span><span class="o">=</span><span class="s1">&#39;Cliquer pour obtenir les variables&#39;</span><span class="p">,</span>
+    <span class="n">layout</span><span class="o">=</span><span class="n">widgets</span><span class="o">.</span><span class="n">Layout</span><span class="p">(</span><span class="n">width</span><span class="o">=</span><span class="s2">&quot;auto&quot;</span><span class="p">,</span> <span class="n">height</span><span class="o">=</span><span class="s2">&quot;auto&quot;</span><span class="p">),</span>
+    <span class="n">style</span><span class="o">=</span><span class="n">style</span><span class="p">,</span>
+<span class="p">)</span>
+
+<span class="c1">#Téléchargeur</span>
+<span class="n">uploader</span> <span class="o">=</span> <span class="n">widgets</span><span class="o">.</span><span class="n">FileUpload</span><span class="p">(</span>
+    <span class="n">description</span><span class="o">=</span><span class="s1">&#39;Charger zone&#39;</span><span class="p">,</span>
+    <span class="n">accept</span><span class="o">=</span><span class="s1">&#39;.zip, .json, .geojson&#39;</span><span class="p">,</span>
+    <span class="n">multiple</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+    <span class="n">button_style</span><span class="o">=</span><span class="s1">&#39;primary&#39;</span><span class="p">,</span>
+    <span class="n">tooltip</span><span class="o">=</span><span class="s1">&#39;Fichier Zip.&#39;</span><span class="p">,</span>
+    <span class="n">style</span><span class="o">=</span><span class="n">style</span><span class="p">,</span>
+<span class="p">)</span>
+
+<span class="c1">#soumetteur</span>
+<span class="n">submit</span> <span class="o">=</span> <span class="n">widgets</span><span class="o">.</span><span class="n">Button</span><span class="p">(</span>
+    <span class="n">description</span><span class="o">=</span><span class="s1">&#39;Afficher zone/region&#39;</span><span class="p">,</span>
+    <span class="n">button_style</span><span class="o">=</span><span class="s1">&#39;success&#39;</span><span class="p">,</span>
+    <span class="n">tooltip</span><span class="o">=</span><span class="s1">&#39;Afficher la zone chargée ou la region&#39;</span><span class="p">,</span>
+    <span class="n">style</span><span class="o">=</span><span class="n">style</span>
+<span class="p">)</span>
+<span class="c1">#reinitialiseur</span>
+<span class="n">reset</span> <span class="o">=</span> <span class="n">widgets</span><span class="o">.</span><span class="n">Button</span><span class="p">(</span>
+    <span class="n">description</span><span class="o">=</span><span class="s1">&#39;Effacer&#39;</span><span class="p">,</span>
+    <span class="n">button_style</span><span class="o">=</span><span class="s1">&#39;warning&#39;</span><span class="p">,</span>
+    <span class="n">tooltip</span><span class="o">=</span><span class="s1">&#39;Effacer la zone chargée&#39;</span><span class="p">,</span>
+    <span class="n">style</span><span class="o">=</span><span class="n">style</span>
+<span class="p">)</span>
+<span class="c1">#taux degradation</span>
+<span class="n">tauxDegradation</span> <span class="o">=</span> <span class="n">widgets</span><span class="o">.</span><span class="n">FloatSlider</span><span class="p">(</span>
+    <span class="n">value</span><span class="o">=</span><span class="mf">0.05</span><span class="p">,</span>
+    <span class="nb">min</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span>
+    <span class="nb">max</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span>
+    <span class="n">step</span><span class="o">=</span><span class="mf">0.01</span><span class="p">,</span>
+    <span class="n">description</span><span class="o">=</span><span class="s1">&#39;Degrad. MS:&#39;</span>
+<span class="p">)</span>
+<span class="c1">#coefficient accessibilité</span>
+<span class="n">coefAccessLigneux</span> <span class="o">=</span> <span class="n">widgets</span><span class="o">.</span><span class="n">FloatSlider</span><span class="p">(</span>
+    <span class="n">value</span><span class="o">=</span><span class="mf">0.3</span><span class="p">,</span>
+    <span class="nb">min</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span>
+    <span class="nb">max</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span>
+    <span class="n">step</span><span class="o">=</span><span class="mf">0.01</span><span class="p">,</span>
+    <span class="n">description</span><span class="o">=</span><span class="s1">&#39;Acces_Lign.:&#39;</span>
+<span class="p">)</span>
+<span class="c1">#coefficient accessibilité</span>
+<span class="n">coefAccessResidusCult</span> <span class="o">=</span> <span class="n">widgets</span><span class="o">.</span><span class="n">FloatSlider</span><span class="p">(</span>
+    <span class="n">value</span><span class="o">=</span><span class="mf">0.5</span><span class="p">,</span>
+    <span class="nb">min</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span>
+    <span class="nb">max</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span>
+    <span class="n">step</span><span class="o">=</span><span class="mf">0.01</span><span class="p">,</span>
+    <span class="n">layout</span><span class="o">=</span><span class="n">widgets</span><span class="o">.</span><span class="n">Layout</span><span class="p">(</span><span class="n">width</span><span class="o">=</span><span class="s2">&quot;auto&quot;</span><span class="p">,</span> <span class="n">height</span><span class="o">=</span><span class="s2">&quot;auto&quot;</span><span class="p">),</span>
+    <span class="n">description</span><span class="o">=</span><span class="s1">&#39;Acces_Cult.:&#39;</span>
+<span class="p">)</span>
+<span class="c1">#cnsommation moyenne quotidien</span>
+<span class="n">feedIntakeCoef</span> <span class="o">=</span> <span class="n">widgets</span><span class="o">.</span><span class="n">FloatText</span><span class="p">(</span>
+    <span class="n">value</span><span class="o">=</span><span class="mf">3.5</span><span class="p">,</span>
+    <span class="n">layout</span><span class="o">=</span><span class="n">widgets</span><span class="o">.</span><span class="n">Layout</span><span class="p">(</span><span class="n">width</span><span class="o">=</span><span class="s2">&quot;auto&quot;</span><span class="p">,</span> <span class="n">height</span><span class="o">=</span><span class="s2">&quot;auto&quot;</span><span class="p">),</span>
+    <span class="n">description</span><span class="o">=</span><span class="s1">&#39;Conso. QM:&#39;</span><span class="p">,</span>
+<span class="p">)</span>
+
+<span class="n">choisirVariable</span> <span class="o">=</span> <span class="n">widgets</span><span class="o">.</span><span class="n">Dropdown</span><span class="p">(</span>
+    <span class="n">options</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;Couche à exporter&#39;</span><span class="p">,</span> <span class="s1">&#39;Biomasse_accessible&#39;</span><span class="p">,</span> <span class="s1">&#39;Biomasse_totale&#39;</span><span class="p">],</span> <span class="n">value</span><span class="o">=</span><span class="s1">&#39;Couche à exporter&#39;</span><span class="p">,</span> <span class="n">layout</span><span class="o">=</span><span class="n">widgets</span><span class="o">.</span><span class="n">Layout</span><span class="p">(</span><span class="n">width</span><span class="o">=</span><span class="s2">&quot;auto&quot;</span><span class="p">,</span> <span class="n">height</span><span class="o">=</span><span class="s2">&quot;auto&quot;</span><span class="p">)</span>
+<span class="p">)</span>
+
+<span class="n">exporter</span> <span class="o">=</span> <span class="n">widgets</span><span class="o">.</span><span class="n">Button</span><span class="p">(</span>
+    <span class="n">description</span><span class="o">=</span><span class="s2">&quot;Exporter couche&quot;</span><span class="p">,</span>
+    <span class="n">button_style</span><span class="o">=</span><span class="s1">&#39;info&#39;</span><span class="p">,</span>
+    <span class="n">tooltip</span><span class="o">=</span><span class="s1">&#39;Exporter variable&#39;</span><span class="p">,</span>
+    <span class="n">style</span><span class="o">=</span><span class="n">style</span><span class="p">,</span>
+<span class="p">)</span>
+
+<span class="c1">#date_picker = widgets.DatePicker(description=&#39;Date de la requête&#39;, value=datetime.datetime(2020,10,1))</span>
+<span class="c1">#startYear = widgets.DatePicker(description=&#39;Fin transhumance précédente&#39;, value=datetime.datetime(2020,1,1))</span>
+
+<span class="n">startDatePicker</span> <span class="o">=</span> <span class="n">widgets</span><span class="o">.</span><span class="n">DatePicker</span><span class="p">(</span>
+    <span class="n">description</span><span class="o">=</span><span class="s1">&#39;Début&#39;</span><span class="p">,</span>
+    <span class="n">value</span><span class="o">=</span><span class="n">datetime</span><span class="o">.</span><span class="n">datetime</span><span class="p">(</span><span class="mi">2021</span><span class="p">,</span><span class="mi">1</span><span class="p">,</span><span class="mi">1</span><span class="p">)</span>
+    <span class="p">)</span>
+<span class="n">requestDatePicker</span> <span class="o">=</span> <span class="n">widgets</span><span class="o">.</span><span class="n">DatePicker</span><span class="p">(</span>
+    <span class="n">description</span><span class="o">=</span><span class="s1">&#39;Requete&#39;</span><span class="p">,</span>
+    <span class="n">value</span><span class="o">=</span><span class="n">datetime</span><span class="o">.</span><span class="n">datetime</span><span class="p">(</span><span class="mi">2021</span><span class="p">,</span><span class="mi">3</span><span class="p">,</span><span class="mi">1</span><span class="p">)</span>
+    <span class="p">)</span>
+
+<span class="c1">#Ratio Bimass sup vs Bimass sous</span>
+
+<span class="n">ratioBimassSup1</span> <span class="o">=</span> <span class="n">widgets</span><span class="o">.</span><span class="n">FloatSlider</span><span class="p">(</span>
+    <span class="n">value</span><span class="o">=</span><span class="mf">0.9</span><span class="p">,</span>
+    <span class="nb">min</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span>
+    <span class="nb">max</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span>
+    <span class="n">step</span><span class="o">=</span><span class="mf">0.01</span><span class="p">,</span>
+    <span class="n">description</span><span class="o">=</span><span class="s1">&#39;% MS aerienne:&#39;</span>
+    <span class="p">)</span>
+
+<span class="c1">#Effaceur</span>
+<span class="n">boutoneffacer</span> <span class="o">=</span> <span class="n">widgets</span><span class="o">.</span><span class="n">Button</span><span class="p">(</span>
+    <span class="n">description</span><span class="o">=</span><span class="s1">&#39;Effacer zone&#39;</span><span class="p">,</span>
+    <span class="n">button_style</span><span class="o">=</span><span class="s1">&#39;warning&#39;</span><span class="p">,</span>
+    <span class="n">tooltip</span><span class="o">=</span><span class="s1">&#39;Effacer la zone&#39;</span><span class="p">,</span>
+    <span class="n">style</span><span class="o">=</span><span class="n">style</span>
+<span class="p">)</span>
+
+<span class="n">boutonexportercsv</span> <span class="o">=</span> <span class="n">widgets</span><span class="o">.</span><span class="n">Button</span><span class="p">(</span>
+    <span class="n">description</span><span class="o">=</span><span class="s1">&#39;Exporter CSV&#39;</span><span class="p">,</span>
+    <span class="n">tooltip</span><span class="o">=</span><span class="s1">&#39;Expoter information sur la zone&#39;</span><span class="p">,</span>
+    <span class="n">style</span><span class="o">=</span><span class="n">style</span>
+<span class="p">)</span>
+
+<span class="n">choisirRegion</span> <span class="o">=</span> <span class="n">widgets</span><span class="o">.</span><span class="n">Dropdown</span><span class="p">(</span>
+    <span class="n">options</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;Choisir region&#39;</span><span class="p">,</span> <span class="s1">&#39;Kayes&#39;</span><span class="p">,</span> <span class="s1">&#39;Koulikouro&#39;</span><span class="p">,</span> <span class="s1">&#39;Sikasso&#39;</span><span class="p">,</span> <span class="s1">&#39;Mopti&#39;</span><span class="p">,</span> <span class="s1">&#39;Tombouctou&#39;</span><span class="p">],</span> <span class="n">value</span><span class="o">=</span><span class="s1">&#39;Choisir region&#39;</span><span class="p">,</span> <span class="n">layout</span><span class="o">=</span><span class="n">widgets</span><span class="o">.</span><span class="n">Layout</span><span class="p">(</span><span class="n">width</span><span class="o">=</span><span class="s2">&quot;auto&quot;</span><span class="p">,</span> <span class="n">height</span><span class="o">=</span><span class="s2">&quot;auto&quot;</span><span class="p">)</span>
+<span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[20]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">resources</span><span class="p">(</span><span class="n">btn</span><span class="p">):</span>
+
+    <span class="c1">###Define Wet and Dry seasons for the year of the query date</span>
+<span class="c1">##### wet starts on Jun 1st and ends on September 30 of the query year</span>
+<span class="c1">##### Dry starts on Nov 1st of previous year and ends May query year</span>
+<span class="c1">#####get the query year</span>
+
+    <span class="n">st_time</span> <span class="o">=</span> <span class="n">startDatePicker</span><span class="o">.</span><span class="n">value</span>
+    <span class="n">end_time</span> <span class="o">=</span> <span class="n">requestDatePicker</span><span class="o">.</span><span class="n">value</span>
+    <span class="n">startYear</span> <span class="o">=</span> <span class="n">datetime</span><span class="o">.</span><span class="n">datetime</span><span class="o">.</span><span class="n">strftime</span><span class="p">(</span><span class="n">st_time</span><span class="p">,</span><span class="s1">&#39;%Y-%m-</span><span class="si">%d</span><span class="s1">&#39;</span><span class="p">)</span>
+    <span class="n">queryDate</span> <span class="o">=</span> <span class="n">datetime</span><span class="o">.</span><span class="n">datetime</span><span class="o">.</span><span class="n">strftime</span><span class="p">(</span><span class="n">end_time</span><span class="p">,</span><span class="s1">&#39;%Y-%m-</span><span class="si">%d</span><span class="s1">&#39;</span><span class="p">)</span>
+
+    <span class="n">startWet</span> <span class="o">=</span> <span class="n">startYear</span><span class="p">;</span>
+    <span class="n">endWet</span> <span class="o">=</span> <span class="n">queryDate</span><span class="p">;</span>
+    <span class="n">startDry</span> <span class="o">=</span> <span class="n">startYear</span><span class="p">;</span>
+    <span class="n">endDry</span> <span class="o">=</span> <span class="n">queryDate</span><span class="p">;</span>
+
+    <span class="n">queryDateNotString</span> <span class="o">=</span> <span class="n">ee</span><span class="o">.</span><span class="n">Date</span><span class="p">(</span><span class="n">queryDate</span><span class="p">);</span>
+    <span class="n">yearBefore</span> <span class="o">=</span> <span class="n">queryDateNotString</span><span class="o">.</span><span class="n">advance</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="s1">&#39;year&#39;</span><span class="p">)</span>
+
+<span class="c1">####Clear map</span>
+    <span class="n">Map</span><span class="o">.</span><span class="n">clear_layers</span><span class="p">()</span>
+    <span class="n">Map</span><span class="o">.</span><span class="n">remove_legends</span><span class="p">()</span>
+    <span class="n">Map</span><span class="o">.</span><span class="n">remove_colorbars</span><span class="p">()</span>
+    <span class="n">Map</span><span class="o">.</span><span class="n">add_basemap</span><span class="p">(</span><span class="n">basemap</span><span class="o">=</span><span class="s1">&#39;ROADMAP&#39;</span><span class="p">)</span>
+
+<span class="c1">#Load Dynamic world image for the wet season</span>
+    <span class="n">dw</span> <span class="o">=</span> <span class="n">geemap</span><span class="o">.</span><span class="n">dynamic_world</span><span class="p">(</span><span class="n">countries</span><span class="p">,</span> <span class="n">yearBefore</span><span class="p">,</span> <span class="n">queryDate</span><span class="p">,</span> <span class="n">return_type</span><span class="o">=</span><span class="s1">&#39;class&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">clip</span><span class="p">(</span><span class="n">countries</span><span class="p">)</span>
+    <span class="n">dwVis</span> <span class="o">=</span> <span class="p">{</span> <span class="s2">&quot;min&quot;</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span> <span class="s2">&quot;max&quot;</span><span class="p">:</span> <span class="mi">8</span><span class="p">,</span> <span class="s2">&quot;palette&quot;</span><span class="p">:</span> <span class="p">[</span><span class="s2">&quot;#419BDF&quot;</span><span class="p">,</span> <span class="s2">&quot;#397D49&quot;</span><span class="p">,</span> <span class="s2">&quot;#88B053&quot;</span><span class="p">,</span> <span class="s2">&quot;#7A87C6&quot;</span><span class="p">,</span> <span class="s2">&quot;#E49635&quot;</span><span class="p">,</span> <span class="s2">&quot;#DFC35A&quot;</span><span class="p">,</span> <span class="s2">&quot;#C4281B&quot;</span><span class="p">,</span> <span class="s2">&quot;#A59B8F&quot;</span><span class="p">,</span> <span class="s2">&quot;#B39FE1&quot;</span><span class="p">,]}</span>
+<span class="c1">##########Add LULC to Map</span>
+    <span class="n">Map</span><span class="o">.</span><span class="n">addLayer</span><span class="p">(</span><span class="n">countries</span><span class="p">,</span> <span class="p">{},</span> <span class="s1">&#39;Mali_Burkina&#39;</span><span class="p">,</span><span class="mi">1</span><span class="p">);</span>
+    <span class="c1">#Map.addLayer(dw, dwVis, &#39;DW Land Cover&#39;, False)</span>
+    <span class="c1">#Map.add_legend(title=&quot;Dynamic World&quot;, builtin_legend=&#39;Dynamic_World&#39;)</span>
+    <span class="c1">#Map.addLayer(WDPA, {&#39;color&#39;:&#39;green&#39;},&#39;WDPA&#39;, False )</span>
+    <span class="n">Map</span><span class="o">.</span><span class="n">centerObject</span><span class="p">(</span><span class="n">countries</span><span class="p">)</span>
+    <span class="c1">#Map</span>
+
+
+
+<span class="c1">##########Use WaPOR LULC Map to excude Irrigated land</span>
+    <span class="n">waporLulc</span> <span class="o">=</span> <span class="n">ee</span><span class="o">.</span><span class="n">ImageCollection</span><span class="p">(</span><span class="s1">&#39;projects/fao-wapor/L1/L1_LCC_A&#39;</span><span class="p">);</span>
+    <span class="n">waporLulc</span> <span class="o">=</span><span class="n">waporLulc</span><span class="o">.</span><span class="n">limit</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="s1">&#39;system:time_start&#39;</span><span class="p">,</span> <span class="kc">False</span><span class="p">)</span><span class="o">.</span><span class="n">first</span><span class="p">();</span> <span class="c1">### stops in 2016 therefore using the most recent recent image</span>
+    <span class="n">waporLulc</span> <span class="o">=</span> <span class="n">waporLulc</span><span class="o">.</span><span class="n">clip</span><span class="p">(</span><span class="n">countries</span><span class="p">);</span>
+    <span class="n">notIrrigated</span> <span class="o">=</span> <span class="n">waporLulc</span><span class="o">.</span><span class="n">neq</span><span class="p">(</span><span class="mi">42</span><span class="p">);</span>
+    <span class="n">notIrrigated</span> <span class="o">=</span> <span class="n">notIrrigated</span><span class="o">.</span><span class="n">updateMask</span><span class="p">(</span><span class="n">notIrrigated</span><span class="p">);</span>
+
+<span class="c1">###### Select DW LULC of interest for the dry season</span>
+    <span class="n">grazingAreaDry</span> <span class="o">=</span> <span class="n">dw</span><span class="o">.</span><span class="n">eq</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">dw</span><span class="o">.</span><span class="n">eq</span><span class="p">(</span><span class="mi">2</span><span class="p">))</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">dw</span><span class="o">.</span><span class="n">eq</span><span class="p">(</span><span class="mi">3</span><span class="p">))</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">dw</span><span class="o">.</span><span class="n">eq</span><span class="p">(</span><span class="mi">5</span><span class="p">))</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">dw</span><span class="o">.</span><span class="n">eq</span><span class="p">(</span><span class="mi">6</span><span class="p">))</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">dw</span><span class="o">.</span><span class="n">eq</span><span class="p">(</span><span class="mi">7</span><span class="p">));</span>
+    <span class="n">grazingAreaDry</span> <span class="o">=</span> <span class="n">grazingAreaDry</span><span class="o">.</span><span class="n">updateMask</span><span class="p">(</span><span class="n">grazingAreaDry</span><span class="p">);</span>
+
+    <span class="c1">### Exclude irrigated land during dry season</span>
+    <span class="n">grazingAreaDry</span> <span class="o">=</span> <span class="n">grazingAreaDry</span><span class="o">.</span><span class="n">updateMask</span><span class="p">(</span><span class="n">notIrrigated</span><span class="p">);</span>
+
+<span class="c1">###### Select DW LULC of interestfor the rainin season</span>
+    <span class="n">grazingAreaWet</span> <span class="o">=</span> <span class="n">dw</span><span class="o">.</span><span class="n">eq</span><span class="p">(</span><span class="mi">4</span><span class="p">)</span>
+    <span class="n">grazingAreaWet</span> <span class="o">=</span> <span class="n">grazingAreaWet</span><span class="o">.</span><span class="n">updateMask</span><span class="p">(</span><span class="n">grazingAreaWet</span><span class="p">);</span>
+
+    <span class="n">grazingAreaAll</span> <span class="o">=</span> <span class="n">dw</span><span class="o">.</span><span class="n">eq</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">dw</span><span class="o">.</span><span class="n">eq</span><span class="p">(</span><span class="mi">2</span><span class="p">))</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">dw</span><span class="o">.</span><span class="n">eq</span><span class="p">(</span><span class="mi">3</span><span class="p">))</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">dw</span><span class="o">.</span><span class="n">eq</span><span class="p">(</span><span class="mi">4</span><span class="p">))</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">dw</span><span class="o">.</span><span class="n">eq</span><span class="p">(</span><span class="mi">5</span><span class="p">))</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">dw</span><span class="o">.</span><span class="n">eq</span><span class="p">(</span><span class="mi">6</span><span class="p">))</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">dw</span><span class="o">.</span><span class="n">eq</span><span class="p">(</span><span class="mi">7</span><span class="p">));</span>
+    <span class="n">grazingAreaAll</span> <span class="o">=</span> <span class="n">grazingAreaAll</span><span class="o">.</span><span class="n">updateMask</span><span class="p">(</span><span class="n">grazingAreaAll</span><span class="p">)</span>
+
+<span class="c1">#Show on Map</span>
+    <span class="c1">#Map.addLayer(grazingAreaDry, {&#39;palette&#39;: &#39;green&#39;},&#39;Zone_VegNat&#39;, False )</span>
+    <span class="c1">#Map.addLayer(grazingAreaWet, {&#39;palette&#39;: &#39;green&#39;},&#39;zone_cultures&#39;, False )</span>
+    <span class="c1">#Map.addLayer(grazingAreaAll, {&#39;palette&#39;: &#39;green&#39;},&#39;zoneTout&#39;, False )</span>
+
+    <span class="c1">#extraire valeur du % matiere sèche sup</span>
+    <span class="n">ratioBimassSup</span> <span class="o">=</span> <span class="n">ratioBimassSup1</span><span class="o">.</span><span class="n">value</span>
+<span class="c1"># WAPOR NPP image filtered from Start Date to  date of query</span>
+    <span class="n">startTransh</span> <span class="o">=</span> <span class="n">startYear</span>     <span class="c1">#when Biomass production start</span>
+    <span class="n">queryDate</span> <span class="o">=</span> <span class="n">queryDate</span>       <span class="c1">#when query is made</span>
+    <span class="n">nppPluvieuse</span> <span class="o">=</span> <span class="n">ee</span><span class="o">.</span><span class="n">ImageCollection</span><span class="p">(</span><span class="s1">&#39;FAO/WAPOR/2/L1_NPP_D&#39;</span><span class="p">)</span>\
+            <span class="o">.</span><span class="n">filterDate</span><span class="p">(</span><span class="n">startTransh</span><span class="p">,</span> <span class="n">queryDate</span><span class="p">)</span>\
+            <span class="o">.</span><span class="n">filterBounds</span><span class="p">(</span><span class="n">countries</span><span class="p">)</span>\
+            <span class="o">.</span><span class="n">filter</span><span class="p">(</span><span class="n">ee</span><span class="o">.</span><span class="n">Filter</span><span class="o">.</span><span class="n">calendarRange</span><span class="p">(</span><span class="mi">5</span><span class="p">,</span> <span class="mi">9</span><span class="p">,</span> <span class="s1">&#39;month&#39;</span><span class="p">))</span>
+    <span class="n">joursPluvieuse</span><span class="o">=</span><span class="n">nppPluvieuse</span><span class="o">.</span><span class="n">size</span><span class="p">()</span><span class="o">.</span><span class="n">getInfo</span><span class="p">()</span><span class="o">*</span><span class="mi">10</span>
+    <span class="n">nppPluvieuse</span><span class="o">=</span><span class="n">nppPluvieuse</span><span class="o">.</span><span class="n">mean</span><span class="p">()</span><span class="o">.</span><span class="n">divide</span><span class="p">(</span><span class="mi">1000</span><span class="p">)</span><span class="o">.</span><span class="n">multiply</span><span class="p">(</span><span class="n">ratioBimassSup</span><span class="p">)</span><span class="o">.</span><span class="n">multiply</span><span class="p">(</span><span class="n">joursPluvieuse</span><span class="p">)</span><span class="o">.</span><span class="n">clip</span><span class="p">(</span><span class="n">countries</span><span class="p">)</span>
+
+    <span class="n">nppSeche</span> <span class="o">=</span> <span class="n">ee</span><span class="o">.</span><span class="n">ImageCollection</span><span class="p">(</span><span class="s1">&#39;FAO/WAPOR/2/L1_NPP_D&#39;</span><span class="p">)</span>\
+            <span class="o">.</span><span class="n">filterDate</span><span class="p">(</span><span class="n">startTransh</span><span class="p">,</span> <span class="n">queryDate</span><span class="p">)</span>\
+            <span class="o">.</span><span class="n">filterBounds</span><span class="p">(</span><span class="n">countries</span><span class="p">)</span>\
+            <span class="o">.</span><span class="n">filter</span><span class="p">(</span><span class="n">ee</span><span class="o">.</span><span class="n">Filter</span><span class="o">.</span><span class="n">calendarRange</span><span class="p">(</span><span class="mi">10</span><span class="p">,</span> <span class="mi">4</span><span class="p">,</span> <span class="s1">&#39;month&#39;</span><span class="p">))</span>
+    <span class="n">joursSeche</span><span class="o">=</span><span class="n">nppSeche</span><span class="o">.</span><span class="n">size</span><span class="p">()</span><span class="o">.</span><span class="n">getInfo</span><span class="p">()</span><span class="o">*</span><span class="mi">10</span>
+    <span class="n">nppSeche</span><span class="o">=</span><span class="n">nppSeche</span><span class="o">.</span><span class="n">mean</span><span class="p">()</span><span class="o">.</span><span class="n">divide</span><span class="p">(</span><span class="mi">1000</span><span class="p">)</span><span class="o">.</span><span class="n">multiply</span><span class="p">(</span><span class="n">ratioBimassSup</span><span class="p">)</span><span class="o">.</span><span class="n">multiply</span><span class="p">(</span><span class="n">joursSeche</span><span class="p">)</span><span class="o">.</span><span class="n">clip</span><span class="p">(</span><span class="n">countries</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">joursPluvieuse</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="n">npp</span> <span class="o">=</span> <span class="n">nppSeche</span>
+    <span class="k">elif</span> <span class="n">joursSeche</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="n">npp</span> <span class="o">=</span> <span class="n">nppPluvieuse</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">npp</span> <span class="o">=</span> <span class="n">nppPluvieuse</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">nppSeche</span><span class="p">)</span>
+
+
+    <span class="n">nppWet</span><span class="o">=</span><span class="n">npp</span><span class="o">.</span><span class="n">multiply</span><span class="p">(</span><span class="n">grazingAreaWet</span><span class="p">)</span><span class="o">.</span><span class="n">rename</span><span class="p">(</span><span class="s1">&#39;nppWet&#39;</span><span class="p">)</span>
+    <span class="n">nppDry</span><span class="o">=</span><span class="n">npp</span><span class="o">.</span><span class="n">multiply</span><span class="p">(</span><span class="n">grazingAreaDry</span><span class="p">)</span><span class="o">.</span><span class="n">rename</span><span class="p">(</span><span class="s1">&#39;nppDry&#39;</span><span class="p">)</span>
+    <span class="n">nppAll</span><span class="o">=</span><span class="n">npp</span><span class="o">.</span><span class="n">multiply</span><span class="p">(</span><span class="n">grazingAreaAll</span><span class="p">)</span><span class="o">.</span><span class="n">rename</span><span class="p">(</span><span class="s1">&#39;nppAll&#39;</span><span class="p">)</span>
+
+<span class="c1">#Days between start and query date</span>
+    <span class="n">startDate</span> <span class="o">=</span> <span class="n">ee</span><span class="o">.</span><span class="n">Date</span><span class="p">(</span><span class="n">startTransh</span><span class="p">);</span>
+    <span class="n">queryDate</span> <span class="o">=</span> <span class="n">ee</span><span class="o">.</span><span class="n">Date</span><span class="p">(</span><span class="n">queryDate</span><span class="p">);</span>
+    <span class="n">numberDays</span> <span class="o">=</span> <span class="n">queryDate</span><span class="o">.</span><span class="n">difference</span><span class="p">(</span><span class="n">startDate</span><span class="p">,</span> <span class="s1">&#39;days&#39;</span><span class="p">);</span>
+
+<span class="c1">#NPP to DMP (from gC/m2 to  kgDM/ha)</span>
+    <span class="n">dmpWet</span><span class="o">=</span><span class="n">nppWet</span><span class="o">.</span><span class="n">multiply</span><span class="p">(</span><span class="mf">22.222</span><span class="p">)</span><span class="o">.</span><span class="n">rename</span><span class="p">(</span><span class="s1">&#39;dmpWet&#39;</span><span class="p">)</span>
+    <span class="n">dmpDry</span><span class="o">=</span><span class="n">nppDry</span><span class="o">.</span><span class="n">multiply</span><span class="p">(</span><span class="mf">22.222</span><span class="p">)</span><span class="o">.</span><span class="n">rename</span><span class="p">(</span><span class="s1">&#39;dmpDry&#39;</span><span class="p">)</span>
+    <span class="n">dmpAll</span> <span class="o">=</span> <span class="n">nppAll</span><span class="o">.</span><span class="n">multiply</span><span class="p">(</span><span class="mf">22.222</span><span class="p">)</span><span class="o">.</span><span class="n">rename</span><span class="p">(</span><span class="s1">&#39;dmpAll&#39;</span><span class="p">)</span>
+    <span class="n">dmpWetTransh</span> <span class="o">=</span> <span class="n">dmpWet</span><span class="o">.</span><span class="n">clip</span><span class="p">(</span><span class="n">buffer</span><span class="p">)</span>
+    <span class="n">dmpDryTransh</span> <span class="o">=</span> <span class="n">dmpDry</span><span class="o">.</span><span class="n">clip</span><span class="p">(</span><span class="n">buffer</span><span class="p">)</span>
+    <span class="n">dmpAllTransh</span> <span class="o">=</span> <span class="n">dmpAll</span><span class="o">.</span><span class="n">clip</span><span class="p">(</span><span class="n">buffer</span><span class="p">)</span>
+
+    <span class="n">nppTransh</span> <span class="o">=</span> <span class="n">npp</span><span class="o">.</span><span class="n">clip</span><span class="p">(</span><span class="n">buffer</span><span class="p">)</span>
+
+
+
+    <span class="n">visDmp</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;min&#39;</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span> <span class="s1">&#39;max&#39;</span><span class="p">:</span> <span class="mi">7500</span><span class="p">,</span> <span class="s1">&#39;palette&#39;</span><span class="p">:</span> <span class="p">[</span><span class="s1">&#39;white&#39;</span><span class="p">,</span><span class="s1">&#39;yellow&#39;</span><span class="p">,</span> <span class="s1">&#39;green&#39;</span><span class="p">]}</span>
+    <span class="n">visNpp</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;min&#39;</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span> <span class="s1">&#39;max&#39;</span><span class="p">:</span> <span class="mi">150</span><span class="p">,</span> <span class="s1">&#39;palette&#39;</span><span class="p">:</span> <span class="p">[</span><span class="s1">&#39;white&#39;</span><span class="p">,</span><span class="s1">&#39;yellow&#39;</span><span class="p">,</span> <span class="s1">&#39;green&#39;</span><span class="p">]}</span>
+    <span class="c1">#Show on Map</span>
+    <span class="c1">#Map.addLayer(dmpWet, visDmp,&#39;Matière_Sèche_Culture&#39;, False )</span>
+   <span class="c1"># Map.addLayer(dmpDry, visDmp,&#39;Matière_Sèche_Veg._Naturelle&#39; )</span>
+    <span class="n">Map</span><span class="o">.</span><span class="n">addLayer</span><span class="p">(</span><span class="n">dmpAll</span><span class="p">,</span> <span class="n">visDmp</span><span class="p">,</span><span class="s1">&#39;Matière_sèche_totale_Produite&#39;</span><span class="p">,</span> <span class="kc">False</span> <span class="p">)</span>
+    <span class="c1">#Map.addLayer(dmpWetTransh, visDmp,&#39;Mat_Sèch_Total_Culture_Parcours_kg/ha&#39;, False )</span>
+    <span class="c1">#Map.addLayer(dmpDryTransh, visDmp,&#39;Mat_Sèch_Total_Veg._Naturelle_Parcours_kg/ha&#39;, False )</span>
+
+
+     <span class="c1">#use query date and 3 months before to collecte Fire Information for Resource Management System (FIRMS) dataset</span>
+    <span class="n">queryDate</span> <span class="o">=</span> <span class="n">ee</span><span class="o">.</span><span class="n">Date</span><span class="p">(</span><span class="n">queryDate</span><span class="p">);</span>
+    <span class="n">daysBefore</span> <span class="o">=</span> <span class="n">queryDate</span><span class="o">.</span><span class="n">advance</span><span class="p">(</span><span class="o">-</span><span class="mi">90</span><span class="p">,</span> <span class="s1">&#39;day&#39;</span><span class="p">)</span>
+    <span class="n">fire</span> <span class="o">=</span> <span class="n">ee</span><span class="o">.</span><span class="n">ImageCollection</span><span class="p">(</span><span class="s1">&#39;FIRMS&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">select</span><span class="p">(</span><span class="s1">&#39;T21&#39;</span><span class="p">)</span>\
+            <span class="o">.</span><span class="n">filterDate</span><span class="p">(</span><span class="n">daysBefore</span><span class="p">,</span> <span class="n">queryDate</span><span class="p">)</span>\
+            <span class="o">.</span><span class="n">filterBounds</span><span class="p">(</span><span class="n">countries</span><span class="p">)</span>\
+            <span class="o">.</span><span class="n">mean</span><span class="p">()</span><span class="o">.</span><span class="n">clip</span><span class="p">(</span><span class="n">countries</span><span class="p">)</span>
+    <span class="n">visFire</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;min&#39;</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span> <span class="s1">&#39;max&#39;</span><span class="p">:</span> <span class="mi">500</span><span class="p">,</span> <span class="s1">&#39;palette&#39;</span><span class="p">:</span> <span class="p">[</span><span class="s1">&#39;red&#39;</span><span class="p">,</span> <span class="s1">&#39;orange&#39;</span><span class="p">,</span> <span class="s1">&#39;yellow&#39;</span><span class="p">]};</span>
+    <span class="n">Map</span><span class="o">.</span><span class="n">addLayer</span><span class="p">(</span><span class="n">fire</span><span class="p">,</span> <span class="n">visFire</span><span class="p">,</span> <span class="s1">&#39;Feu&#39;</span><span class="p">,</span><span class="kc">False</span><span class="p">);</span>
+    <span class="c1">#Map.add_colorbar(visFire, discrete=False, label=&quot;Fire&quot;, orientation=&quot;horizontal&quot;, position=&#39;bottomleft&#39;, layer_name=&quot;Fire&quot;, transparent_bg=True,)</span>
+    <span class="n">fire</span> <span class="o">=</span> <span class="n">fire</span><span class="o">.</span><span class="n">multiply</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+    <span class="n">fireMask1</span> <span class="o">=</span> <span class="n">fire</span><span class="o">.</span><span class="n">unmask</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
+    <span class="n">fireMask1</span><span class="o">=</span> <span class="n">fireMask1</span><span class="o">.</span><span class="n">clip</span><span class="p">(</span><span class="n">countries</span><span class="p">)</span>
+    <span class="c1">#Map.addLayer(fireMask1, {}, &#39;FeuMask&#39;,False);</span>
+
+    <span class="c1">##################Affichage Données Betail DLW (gridded livestock world)##############</span>
+    <span class="n">visCattle</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;min&#39;</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span> <span class="s1">&#39;max&#39;</span><span class="p">:</span> <span class="mi">40</span><span class="p">,</span> <span class="s1">&#39;palette&#39;</span><span class="p">:</span> <span class="p">[</span><span class="s1">&#39;white&#39;</span><span class="p">,</span><span class="s1">&#39;red&#39;</span><span class="p">,</span> <span class="s1">&#39;black&#39;</span><span class="p">]}</span>
+    <span class="c1">#Map.addLayer(Cattle, visCattle,&#39;Betail_Tête/ha&#39;, False )</span>
+
+    <span class="c1">##################Consommation de Matière sèche######</span>
+
+<span class="c1">#Daily feed intake coef (1.75 to 2 kg/day per 100 Kg of Cattle live weight -FAO 2020 )</span>
+    <span class="n">feedIntakeCoef1</span> <span class="o">=</span> <span class="n">feedIntakeCoef</span><span class="o">.</span><span class="n">value</span><span class="p">;</span>
+    <span class="n">feedIntakeCoef1</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">feedIntakeCoef1</span><span class="p">)</span>
+    <span class="n">feedIntake</span> <span class="o">=</span> <span class="n">Cattle</span><span class="o">.</span><span class="n">multiply</span><span class="p">(</span><span class="n">feedIntakeCoef1</span><span class="p">)</span><span class="o">.</span><span class="n">multiply</span><span class="p">(</span><span class="n">numberDays</span><span class="p">);</span>   <span class="c1">####check if coeff accessibility considered</span>
+    <span class="n">visCattleIntake</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;min&#39;</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span> <span class="s1">&#39;max&#39;</span><span class="p">:</span> <span class="mi">20000</span><span class="p">,</span> <span class="s1">&#39;palette&#39;</span><span class="p">:</span> <span class="p">[</span><span class="s1">&#39;white&#39;</span><span class="p">,</span><span class="s1">&#39;yellow&#39;</span><span class="p">,</span> <span class="s1">&#39;green&#39;</span><span class="p">]};</span>
+    <span class="c1">#Map.addLayer(feedIntake, visCattleIntake,&#39;Consommation_Mat_Sèch_kg/ha&#39;, False );</span>
+
+    <span class="c1">##########Mask paturage Ligneux#############</span>
+    <span class="n">maskLigneux</span> <span class="o">=</span> <span class="n">dw</span><span class="o">.</span><span class="n">eq</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">dw</span><span class="o">.</span><span class="n">eq</span><span class="p">(</span><span class="mi">2</span><span class="p">))</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">dw</span><span class="o">.</span><span class="n">eq</span><span class="p">(</span><span class="mi">3</span><span class="p">))</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">dw</span><span class="o">.</span><span class="n">eq</span><span class="p">(</span><span class="mi">5</span><span class="p">))</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">dw</span><span class="o">.</span><span class="n">eq</span><span class="p">(</span><span class="mi">6</span><span class="p">))</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">dw</span><span class="o">.</span><span class="n">eq</span><span class="p">(</span><span class="mi">7</span><span class="p">));</span>
+    <span class="n">maskLigneux</span> <span class="o">=</span> <span class="n">maskLigneux</span><span class="o">.</span><span class="n">updateMask</span><span class="p">(</span><span class="n">maskLigneux</span><span class="p">);</span>
+    <span class="c1">##########Mask Cultures###############</span>
+    <span class="n">maskCultures</span> <span class="o">=</span> <span class="n">dw</span><span class="o">.</span><span class="n">eq</span><span class="p">(</span><span class="mi">4</span><span class="p">);</span>
+    <span class="n">maskCultures</span> <span class="o">=</span> <span class="n">maskCultures</span><span class="o">.</span><span class="n">updateMask</span><span class="p">(</span><span class="n">maskCultures</span><span class="p">);</span>
+
+    <span class="c1">##########Accessible DM kgDM/ha   production times coef. times non degraded Ligneux et culture</span>
+    <span class="c1">#Taux de degradation de la Matière sèche (incluse en considerant que 5% de la production est perdue par degradation)</span>
+    <span class="c1">#Widget taux degardation Matière Sèche</span>
+    <span class="n">tauxDegradationVal</span> <span class="o">=</span> <span class="n">tauxDegradation</span><span class="o">.</span><span class="n">value</span>
+    <span class="n">tauxDegra</span> <span class="o">=</span> <span class="mi">1</span><span class="o">-</span><span class="n">tauxDegradationVal</span>
+
+    <span class="c1">#Coefficient accessibilité</span>
+    <span class="n">coefAccessLigneux1</span> <span class="o">=</span> <span class="n">coefAccessLigneux</span><span class="o">.</span><span class="n">value</span>         <span class="c1">####</span>
+    <span class="n">coefAccessResidusCult1</span> <span class="o">=</span> <span class="n">coefAccessResidusCult</span><span class="o">.</span><span class="n">value</span>     <span class="c1">####guessed figure</span>
+
+
+    <span class="c1">##Ligneux</span>
+    <span class="n">dmpWetLigneuxAcc</span> <span class="o">=</span> <span class="n">dmpDry</span><span class="o">.</span><span class="n">multiply</span><span class="p">(</span><span class="n">coefAccessLigneux1</span><span class="p">);</span>
+    <span class="n">dmpWetLigneuxAcc</span> <span class="o">=</span> <span class="n">dmpWetLigneuxAcc</span><span class="o">.</span><span class="n">multiply</span><span class="p">(</span><span class="n">tauxDegra</span><span class="p">);</span>
+    <span class="c1">#dmpWetLigneuxAcc = dmpWetLigneuxAcc.updateMask(maskLigneux); # should be activated, not working for, reason = format</span>
+    <span class="c1">#Map.addLayer(dmpWetLigneuxAcc, visDmp,&#39;Mat_Sèch_Access_Ligneux&#39;, False )</span>
+    <span class="c1">##Cultures</span>
+    <span class="n">dmpDryCulturesAcc</span> <span class="o">=</span> <span class="n">dmpWet</span><span class="o">.</span><span class="n">multiply</span><span class="p">(</span><span class="n">coefAccessResidusCult1</span><span class="p">)</span>
+    <span class="n">dmpDryCulturesAcc</span> <span class="o">=</span> <span class="n">dmpDryCulturesAcc</span><span class="o">.</span><span class="n">multiply</span><span class="p">(</span><span class="n">tauxDegra</span><span class="p">);</span>
+    <span class="c1">#dmpDryCulturesAcc = dmpDryCulturesAcc.updateMask(maskCultures);  # should be activated, not working for, reason = format</span>
+    <span class="c1">#Map.addLayer(dmpDryCulturesAcc, visDmp,&#39;Mat_Sèch_Access_Culture&#39;, False )</span>
+    <span class="c1">##Ligneux + Culture</span>
+    <span class="c1">#dmpLigneuxCulturesAcc = dmpWetLigneuxAcc</span>
+
+
+    <span class="c1">############################################################################</span>
+    <span class="c1">####################Revoir partie ci-dessous en dissociant MS produite par cultures et Ms produite Ligneux et rendre cela calculable pour le fichier importé</span>
+    <span class="c1">############################################################################</span>
+
+    <span class="c1">##Exclude burned areas</span>
+    <span class="c1">#dmpLigneuxCulturesAcc = dmpLigneuxCulturesAcc.multiply(fireMask1)</span>
+    <span class="n">dmpWetLigneuxAcc</span> <span class="o">=</span> <span class="n">dmpWetLigneuxAcc</span><span class="o">.</span><span class="n">multiply</span><span class="p">(</span><span class="n">fireMask1</span><span class="p">)</span>
+    <span class="n">dmpDryCulturesAcc</span> <span class="o">=</span> <span class="n">dmpDryCulturesAcc</span><span class="o">.</span><span class="n">multiply</span><span class="p">(</span><span class="n">fireMask1</span><span class="p">)</span>
+
+    <span class="c1">#Toute la zone</span>
+    <span class="c1">#Map.addLayer(dmpLigneuxCulturesAcc, visDmp,&#39;Mat_Sèch_Totale_Accessible_kg/ha&#39;, False )</span>
+    <span class="n">Map</span><span class="o">.</span><span class="n">addLayer</span><span class="p">(</span><span class="n">dmpWetLigneuxAcc</span><span class="p">,</span> <span class="n">visDmp</span><span class="p">,</span><span class="s1">&#39;Mat_Sèch_Veg.Naturelle_Accessible_kg/ha&#39;</span> <span class="p">)</span>
+    <span class="n">Map</span><span class="o">.</span><span class="n">addLayer</span><span class="p">(</span><span class="n">dmpDryCulturesAcc</span><span class="p">,</span> <span class="n">visDmp</span><span class="p">,</span><span class="s1">&#39;Mat_Sèch_Cultures_Accessible_kg/ha&#39;</span><span class="p">)</span>
+
+    <span class="c1">#Parcours</span>
+    <span class="c1">#dmpLigneuxCulturesAccTransh = dmpLigneuxCulturesAcc.clip(buffer)</span>
+    <span class="c1">#Map.addLayer(dmpLigneuxCulturesAccTransh, visDmp,&#39;Mat_Sèch_Accessible_Parcours_kg/ha&#39;, False )</span>
+
+
+
+
+    <span class="c1">#Bilan Matière sèche</span>
+    <span class="c1">#feedBalance = dmpLigneuxCulturesAcc.subtract(feedIntake);</span>
+    <span class="c1">#visBalance = {&#39;min&#39;: -20000, &#39;max&#39;: 20000, &#39;palette&#39;: [&#39;#d7191c&#39;,&#39;#fdae61&#39;,&#39;#ffffbf&#39;,&#39;#a6d96a&#39;,&#39;#1a9641&#39;]}</span>
+    <span class="c1">#Map.addLayer(feedBalance, visBalance,&#39;Bilan_Mat_Sèch_kg/ha&#39;)</span>
+
+    <span class="c1">#Map.add_colorbar(visDmp, discrete=False, label=&quot;DMP (kg/ha)&quot;, orientation=&quot;horizontal&quot;, position=&#39;bottomleft&#39;, layer_name=&quot;nppTransh&quot;, transparent_bg=False,)</span>
+    <span class="c1">#Map.addLayer(nppTransh, visNpp,&#39;nppTransh&#39;, False )</span>
+    <span class="c1">#Map.add_colorbar(visNpp, discrete=False, label=&quot;NPP (gC/m2)&quot;, orientation=&quot;horizontal&quot;, position=&#39;bottomleft&#39;, layer_name=&quot;dmpTransh&quot;, transparent_bg=True,)</span>
+    <span class="c1">#use query date and 10 days before to collecte Sentinel image</span>
+    <span class="n">queryDate</span> <span class="o">=</span> <span class="n">ee</span><span class="o">.</span><span class="n">Date</span><span class="p">(</span><span class="n">queryDate</span><span class="p">);</span>
+    <span class="n">daysBefore</span> <span class="o">=</span> <span class="n">queryDate</span><span class="o">.</span><span class="n">advance</span><span class="p">(</span><span class="o">-</span><span class="mi">10</span><span class="p">,</span> <span class="s1">&#39;day&#39;</span><span class="p">)</span>
+    <span class="n">sentinelQuery</span> <span class="o">=</span> <span class="n">ee</span><span class="o">.</span><span class="n">ImageCollection</span><span class="p">(</span><span class="s1">&#39;COPERNICUS/S2&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">filterDate</span><span class="p">(</span><span class="n">daysBefore</span><span class="p">,</span><span class="n">queryDate</span><span class="p">)</span><span class="o">.</span><span class="n">filterBounds</span><span class="p">(</span><span class="n">countries</span><span class="p">)</span><span class="o">.</span><span class="n">median</span><span class="p">()</span><span class="o">.</span><span class="n">divide</span><span class="p">(</span><span class="mi">10000</span><span class="p">)</span><span class="o">.</span><span class="n">clip</span><span class="p">(</span><span class="n">countries</span><span class="p">)</span>
+
+<span class="c1"># Calculate Modified Normalized Difference Water Index (MNDWI) using &#39;GREEN&#39;(B3) and &#39;SWIR1&#39; (B11)</span>
+    <span class="n">mndwi</span> <span class="o">=</span> <span class="n">sentinelQuery</span><span class="o">.</span><span class="n">normalizedDifference</span><span class="p">([</span><span class="s1">&#39;B3&#39;</span><span class="p">,</span> <span class="s1">&#39;B11&#39;</span><span class="p">])</span><span class="o">.</span><span class="n">rename</span><span class="p">([</span><span class="s1">&#39;mndwi&#39;</span><span class="p">]);</span>
+    <span class="n">mndwi</span> <span class="o">=</span> <span class="n">mndwi</span><span class="o">.</span><span class="n">gte</span><span class="p">(</span><span class="mi">0</span><span class="p">);</span>
+    <span class="n">mndwi</span> <span class="o">=</span> <span class="n">mndwi</span><span class="o">.</span><span class="n">updateMask</span><span class="p">(</span><span class="n">mndwi</span><span class="p">);</span>
+    <span class="n">mndwi</span><span class="o">=</span> <span class="n">mndwi</span><span class="o">.</span><span class="n">clip</span><span class="p">(</span><span class="n">countries</span><span class="p">)</span>
+    <span class="n">visMndwi</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;min&#39;</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span> <span class="s1">&#39;max&#39;</span><span class="p">:</span> <span class="mi">1</span><span class="p">,</span> <span class="s1">&#39;palette&#39;</span><span class="p">:</span> <span class="p">[</span><span class="s1">&#39;white&#39;</span><span class="p">,</span> <span class="s1">&#39;blue&#39;</span><span class="p">]</span> <span class="p">};</span>
+    <span class="n">Map</span><span class="o">.</span><span class="n">addLayer</span><span class="p">(</span><span class="n">mndwi</span><span class="p">,</span> <span class="n">visMndwi</span><span class="p">,</span> <span class="s1">&#39;Eau de surface&#39;</span><span class="p">,</span><span class="kc">False</span><span class="p">);</span>
+<span class="c1">#Map.add_colorbar(visMndwi, discrete=False, label=&quot;Water Index&quot;, orientation=&quot;horizontal&quot;, position=&#39;bottomleft&#39;, layer_name=&quot;Water Index&quot;, transparent_bg=True,)</span>
+
+<span class="c1">#use query date and 10 days before to collecte CHIRPS Precipitation data</span>
+    <span class="n">queryDate</span> <span class="o">=</span> <span class="n">ee</span><span class="o">.</span><span class="n">Date</span><span class="p">(</span><span class="n">queryDate</span><span class="p">);</span>
+    <span class="n">daysBefore</span> <span class="o">=</span> <span class="n">queryDate</span><span class="o">.</span><span class="n">advance</span><span class="p">(</span><span class="o">-</span><span class="mi">10</span><span class="p">,</span> <span class="s1">&#39;day&#39;</span><span class="p">)</span>
+    <span class="n">precipitaion</span> <span class="o">=</span> <span class="n">ee</span><span class="o">.</span><span class="n">ImageCollection</span><span class="p">(</span><span class="s1">&#39;UCSB-CHG/CHIRPS/DAILY&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">select</span><span class="p">(</span><span class="s1">&#39;precipitation&#39;</span><span class="p">)</span>\
+            <span class="o">.</span><span class="n">filterDate</span><span class="p">(</span><span class="n">daysBefore</span><span class="p">,</span> <span class="n">queryDate</span><span class="p">)</span>\
+            <span class="o">.</span><span class="n">filterBounds</span><span class="p">(</span><span class="n">countries</span><span class="p">)</span>\
+            <span class="o">.</span><span class="n">sum</span><span class="p">()</span><span class="o">.</span><span class="n">clip</span><span class="p">(</span><span class="n">countries</span><span class="p">)</span>
+    <span class="n">visPecipitation</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;min&#39;</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span> <span class="s1">&#39;max&#39;</span><span class="p">:</span> <span class="mi">200</span><span class="p">,</span> <span class="s1">&#39;palette&#39;</span><span class="p">:</span> <span class="p">[</span><span class="s1">&#39;white&#39;</span><span class="p">,</span> <span class="s1">&#39;blue&#39;</span><span class="p">]</span> <span class="p">};</span>
+    <span class="n">Map</span><span class="o">.</span><span class="n">addLayer</span><span class="p">(</span><span class="n">precipitaion</span><span class="p">,</span> <span class="n">visPecipitation</span><span class="p">,</span> <span class="s1">&#39;Precipitaion&#39;</span><span class="p">,</span><span class="kc">False</span><span class="p">);</span>
+    <span class="c1">#Map.add_colorbar(visPecipitation, discrete=False, label=&quot;Precipitation (mm)&quot;, orientation=&quot;horizontal&quot;, position=&#39;bottomleft&#39;, layer_name=&quot;Precipitation&quot;, transparent_bg=True,)</span>
+
+    <span class="c1"># precipitation of the period</span>
+    <span class="n">queryDate</span> <span class="o">=</span> <span class="n">ee</span><span class="o">.</span><span class="n">Date</span><span class="p">(</span><span class="n">queryDate</span><span class="p">);</span>
+    <span class="n">start</span> <span class="o">=</span> <span class="n">ee</span><span class="o">.</span><span class="n">Date</span><span class="p">(</span><span class="n">startYear</span><span class="p">)</span>
+    <span class="n">precipitaionperiode</span> <span class="o">=</span> <span class="n">ee</span><span class="o">.</span><span class="n">ImageCollection</span><span class="p">(</span><span class="s1">&#39;UCSB-CHG/CHIRPS/DAILY&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">select</span><span class="p">(</span><span class="s1">&#39;precipitation&#39;</span><span class="p">)</span>\
+            <span class="o">.</span><span class="n">filterDate</span><span class="p">(</span><span class="n">start</span><span class="p">,</span> <span class="n">queryDate</span><span class="p">)</span>\
+            <span class="o">.</span><span class="n">filterBounds</span><span class="p">(</span><span class="n">countries</span><span class="p">)</span>\
+            <span class="o">.</span><span class="n">sum</span><span class="p">()</span><span class="o">.</span><span class="n">clip</span><span class="p">(</span><span class="n">countries</span><span class="p">)</span>
+
+    <span class="c1"># precipitation 5 periods precedante</span>
+    <span class="n">queryDate1y</span> <span class="o">=</span> <span class="n">queryDate</span><span class="o">.</span><span class="n">advance</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="s1">&#39;year&#39;</span><span class="p">);</span>
+    <span class="n">start1y</span> <span class="o">=</span> <span class="n">start</span><span class="o">.</span><span class="n">advance</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="s1">&#39;year&#39;</span><span class="p">);</span>
+    <span class="n">precipitaionperiode1y</span> <span class="o">=</span> <span class="n">ee</span><span class="o">.</span><span class="n">ImageCollection</span><span class="p">(</span><span class="s1">&#39;UCSB-CHG/CHIRPS/DAILY&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">select</span><span class="p">(</span><span class="s1">&#39;precipitation&#39;</span><span class="p">)</span>\
+            <span class="o">.</span><span class="n">filterDate</span><span class="p">(</span><span class="n">start1y</span><span class="p">,</span> <span class="n">queryDate1y</span><span class="p">)</span>\
+            <span class="o">.</span><span class="n">filterBounds</span><span class="p">(</span><span class="n">countries</span><span class="p">)</span>\
+            <span class="o">.</span><span class="n">sum</span><span class="p">()</span><span class="o">.</span><span class="n">clip</span><span class="p">(</span><span class="n">countries</span><span class="p">)</span>
+
+    <span class="n">queryDate2y</span> <span class="o">=</span> <span class="n">queryDate</span><span class="o">.</span><span class="n">advance</span><span class="p">(</span><span class="o">-</span><span class="mi">2</span><span class="p">,</span> <span class="s1">&#39;year&#39;</span><span class="p">);</span>
+    <span class="n">start2y</span> <span class="o">=</span> <span class="n">start</span><span class="o">.</span><span class="n">advance</span><span class="p">(</span><span class="o">-</span><span class="mi">2</span><span class="p">,</span> <span class="s1">&#39;year&#39;</span><span class="p">);</span>
+    <span class="n">precipitaionperiode2y</span> <span class="o">=</span> <span class="n">ee</span><span class="o">.</span><span class="n">ImageCollection</span><span class="p">(</span><span class="s1">&#39;UCSB-CHG/CHIRPS/DAILY&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">select</span><span class="p">(</span><span class="s1">&#39;precipitation&#39;</span><span class="p">)</span>\
+            <span class="o">.</span><span class="n">filterDate</span><span class="p">(</span><span class="n">start2y</span><span class="p">,</span> <span class="n">queryDate2y</span><span class="p">)</span>\
+            <span class="o">.</span><span class="n">filterBounds</span><span class="p">(</span><span class="n">countries</span><span class="p">)</span>\
+            <span class="o">.</span><span class="n">sum</span><span class="p">()</span><span class="o">.</span><span class="n">clip</span><span class="p">(</span><span class="n">countries</span><span class="p">)</span>
+
+    <span class="n">queryDate3y</span> <span class="o">=</span> <span class="n">queryDate</span><span class="o">.</span><span class="n">advance</span><span class="p">(</span><span class="o">-</span><span class="mi">3</span><span class="p">,</span> <span class="s1">&#39;year&#39;</span><span class="p">);</span>
+    <span class="n">start3y</span> <span class="o">=</span> <span class="n">start</span><span class="o">.</span><span class="n">advance</span><span class="p">(</span><span class="o">-</span><span class="mi">3</span><span class="p">,</span> <span class="s1">&#39;year&#39;</span><span class="p">);</span>
+    <span class="n">precipitaionperiode3y</span> <span class="o">=</span> <span class="n">ee</span><span class="o">.</span><span class="n">ImageCollection</span><span class="p">(</span><span class="s1">&#39;UCSB-CHG/CHIRPS/DAILY&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">select</span><span class="p">(</span><span class="s1">&#39;precipitation&#39;</span><span class="p">)</span>\
+            <span class="o">.</span><span class="n">filterDate</span><span class="p">(</span><span class="n">start3y</span><span class="p">,</span> <span class="n">queryDate3y</span><span class="p">)</span>\
+            <span class="o">.</span><span class="n">filterBounds</span><span class="p">(</span><span class="n">countries</span><span class="p">)</span>\
+            <span class="o">.</span><span class="n">sum</span><span class="p">()</span><span class="o">.</span><span class="n">clip</span><span class="p">(</span><span class="n">countries</span><span class="p">)</span>
+
+    <span class="n">queryDate4y</span> <span class="o">=</span> <span class="n">queryDate</span><span class="o">.</span><span class="n">advance</span><span class="p">(</span><span class="o">-</span><span class="mi">4</span><span class="p">,</span> <span class="s1">&#39;year&#39;</span><span class="p">);</span>
+    <span class="n">start4y</span> <span class="o">=</span> <span class="n">start</span><span class="o">.</span><span class="n">advance</span><span class="p">(</span><span class="o">-</span><span class="mi">4</span><span class="p">,</span> <span class="s1">&#39;year&#39;</span><span class="p">);</span>
+    <span class="n">precipitaionperiode4y</span> <span class="o">=</span> <span class="n">ee</span><span class="o">.</span><span class="n">ImageCollection</span><span class="p">(</span><span class="s1">&#39;UCSB-CHG/CHIRPS/DAILY&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">select</span><span class="p">(</span><span class="s1">&#39;precipitation&#39;</span><span class="p">)</span>\
+            <span class="o">.</span><span class="n">filterDate</span><span class="p">(</span><span class="n">start4y</span><span class="p">,</span> <span class="n">queryDate4y</span><span class="p">)</span>\
+            <span class="o">.</span><span class="n">filterBounds</span><span class="p">(</span><span class="n">countries</span><span class="p">)</span>\
+            <span class="o">.</span><span class="n">sum</span><span class="p">()</span><span class="o">.</span><span class="n">clip</span><span class="p">(</span><span class="n">countries</span><span class="p">)</span>
+
+    <span class="n">queryDate5y</span> <span class="o">=</span> <span class="n">queryDate</span><span class="o">.</span><span class="n">advance</span><span class="p">(</span><span class="o">-</span><span class="mi">5</span><span class="p">,</span> <span class="s1">&#39;year&#39;</span><span class="p">);</span>
+    <span class="n">start5y</span> <span class="o">=</span> <span class="n">start</span><span class="o">.</span><span class="n">advance</span><span class="p">(</span><span class="o">-</span><span class="mi">5</span><span class="p">,</span> <span class="s1">&#39;year&#39;</span><span class="p">);</span>
+    <span class="n">precipitaionperiode5y</span> <span class="o">=</span> <span class="n">ee</span><span class="o">.</span><span class="n">ImageCollection</span><span class="p">(</span><span class="s1">&#39;UCSB-CHG/CHIRPS/DAILY&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">select</span><span class="p">(</span><span class="s1">&#39;precipitation&#39;</span><span class="p">)</span>\
+            <span class="o">.</span><span class="n">filterDate</span><span class="p">(</span><span class="n">start5y</span><span class="p">,</span> <span class="n">queryDate5y</span><span class="p">)</span>\
+            <span class="o">.</span><span class="n">filterBounds</span><span class="p">(</span><span class="n">countries</span><span class="p">)</span>\
+            <span class="o">.</span><span class="n">sum</span><span class="p">()</span><span class="o">.</span><span class="n">clip</span><span class="p">(</span><span class="n">countries</span><span class="p">)</span>
+
+    <span class="n">precipitaionperiode15y</span><span class="o">=</span> <span class="n">precipitaionperiode1y</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">precipitaionperiode2y</span><span class="p">)</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">precipitaionperiode3y</span><span class="p">)</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">precipitaionperiode4y</span><span class="p">)</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">precipitaionperiode5y</span><span class="p">)</span><span class="o">.</span><span class="n">divide</span><span class="p">(</span><span class="mi">5</span><span class="p">)</span>
+
+    <span class="n">Map</span><span class="o">.</span><span class="n">addLayer</span><span class="p">(</span><span class="n">buffer</span><span class="p">,</span> <span class="p">{},</span> <span class="s1">&#39;couloir de transhumance&#39;</span><span class="p">,</span><span class="kc">False</span><span class="p">);</span>
+
+
+    <span class="k">def</span> <span class="nf">get_vector</span><span class="p">(</span><span class="n">upload_widget</span><span class="p">,</span> <span class="n">out_dir</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+
+        <span class="kn">import</span> <span class="nn">zipfile</span>
+        <span class="kn">import</span> <span class="nn">glob</span>
+
+        <span class="k">if</span> <span class="n">out_dir</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">out_dir</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">expanduser</span><span class="p">(</span><span class="s1">&#39;~&#39;</span><span class="p">),</span> <span class="s1">&#39;Downloads&#39;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">exists</span><span class="p">(</span><span class="n">out_dir</span><span class="p">):</span>
+            <span class="n">os</span><span class="o">.</span><span class="n">makedirs</span><span class="p">(</span><span class="n">out_dir</span><span class="p">)</span>
+
+        <span class="n">vector</span> <span class="o">=</span> <span class="kc">None</span>
+
+        <span class="k">try</span><span class="p">:</span>
+            <span class="p">[</span><span class="n">uploaded_file</span><span class="p">]</span> <span class="o">=</span> <span class="n">upload_widget</span><span class="o">.</span><span class="n">value</span>
+            <span class="n">file</span> <span class="o">=</span> <span class="n">upload_widget</span><span class="o">.</span><span class="n">value</span><span class="p">[</span><span class="n">uploaded_file</span><span class="p">]</span>
+            <span class="n">name</span> <span class="o">=</span> <span class="n">file</span><span class="p">[</span><span class="s1">&#39;metadata&#39;</span><span class="p">][</span><span class="s1">&#39;name&#39;</span><span class="p">]</span>
+            <span class="n">content</span> <span class="o">=</span> <span class="n">file</span><span class="p">[</span><span class="s1">&#39;content&#39;</span><span class="p">]</span>
+            <span class="n">out_file</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">out_dir</span><span class="p">,</span> <span class="n">name</span><span class="p">)</span>
+            <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">out_file</span><span class="p">,</span> <span class="s2">&quot;wb&quot;</span><span class="p">)</span> <span class="k">as</span> <span class="n">fp</span><span class="p">:</span>
+                <span class="n">fp</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="n">content</span><span class="p">)</span>
+
+            <span class="k">if</span> <span class="n">name</span><span class="o">.</span><span class="n">endswith</span><span class="p">(</span><span class="s1">&#39;.zip&#39;</span><span class="p">):</span>
+                <span class="k">with</span> <span class="n">zipfile</span><span class="o">.</span><span class="n">ZipFile</span><span class="p">(</span><span class="n">out_file</span><span class="p">,</span> <span class="s2">&quot;r&quot;</span><span class="p">)</span> <span class="k">as</span> <span class="n">zip_ref</span><span class="p">:</span>
+                    <span class="n">extract_dir</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span>
+                        <span class="n">out_dir</span><span class="p">,</span> <span class="n">name</span><span class="p">[:</span><span class="o">-</span><span class="mi">4</span><span class="p">]</span> <span class="o">+</span> <span class="s2">&quot;_&quot;</span> <span class="o">+</span> <span class="n">geemap</span><span class="o">.</span><span class="n">random_string</span><span class="p">(</span><span class="mi">3</span><span class="p">)</span>
+                    <span class="p">)</span>
+                    <span class="n">zip_ref</span><span class="o">.</span><span class="n">extractall</span><span class="p">(</span><span class="n">extract_dir</span><span class="p">)</span>
+                    <span class="n">files</span> <span class="o">=</span> <span class="n">glob</span><span class="o">.</span><span class="n">glob</span><span class="p">(</span><span class="n">extract_dir</span> <span class="o">+</span> <span class="s1">&#39;/*.shp&#39;</span><span class="p">)</span>
+                    <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">files</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+                        <span class="n">shp</span> <span class="o">=</span> <span class="n">files</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+                        <span class="n">vector</span> <span class="o">=</span> <span class="n">geemap</span><span class="o">.</span><span class="n">shp_to_ee</span><span class="p">(</span><span class="n">shp</span><span class="p">)</span>
+                    <span class="k">else</span><span class="p">:</span>
+                        <span class="n">files</span> <span class="o">=</span> <span class="n">glob</span><span class="o">.</span><span class="n">glob</span><span class="p">(</span><span class="n">extract_dir</span> <span class="o">+</span> <span class="s1">&#39;/*.geojson&#39;</span><span class="p">)</span>
+                        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">files</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+                            <span class="n">geojson</span> <span class="o">=</span> <span class="n">files</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+                            <span class="n">vector</span> <span class="o">=</span> <span class="n">geemap</span><span class="o">.</span><span class="n">geojson_to_ee</span><span class="p">(</span><span class="n">geojson</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">vector</span> <span class="o">=</span> <span class="n">geemap</span><span class="o">.</span><span class="n">geojson_to_ee</span><span class="p">(</span><span class="n">out_file</span><span class="p">)</span>
+
+        <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+            <span class="nb">print</span><span class="p">(</span><span class="n">e</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">vector</span>
+
+    <span class="k">def</span> <span class="nf">submit_clicked</span><span class="p">(</span><span class="n">b</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">uploader</span><span class="o">.</span><span class="n">_counter</span> <span class="o">&gt;=</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="c1">#regionvalue= choisirRegion.value</span>
+            <span class="c1">#zone = Mali.filter(ee.Filter.eq(&#39;admin1Name&#39;, regionvalue))</span>
+            <span class="c1">#Map.default_style = {&#39;cursor&#39;: &#39;wait&#39;}</span>
+            <span class="c1">#layer_name = &#39;Zone&#39;</span>
+            <span class="c1">#style = {&#39;color&#39;: &#39;0000ffff&#39;, &#39;width&#39;: 2, &#39;lineType&#39;: &#39;solid&#39;, &#39;fillColor&#39;: &#39;00000000&#39;}</span>
+            <span class="c1">#Map.addLayer(zone.style(**style), {}, layer_name)</span>
+            <span class="c1">#Map.centerObject(zone)</span>
+        <span class="c1">#else:</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="k">if</span> <span class="n">uploader</span><span class="o">.</span><span class="n">_counter</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+                    <span class="n">regionvalue</span><span class="o">=</span> <span class="n">choisirRegion</span><span class="o">.</span><span class="n">value</span>
+                    <span class="n">zone</span> <span class="o">=</span> <span class="n">Mali</span><span class="o">.</span><span class="n">filter</span><span class="p">(</span><span class="n">ee</span><span class="o">.</span><span class="n">Filter</span><span class="o">.</span><span class="n">eq</span><span class="p">(</span><span class="s1">&#39;admin1Name&#39;</span><span class="p">,</span> <span class="n">regionvalue</span><span class="p">))</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="n">zone</span> <span class="o">=</span> <span class="n">get_vector</span><span class="p">(</span><span class="n">uploader</span><span class="p">)</span>
+                <span class="n">Map</span><span class="o">.</span><span class="n">default_style</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;cursor&#39;</span><span class="p">:</span> <span class="s1">&#39;wait&#39;</span><span class="p">}</span>
+                <span class="n">layer_name</span> <span class="o">=</span> <span class="s1">&#39;Zone&#39;</span>
+                <span class="n">style</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;color&#39;</span><span class="p">:</span> <span class="s1">&#39;0000ffff&#39;</span><span class="p">,</span> <span class="s1">&#39;width&#39;</span><span class="p">:</span> <span class="mi">2</span><span class="p">,</span> <span class="s1">&#39;lineType&#39;</span><span class="p">:</span> <span class="s1">&#39;solid&#39;</span><span class="p">,</span> <span class="s1">&#39;fillColor&#39;</span><span class="p">:</span> <span class="s1">&#39;00000000&#39;</span><span class="p">}</span>
+                <span class="n">Map</span><span class="o">.</span><span class="n">addLayer</span><span class="p">(</span><span class="n">zone</span><span class="o">.</span><span class="n">style</span><span class="p">(</span><span class="o">**</span><span class="n">style</span><span class="p">),</span> <span class="p">{},</span> <span class="n">layer_name</span><span class="p">)</span>
+                <span class="n">Map</span><span class="o">.</span><span class="n">centerObject</span><span class="p">(</span><span class="n">zone</span><span class="p">)</span>
+
+                <span class="c1">#calulate area of the uploaded shapefile</span>
+                <span class="n">areaImg</span> <span class="o">=</span> <span class="n">ee</span><span class="o">.</span><span class="n">Image</span><span class="o">.</span><span class="n">pixelArea</span><span class="p">()</span>
+                <span class="n">zoneArea</span> <span class="o">=</span> <span class="n">areaImg</span><span class="o">.</span><span class="n">reduceRegion</span><span class="p">(</span>
+                    <span class="n">reducer</span> <span class="o">=</span> <span class="n">ee</span><span class="o">.</span><span class="n">Reducer</span><span class="o">.</span><span class="n">sum</span><span class="p">(),</span>
+                    <span class="n">geometry</span> <span class="o">=</span> <span class="n">zone</span><span class="p">,</span>
+                    <span class="n">scale</span> <span class="o">=</span> <span class="mi">1000</span>
+                <span class="p">)</span>
+
+                <span class="c1">#convert area to km2</span>
+                <span class="n">zoneArea</span> <span class="o">=</span> <span class="n">zoneArea</span><span class="o">.</span><span class="n">getInfo</span><span class="p">()</span>
+                <span class="n">zoneArea</span> <span class="o">=</span> <span class="n">zoneArea</span><span class="p">[</span><span class="s1">&#39;area&#39;</span><span class="p">]</span>
+                <span class="n">zoneAreaKm1</span> <span class="o">=</span> <span class="n">zoneArea</span><span class="o">/</span><span class="mi">1000000</span>
+                <span class="n">zoneAreaKm2</span> <span class="o">=</span> <span class="nb">round</span><span class="p">(</span><span class="n">zoneAreaKm1</span><span class="p">,</span> <span class="mi">2</span><span class="p">)</span>
+
+                <span class="c1">#calculate MS All for the uploaded shapefile</span>
+                <span class="n">dmpLigneuxCulturesAcc1</span> <span class="o">=</span> <span class="n">dmpAll</span><span class="o">.</span><span class="n">clip</span><span class="p">(</span><span class="n">zone</span><span class="p">)</span>
+                <span class="n">dmpLigneuxCulturesAcc2</span> <span class="o">=</span> <span class="n">dmpLigneuxCulturesAcc1</span><span class="o">.</span><span class="n">reduceRegion</span><span class="p">(</span> <span class="c1"># sq meters \</span>
+                                <span class="n">reducer</span> <span class="o">=</span> <span class="n">ee</span><span class="o">.</span><span class="n">Reducer</span><span class="o">.</span><span class="n">sum</span><span class="p">(),</span>
+                                <span class="n">geometry</span> <span class="o">=</span> <span class="n">zone</span><span class="p">,</span>
+                                <span class="n">scale</span> <span class="o">=</span> <span class="mi">1000</span><span class="p">,</span>
+                                <span class="n">maxPixels</span> <span class="o">=</span> <span class="mf">1e30</span>
+                              <span class="p">)</span>
+                <span class="n">dmpLigneuxCulturesAcc3</span> <span class="o">=</span> <span class="n">dmpLigneuxCulturesAcc2</span><span class="o">.</span><span class="n">getInfo</span><span class="p">()</span>
+                <span class="n">dmpLigneuxCulturesAcc4</span> <span class="o">=</span> <span class="n">dmpLigneuxCulturesAcc3</span><span class="p">[</span><span class="s1">&#39;dmpAll&#39;</span><span class="p">]</span>
+                <span class="n">dmpLigneuxCulturesAccTon</span> <span class="o">=</span> <span class="n">dmpLigneuxCulturesAcc4</span><span class="o">/</span><span class="mi">1000</span>
+                <span class="n">dmpLigneuxCulturesAccTon</span> <span class="o">=</span> <span class="nb">round</span><span class="p">(</span><span class="n">dmpLigneuxCulturesAccTon</span><span class="p">,</span> <span class="mi">2</span><span class="p">)</span>
+
+                <span class="c1">#calculate MS Veg. Naturelle for the uploaded shapefile</span>
+                <span class="n">dmpWetLigneuxAcc1</span> <span class="o">=</span> <span class="n">dmpWetLigneuxAcc</span><span class="o">.</span><span class="n">clip</span><span class="p">(</span><span class="n">zone</span><span class="p">)</span>
+                <span class="c1">#Map.addLayer(dmpWetLigneuxAcc1, visDmp,&#39;Mat_Sèch_Veg.Naturelle_Accessible_kg/ha encore&#39; )</span>
+                <span class="n">dmpWetLigneuxAcc2</span> <span class="o">=</span> <span class="n">dmpWetLigneuxAcc1</span><span class="o">.</span><span class="n">reduceRegion</span><span class="p">(</span> <span class="c1"># sq meters \</span>
+                                <span class="n">reducer</span> <span class="o">=</span> <span class="n">ee</span><span class="o">.</span><span class="n">Reducer</span><span class="o">.</span><span class="n">sum</span><span class="p">(),</span>
+                                <span class="n">geometry</span> <span class="o">=</span> <span class="n">zone</span><span class="p">,</span>
+                                <span class="n">scale</span> <span class="o">=</span> <span class="mi">1000</span><span class="p">,</span>
+                                <span class="n">maxPixels</span> <span class="o">=</span> <span class="mf">1e30</span>
+                              <span class="p">)</span>
+                <span class="n">dmpWetLigneuxAcc3</span> <span class="o">=</span> <span class="n">dmpWetLigneuxAcc2</span><span class="o">.</span><span class="n">getInfo</span><span class="p">()</span>
+                <span class="n">dmpWetLigneuxAcc4</span> <span class="o">=</span> <span class="n">dmpWetLigneuxAcc3</span><span class="p">[</span><span class="s1">&#39;dmpDry&#39;</span><span class="p">]</span>
+                <span class="n">dmpWetLigneuxAccTon</span> <span class="o">=</span> <span class="n">dmpWetLigneuxAcc4</span><span class="o">/</span><span class="mi">1000</span>
+                <span class="n">dmpWetLigneuxAccTon</span> <span class="o">=</span> <span class="nb">round</span><span class="p">(</span><span class="n">dmpWetLigneuxAccTon</span><span class="p">,</span> <span class="mi">2</span><span class="p">)</span>
+
+
+
+                <span class="c1">#calculate MS Culture for the uploaded shapefile</span>
+                <span class="n">dmpDryCulturesAcc1</span> <span class="o">=</span> <span class="n">dmpDryCulturesAcc</span><span class="o">.</span><span class="n">clip</span><span class="p">(</span><span class="n">zone</span><span class="p">)</span>
+                <span class="n">dmpDryCulturesAcc2</span> <span class="o">=</span> <span class="n">dmpDryCulturesAcc1</span><span class="o">.</span><span class="n">reduceRegion</span><span class="p">(</span> <span class="c1"># sq meters \</span>
+                                <span class="n">reducer</span> <span class="o">=</span> <span class="n">ee</span><span class="o">.</span><span class="n">Reducer</span><span class="o">.</span><span class="n">sum</span><span class="p">(),</span>
+                                <span class="n">geometry</span> <span class="o">=</span> <span class="n">zone</span><span class="p">,</span>
+                                <span class="n">scale</span> <span class="o">=</span> <span class="mi">1000</span><span class="p">,</span>
+                                <span class="n">maxPixels</span> <span class="o">=</span> <span class="mf">1e30</span>
+                              <span class="p">)</span>
+                <span class="n">dmpDryCulturesAcc3</span> <span class="o">=</span> <span class="n">dmpDryCulturesAcc2</span><span class="o">.</span><span class="n">getInfo</span><span class="p">()</span>
+                <span class="n">dmpDryCulturesAcc4</span> <span class="o">=</span> <span class="n">dmpDryCulturesAcc3</span><span class="p">[</span><span class="s1">&#39;dmpWet&#39;</span><span class="p">]</span>
+                <span class="n">dmpDryCulturesAccTon</span> <span class="o">=</span> <span class="n">dmpDryCulturesAcc4</span><span class="o">/</span><span class="mi">1000</span>
+                <span class="n">dmpDryCulturesAccTon</span> <span class="o">=</span> <span class="nb">round</span><span class="p">(</span><span class="n">dmpDryCulturesAccTon</span><span class="p">,</span> <span class="mi">2</span><span class="p">)</span>
+
+
+                <span class="c1">#calculate precipitation for the uploaded shapefile for the period</span>
+                <span class="n">precipitaionperiode1</span> <span class="o">=</span> <span class="n">precipitaionperiode</span><span class="o">.</span><span class="n">clip</span><span class="p">(</span><span class="n">zone</span><span class="p">)</span>
+                <span class="n">precipitaionperiode2</span> <span class="o">=</span> <span class="n">precipitaionperiode1</span><span class="o">.</span><span class="n">reduceRegion</span><span class="p">(</span>
+                                <span class="n">reducer</span> <span class="o">=</span> <span class="n">ee</span><span class="o">.</span><span class="n">Reducer</span><span class="o">.</span><span class="n">mean</span><span class="p">(),</span>
+                                <span class="n">geometry</span> <span class="o">=</span> <span class="n">zone</span><span class="p">,</span>
+                                <span class="n">scale</span> <span class="o">=</span> <span class="mi">1000</span><span class="p">,</span>
+                                <span class="n">maxPixels</span> <span class="o">=</span> <span class="mf">1e30</span>
+                              <span class="p">)</span>
+                <span class="n">precipitaionperiode3</span> <span class="o">=</span> <span class="n">precipitaionperiode2</span><span class="o">.</span><span class="n">getInfo</span><span class="p">()</span>
+                <span class="n">precipitaionperiode4</span> <span class="o">=</span> <span class="n">precipitaionperiode3</span><span class="p">[</span><span class="s1">&#39;precipitation&#39;</span><span class="p">]</span>
+                <span class="n">precipitaionperiodemm</span> <span class="o">=</span> <span class="nb">round</span><span class="p">(</span><span class="n">precipitaionperiode4</span><span class="p">,</span> <span class="mi">2</span><span class="p">)</span>
+
+                <span class="c1">#calculate precipitation for the uploaded shapefile for 5 periods before</span>
+                <span class="n">precipitaionperiode15y1</span> <span class="o">=</span> <span class="n">precipitaionperiode15y</span><span class="o">.</span><span class="n">clip</span><span class="p">(</span><span class="n">zone</span><span class="p">)</span>
+                <span class="n">precipitaionperiode15y2</span> <span class="o">=</span> <span class="n">precipitaionperiode15y1</span><span class="o">.</span><span class="n">reduceRegion</span><span class="p">(</span>
+                                <span class="n">reducer</span> <span class="o">=</span> <span class="n">ee</span><span class="o">.</span><span class="n">Reducer</span><span class="o">.</span><span class="n">mean</span><span class="p">(),</span>
+                                <span class="n">geometry</span> <span class="o">=</span> <span class="n">zone</span><span class="p">,</span>
+                                <span class="n">scale</span> <span class="o">=</span> <span class="mi">1000</span><span class="p">,</span>
+                                <span class="n">maxPixels</span> <span class="o">=</span> <span class="mf">1e30</span>
+                              <span class="p">)</span>
+                <span class="n">precipitaionperiode15y3</span> <span class="o">=</span> <span class="n">precipitaionperiode15y2</span><span class="o">.</span><span class="n">getInfo</span><span class="p">()</span>
+                <span class="n">precipitaionperiode15y4</span> <span class="o">=</span> <span class="n">precipitaionperiode15y3</span><span class="p">[</span><span class="s1">&#39;precipitation&#39;</span><span class="p">]</span>
+                <span class="n">precipitaionperiode15ymm</span> <span class="o">=</span> <span class="nb">round</span><span class="p">(</span><span class="n">precipitaionperiode15y4</span><span class="p">,</span> <span class="mi">2</span><span class="p">)</span>
+
+
+
+                <span class="c1">#dgraph = {&#39;MS_Total&#39;: dmpLigneuxCulturesAccTon, &#39;MS_Veg._Na_acces&#39;: dmpWetLigneuxAccTon, &#39;MS_Cul._acces&#39;: dmpDryCulturesAccTon}</span>
+                <span class="c1">#graph=plt.bar(list(dgraph.keys()), dgraph.values(), color=&#39;g&#39;)</span>
+
+
+
+                <span class="c1">#Disply shapefile values on the map</span>
+                <span class="n">output_widget</span> <span class="o">=</span> <span class="n">widgets</span><span class="o">.</span><span class="n">Output</span><span class="p">(</span><span class="n">layout</span><span class="o">=</span><span class="p">{</span><span class="s1">&#39;border&#39;</span><span class="p">:</span> <span class="s1">&#39;1px solid black&#39;</span><span class="p">})</span>
+                <span class="n">output_control</span> <span class="o">=</span> <span class="n">ipyleaflet</span><span class="o">.</span><span class="n">WidgetControl</span><span class="p">(</span><span class="n">widget</span><span class="o">=</span><span class="n">output_widget</span><span class="p">,</span> <span class="n">position</span><span class="o">=</span><span class="s1">&#39;topright&#39;</span><span class="p">)</span>
+                <span class="n">Map</span><span class="o">.</span><span class="n">add_control</span><span class="p">(</span><span class="n">output_control</span><span class="p">)</span>
+                <span class="n">output_widget</span><span class="o">.</span><span class="n">clear_output</span><span class="p">()</span>
+                <span class="k">with</span> <span class="n">output_widget</span><span class="p">:</span>
+                    <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;Superficie de la zone: &#39;</span><span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="n">zoneAreaKm2</span><span class="p">)</span> <span class="o">+</span> <span class="s1">&#39; Km2&#39;</span><span class="p">)</span>
+                    <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;MS Totale produite: &#39;</span><span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="n">dmpLigneuxCulturesAccTon</span><span class="p">)</span><span class="o">+</span> <span class="s1">&#39; Tonne&#39;</span><span class="p">)</span>
+                    <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;MS Veg. Naturelle accessible: &#39;</span><span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="n">dmpWetLigneuxAccTon</span><span class="p">)</span><span class="o">+</span> <span class="s1">&#39; Tonne&#39;</span><span class="p">)</span>
+                    <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;MS Culture accessible: &#39;</span><span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="n">dmpDryCulturesAccTon</span><span class="p">)</span><span class="o">+</span> <span class="s1">&#39; Tonne&#39;</span><span class="p">)</span>
+                    <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;Pluie sur la période: &#39;</span><span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="n">precipitaionperiodemm</span><span class="p">)</span><span class="o">+</span> <span class="s1">&#39; mm&#39;</span><span class="p">)</span>
+                    <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;Pluie cinq périodes précédentes: &#39;</span><span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="n">precipitaionperiode15ymm</span><span class="p">)</span><span class="o">+</span> <span class="s1">&#39; mm&#39;</span><span class="p">)</span>
+
+                <span class="n">statZone</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;Superficie de la zone (km2)&#39;</span><span class="p">:</span> <span class="n">zoneAreaKm2</span><span class="p">,</span> <span class="s1">&#39;MS Totale produite (Tonne)&#39;</span><span class="p">:</span> <span class="n">dmpLigneuxCulturesAccTon</span><span class="p">,</span> <span class="s1">&#39;MS Veg. Naturelle accessible (Tonne)&#39;</span><span class="p">:</span> <span class="n">dmpWetLigneuxAccTon</span><span class="p">,</span> <span class="s1">&#39;MS Culture accessible (Tonne)&#39;</span><span class="p">:</span> <span class="n">dmpDryCulturesAccTon</span><span class="p">,</span> <span class="s1">&#39;Pluie sur la periode (mm)&#39;</span><span class="p">:</span> <span class="n">precipitaionperiodemm</span><span class="p">,</span> <span class="s1">&#39;Pluie cinq periodes precedentes (mm)&#39;</span><span class="p">:</span><span class="n">precipitaionperiode15ymm</span><span class="p">};</span>
+
+                <span class="k">def</span> <span class="nf">fexportCsv</span> <span class="p">(</span><span class="n">btn</span><span class="p">):</span>
+                    <span class="n">out_dir</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">expanduser</span><span class="p">(</span><span class="s1">&#39;~&#39;</span><span class="p">),</span> <span class="s1">&#39;Downloads&#39;</span><span class="p">)</span>
+                    <span class="n">filename</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">out_dir</span><span class="p">,</span> <span class="s1">&#39;statistiques de la zone.csv&#39;</span><span class="p">)</span>
+                    <span class="p">(</span><span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="o">.</span><span class="n">from_dict</span><span class="p">(</span><span class="n">data</span><span class="o">=</span><span class="n">statZone</span><span class="p">,</span> <span class="n">orient</span><span class="o">=</span><span class="s1">&#39;index&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">to_csv</span><span class="p">(</span><span class="n">filename</span><span class="p">,</span> <span class="n">header</span><span class="o">=</span><span class="kc">False</span><span class="p">))</span>
+
+                <span class="n">boutonexportercsv</span><span class="o">.</span><span class="n">on_click</span><span class="p">(</span><span class="n">fexportCsv</span><span class="p">)</span>
+
+                <span class="k">def</span> <span class="nf">feffacer</span> <span class="p">(</span><span class="n">btn</span><span class="p">):</span>
+                    <span class="n">output_widget</span><span class="o">.</span><span class="n">clear_output</span><span class="p">()</span>
+                    <span class="n">existance</span> <span class="o">=</span> <span class="n">Map</span><span class="o">.</span><span class="n">find_layer</span><span class="p">(</span><span class="s1">&#39;Zone&#39;</span><span class="p">)</span>
+                    <span class="k">if</span> <span class="n">existance</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+                        <span class="n">Message</span> <span class="o">=</span> <span class="s1">&#39;Pas de couche Zone à effacer&#39;</span>
+                    <span class="k">else</span><span class="p">:</span>
+                        <span class="n">Map</span><span class="o">.</span><span class="n">remove_ee_layer</span><span class="p">(</span><span class="s1">&#39;Zone&#39;</span><span class="p">)</span>
+
+                <span class="k">def</span> <span class="nf">export</span><span class="p">(</span><span class="n">btn</span><span class="p">):</span>
+                    <span class="n">out_dir</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">expanduser</span><span class="p">(</span><span class="s1">&#39;~&#39;</span><span class="p">),</span> <span class="s1">&#39;Downloads&#39;</span><span class="p">)</span>
+                    <span class="n">filename</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">out_dir</span><span class="p">,</span> <span class="n">choisirVariable</span><span class="o">.</span><span class="n">value</span><span class="o">+</span><span class="s1">&#39;.tif&#39;</span><span class="p">)</span>
+                    <span class="n">Biomasse_accessible1</span> <span class="o">=</span> <span class="n">dmpLigneuxCulturesAcc1</span>
+                    <span class="n">Biomasse_totale1</span> <span class="o">=</span> <span class="n">dmpDry</span>
+                    <span class="k">if</span> <span class="n">choisirVariable</span><span class="o">.</span><span class="n">value</span> <span class="o">==</span> <span class="s1">&#39;Biomasse_accessible&#39;</span><span class="p">:</span>
+                        <span class="n">geemap</span><span class="o">.</span><span class="n">ee_export_image</span><span class="p">(</span><span class="n">Biomasse_accessible1</span><span class="p">,</span> <span class="n">filename</span><span class="o">=</span><span class="n">filename</span><span class="p">,</span> <span class="n">scale</span><span class="o">=</span><span class="mi">1000</span><span class="p">,</span> <span class="n">region</span><span class="o">=</span><span class="n">zone</span><span class="o">.</span><span class="n">geometry</span><span class="p">(),</span> <span class="n">file_per_band</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+                    <span class="k">else</span><span class="p">:</span>
+                        <span class="k">if</span> <span class="n">choisirVariable</span><span class="o">.</span><span class="n">value</span> <span class="o">==</span> <span class="s1">&#39;Biomasse_totale&#39;</span><span class="p">:</span>
+                            <span class="n">geemap</span><span class="o">.</span><span class="n">ee_export_image</span><span class="p">(</span><span class="n">Biomasse_totale1</span><span class="p">,</span> <span class="n">filename</span><span class="o">=</span><span class="n">filename</span><span class="p">,</span> <span class="n">scale</span><span class="o">=</span><span class="mi">1000</span><span class="p">,</span> <span class="n">region</span><span class="o">=</span><span class="n">zone</span><span class="o">.</span><span class="n">geometry</span><span class="p">(),</span> <span class="n">file_per_band</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+                    <span class="c1">#display(Javascript(&#39;IPython.notebook.execute_cell(2)&#39;))</span>
+
+                    <span class="k">return</span>
+
+                <span class="n">exporter</span><span class="o">.</span><span class="n">on_click</span><span class="p">(</span><span class="n">export</span><span class="p">)</span>
+
+                <span class="n">uploader</span><span class="o">.</span><span class="n">value</span><span class="o">.</span><span class="n">clear</span><span class="p">()</span>
+                <span class="n">uploader</span><span class="o">.</span><span class="n">_counter</span> <span class="o">=</span> <span class="mi">0</span>
+
+            <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+                <span class="nb">print</span><span class="p">(</span><span class="n">e</span><span class="p">)</span>
+            <span class="n">Map</span><span class="o">.</span><span class="n">default_style</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;cursor&#39;</span><span class="p">:</span> <span class="s1">&#39;pointer&#39;</span><span class="p">}</span>
+
+            <span class="n">boutoneffacer</span><span class="o">.</span><span class="n">on_click</span><span class="p">(</span><span class="n">feffacer</span><span class="p">)</span>
+
+
+    <span class="n">submit</span><span class="o">.</span><span class="n">on_click</span><span class="p">(</span><span class="n">submit_clicked</span><span class="p">)</span>
+
+
+    <span class="k">def</span> <span class="nf">reset_clicked</span><span class="p">(</span><span class="n">b</span><span class="p">):</span>
+        <span class="n">Map</span><span class="o">.</span><span class="n">layers</span> <span class="o">=</span> <span class="n">Map</span><span class="o">.</span><span class="n">layers</span><span class="p">[:</span><span class="mi">3</span><span class="p">]</span>
+        <span class="n">output_widget</span><span class="o">.</span><span class="n">clear_output</span><span class="p">()</span>
+        <span class="k">with</span> <span class="n">output_widget</span><span class="p">:</span>
+            <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;Upload shapefile or </span><span class="se">\n</span><span class="s1">geojson as a zip file&#39;</span><span class="p">)</span>
+            <span class="n">display</span><span class="p">(</span><span class="n">uploader</span><span class="p">)</span>
+            <span class="n">display</span><span class="p">(</span><span class="n">submit</span><span class="p">)</span>
+            <span class="n">display</span><span class="p">(</span><span class="n">reset</span><span class="p">)</span>
+        <span class="n">uploader</span><span class="o">.</span><span class="n">value</span><span class="o">.</span><span class="n">clear</span><span class="p">()</span>
+        <span class="n">uploader</span><span class="o">.</span><span class="n">_counter</span> <span class="o">=</span> <span class="mi">0</span>
+
+
+    <span class="n">reset</span><span class="o">.</span><span class="n">on_click</span><span class="p">(</span><span class="n">reset_clicked</span><span class="p">)</span>
+
+    <span class="n">Map</span><span class="o">.</span><span class="n">addLayer</span><span class="p">(</span><span class="n">couloir</span><span class="p">,</span> <span class="p">{},</span> <span class="s1">&#39;Piste de transhumance&#39;</span><span class="p">,</span><span class="mi">0</span><span class="p">);</span>
+    <span class="n">Map</span><span class="o">.</span><span class="n">addLayer</span><span class="p">(</span><span class="n">marche</span><span class="p">,</span> <span class="p">{},</span> <span class="s1">&#39;Marché&#39;</span><span class="p">,</span><span class="mi">0</span><span class="p">);</span>
+    <span class="n">Map</span><span class="o">.</span><span class="n">addLayer</span><span class="p">(</span><span class="n">veto</span><span class="p">,</span> <span class="p">{},</span> <span class="s1">&#39;Poste vétérinaire&#39;</span><span class="p">,</span><span class="mi">0</span><span class="p">);</span>
+    <span class="n">Map</span><span class="o">.</span><span class="n">addLayer</span><span class="p">(</span><span class="n">Quai_Embq_BF</span><span class="p">,</span> <span class="p">{},</span> <span class="s1">&#39;Quai embarquement&#39;</span><span class="p">,</span><span class="mi">0</span><span class="p">);</span>
+    <span class="n">Map</span><span class="o">.</span><span class="n">addLayer</span><span class="p">(</span><span class="n">pointEau</span><span class="p">,</span> <span class="p">{},</span> <span class="s1">&#39;Point eau&#39;</span><span class="p">,</span><span class="mi">0</span><span class="p">);</span>
+
+
+
+
+    <span class="k">return</span>
+
+
+
+<span class="n">Obtressources</span><span class="o">.</span><span class="n">on_click</span><span class="p">(</span><span class="n">resources</span><span class="p">)</span>
+<br/><br/></pre></div>
+</div>
+</div>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[21]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">WaPOR_lien</span> <span class="o">=</span> <span class="s1">&#39;https://wapor.apps.fao.org/home/WAPOR_2/1&#39;</span>
+<span class="n">FBS_lien</span> <span class="o">=</span> <span class="s1">&#39;https://wapor.apps.fao.org/home/WAPOR_2/1&#39;</span>
+<span class="n">FIRMS_lien</span> <span class="o">=</span> <span class="s1">&#39;https://www.earthdata.nasa.gov/learn/find-data/near-real-time/firms/mcd14dl-nrt&#39;</span>
+<span class="n">CHIRPS_lien</span> <span class="o">=</span> <span class="s1">&#39;https://www.nature.com/articles/sdata201566&#39;</span>
+
+
+<span class="n">lien</span> <span class="o">=</span> <span class="n">widgets</span><span class="o">.</span><span class="n">HTML</span><span class="p">(</span><span class="n">value</span> <span class="o">=</span> <span class="sa">f</span><span class="s1">&#39;Sources: Matière Sèche (MS) dérivée de &lt;a href=&quot;</span><span class="si">{</span><span class="n">WaPOR_lien</span><span class="si">}</span><span class="s1">&quot; target=&quot;_blank&quot;&gt;WaPOR&lt;/a&gt;, </span><span class="se">\</span>
+<span class="s1">        Matière Sèche accessible suivant &lt;a href=&quot;</span><span class="si">{</span><span class="n">FBS_lien</span><span class="si">}</span><span class="s1">&quot; target=&quot;_blank&quot;&gt;FBS&lt;/a&gt;, </span><span class="se">\</span>
+<span class="s1">        Précipitation suivant &lt;a href=&quot;</span><span class="si">{</span><span class="n">CHIRPS_lien</span><span class="si">}</span><span class="s1">&quot; target=&quot;_blank&quot;&gt;CHIRPS&lt;/a&gt;, </span><span class="se">\</span>
+<span class="s1">        Feu selon &lt;a href=&quot;</span><span class="si">{</span><span class="n">FIRMS_lien</span><span class="si">}</span><span class="s1">&quot; target=&quot;_blank&quot;&gt;MCD14DL&lt;/a&gt;.&#39;</span><span class="p">)</span>
+<br/></pre></div>
+</div>
+</div>
+<div class="nbinput docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[22]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">AppLayout</span><span class="p">(</span><span class="n">center</span><span class="o">=</span><span class="n">Map</span><span class="p">,</span>
+          <span class="n">header</span><span class="o">=</span><span class="n">HBox</span><span class="p">([</span><span class="n">VBox</span><span class="p">([</span><span class="n">startDatePicker</span><span class="p">,</span> <span class="n">requestDatePicker</span><span class="p">,</span> <span class="n">feedIntakeCoef</span><span class="p">]),</span> <span class="n">VBox</span><span class="p">([</span><span class="n">tauxDegradation</span><span class="p">,</span> <span class="n">coefAccessLigneux</span><span class="p">,</span><span class="n">coefAccessResidusCult</span><span class="p">]),</span> <span class="n">VBox</span><span class="p">([</span><span class="n">ratioBimassSup1</span><span class="p">,</span> <span class="n">Obtressources</span><span class="p">])]),</span>
+          <span class="n">left_sidebar</span><span class="o">=</span> <span class="n">VBox</span><span class="p">([</span><span class="n">uploader</span><span class="p">,</span> <span class="n">choisirRegion</span><span class="p">,</span> <span class="n">submit</span><span class="p">,</span><span class="n">boutonexportercsv</span><span class="p">,</span> <span class="n">choisirVariable</span><span class="p">,</span> <span class="n">exporter</span><span class="p">,</span> <span class="n">boutoneffacer</span><span class="p">]),</span>
+          <span class="n">footer</span> <span class="o">=</span> <span class="n">VBox</span><span class="p">([</span><span class="n">lien</span><span class="p">]),</span>
+          <span class="n">pane_widths</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;15%&#39;</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">],</span>
+          <span class="n">height</span><span class="o">=</span><span class="s1">&#39;90%&#39;</span><span class="p">,</span>
+          <span class="n">width</span><span class="o">=</span><span class="s1">&#39;100%&#39;</span><span class="p">,</span>
+
+          <span class="n">grid_gap</span><span class="o">=</span><span class="s2">&quot;10px&quot;</span><span class="p">)</span>
+<br/><br/></pre></div>
+</div>
+</div>
+<div class="nboutput nblast docutils container">
+<div class="prompt empty docutils container">
+</div>
+<div class="output_area docutils container">
+<script type="application/vnd.jupyter.widget-view+json">{"model_id": "4a8849fcc06c49c58dc995f86aba1162", "version_major": 2, "version_minor": 0}</script></div>
+</div>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span>
+</pre></div>
+</div>
+</div>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span>
+</pre></div>
+</div>
+</div>
+<div class="nbinput nblast docutils container">
+<div class="prompt highlight-none notranslate"><div class="highlight"><pre><span></span>[ ]:
+</pre></div>
+</div>
+<div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre><span></span>
+</pre></div>
+</div>
+</div>
+
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2022, FAO.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

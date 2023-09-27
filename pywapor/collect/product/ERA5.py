@@ -28,12 +28,12 @@ def default_vars(product_name, req_vars):
 
     variables = {
         "sis-agrometeorological-indicators": {
-                    "2m_temperature": [{"statistic": "24_hour_mean", "format": "zip"}, "t_air"],
-                    "2m_dewpoint_temperature": [{"statistic": "24_hour_mean", "format": "zip"}, "t_dew"],
-                    "2m_relative_humidity": [{"time": [f"{x:02d}_00" for x in [6,9,12,15,18]], "format": "zip"}, "rh"],
-                    "10m_wind_speed": [{"statistic": "24_hour_mean", "format": "zip"}, "u"],
-                    "vapour_pressure": [{"statistic": "24_hour_mean", "format": "zip"}, "vp"],
-                    "solar_radiation_flux": [{"statistic": "24_hour_mean", "format": "zip"}, "ra"],
+                    "2m_temperature": [{"statistic": "24_hour_mean", "format": "zip", "version": "1_1"}, "t_air"],
+                    "2m_dewpoint_temperature": [{"statistic": "24_hour_mean", "format": "zip", "version": "1_1"}, "t_dew"],
+                    "2m_relative_humidity": [{"time": [f"{x:02d}_00" for x in [6,9,12,15,18]], "format": "zip", "version": "1_1"}, "rh"],
+                    "10m_wind_speed": [{"statistic": "24_hour_mean", "format": "zip", "version": "1_1"}, "u"],
+                    "vapour_pressure": [{"statistic": "24_hour_mean", "format": "zip", "version": "1_1"}, "vp"],
+                    "solar_radiation_flux": [{"statistic": "24_hour_mean", "format": "zip", "version": "1_1"}, "ra"],
                         },
 
         "reanalysis-era5-single-levels": {

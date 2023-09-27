@@ -9,4 +9,4 @@ protocol
    protocol/cog
    protocol/crawler
    protocol/opendap
-   protocol/sentinelapi
+   protocol/copernicus_odata

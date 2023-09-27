@@ -25,7 +25,7 @@
     <script src="../../../_static/js/theme.js"></script>
     <link rel="index" title="Index" href="../../../genindex.html" />
     <link rel="search" title="Search" href="../../../search.html" />
-    <link rel="next" title="sentinelapi" href="sentinelapi.html" />
+    <link rel="next" title="sentinelapi" href="copernicus_odata.html" />
     <link rel="prev" title="crawler" href="crawler.html" /> 
 </head>
 
@@ -68,7 +68,7 @@
 <li class="toctree-l4"><a class="reference internal" href="cog.html">cog</a></li>
 <li class="toctree-l4"><a class="reference internal" href="crawler.html">crawler</a></li>
 <li class="toctree-l4 current"><a class="current reference internal" href="#">opendap</a></li>
-<li class="toctree-l4"><a class="reference internal" href="sentinelapi.html">sentinelapi</a></li>
+<li class="toctree-l4"><a class="reference internal" href="copernicus_odata.html">sentinelapi</a></li>
 </ul>
 </li>
 </ul>
@@ -141,6 +141,19 @@
 </dd></dl>
 
 <dl class="py function">
+<dt class="sig sig-object py" id="pywapor.collect.protocol.opendap.setup_session">
+<span class="sig-name descname"><span class="pre">setup_session</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">uri</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">username</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">password</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">check_url</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">session</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">verify</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">username_field</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'username'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">password_field</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'password'</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pywapor.collect.protocol.opendap.setup_session" title="Permalink to this definition"></a></dt>
+<dd><p>A general function to set-up requests session with cookies
+using beautifulsoup and by calling the right url.</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="pywapor.collect.protocol.opendap.raise_if_form_exists">
+<span class="sig-name descname"><span class="pre">raise_if_form_exists</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">url</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">session</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pywapor.collect.protocol.opendap.raise_if_form_exists" title="Permalink to this definition"></a></dt>
+<dd><p>This function raises a UserWarning if the link has forms</p>
+</dd></dl>
+
+<dl class="py function">
 <dt class="sig sig-object py" id="pywapor.collect.protocol.opendap.download_xarray">
 <span class="sig-name descname"><span class="pre">download_xarray</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">url</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">fp</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">coords</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">variables</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">post_processors</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">data_source_crs</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">timedelta</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pywapor.collect.protocol.opendap.download_xarray" title="Permalink to this definition"></a></dt>
 <dd><p>Download a OPENDaP dataset using xarray directly.</p>
@@ -196,7 +209,7 @@ value the respective dimension names in the <cite>ds</cite> and the second value
           </div>
           <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
         <a href="crawler.html" class="btn btn-neutral float-left" title="crawler" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
-        <a href="sentinelapi.html" class="btn btn-neutral float-right" title="sentinelapi" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+        <a href="copernicus_odata.html" class="btn btn-neutral float-right" title="sentinelapi" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
     </div>
 
   <hr/>

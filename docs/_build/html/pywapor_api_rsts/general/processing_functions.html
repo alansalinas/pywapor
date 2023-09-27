@@ -70,12 +70,10 @@
 <li class="toctree-l4"><a class="reference internal" href="#pywapor.general.processing_functions.make_example_ds"><code class="docutils literal notranslate"><span class="pre">make_example_ds()</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="#pywapor.general.processing_functions.open_ds"><code class="docutils literal notranslate"><span class="pre">open_ds()</span></code></a></li>
 <li class="toctree-l4"><a class="reference internal" href="#pywapor.general.processing_functions.transform_bb"><code class="docutils literal notranslate"><span class="pre">transform_bb()</span></code></a></li>
-<li class="toctree-l4"><a class="reference internal" href="#pywapor.general.processing_functions.calc_dlat_dlon"><code class="docutils literal notranslate"><span class="pre">calc_dlat_dlon()</span></code></a></li>
 </ul>
 </li>
 <li class="toctree-l3"><a class="reference internal" href="variables.html">variables</a></li>
 <li class="toctree-l3"><a class="reference internal" href="lazifier.html">lazifier</a></li>
-<li class="toctree-l3"><a class="reference internal" href="network.html">network</a></li>
 </ul>
 </li>
 <li class="toctree-l2"><a class="reference internal" href="../collect.html">pywapor.collect</a></li>
@@ -236,28 +234,6 @@ or a <cite>str</cite> in which case it must be a path to a file.</p>
 </dd>
 <dt class="field-odd">Return type</dt>
 <dd class="field-odd"><p>list</p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py function">
-<dt class="sig sig-object py" id="pywapor.general.processing_functions.calc_dlat_dlon">
-<span class="sig-name descname"><span class="pre">calc_dlat_dlon</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">geo_out</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">size_X</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">size_Y</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">lat_lon</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pywapor.general.processing_functions.calc_dlat_dlon" title="Permalink to this definition"></a></dt>
-<dd><p>Calculated the dimensions of each pixel in meter.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
-<dd class="field-odd"><ul class="simple">
-<li><p><strong>geo_out</strong> (<em>list</em>) – Geotransform function of the array.</p></li>
-<li><p><strong>size_X</strong> (<em>int</em>) – Number of pixels in x-direction.</p></li>
-<li><p><strong>size_Y</strong> (<em>int</em>) – Number of pixels in y-direction.</p></li>
-<li><p><strong>lat_lon</strong> (<em>tuple</em><em>, </em><em>optional</em>) – Tuple with two rasters, one for latitudes, another for longitudes, by default None.</p></li>
-</ul>
-</dd>
-<dt class="field-even">Returns</dt>
-<dd class="field-even"><p>Tuple with two arrays with teh size of each pixel in the x and y direction in meters.</p>
-</dd>
-<dt class="field-odd">Return type</dt>
-<dd class="field-odd"><p>tuple</p>
 </dd>
 </dl>
 </dd></dl>

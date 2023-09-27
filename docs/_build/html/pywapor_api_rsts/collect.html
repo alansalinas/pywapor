@@ -26,7 +26,7 @@
     <link rel="index" title="Index" href="../genindex.html" />
     <link rel="search" title="Search" href="../search.html" />
     <link rel="next" title="accounts" href="collect/accounts.html" />
-    <link rel="prev" title="network" href="general/network.html" /> 
+    <link rel="prev" title="lazifier" href="general/lazifier.html" /> 
 </head>
 
 <body class="wy-body-for-nav"> 
@@ -106,12 +106,10 @@
 <li class="toctree-l2"><a class="reference internal" href="collect/accounts.html#pywapor.collect.accounts.setup"><code class="docutils literal notranslate"><span class="pre">setup()</span></code></a></li>
 <li class="toctree-l2"><a class="reference internal" href="collect/accounts.html#pywapor.collect.accounts.get"><code class="docutils literal notranslate"><span class="pre">get()</span></code></a></li>
 <li class="toctree-l2"><a class="reference internal" href="collect/accounts.html#pywapor.collect.accounts.create_key"><code class="docutils literal notranslate"><span class="pre">create_key()</span></code></a></li>
-<li class="toctree-l2"><a class="reference internal" href="collect/accounts.html#pywapor.collect.accounts.vito_account"><code class="docutils literal notranslate"><span class="pre">vito_account()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="collect/accounts.html#pywapor.collect.accounts.terra_account"><code class="docutils literal notranslate"><span class="pre">terra_account()</span></code></a></li>
 <li class="toctree-l2"><a class="reference internal" href="collect/accounts.html#pywapor.collect.accounts.nasa_account"><code class="docutils literal notranslate"><span class="pre">nasa_account()</span></code></a></li>
 <li class="toctree-l2"><a class="reference internal" href="collect/accounts.html#pywapor.collect.accounts.earthexplorer_account"><code class="docutils literal notranslate"><span class="pre">earthexplorer_account()</span></code></a></li>
-<li class="toctree-l2"><a class="reference internal" href="collect/accounts.html#pywapor.collect.accounts.wapor_account"><code class="docutils literal notranslate"><span class="pre">wapor_account()</span></code></a></li>
-<li class="toctree-l2"><a class="reference internal" href="collect/accounts.html#pywapor.collect.accounts.viirsl1_account"><code class="docutils literal notranslate"><span class="pre">viirsl1_account()</span></code></a></li>
-<li class="toctree-l2"><a class="reference internal" href="collect/accounts.html#pywapor.collect.accounts.sentinel_account"><code class="docutils literal notranslate"><span class="pre">sentinel_account()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="collect/accounts.html#pywapor.collect.accounts.copernicus_data_space_account"><code class="docutils literal notranslate"><span class="pre">copernicus_data_space_account()</span></code></a></li>
 <li class="toctree-l2"><a class="reference internal" href="collect/accounts.html#pywapor.collect.accounts.ecmwf_account"><code class="docutils literal notranslate"><span class="pre">ecmwf_account()</span></code></a></li>
 </ul>
 </li>
@@ -177,13 +175,18 @@
 <li class="toctree-l3"><a class="reference internal" href="collect/product/MODIS.html#pywapor.collect.product.MODIS.download"><code class="docutils literal notranslate"><span class="pre">download()</span></code></a></li>
 </ul>
 </li>
-<li class="toctree-l2"><a class="reference internal" href="collect/product/PROBAV.html">PROBAV</a><ul>
-<li class="toctree-l3"><a class="reference internal" href="collect/product/PROBAV.html#pywapor.collect.product.PROBAV.download"><code class="docutils literal notranslate"><span class="pre">download()</span></code></a></li>
-<li class="toctree-l3"><a class="reference internal" href="collect/product/PROBAV.html#pywapor.collect.product.PROBAV.open_hdf5_groups"><code class="docutils literal notranslate"><span class="pre">open_hdf5_groups()</span></code></a></li>
-<li class="toctree-l3"><a class="reference internal" href="collect/product/PROBAV.html#pywapor.collect.product.PROBAV.mask_bitwise_qa"><code class="docutils literal notranslate"><span class="pre">mask_bitwise_qa()</span></code></a></li>
-<li class="toctree-l3"><a class="reference internal" href="collect/product/PROBAV.html#pywapor.collect.product.PROBAV.default_post_processors"><code class="docutils literal notranslate"><span class="pre">default_post_processors()</span></code></a></li>
-<li class="toctree-l3"><a class="reference internal" href="collect/product/PROBAV.html#pywapor.collect.product.PROBAV.default_vars"><code class="docutils literal notranslate"><span class="pre">default_vars()</span></code></a></li>
-<li class="toctree-l3"><a class="reference internal" href="collect/product/PROBAV.html#pywapor.collect.product.PROBAV.find_tiles"><code class="docutils literal notranslate"><span class="pre">find_tiles()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="collect/product/TERRA.html">TERRA</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="collect/product/TERRA.html#pywapor.collect.product.TERRA.default_post_processors"><code class="docutils literal notranslate"><span class="pre">default_post_processors()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="collect/product/TERRA.html#pywapor.collect.product.TERRA.default_vars"><code class="docutils literal notranslate"><span class="pre">default_vars()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="collect/product/TERRA.html#pywapor.collect.product.TERRA.mask_bitwise_qa"><code class="docutils literal notranslate"><span class="pre">mask_bitwise_qa()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="collect/product/TERRA.html#pywapor.collect.product.TERRA.download"><code class="docutils literal notranslate"><span class="pre">download()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="collect/product/LANDSAT.html">TERRA</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="collect/product/LANDSAT.html#pywapor.collect.product.LANDSAT.calc_r0"><code class="docutils literal notranslate"><span class="pre">calc_r0()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="collect/product/LANDSAT.html#pywapor.collect.product.LANDSAT.calc_normalized_difference"><code class="docutils literal notranslate"><span class="pre">calc_normalized_difference()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="collect/product/LANDSAT.html#pywapor.collect.product.LANDSAT.espa_api"><code class="docutils literal notranslate"><span class="pre">espa_api()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="collect/product/LANDSAT.html#pywapor.collect.product.LANDSAT.download"><code class="docutils literal notranslate"><span class="pre">download()</span></code></a></li>
 </ul>
 </li>
 <li class="toctree-l2"><a class="reference internal" href="collect/product/SENTINEL2.html">SENTINEL2</a><ul>
@@ -226,11 +229,7 @@
 </ul>
 </li>
 <li class="toctree-l2"><a class="reference internal" href="collect/product/VIIRSL1.html">VIIRSL1</a><ul>
-<li class="toctree-l3"><a class="reference internal" href="collect/product/VIIRSL1.html#pywapor.collect.product.VIIRSL1.regrid_VNP"><code class="docutils literal notranslate"><span class="pre">regrid_VNP()</span></code></a></li>
-<li class="toctree-l3"><a class="reference internal" href="collect/product/VIIRSL1.html#pywapor.collect.product.VIIRSL1.boxtimes"><code class="docutils literal notranslate"><span class="pre">boxtimes()</span></code></a></li>
-<li class="toctree-l3"><a class="reference internal" href="collect/product/VIIRSL1.html#pywapor.collect.product.VIIRSL1.find_VIIRSL1_urls"><code class="docutils literal notranslate"><span class="pre">find_VIIRSL1_urls()</span></code></a></li>
-<li class="toctree-l3"><a class="reference internal" href="collect/product/VIIRSL1.html#pywapor.collect.product.VIIRSL1.check_tiles"><code class="docutils literal notranslate"><span class="pre">check_tiles()</span></code></a></li>
-<li class="toctree-l3"><a class="reference internal" href="collect/product/VIIRSL1.html#pywapor.collect.product.VIIRSL1.check_geoloc_tile"><code class="docutils literal notranslate"><span class="pre">check_geoloc_tile()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="collect/product/VIIRSL1.html#pywapor.collect.product.VIIRSL1.get_token"><code class="docutils literal notranslate"><span class="pre">get_token()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="collect/product/VIIRSL1.html#pywapor.collect.product.VIIRSL1.default_vars"><code class="docutils literal notranslate"><span class="pre">default_vars()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="collect/product/VIIRSL1.html#pywapor.collect.product.VIIRSL1.default_post_processors"><code class="docutils literal notranslate"><span class="pre">default_post_processors()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="collect/product/VIIRSL1.html#pywapor.collect.product.VIIRSL1.download"><code class="docutils literal notranslate"><span class="pre">download()</span></code></a></li>
@@ -260,13 +259,15 @@
 </li>
 <li class="toctree-l2"><a class="reference internal" href="collect/protocol/opendap.html">opendap</a><ul>
 <li class="toctree-l3"><a class="reference internal" href="collect/protocol/opendap.html#pywapor.collect.protocol.opendap.download"><code class="docutils literal notranslate"><span class="pre">download()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="collect/protocol/opendap.html#pywapor.collect.protocol.opendap.setup_session"><code class="docutils literal notranslate"><span class="pre">setup_session()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="collect/protocol/opendap.html#pywapor.collect.protocol.opendap.raise_if_form_exists"><code class="docutils literal notranslate"><span class="pre">raise_if_form_exists()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="collect/protocol/opendap.html#pywapor.collect.protocol.opendap.download_xarray"><code class="docutils literal notranslate"><span class="pre">download_xarray()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="collect/protocol/opendap.html#pywapor.collect.protocol.opendap.create_selection"><code class="docutils literal notranslate"><span class="pre">create_selection()</span></code></a></li>
 </ul>
 </li>
-<li class="toctree-l2"><a class="reference internal" href="collect/protocol/sentinelapi.html">sentinelapi</a><ul>
-<li class="toctree-l3"><a class="reference internal" href="collect/protocol/sentinelapi.html#pywapor.collect.protocol.sentinelapi.download"><code class="docutils literal notranslate"><span class="pre">download()</span></code></a></li>
-<li class="toctree-l3"><a class="reference internal" href="collect/protocol/sentinelapi.html#pywapor.collect.protocol.sentinelapi.process_sentinel"><code class="docutils literal notranslate"><span class="pre">process_sentinel()</span></code></a></li>
+<li class="toctree-l2"><a class="reference internal" href="collect/protocol/copernicus_odata.html">sentinelapi</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="collect/protocol/copernicus_odata.html#pywapor.collect.protocol.copernicus_odata.get_access_token"><code class="docutils literal notranslate"><span class="pre">get_access_token()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="collect/protocol/copernicus_odata.html#pywapor.collect.protocol.copernicus_odata.process_sentinel"><code class="docutils literal notranslate"><span class="pre">process_sentinel()</span></code></a></li>
 </ul>
 </li>
 </ul>
@@ -279,7 +280,7 @@
            </div>
           </div>
           <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
-        <a href="general/network.html" class="btn btn-neutral float-left" title="network" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="general/lazifier.html" class="btn btn-neutral float-left" title="lazifier" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
         <a href="collect/accounts.html" class="btn btn-neutral float-right" title="accounts" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
     </div>
 

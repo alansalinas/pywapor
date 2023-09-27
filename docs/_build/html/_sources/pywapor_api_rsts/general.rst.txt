@@ -11,4 +11,3 @@ pywapor.general
    general/processing_functions
    general/variables
    general/lazifier
-   general/network
