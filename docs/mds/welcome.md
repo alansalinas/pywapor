@@ -1,6 +1,6 @@
 ### pyWaPOR
 
-![downloads](https://img.shields.io/pypi/dw/pywapor) [![version](https://img.shields.io/pypi/v/pywapor)](https://pypi.org/project/pywapor/) [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/bertcoerver/pywapor_notebooks/blob/main/1_introduction.ipynb)
+![downloads](https://img.shields.io/pypi/dw/pywapor) [![version](https://img.shields.io/pypi/v/pywapor)](https://pypi.org/project/pywapor/) [![Open In Colab](https://colab.research.google.com/github/un-fao/FAO-Water-Applications/blob/main/pyWaPOR/introduction.ipynb) [<img src="https://camo.githubusercontent.com/418aa0f16e95e967f0f615c71388a2b9a1a23a2dfe37532bf83ffc54c85fb7d7/68747470733a2f2f6564656e742e6769746875622e696f2f537570657254696e7949636f6e732f696d616765732f7376672f7273732e737667" height="20" style="border-radius: 15%;">](https://pypi.org/rss/project/pywapor/releases.xml)
 
 This repository contains a Python implementation of the algorithm used to generate the [WaPOR](http://www.fao.org/in-action/remote-sensing-for-water-productivity/en/) [datasets](https://wapor.apps.fao.org/home/WAPOR_2/1). It can be used to calculate evaporation, transpiration and biomass production maps.
 
@@ -9,7 +9,7 @@ This repository contains a Python implementation of the algorithm used to genera
 Its recommended to install in a clean [conda environment](https://docs.conda.io/projects/conda/en/latest/user-guide/concepts/environments.html) and use [conda](https://docs.conda.io/projects/conda/en/latest/user-guide/install/) to install all the important packages from the `conda-forge` channel.
 
 ```bash
-conda create -n my_pywapor_env --yes -c conda-forge python pip gdal pydap numpy "pandas<2.0.0" requests matplotlib pyproj scipy pycurl pyshp joblib bs4 rasterio xarray bottleneck geojson tqdm dask rioxarray pyvis shapely lxml cachetools cdsapi sentinelsat geopy numba scikit-learn beautifulsoup4 "libnetcdf=4.8"
+conda create -n my_pywapor_env --yes -c conda-forge python pip gdal xarray numpy pandas requests matplotlib netcdf4 pyproj scipy pycurl joblib bs4 rasterio bottleneck tqdm dask rioxarray cryptography cachetools cdsapi shapely lxml scikit-learn numba xmltodict 
 
 conda activate my_pywapor_env
 ```
@@ -22,19 +22,23 @@ pip install pywapor
 
 #### Usage
 
-To run the model for one dekad (from 2021-07-01 to 2021-07-11 in this case) for the Fayoum irrigation scheme in Egypt (but feel free to change the [boundingbox](http://bboxfinder.com) defined by `latlim` and `lonlim`) using mainly MODIS data, run the following code  (run `python` in your console to activate Python and `exit()` to deactivate). 
+To run the model for one dekad (from 2021-07-01 to 2021-07-11 in this case) for the Fayoum irrigation scheme in Egypt (but feel free to change the [boundingbox](http://bboxfinder.com) defined by `latlim` and `lonlim`) using mainly VIIRS and Sentinel-2 data, run the following code (run `python` in your console to activate Python and `exit()` to deactivate). 
 
 ```python
 import pywapor
 
 # User inputs.
-timelim = ["2021-07-01", "2021-07-11"]
+timelim = ["2021-07-01", "2021-07-03"]
 latlim = [28.9, 29.7]
 lonlim = [30.2, 31.2]
 project_folder = r"/my_first_ETLook_run/"
+level = "level_2_v3"
+
+# Load a model configuration.
+configuration = pywapor.general.levels.pre_et_look_levels(level = level)
 
 # Download and prepare input data.
-ds_in  = pywapor.pre_et_look.main(project_folder, latlim, lonlim, timelim)
+ds_in  = pywapor.pre_et_look.main(project_folder, latlim, lonlim, timelim, sources = configuration)
 
 # Run the model.
 ds_out = pywapor.et_look.main(ds_in)
@@ -58,27 +62,22 @@ Check out the documentation and the notebooks below to learn more!
       <tr class="row-odd">
          <td>1.</td>
          <td>Introduction</td>
-         <td style="text-align:center"><a href="https://colab.research.google.com/github/bertcoerver/pywapor_notebooks/blob/main/1_introduction.ipynb"><img src="https://colab.research.google.com/assets/colab-badge.svg" alt="colab"/></a></td>
+         <td style="text-align:center"><a href="https://colab.research.google.com/github/un-fao/FAO-Water-Applications/blob/main/pyWaPOR/introduction.ipynb"><img src="https://colab.research.google.com/assets/colab-badge.svg" alt="colab"/></a></td>
       </tr>
       <tr class="row-even">
          <td>2.</td>
-         <td>Levels</td>
-         <td style="text-align:center"><a href="https://colab.research.google.com/github/bertcoerver/pywapor_notebooks/blob/main/2_levels.ipynb"><img src="https://colab.research.google.com/assets/colab-badge.svg" alt="colab"/></a></td>
+         <td>Passwords</td>
+         <td style="text-align:center"><a href="https://colab.research.google.com/github/un-fao/FAO-Water-Applications/blob/main/pyWaPOR/passwords.ipynb"><img src="https://colab.research.google.com/assets/colab-badge.svg" alt="colab"/></a></td>
       </tr>
       <tr class="row-odd">
          <td>3.</td>
-         <td>Composites</td>
-         <td style="text-align:center"><a href="https://colab.research.google.com/github/bertcoerver/pywapor_notebooks/blob/main/3_composites.ipynb"><img src="https://colab.research.google.com/assets/colab-badge.svg" alt="colab"/></a></td>
+         <td>Enhancers</td>
+         <td style="text-align:center"><a href="https://colab.research.google.com/github/un-fao/FAO-Water-Applications/blob/main/pyWaPOR/enhancers.ipynb"><img src="https://colab.research.google.com/assets/colab-badge.svg" alt="colab"/></a></td>
       </tr>
       <tr class="row-even">
          <td>4.</td>
-         <td>Enhancers</td>
-         <td style="text-align:center"><a href="https://colab.research.google.com/github/bertcoerver/pywapor_notebooks/blob/main/5_enhancers.ipynb"><img src="https://colab.research.google.com/assets/colab-badge.svg" alt="colab"/></a></td>
-      </tr>
-      <tr class="row-odd">
-         <td>5.</td>
-         <td>pyWaPOR vs. WaPOR</td>
-         <td style="text-align:center"><a href="https://colab.research.google.com/github/bertcoerver/pywapor_notebooks/blob/main/6_wapor_vs_pywapor.ipynb"><img src="https://colab.research.google.com/assets/colab-badge.svg" alt="colab"/></a></td>
+         <td>Sideloading</td>
+         <td style="text-align:center"><a href="https://colab.research.google.com/github/un-fao/FAO-Water-Applications/blob/main/pyWaPOR/sideload.ipynb"><img src="https://colab.research.google.com/assets/colab-badge.svg" alt="colab"/></a></td>
       </tr>
    </tbody>
 </table>
@@ -119,6 +118,21 @@ For questions, requests or issues with this repository, please contact Bert Coer
 #### Release Notes
 
 <p><details open>
+<summary><b>3.4.0 (2023-09-15)</b></summary>
+<ul>
+    <li> Rewritten code to download and process VIIRSL1 data, which is now available from an S3 bucket.</li>
+    <li> Rewritten code to download PROBA-V data, which now comes from the new Terrascope platform (the old portal was deprecated). </li>
+    <li> Rewritten Sentinel downloader, which now uses the new Copernicus Data Space Ecosystem. Most importantly this means that all images are available instantly (so no more tedious requesting from the Long Term Archive for older scenes).
+    <li> Projecting of curvilinear data (VIIRSL1 and Sentinel-3) is now done using gdal-warp. </li>
+    <li> Calculation of terrain slope and aspect is now done using gdal-dem. </li>
+    <li> It is now possible turn off SSL-verification when downloading certain products. Run 'import os; os.environ["PYWAPOR_VERIFY_SSL"] = "NO"' to do so. </li>
+    <li> Simplified installation requirements. </li>
+    <li> Available options in `pywapor.pre_et_look.main` for `sources` are now "level_1", "level_2", "level_3", "level_2_v3" (new default value) and "level_3_v3". The `bin_length' is now set to 1 by default (was `"DEKAD"`).
+    <li> Various other smaller bug fixes.</li>
+</ul>
+</details></p>
+
+<p><details>
 <summary><b>3.3.0 (2023-04-05)</b></summary>
 <ul>
     <li> - Option to smooth and interpolate data with a Whittaker smoother.</li>
