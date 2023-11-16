@@ -365,7 +365,8 @@ def ecmwf_account(user_pw):
                 'year': '2005',
                 'month': '11',
                 'day': ['01'],
-                'area': [2,-2,-2,2]
+                'area': [2,-2,-2,2],
+                'version': '1_1'
             },
             fp)
         try:
