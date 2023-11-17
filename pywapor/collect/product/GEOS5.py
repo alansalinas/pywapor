@@ -2,8 +2,9 @@ from pywapor.collect.protocol import opendap
 from pywapor.collect.protocol.projections import get_crss
 import os
 import xarray as xr
-from pywapor.general.processing_functions import open_ds, remove_ds, save_ds
+from pywapor.general.processing_functions import open_ds
 from pywapor.enhancers.temperature import kelvin_to_celsius
+from pywapor.enhancers.wind import adjust_wind_height
 from functools import partial
 import numpy as np
 from pywapor.enhancers.pressure import pa_to_kpa
@@ -37,6 +38,31 @@ def default_vars(product_name, req_vars):
                     "ps": [("time", "lat", "lon"), "p_air"],
                     "slp": [("time", "lat", "lon"), "p_air_0"],
                         },
+
+        "tavg1_2d_slv_Nx": {
+                    "t2m": [("time", "lat", "lon"), "t_air"],
+                    "qv2m": [("time", "lat", "lon"), "qv"],
+                    "u10m": [("time", "lat", "lon"), "u10m"],
+                    "v10m": [("time", "lat", "lon"), "v10m"],
+                    "ps": [("time", "lat", "lon"), "p_air"],
+                    "slp": [("time", "lat", "lon"), "p_air_0"],
+                    "tqv": [("time", "lat", "lon"), "wv"],
+                    "to3": [("time", "lat", "lon"), "to3"],
+                        },
+
+        "tavg1_2d_rad_Nx": {
+                    "swgdn": [("time", "lat", "lon"), "swgdn"],
+                        },
+
+        "tavg1_2d_lnd_Nx": {
+            "prectot": [("time", "lat", "lon"), "p"],
+        },
+
+        "tavg3_2d_aer_Nx": {
+            "totangstr": [("time", "lat", "lon"), "totangstr"],
+            "totexttau": [("time", "lat", "lon"), "totexttau"]
+        }
+
     }
 
     req_dl_vars = {
@@ -50,7 +76,31 @@ def default_vars(product_name, req_vars):
             "wv": ["tqv"],
             "p_air": ["ps"],
             "p_air_0": ["slp"],
-        }
+        },
+        "tavg1_2d_slv_Nx": {
+            "t_air": ["t2m"],
+            "t_air_max": ["t2m"],
+            "t_air_min": ["t2m"],
+            "u10m": ["u10m"],
+            "v10m": ["v10m"],
+            "u2m": ["u10m"],
+            "v2m": ["v10m"],
+            "qv": ["qv2m"],
+            "wv": ["tqv"],
+            "p_air": ["ps"],
+            "p_air_0": ["slp"],
+            "to3": ["to3"], # total_column_ozone
+        },
+        "tavg1_2d_rad_Nx": {
+            "swgdn": ["swgdn"], # surface_incoming_shortwave_flux
+        },
+        "tavg1_2d_lnd_Nx": {
+            "p": ["prectot"],
+        },
+        "tavg3_2d_aer_Nx": {
+            "totangstr": ["totangstr"], # total aerosol angstrom parameter [470-870 nm] 
+            "totexttau": ["totexttau"], # total aerosol extinction aot [550 nm] 
+        },
     }
 
     out = {val:variables[product_name][val] for sublist in map(req_dl_vars[product_name].get, req_vars) for val in sublist}
@@ -86,7 +136,31 @@ def default_post_processors(product_name, req_vars):
             "wv": [],
             "p_air": [pa_to_kpa],
             "p_air_0": [pa_to_kpa],
-        }
+        },
+        "tavg1_2d_slv_Nx": {
+            "t_air": [kelvin_to_celsius],
+            "t_air_max": [partial(kelvin_to_celsius, in_var = "t_air", out_var = "t_air_max")],
+            "t_air_min": [partial(kelvin_to_celsius, in_var = "t_air", out_var = "t_air_min")],
+            "v10m": [],
+            "u10m": [],
+            "u2m": [adjust_wind_height],
+            "v2m": [adjust_wind_height],
+            "qv": [],
+            "wv": [],
+            "p_air": [pa_to_kpa],
+            "p_air_0": [pa_to_kpa],
+            "to3": [],
+        },
+        "tavg1_2d_rad_Nx": {
+            "swgdn": [],
+        },
+        "tavg1_2d_lnd_Nx": {
+            "p": [],
+        },
+        "tavg3_2d_aer_Nx": {
+            "totangstr": [],
+            "totexttau": [],
+        },
     }
 
     out = {k:v for k,v in post_processors[product_name].items() if k in req_vars}
@@ -95,7 +169,8 @@ def default_post_processors(product_name, req_vars):
 
 def download(folder, latlim, lonlim, timelim, product_name, req_vars,
                  variables = None, post_processors = None):
-    """Download GEOS5 data and store it in a single netCDF file.
+    """Download GEOS5 data and store it in a single netCDF file. Product
+    docs are here https://gmao.gsfc.nasa.gov/pubs/docs/Lucchesi1202.pdf
 
     Parameters
     ----------
@@ -161,29 +236,3 @@ def download(folder, latlim, lonlim, timelim, product_name, req_vars,
                                     timedelta = timedelta)
 
     return ds[req_vars_orig]
-
-if __name__ == "__main__":
-
-    import datetime
-
-    folder = r"/Users/hmcoerver/Downloads/pywapor_test"
-    # latlim = [26.9, 33.7]
-    # lonlim = [25.2, 37.2]
-    latlim = [28.9, 29.7]
-    lonlim = [30.2, 31.2]
-    timelim = [datetime.date(2020, 7, 1), datetime.date(2020, 7, 11)]
-
-    # GEOS5.
-    product_name = "inst3_2d_asm_Nx"
-
-    variables = None
-    post_processors = None
-
-    req_vars = [
-                "t_air", "u2m", "v2m", "qv", 
-                "wv", 
-                "p_air", "p_air_0"
-                ]
-
-    ds = download(folder, latlim, lonlim, timelim, product_name, req_vars = req_vars)
-    print(ds.rio.crs, ds.rio.grid_mapping)
