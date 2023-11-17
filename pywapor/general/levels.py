@@ -645,7 +645,7 @@ def pre_se_root_levels(level = "level_1"):
 
     Parameters
     ----------
-    level : "level_1" | "level_2" | "level_3" | "level_2_v3"
+    level : "level_1" | "level_2" | "level_3" | "level_2_v3" | "level_3_v3"
         For which level to create the `sources`, by default "level_1".
 
     Returns

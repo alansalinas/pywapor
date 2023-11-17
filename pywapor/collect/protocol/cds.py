@@ -147,19 +147,25 @@ def download(folder, product_name, latlim, lonlim, timelim, variables, post_proc
     # Load api key.
     url, key = pywapor.collect.accounts.get("ECMWF")
 
+    _ = log.info("--> Directing CDS logging to file `CDS_log.txt`.")
+
+    cds_log = logging.getLogger("CDS")
+    handler = logging.FileHandler(filename = os.path.join(folder, "CDS_log.txt"))
+    cds_log.setLevel("INFO")
+    cds_log.addHandler(handler)
+    cds_log.info("\n >>> STARTING REQUESTS <<<")
+
     def info_callback(*args, **kwargs):
-        _ = log.add().debug(*args, **kwargs).sub()
+        cds_log.info(*args, **kwargs)
 
     def warning_callback(*args, **kwargs):
-        _ = log.add().warning(*args, **kwargs).sub()
+        cds_log.warning(*args, **kwargs)
 
     def error_callback(*args, **kwargs):
-        _ = log.add().error(*args, **kwargs).sub()
+        cds_log.error(*args, **kwargs)
 
     def debug_callback(*args, **kwargs):
-        _ = log.add().debug(*args, **kwargs).sub()
-
-    _ = log.info("--> Directing CDS logging to file.")
+        cds_log.debug(*args, **kwargs)
 
     # Connect to server.
     vrfy = {"NO": False, "YES": True}.get(os.environ.get("PYWAPOR_VERIFY_SSL", "YES"), True)
@@ -168,7 +174,7 @@ def download(folder, product_name, latlim, lonlim, timelim, variables, post_proc
                         warning_callback=warning_callback,
                         error_callback=error_callback,
                         debug_callback=debug_callback,
-                        quiet = True
+                        quiet = False
                         )
 
     c.progress = True
