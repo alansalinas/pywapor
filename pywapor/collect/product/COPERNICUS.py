@@ -40,7 +40,7 @@ def tiles_intersect(latlim, lonlim, product_name):
     for tile in tiles:
         we_sign = {-1: "W", 1: "E"}[np.sign(tile[0])]
         ns_sign = {-1: "S", 1: "N"}[np.sign(tile[1])]
-        fn = f"Copernicus_DSM_COG_{res}_{ns_sign}{tile[1]:02}_00_{we_sign}{tile[0]:03}_00_DEM"
+        fn = f"Copernicus_DSM_COG_{res}_{ns_sign}{abs(tile[1]):02}_00_{we_sign}{abs(tile[0]):03}_00_DEM"
         if fn in all_tiles:
             dl_tiles.append(fn)
     return dl_tiles
@@ -240,10 +240,13 @@ if __name__ == "__main__":
 
     folder = r"/Users/hmcoerver/Local/cog_test"
     product_name = r"GLO90" # r"GLO90" r"GLO30
-    latlim = [28.9, 29.7]
-    lonlim = [30.2, 31.2]
+    # latlim = [28.9, 29.7]
+    # lonlim = [30.2, 31.2]
     # latlim = [24.2, 30.2]
     # lonlim = [24.8, 33.7]
+
+    lonlim = [-75.25, -75.15]
+    latlim = [-13.6, -13.5]
 
     req_vars = ["z", "slope", "aspect"]
     variables = None
