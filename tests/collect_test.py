@@ -113,6 +113,9 @@ def test_dl(product_name, tmp_path):
     latlim = [29.4, 29.7]
     lonlim = [30.7, 31.0]
 
+    # lonlim = [-75.25, -75.15]
+    # latlim = [-13.6, -13.5]
+
     if product_name == "LANDSAT":
         products = ["LT05_SR", "LE07_SR", "LC08_SR", "LC09_SR"]
         req_dl_vars = {k: {"ndvi":None} for k in products}
