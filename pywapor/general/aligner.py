@@ -3,7 +3,6 @@ Functions to prepare input for `pywapor.se_root`, more specifically to
 interpolate various parameters in time to match with land-surface-temperature
 times. 
 """
-
 from pywapor.general.processing_functions import save_ds, open_ds, remove_ds, log_example_ds
 from pywapor.general.reproject import align_pixels
 from pywapor.enhancers.apply_enhancers import apply_enhancer
@@ -63,64 +62,72 @@ def main(dss, sources, folder, general_enhancers, example_t_vars = ["lst"]):
     # Loop over the variables
     for var in variables:
 
-        config = sources[var]
-        spatial_interp = config["spatial_interp"]
-        temporal_interp = config["temporal_interp"]
+        dst_path = os.path.join(folder, f"{var}_i.nc")
 
-        if isinstance(temporal_interp, dict):
-            kwargs = temporal_interp.copy()
-            temporal_interp = kwargs.pop("method")
-        else:
-            kwargs = {}
-
-        # Align pixels of different products for a single variable together.
-        dss_part = [ds[[var]] for ds in dss.values() if var in ds.data_vars]
-        if len(dss_part) > 1:
-            log.info(f"--> Spatially aligning {len(dss_part)} `{var}` products together.").add()
-        dss1, temp_files1 = align_pixels(dss_part, folder, spatial_interp, fn_append = "_step1")
-        if len(dss_part) > 1:
-            log.sub()
-        cleanup.append(temp_files1)
-
-        # Combine different source_products (along time dimension).
-        ds = xr.combine_nested(dss1, concat_dim = "time").chunk(chunks).sortby("time").squeeze()
-
-        if var in example_t_vars:
-            if "time" not in ds[var].dims:
-                ds[var] = ds[var].expand_dims("time").transpose("time", "y", "x")
-            if isinstance(example_time, type(None)):
-                example_time = ds["time"]
-            else:
-                example_time = xr.concat([example_time, ds["time"]], dim = "time").drop_duplicates("time").sortby("time")
-        else:
-            ...
-
-        if "time" in ds[var].dims and not isinstance(temporal_interp, type(None)):
-            orig_time_size = ds["time"].size
-            if temporal_interp == "whittaker":
-                if (not ds.time.equals(example_time)) and (not var in example_t_vars):
-                    new_x = example_time.values
-                else:
-                    new_x = None
-                if "weights" in kwargs.keys():
-                    ds["sensor"] = xr.combine_nested([xr.ones_like(x.time.astype(int)) * i for i, x in enumerate(dss1)], concat_dim="time").sortby("time")
-                    source_legend = {str(i): os.path.split(x.encoding["source"])[-1].replace(".nc", "") for i, x in enumerate(dss1)}
-                    ds["sensor"] = ds["sensor"].assign_attrs(source_legend)
-                ds = whittaker_smoothing(ds, var, chunks = chunks, new_x = new_x, **kwargs)
-                ds = ds.rename_vars({f"{var}_smoothed": var})
-            else:
-                if not ds.time.equals(example_time):
-                    new_coords = xr.concat([ds.time, example_time], dim = "time").drop_duplicates("time").sortby("time")
-                    ds = ds.reindex_like(new_coords).chunk(chunks)
-                ds = ds.interpolate_na(dim = "time", method = temporal_interp, **kwargs).sel(time = example_time)
-
-            lbl = f"Aligning times in `{var}` ({orig_time_size}) with `{'` and `'.join(example_t_vars)}` ({example_time.time.size}, {temporal_interp})."
-            dst_path = os.path.join(folder, f"{var}_i.nc")
-            ds = save_ds(ds, dst_path, chunks = chunks, encoding = "initiate", label = lbl)
-            log.add().info(f"> shape: {ds[var].shape}, kwargs: {list(kwargs.keys())}.").sub()
+        if os.path.isfile(dst_path):
+            ds = open_ds(dst_path, chunks = chunks)
             cleanup.append([ds])
         else:
-            ...
+            config = sources[var]
+            spatial_interp = config["spatial_interp"]
+            temporal_interp = config["temporal_interp"]
+
+            if isinstance(temporal_interp, dict):
+                kwargs = temporal_interp.copy()
+                temporal_interp = kwargs.pop("method")
+            else:
+                kwargs = {}
+
+            # Align pixels of different products for a single variable together.
+            dss_part = [ds[[var]] for ds in dss.values() if var in ds.data_vars]
+            if len(dss_part) > 1:
+                log.info(f"--> Spatially aligning {len(dss_part)} `{var}` products together.").add()
+            dss1, temp_files1 = align_pixels(dss_part, folder, spatial_interp, fn_append = "_step1")
+            if len(dss_part) > 1:
+                log.sub()
+            cleanup.append(temp_files1)
+
+            # Combine different source_products (along time dimension).
+            ds = xr.combine_nested(dss1, concat_dim = "time").chunk(chunks).sortby("time").squeeze()
+
+            if var in example_t_vars:
+                if "time" not in ds[var].dims:
+                    ds[var] = ds[var].expand_dims("time").transpose("time", "y", "x")
+                if isinstance(example_time, type(None)):
+                    example_time = ds["time"]
+                else:
+                    example_time = xr.concat([example_time, ds["time"]], dim = "time").drop_duplicates("time").sortby("time")
+            else:
+                ...
+
+            if "time" in ds[var].dims and not isinstance(temporal_interp, type(None)):
+                orig_time_size = ds["time"].size
+
+                if temporal_interp == "whittaker":
+                    if (not ds.time.equals(example_time)) and (not var in example_t_vars):
+                        new_x = example_time.values
+                    else:
+                        new_x = None
+                    if "weights" in kwargs.keys():
+                        ds["sensor"] = xr.combine_nested([xr.ones_like(x.time.astype(int)) * i for i, x in enumerate(dss1)], concat_dim="time").sortby("time")
+                        source_legend = {str(i): os.path.split(x.encoding["source"])[-1].replace(".nc", "") for i, x in enumerate(dss1)}
+                        ds["sensor"] = ds["sensor"].assign_attrs(source_legend)
+                    ds = whittaker_smoothing(ds, var, chunks = chunks, new_x = new_x, **kwargs)
+                    ds = ds.rename_vars({f"{var}_smoothed": var})
+                else:
+                    if not ds.time.equals(example_time):
+                        new_coords = xr.concat([ds.time, example_time], dim = "time").drop_duplicates("time").sortby("time")
+                        ds = ds.reindex_like(new_coords).chunk(chunks)
+                    ds = ds.interpolate_na(dim = "time", method = temporal_interp, **kwargs).sel(time = example_time)
+
+                lbl = f"Aligning times in `{var}` ({orig_time_size}) with `{'` and `'.join(example_t_vars)}` ({example_time.time.size}, {temporal_interp})."
+                ds = save_ds(ds, dst_path, chunks = chunks, encoding = "initiate", label = lbl)
+                log.add().info(f"> shape: {ds[var].shape}, kwargs: {list(kwargs.keys())}.").sub()
+                cleanup.append([ds])
+            else:
+                lbl = f"Saving spatially aligned `{var}` data without temporal interpolation."
+                ds = save_ds(ds, dst_path, chunks = chunks, encoding = "initiate", label = lbl)
+                cleanup.append([ds])
 
         # Set dimension order.
         ds = ds.transpose(*sorted(list(ds.dims.keys()), key = lambda e: ["time", "y", "x"].index(e)))
