@@ -7,4 +7,4 @@ from pywapor import general, et_look_v2_v3, pre_et_look, et_look, collect, post_
 
 __all__ = ['general', 'et_look_v2_v3', 'pre_et_look', 'et_look', 'collect', 'post_et_look', 'pre_se_root', 'se_root', 'enhancers']
 
-__version__ = '3.4.5'
+__version__ = '3.4.6'

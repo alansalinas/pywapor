@@ -806,7 +806,7 @@ def download(folder, latlim, lonlim, timelim, product_name,
 if __name__ == "__main__":
 
     sources = "level_3"
-    period = 0
+    period = 5
     area = "fayoum"
 
     lonlim, latlim = {
@@ -821,6 +821,7 @@ if __name__ == "__main__":
         2: [datetime.date(2022, 10, 1), datetime.date(2022, 10, 11)],
         3: [datetime.date(2022, 8, 1), datetime.date(2022, 10, 1)],
         4: [datetime.date(2021, 8, 1), datetime.date(2021, 10, 1)],
+        5: [datetime.date(2015,5,15), datetime.date(2015,7,21)],
     }[period]
 
     folder = f"/Users/hmcoerver/Local/{area}_{sources}_{period}" #
@@ -835,6 +836,7 @@ if __name__ == "__main__":
     max_attempts = 24
     wait_time = 300
 
-    # ds = download(folder, latlim, lonlim, timelim, product_name, 
-    #                 req_vars, variables = variables, post_processors = post_processors, 
-    #                 extra_search_kwargs = extra_search_kwargs)
+    for product_name in ["LC08_SR", "LT05_SR", "LE07_SR"]:
+        ds = download(folder, latlim, lonlim, timelim, product_name, 
+                        req_vars, variables = variables, post_processors = post_processors, 
+                        extra_search_kwargs = extra_search_kwargs)

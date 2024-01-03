@@ -6,18 +6,10 @@ This repository contains a Python implementation of the algorithm used to genera
 
 ### Installation
 
-Its recommended to install in a clean [conda environment](https://docs.conda.io/projects/conda/en/latest/user-guide/concepts/environments.html) and use [conda](https://docs.conda.io/projects/conda/en/latest/user-guide/install/) to install all the important packages from the `conda-forge` channel.
+Its recommended to install in a clean [conda environment](https://docs.conda.io/projects/conda/en/latest/user-guide/concepts/environments.html).
 
 ```bash
-conda create -n my_pywapor_env --yes -c conda-forge python pip gdal xarray numpy pandas requests matplotlib netcdf4 pyproj scipy pycurl joblib bs4 rasterio bottleneck tqdm dask rioxarray cryptography cachetools cdsapi shapely lxml scikit-learn numba xmltodict 
-
-conda activate my_pywapor_env
-```
-
-Then use the package manager [pip](https://pip.pypa.io/en/stable/) to install pywapor.
-
-```bash
-pip install pywapor
+conda create -n my_pywapor_env -c conda-forge pywapor
 ```
 
 ### Usage

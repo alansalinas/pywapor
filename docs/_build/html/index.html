@@ -89,14 +89,8 @@
 <p>This repository contains a Python implementation of the algorithm used to generate the <a class="reference external" href="http://www.fao.org/in-action/remote-sensing-for-water-productivity/en/">WaPOR</a> <a class="reference external" href="https://wapor.apps.fao.org/home/WAPOR_2/1">datasets</a>. It can be used to calculate evaporation, transpiration and biomass production maps.</p>
 <section id="installation">
 <h2>Installation<a class="headerlink" href="#installation" title="Permalink to this heading"></a></h2>
-<p>Its recommended to install in a clean <a class="reference external" href="https://docs.conda.io/projects/conda/en/latest/user-guide/concepts/environments.html">conda environment</a> and use <a class="reference external" href="https://docs.conda.io/projects/conda/en/latest/user-guide/install/">conda</a> to install all the important packages from the <code class="docutils literal notranslate"><span class="pre">conda-forge</span></code> channel.</p>
-<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>conda<span class="w"> </span>create<span class="w"> </span>-n<span class="w"> </span>my_pywapor_env<span class="w"> </span>--yes<span class="w"> </span>-c<span class="w"> </span>conda-forge<span class="w"> </span>python<span class="w"> </span>pip<span class="w"> </span>gdal<span class="w"> </span>xarray<span class="w"> </span>numpy<span class="w"> </span>pandas<span class="w"> </span>requests<span class="w"> </span>matplotlib<span class="w"> </span>netcdf4<span class="w"> </span>pyproj<span class="w"> </span>scipy<span class="w"> </span>pycurl<span class="w"> </span>joblib<span class="w"> </span>bs4<span class="w"> </span>rasterio<span class="w"> </span>bottleneck<span class="w"> </span>tqdm<span class="w"> </span>dask<span class="w"> </span>rioxarray<span class="w"> </span>cryptography<span class="w"> </span>cachetools<span class="w"> </span>cdsapi<span class="w"> </span>shapely<span class="w"> </span>lxml<span class="w"> </span>scikit-learn<span class="w"> </span>numba<span class="w"> </span>xmltodict
-
-conda<span class="w"> </span>activate<span class="w"> </span>my_pywapor_env
-</pre></div>
-</div>
-<p>Then use the package manager <a class="reference external" href="https://pip.pypa.io/en/stable/">pip</a> to install pywapor.</p>
-<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>pip<span class="w"> </span>install<span class="w"> </span>pywapor
+<p>Its recommended to install in a clean <a class="reference external" href="https://docs.conda.io/projects/conda/en/latest/user-guide/concepts/environments.html">conda environment</a>.</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>conda<span class="w"> </span>create<span class="w"> </span>-n<span class="w"> </span>my_pywapor_env<span class="w"> </span>-c<span class="w"> </span>conda-forge<span class="w"> </span>pywapor
 </pre></div>
 </div>
 </section>

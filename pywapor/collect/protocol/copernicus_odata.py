@@ -22,7 +22,7 @@ from pywapor.general.logger import log
 from pywapor.collect.accounts import get
 from pywapor.enhancers.apply_enhancers import apply_enhancer
 
-@cached(cache=TTLCache(maxsize=2048, ttl=550))
+@cached(cache=TTLCache(maxsize=2048, ttl=100))
 def get_access_token():
     """
     Create account at https://dataspace.copernicus.eu/
