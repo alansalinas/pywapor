@@ -39,10 +39,20 @@ def default_vars(product_name, req_vars):
                 "Band13": [("lat", "lon"), "z_obst_max"],
                 "crs": [(), "spatial_ref"],
                     },
+        # 'WaPOR3': {
+        #         "Band2": [("lat", "lon"), "lw_offset"],
+        #         "Band1": [("lat", "lon"), "lw_slope"],
+        #         "crs": [(), "spatial_ref"],
+        # },
         'WaPOR3': {
-                "Band2": [("lat", "lon"), "lw_offset"],
-                "Band1": [("lat", "lon"), "lw_slope"],
-                "crs": [(), "spatial_ref"],
+            "Band1": [("lat", "lon"), "lw_offset"],
+            "Band2": [("lat", "lon"), "lw_slope"],
+            "Band3": [("lat", "lon"), "rn_offset"],
+            "Band4": [("lat", "lon"), "rn_slope"],
+            "Band5": [("lat", "lon"), "t_amp"],
+            "Band6": [("lat", "lon"), "t_opt"],
+            "Band7": [("lat", "lon"), "vpd_slope"],
+            "crs": [(), "spatial_ref"],
         }
     }
 
@@ -62,10 +72,19 @@ def default_vars(product_name, req_vars):
             "lw_offset": ["Band12", "crs"],
             "z_obst_max": ["Band13", "crs"],
         },
+        # "WaPOR3": {
+        #     "lw_offset": ["Band2", "crs"],
+        #     "lw_slope": ["Band1", "crs"],
+        # },
         "WaPOR3": {
-            "lw_offset": ["Band2", "crs"],
-            "lw_slope": ["Band1", "crs"],
-        },
+            "lw_offset": ["Band1", "crs"], 
+            "lw_slope": ["Band2", "crs"], 
+            "rn_offset": ["Band3", "crs"], 
+            "rn_slope": ["Band4", "crs"], 
+            "t_amp": ["Band5", "crs"], 
+            "t_opt": ["Band6", "crs"], 
+            "vpd_slope": ["Band7", "crs"], 
+        }
     }
 
     out = {val:variables[product_name][val] for sublist in map(req_dl_vars[product_name].get, req_vars) for val in sublist}
@@ -109,10 +128,19 @@ def default_post_processors(product_name, req_vars):
                     "z_obst_max": [],
                     "z_oro": [],
                     },
-        'WaPOR3': {
-                    "lw_offset": [],
-                    "lw_slope": [],
-                    },
+        # 'WaPOR3': {
+        #             "lw_offset": [],
+        #             "lw_slope": [],
+        #             },
+        "WaPOR3": {
+            "lw_offset": [], 
+            "lw_slope": [], 
+            "rn_offset": [], 
+            "rn_slope": [], 
+            "t_amp": [], 
+            "t_opt": [], 
+            "vpd_slope": [], 
+        }
     }
 
     out = {k:v for k,v in post_processors[product_name].items() if k in req_vars}
@@ -178,7 +206,7 @@ def download(folder, latlim, lonlim, product_name, req_vars,
 
     spatial_buffer = True
     if spatial_buffer:
-        dx = dy = 0.05
+        dx = dy = 0.2
         latlim = [latlim[0] - dy, latlim[1] + dy]
         lonlim = [lonlim[0] - dx, lonlim[1] + dx]
 
@@ -201,26 +229,32 @@ def download(folder, latlim, lonlim, product_name, req_vars,
 if __name__ == "__main__":
 
     req_vars = [
-                'land_mask',
-                # 'lw_offset',
+                # 'land_mask',
+                'lw_offset',
                 'lw_slope',
                 # 'r0_bare',
-                'r0_full',
+                # 'r0_full',
                 'rn_offset',
                 'rn_slope',
-                'rs_min',
-                't_amp_year',
+                # 'rs_min',
+                # 't_amp_year',
+                't_amp',
                 't_opt',
-                # 'vpd_slope',
-                'z_obst_max',
-                'z_oro'
+                'vpd_slope',
+                # 'z_obst_max',
+                # 'z_oro'
                 ]
 
-    # product_name = "WaPOR2"
+    product_name = "WaPOR3"
 
-    # folder = r"/Users/hmcoerver/Local/statics_test4"
+    folder = r"/Users/hmcoerver/Local/new_statics"
     # latlim = [28.9, 29.7]
     # lonlim = [30.2, 31.2]
+    latlim = [21.9692194682626933, 21.9939120838340507]
+    lonlim = [91.9371349243682801, 91.9657566608824339]
 
-    # ds = download(folder, latlim, lonlim, product_name, req_vars,
-    #             variables = None, post_processors = None)
+    variables = None
+    post_processors = None
+
+    ds = download(folder, latlim, lonlim, product_name, req_vars,
+                variables = None, post_processors = None)

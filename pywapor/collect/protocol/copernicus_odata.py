@@ -14,12 +14,13 @@ import warnings
 import rasterio.crs
 import numpy as np
 import xarray as xr
-from cachetools import cached, FIFOCache, TTLCache
+from cachetools import cached, TTLCache
 from pywapor.general.logger import adjust_logger, log
 from pywapor.collect.protocol.crawler import download_urls
 from pywapor.general.processing_functions import save_ds, open_ds, unpack, make_example_ds, remove_ds
 from pywapor.general.logger import log
 from pywapor.collect.accounts import get
+from joblib import Memory
 from pywapor.enhancers.apply_enhancers import apply_enhancer
 
 @cached(cache=TTLCache(maxsize=2048, ttl=100))
@@ -52,34 +53,13 @@ def get_access_token():
 
     return token
 
-@cached(cache=FIFOCache(maxsize=2048))
-def get_scene_nodes(scene_id):
-    files = list()
-    nodes_to_crawl = [f"https://catalogue.dataspace.copernicus.eu/odata/v1/Products({scene_id})/Nodes"]
-    
-    while len(nodes_to_crawl) > 0:
-        node_path = nodes_to_crawl[0]
-
-        node_ = requests.get(node_path)
-        node_.raise_for_status()
-        node = node_.json()["result"]
-
-        for sub_node in node:
-            sub_node_name = sub_node["Name"]
-            if sub_node["ChildrenNumber"] != 0:
-                nodes_to_crawl.append(node_path + f"({sub_node_name})/Nodes")
-            else:
-                uri = sub_node["Nodes"]["uri"]
-                files.append(uri[:-6] if uri[-6:] == "/Nodes" else uri)
-
-        nodes_to_crawl.remove(node_path)
-    
-    return files
-
 def download(folder, latlim, lonlim, timelim, product_name, product_type, node_filter = None):
 
     sd = datetime.datetime.strftime(timelim[0], "%Y-%m-%dT00:00:00Z")
     ed = datetime.datetime.strftime(timelim[1], "%Y-%m-%dT23:59:59Z")
+
+    cachedir = os.path.join(folder, "cache")
+    memory = Memory(cachedir, verbose=0)
 
     product_name_ = {"SENTINEL3": "SENTINEL-3", 
                     "SENTINEL2": "SENTINEL-2",
@@ -99,12 +79,18 @@ def download(folder, latlim, lonlim, timelim, product_name, product_type, node_f
     query = base_url + "?$filter=" + " and ".join(filters)
 
     results = {"@odata.nextLink": query}
-    scenes = list()    
-    while "@odata.nextLink" in results.keys():
-        out = requests.get(results["@odata.nextLink"])
-        out.raise_for_status()
-        results = out.json()
-        scenes += results["value"]
+
+    @memory.cache()
+    def query_results(results):
+        scenes = list()    
+        while "@odata.nextLink" in results.keys():
+            out = requests.get(results["@odata.nextLink"])
+            out.raise_for_status()
+            results = out.json()
+            scenes += results["value"]
+        return scenes
+    
+    scenes = query_results(results)
 
     # Drop identical scenes.
     scene_names = {x["Name"]: i for i, x in enumerate(scenes)}
@@ -124,6 +110,30 @@ def download(folder, latlim, lonlim, timelim, product_name, product_type, node_f
 
     scenes = [x[1] for x in overview.values()]
 
+    @memory.cache()
+    def get_scene_nodes(scene_id):
+        files = list()
+        nodes_to_crawl = [f"https://catalogue.dataspace.copernicus.eu/odata/v1/Products({scene_id})/Nodes"]
+        
+        while len(nodes_to_crawl) > 0:
+            node_path = nodes_to_crawl[0]
+
+            node_ = requests.get(node_path)
+            node_.raise_for_status()
+            node = node_.json()["result"]
+
+            for sub_node in node:
+                sub_node_name = sub_node["Name"]
+                if sub_node["ChildrenNumber"] != 0:
+                    nodes_to_crawl.append(node_path + f"({sub_node_name})/Nodes")
+                else:
+                    uri = sub_node["Nodes"]["uri"]
+                    files.append(uri[:-6] if uri[-6:] == "/Nodes" else uri)
+
+            nodes_to_crawl.remove(node_path)
+        
+        return files
+
     log.info(f"--> Searching nodes for {len(scenes)} `{product_name_}.{product_type}` scenes.")
 
     urls = list()
@@ -138,7 +148,7 @@ def download(folder, latlim, lonlim, timelim, product_name, product_type, node_f
             filtered_nodes = set(nodes)
 
         for node in filtered_nodes:
-            node_path_rel = re.findall("Nodes\((.*?)\)", node)
+            node_path_rel = re.findall(r"Nodes\((.*?)\)", node)
             fp = os.path.join(folder, *node_path_rel)
             url = node + "/$value"
             fp_checks.append(fp)
@@ -166,9 +176,9 @@ def download(folder, latlim, lonlim, timelim, product_name, product_type, node_f
             log.warning(f"--> `{fp}` missing.")
 
     if "3" in product_name: # NOTE this is lazy...
-        dled_scenes = sorted(list(set([re.compile(".*\.SEN3").search(x).group() for x in fp_checks])))
+        dled_scenes = sorted(list(set([re.compile(r".*\.SEN3").search(x).group() for x in fp_checks])))
     if "2" in product_name:
-        dled_scenes = sorted(list(set([re.compile(".*\.SAFE").search(x).group() for x in fp_checks])))
+        dled_scenes = sorted(list(set([re.compile(r".*\.SAFE").search(x).group() for x in fp_checks])))
 
     return list(dled_scenes)
 

@@ -6,12 +6,12 @@ import os
 import multiprocessing
 import xarray as xr
 import numpy as np
+import tqdm
 import warnings
 from osgeo import gdal
 from functools import partial
 from pywapor.collect import accounts
-from joblib import Parallel, delayed
-from rasterio.errors import NotGeoreferencedWarning
+from joblib import Parallel, delayed, Memory
 from pywapor.enhancers.apply_enhancers import apply_enhancer
 from pywapor.general.processing_functions import save_ds, remove_ds, open_ds, adjust_timelim_dtype
 from pywapor.general.logger import log, adjust_logger
@@ -55,88 +55,81 @@ def get_token():
     
 def download_arrays(path, subdss, folder, path_appendix = ".nc", creation_options = ["ARRAY:COMPRESS=DEFLATE"], dtype_is_8bit = False):
 
-    # NOTE see https://github.com/OSGeo/gdal/issues/8421
-    if gdal.__version__ in ("3.7.0", "3.7.1", "3.7.2") and dtype_is_8bit:
-        path_appendix = path_appendix.replace(".nc", ".tif")
-
     fn = os.path.splitext(os.path.split(path)[-1])[0]
     path_local = os.path.join(folder, fn + path_appendix)
 
     if os.path.isfile(path_local):
-        ...
-    else:
-        creds = get_token()
+        remove_ds(path_local)
 
-        gdal_config_options = {
-            "AWS_ACCESS_KEY_ID": creds["accessKeyId"],
-            "AWS_SESSION_TOKEN": creds["sessionToken"],
-            "AWS_SECRET_ACCESS_KEY": creds["secretAccessKey"],
-            "GDAL_DISABLE_READDIR_ON_OPEN": "EMPTY_DIR",
-        }
+    creds = get_token()
 
-        try:
-            for k, v in gdal_config_options.items():
-                gdal.SetConfigOption(k, v)
+    gdal_config_options = {
+        "AWS_ACCESS_KEY_ID": creds["accessKeyId"],
+        "AWS_SESSION_TOKEN": creds["sessionToken"],
+        "AWS_SECRET_ACCESS_KEY": creds["secretAccessKey"],
+        "GDAL_DISABLE_READDIR_ON_OPEN": "EMPTY_DIR",
+    }
 
-            md_options = gdal.MultiDimTranslateOptions(
-                    arraySpecs = subdss,
-                    creationOptions = creation_options
-            )
+    try:
+        for k, v in gdal_config_options.items():
+            gdal.SetConfigOption(k, v)
 
-            ds = gdal.MultiDimTranslate(path_local, path, options = md_options)
-            ds = ds.FlushCache()
-        except Exception as e:
-            raise e
-        finally:
-            for k, v in gdal_config_options.items():
-                gdal.SetConfigOption(k, None)
+        md_options = gdal.MultiDimTranslateOptions(
+                arraySpecs = subdss,
+                creationOptions = creation_options
+        )
 
-        # NOTE see https://github.com/OSGeo/gdal/issues/8421
-        if gdal.__version__ in ("3.7.0", "3.7.1", "3.7.2") and dtype_is_8bit:
-            log.info(f"--> Applying extra conversion because GDAL=={gdal.__version__} in ('3.7.0', '3.7.1', '3.7.2').")
-            with warnings.catch_warnings():
-                warnings.filterwarnings("ignore", category = NotGeoreferencedWarning)
-                ds = xr.open_dataset(path_local, chunks = "auto", drop_variables = ["spatial_ref", "x", "y"])
-            ds = ds["band_data"].to_dataset("band")
-            ds = ds.rename({i+1: os.path.split(x)[-1] for i, x in enumerate(subdss)})
-            ds = ds.rename({"x": "number_of_pixels","y": "number_of_lines"})
-            ds = save_ds(ds, path_local.replace(path_appendix, ".nc"))
-            ds = remove_ds(path_local)
-            path_local = path_local.replace(path_appendix, ".nc")
+        ds = gdal.MultiDimTranslate(path_local, path, options = md_options)
+        ds = ds.FlushCache()
+    except Exception as e:
+        raise e
+    finally:
+        for k, v in gdal_config_options.items():
+            gdal.SetConfigOption(k, None)
 
     return path_local
 
-def search_stac(params, endpoint = 'https://cmr.earthdata.nasa.gov/stac/LAADS', extra_filters = {"day_night_flag": "DAY"}):
-    stac_response = requests.get(endpoint)
-    stac_response.raise_for_status()
-    catalog_links = stac_response.json()['links']
-    search = [l['href'] for l in catalog_links if l['rel'] == 'search'][0]
+def search_stac(params, cachedir = None, extra_filters = {"day_night_flag": "DAY"}):
+    
+    memory = Memory(cachedir, verbose=0)
 
-    all_scenes = list()
-
-    links = [{"body": params, "rel": "next"}]
-
-    while "next" in [x.get("rel", None) for x in links]:
-        params_ = [x.get("body") for x in links if x.get("rel") == "next"][0]
+    @memory.cache()
+    def _post_search(search, params_):
         query = requests.post(search, json = params_)
         query.raise_for_status()
         out = query.json()
-        all_scenes += out["features"]
-        links = out["links"]
+        return out
 
+    @memory.cache()
     def _check(ftr, extra_filters):
         links = [x for x in ftr.get("links", []) if x["rel"] == "via"]
         link = links[0].get("href", None) if len(links) > 0 else None
         metadata_resp = requests.get(link)
         metadata_resp.raise_for_status()
         metadata = metadata_resp.json()
-        return all([metadata[k] == v for k,v in extra_filters.items()])
+        check = [metadata[k] == v for k,v in extra_filters.items()]
+        return all(check)
 
-    final = [x for x in all_scenes if _check(x, extra_filters)]
+    search = 'https://cmr.earthdata.nasa.gov/stac/LAADS/search'
+    all_scenes = list()
+    links = [{"body": params, "rel": "next"}]
+    while "next" in [x.get("rel", None) for x in links]:
+        params_ = [x.get("body") for x in links if x.get("rel") == "next"][0]
+        out = _post_search(search, params_)
+        all_scenes += out["features"]
+        links = out["links"]
+    log.info(f"--> Found {len(all_scenes)} `{params_['collections'][0]}` scenes.")
+
+    if len(extra_filters) > 0:
+        log.add().info(f"--> Filtering `{params_['collections'][0]}` scenes with `{extra_filters}`.")
+        final = [x for x in tqdm.tqdm(all_scenes, position = 0, bar_format='{l_bar}{bar}|', delay = 5, leave = False) if _check(x, extra_filters)]
+        log.info(f"--> Found {len(final)} relevant `{params_['collections'][0]}` scenes.").sub()
+    else:
+        final = all_scenes
 
     return final
 
-def create_stac_summary(bb, timelim):
+def create_stac_summary(bb, timelim, cachedir=None):
     
     sd = datetime.datetime.strftime(timelim[0], "%Y-%m-%dT00:00:00Z")
     ed = datetime.datetime.strftime(timelim[1], "%Y-%m-%dT23:59:59Z")
@@ -147,12 +140,12 @@ def create_stac_summary(bb, timelim):
     params['bbox'] = bb
     params['datetime'] = search_dates
 
-    params['collections'] = ['VNP02IMG.v2']
-    results02 = search_stac(params)
     params['collections'] = ['VNP03IMG.v2']
-    results03 = search_stac(params)
+    results03 = search_stac(params, cachedir=cachedir, extra_filters={})
     params['collections'] = ['CLDMSK_L2_VIIRS_SNPP.v1']
-    resultsqa = search_stac(params)
+    resultsqa = search_stac(params, cachedir=cachedir, extra_filters={})
+    params['collections'] = ['VNP02IMG.v2']
+    results02 = search_stac(params, cachedir=cachedir)
 
     get_fns = lambda results: [os.path.split(x["assets"]["data"]["href"])[-1] for x in results]
     get_dts = lambda files: {datetime.datetime.strptime(".".join(x.split(".")[1:3]), "A%Y%j.%H%M"): x for x in files}
@@ -297,6 +290,7 @@ def download(folder, latlim, lonlim, timelim, product_name, req_vars,
         Downloaded data.
     """
     folder = os.path.join(folder, "VIIRSL1")
+    cachedir = os.path.join(folder, "cache")
     if not os.path.exists(folder):
         os.makedirs(folder)
 
@@ -329,13 +323,22 @@ def download(folder, latlim, lonlim, timelim, product_name, req_vars,
         post_processors = {k: {True: default_processors[k], False: v}[v == "default"] for k,v in post_processors.items() if k in req_vars}
 
     bb, nx, ny = create_grid(latlim, lonlim, dx_dy = (0.0033, 0.0033))
-    filtered_summary = create_stac_summary(bb, timelim)
+    filtered_summary = create_stac_summary(bb, timelim, cachedir = cachedir)
 
-    log.info(f"--> Found {len(filtered_summary)} VIIRS scenes.").add()
+    log.info(f"--> Collecting {len(filtered_summary)} VIIRS scenes.")
 
     buckets = ("VNP02IMG", "VNP03IMG","CLDMSK_L2_VIIRS_SNPP")
     all_urls = {k: tuple(f"/vsis3/prod-lads/{buckets[i]}/{v[i]}" for i in range(3)) for k, v in filtered_summary.items()}
     all_proj_files = list()
+
+    for i, (date, (nc02, nc03, nc_cloud)) in enumerate(copy.deepcopy(all_urls).items()):
+        date_str = str(date).replace(" ", "_").replace(":","_")
+        proj_fn = os.path.join(folder, f"bt_{date_str}_projected.nc")
+        if os.path.isfile(proj_fn):
+            all_proj_files.append(proj_fn)
+            _ = all_urls.pop(date)
+
+    log.info(f"--> {len(all_proj_files)} scenes already downloaded, {len(all_urls)} remaining.").add()
 
     for i, (date, (nc02, nc03, nc_cloud)) in enumerate(all_urls.items()):
 
@@ -344,11 +347,6 @@ def download(folder, latlim, lonlim, timelim, product_name, req_vars,
         proj_fn = os.path.join(folder, f"bt_{date_str}_projected.nc")
 
         log.info(f"--> ({i+1}/{len(all_urls)}) Processing '{os.path.split(nc02)[-1]}'.").add()
-
-        if os.path.isfile(proj_fn):
-            all_proj_files.append(proj_fn)
-            log.sub()
-            continue
 
         parallel = True
         if parallel:
@@ -396,29 +394,49 @@ def download(folder, latlim, lonlim, timelim, product_name, req_vars,
 
 if __name__ == "__main__":
 
-    timelim = [np.datetime64 ('2023-07-03T00:00:00.000000000'), 
-               np.datetime64('2023-07-10T00:00:00.000000000')]
-    latlim = [29.4, 29.6]
-    lonlim = [30.7, 30.9]
+    # timelim = [np.datetime64 ('2023-07-03T00:00:00.000000000'), 
+    #            np.datetime64('2023-07-10T00:00:00.000000000')]
+    # latlim = [29.4, 29.6]
+    # lonlim = [30.7, 30.9]
 
-    # timelim = [datetime.datetime(2021, 3, 4), datetime.datetime(2021, 3, 5)]
-    # lonlim = [22.78125, 32.48438]
-    # latlim = [23.72777, 32.1612]
-    folder = workdir = r"/Users/hmcoerver/Local/viirs"
+    timelim = [datetime.datetime(2021, 3, 4), datetime.datetime(2021, 5, 5)]
+    lonlim = [22.78125, 32.48438]
+    latlim = [23.72777, 32.1612]
+    # folder = workdir = r"/Users/hmcoerver/Local/viirs"
     product_name = "VNP02IMG"
     req_vars = ["bt"]
     variables = None
     post_processors = None
+    folder = r"/Users/hmcoerver/Local/viirs_test"
 
     adjust_logger(True, folder, "INFO")
 
-    # endpoint = 'https://cmr.earthdata.nasa.gov/stac/LAADS'
+    i = 2
 
-    # ds = download(folder, latlim, lonlim, timelim, product_name, req_vars,
-    #                 variables = variables, post_processors = post_processors)
-        
-    date = datetime.datetime(2023, 7, 4, 10, 18)
-    nc02, nc03, nc_cloud = ('/vsis3/prod-lads/VNP02IMG/VNP02IMG.A2023185.1018.002.2023185191251.nc',
-    '/vsis3/prod-lads/VNP03IMG/VNP03IMG.A2023185.1018.002.2023185185504.nc',
-    '/vsis3/prod-lads/CLDMSK_L2_VIIRS_SNPP/CLDMSK_L2_VIIRS_SNPP.A2023185.1018.001.2023233195526.nc')
-    i = 0
+    folder = os.path.join(folder, "VIIRSL1")
+    date = datetime.datetime(2022, 4, 30, 7, 54)
+    nc02 = '/vsis3/prod-lads/VNP02IMG/VNP02IMG.A2022120.0754.002.2022270171852.nc'
+    nc03 = '/vsis3/prod-lads/VNP03IMG/VNP03IMG.A2022120.0754.002.2022120162348.nc'
+    nc_cloud = '/vsis3/prod-lads/CLDMSK_L2_VIIRS_SNPP/CLDMSK_L2_VIIRS_SNPP.A2022120.0754.001.2022120192728.nc'
+
+    path, subdss, folder = (nc03, ["/geolocation_data/latitude"], folder)
+    path_appendix="_lat.nc"
+
+    creation_options = ["ARRAY:COMPRESS=DEFLATE"]
+    dtype_is_8bit = False
+
+    bb, nx, ny = create_grid(latlim, lonlim, dx_dy = (0.0033, 0.0033))
+    timelim = adjust_timelim_dtype(timelim)
+
+    params = {'limit': 250,
+                'bbox': [22.78125, 23.72777, 32.48655, 32.16257],
+                'datetime': '2021-03-04T00:00:00Z/2021-05-05T23:59:59Z',
+                'collections': ['VNP02IMG.v2']}
+
+    endpoint = 'https://cmr.earthdata.nasa.gov/stac/LAADS'
+    extra_filters = {"day_night_flag": "DAY"}
+
+    # cachedir = 'your_cache_location_directory'
+    cachedir = os.path.join(folder, "VIIRS_API_cache")
+
+    # memory = Memory(cachedir, verbose=0)

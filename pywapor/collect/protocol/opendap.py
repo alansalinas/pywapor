@@ -7,11 +7,14 @@ import requests
 import copy
 import urllib.parse
 import xarray as xr
+import multiprocessing
+from joblib import Parallel, delayed
 import numpy as np
 from pywapor.general.logger import log
 from rasterio.crs import CRS
 from bs4 import BeautifulSoup
 from urllib.parse import urlsplit, urlunsplit
+from pywapor.general.processing_functions import open_ds, is_corrupt_or_empty
 from pywapor.enhancers.apply_enhancers import apply_enhancer
 from pywapor.collect.protocol.crawler import download_url, download_urls
 from pywapor.general.processing_functions import save_ds, process_ds, remove_ds
@@ -329,7 +332,6 @@ def download_xarray(url, fp, coords, variables, post_processors,
 
     warnings.filterwarnings("ignore", category=xr.SerializationWarning)
     online_ds = xr.open_dataset(url, decode_coords="all")
-    # warnings.filterwarnings("default", category=xr.SerializationWarning)
 
     # Define selection.
     selection = create_selection(coords, target_crs = data_source_crs)
@@ -340,8 +342,40 @@ def download_xarray(url, fp, coords, variables, post_processors,
     # Rename variables and assign crs.
     online_ds = process_ds(online_ds, coords, variables, crs = data_source_crs)
 
-    # Download the data.
-    ds = save_ds(online_ds, fp.replace(".nc", "_temp.nc"), label = f"Downloading data.")
+    def download_chunk(da):
+        time_str = str(da.isel({"time":0}).time.dt.strftime("%Y%m%d_%H%M%S").values)
+        fp_ = fp.replace(".nc", f"_{time_str}_{da.time.size}.nc")
+        corrupt = False
+        if os.path.isfile(fp_):
+            corrupt = is_corrupt_or_empty(fp_)
+            if corrupt:
+                log.info(f"--> Removing corrupt or empty file `{os.path.split(fp_)[-1]}`.")
+                remove_ds(fp_)
+            else:
+                log.info(f"--> Opening existing file `{os.path.split(fp_)[-1]}`.")
+                ds = open_ds(fp_)
+        if corrupt or not os.path.isfile(fp_):
+            log.info(f"--> Downloading file `{os.path.split(fp_)[-1]}`.")
+            da.to_netcdf(fp_)
+            ds = open_ds(fp_)
+        return ds
+    
+    n_jobs = max(1, multiprocessing.cpu_count() - 1)
+    block_size = min(500, np.ceil(online_ds.time.size / n_jobs))
+
+    # TODO open issue at XArray, this is very slow.
+    # x = xr.map_blocks(download_chunk, online_ds.chunk({"time": block_size}), template = online_ds)
+    # ds = x.compute()
+
+    chunks = [online_ds.isel({"time": slice(i*block_size, block_size*(i+1))}) for i in range(int(np.ceil(online_ds.time.size / block_size)))]
+
+    parallel = True
+    if parallel:
+        out = Parallel(n_jobs=n_jobs)(delayed(download_chunk)(subds) for subds in chunks)
+    else:
+        out = list(map(download_chunk, chunks))
+    
+    ds = xr.concat(out, dim="time")
 
     # Apply product specific functions.
     for var, funcs in post_processors.items():
@@ -355,7 +389,8 @@ def download_xarray(url, fp, coords, variables, post_processors,
     # Save final output
     out = save_ds(ds, fp, encoding = "initiate", label = "Saving netCDF.")
 
-    remove_ds(ds)
+    for x in out:
+        remove_ds(x)
 
     return out
 
@@ -401,3 +436,30 @@ def create_selection(coords, target_crs = None, source_crs = CRS.from_epsg(4326)
             selection[name] = lim
 
     return selection
+
+
+if __name__ == "__main__":
+
+    from pywapor.collect.protocol.projections import get_crss
+
+    url = 'https://opendap.nccs.nasa.gov/dods/GEOS-5/fp/0.25_deg/assim/tavg1_2d_slv_Nx'
+
+    coords = {'x': ['lon', [91.62463492436828, 92.27825666088243]],
+                'y': ['lat', [21.719219468262693, 22.24391208383405]],
+                't': ['time', ['2022-01-01', '2022-12-31']]}
+    
+    data_source_crs = get_crss("WGS84")
+
+    variables = {'u10m': [('time', 'lat', 'lon'), 'u10m'],
+                'v10m': [('time', 'lat', 'lon'), 'v10m'],
+                'qv2m': [('time', 'lat', 'lon'), 'qv'],
+                'slp': [('time', 'lat', 'lon'), 'p_air_0'],
+                'ps': [('time', 'lat', 'lon'), 'p_air'],
+                't2m': [('time', 'lat', 'lon'), 't_air'],
+                'tqv': [('time', 'lat', 'lon'), 'wv']}
+
+
+    fp = "/Users/hmcoerver/Local/geos_test/GEOS5/tavg1_2d_slv_Nx.nc"
+
+    from pywapor.general.logger import adjust_logger
+    adjust_logger(True, "/Users/hmcoerver/Local/geos_test", "INFO")

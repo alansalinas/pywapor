@@ -236,3 +236,19 @@ def download(folder, latlim, lonlim, timelim, product_name, req_vars,
                                     timedelta = timedelta)
 
     return ds[req_vars_orig]
+
+if __name__ == "__main__":
+
+    from pywapor.general.logger import adjust_logger
+
+    timelim = ["2022-01-01", "2022-12-31"]
+    latlim = [21.9692194682626933, 21.9939120838340507]
+    lonlim = [91.9371349243682801, 91.9657566608824339]
+    product_name = 'tavg1_2d_slv_Nx'
+    req_vars = ['u2m', 'v2m', 'qv', 'p_air_0', 'p_air', 't_air', 'wv']
+    variables = None
+    post_processors = None
+    folder = r"/Users/hmcoerver/Local/geos_test"
+
+    adjust_logger(True, folder, "INFO")
+

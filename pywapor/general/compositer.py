@@ -153,79 +153,86 @@ def main(dss, sources, folder, general_enhancers, bins):
 
     for i, (var, config) in enumerate(sources.items()):
 
+        dst_path = os.path.join(folder, "_composites", f"{var}_bin.nc")
+
         spatial_interp = config["spatial_interp"]
         temporal_interp = config["temporal_interp"]
         composite_type = config["composite_type"]
 
-        if isinstance(temporal_interp, dict):
-            kwargs = temporal_interp.copy()
-            temporal_interp = kwargs.pop("method")
-        else:
-            kwargs = {}
-
         log.info(f"--> ({i+1}/{len(sources)}) Compositing `{var}` ({composite_type}).").add()
 
-        # Align pixels of different products for a single variable together.
-        dss_part = [ds[[var]] for ds in dss.values() if var in ds.data_vars]
-        dss1, temp_files1 = align_pixels(dss_part, folder, spatial_interp, fn_append = "_step1")
-        cleanup.append(temp_files1)
-
-        # Combine different source_products (along time dimension).
-        if np.all(["time" in x[var].dims for x in dss1]):
-            ds = xr.combine_nested(dss1, concat_dim = "time").chunk(chunks).sortby("time").squeeze()
-        elif np.all(["time" not in x[var].dims for x in dss1]):
-            ds = xr.concat(dss1, "stacked").median("stacked")
-            if len(dss1) > 1:
-                log.warning(f"--> Multiple ({len(dss1)}) sources for time-invariant `{var}` found, reducing those with 'median'.")
+        if os.path.isfile(dst_path):
+            ds = open_ds(dst_path)
         else:
-            ds = xr.combine_nested([x for x in dss1 if "time" in x[var].dims], concat_dim = "time").chunk(chunks).sortby("time").squeeze()
-            log.warning(f"--> Both time-dependent and time-invariant data found for `{var}`, dropping time-invariant data.")
 
-        if "time" in ds.dims:
+            if isinstance(temporal_interp, dict):
+                kwargs = temporal_interp.copy()
+                temporal_interp = kwargs.pop("method")
+            else:
+                kwargs = {}
 
-            if temporal_interp:
+            # Align pixels of different products for a single variable together.
+            dss_part = [ds[[var]] for ds in dss.values() if var in ds.data_vars]
+            dss1, temp_files1 = align_pixels(dss_part, folder, spatial_interp, fn_append = "_step1")
+            cleanup.append(temp_files1)
 
-                # When combining different products, it is possible to have images 
-                # on the exact same date & time. In that case, the median of those images
-                # is used. So gaps in one image are filled in with data from the other
-                # image(s).
-                if np.unique(ds.time).size != ds.time.size:
-                    groups = ds.groupby(ds["time"])
-                    ds = groups.median(dim = "time")
-                    ds = ds.chunk(chunks)
-                    log.warning(f"--> Multiple `{var}` images for an identical datetime found, reducing those with 'median'.")
+            # Combine different source_products (along time dimension).
+            if np.all(["time" in x[var].dims for x in dss1]):
+                ds = xr.combine_nested(dss1, concat_dim = "time").chunk(chunks).sortby("time").squeeze()
+            elif np.all(["time" not in x[var].dims for x in dss1]):
+                ds = xr.concat(dss1, "stacked").median("stacked")
+                if len(dss1) > 1:
+                    log.warning(f"--> Multiple ({len(dss1)}) sources for time-invariant `{var}` found, reducing those with 'median'.")
+            else:
+                ds = xr.combine_nested([x for x in dss1 if "time" in x[var].dims], concat_dim = "time").chunk(chunks).sortby("time").squeeze()
+                log.warning(f"--> Both time-dependent and time-invariant data found for `{var}`, dropping time-invariant data.")
 
-                if temporal_interp == "whittaker":
-                    log.info("--> Applying whittaker smoothing.")
-                    log.add().info(f"> shape: {ds[var].shape}, kwargs: {list(kwargs.keys())}.").sub()
-                    if "weights" in kwargs.keys():
-                        ds["sensor"] = xr.combine_nested([xr.ones_like(x.time.astype(int)) * i for i, x in enumerate(dss1)], concat_dim="time").sortby("time")
-                        source_legend = {str(i): os.path.split(x.encoding["source"])[-1].replace(".nc", "") for i, x in enumerate(dss1)}
-                        ds["sensor"] = ds["sensor"].assign_attrs(source_legend)
-                    new_x = determine_new_x(None, composite_type, bins = bins, dtype = lambda x: np.datetime64(x, "ns"))
-                    ds = whittaker_smoothing(ds, var, new_x = new_x, chunks = chunks, **kwargs)
-                    ds = ds.rename_vars({f"{var}_smoothed": var})
-                    temporal_interp = "linear"
-                else:
-                    ds = add_times(ds, bins, composite_type = composite_type).chunk(chunks)
-                    ds = ds.interpolate_na(dim = "time", method = temporal_interp, **kwargs)
+            if "time" in ds.dims:
 
-            # Make composites.
-            ds[var] = compositers[composite_type](ds[var].groupby_bins("time", bins, labels = bins[:-1]))
+                if temporal_interp:
 
-        # Drop time coordinates.
-        if "time" in ds.coords:
-            ds = ds.drop_vars(["time"])
+                    # When combining different products, it is possible to have images 
+                    # on the exact same date & time. In that case, the median of those images
+                    # is used. So gaps in one image are filled in with data from the other
+                    # image(s).
+                    if np.unique(ds.time).size != ds.time.size:
+                        groups = ds.groupby(ds["time"])
+                        ds = groups.median(dim = "time")
+                        ds = ds.chunk(chunks)
+                        log.warning(f"--> Multiple `{var}` images for an identical datetime found, reducing those with 'median'.")
 
-        # Set dimension order.
-        ds = ds.transpose(*sorted(list(ds.dims.keys()), key = lambda e: ["time_bins", "y", "x"].index(e)))
+                    if temporal_interp == "whittaker":
+                        log.info("--> Applying whittaker smoothing.")
+                        log.add().info(f"> shape: {ds[var].shape}, kwargs: {list(kwargs.keys())}.").sub()
+                        if "weights" in kwargs.keys():
+                            ds["sensor"] = xr.combine_nested([xr.ones_like(x.time.astype(int)) * i for i, x in enumerate(dss1)], concat_dim="time").sortby("time")
+                            source_legend = {str(i): os.path.split(x.encoding["source"])[-1].replace(".nc", "") for i, x in enumerate(dss1)}
+                            ds["sensor"] = ds["sensor"].assign_attrs(source_legend)
+                        new_x = determine_new_x(None, composite_type, bins = bins, dtype = lambda x: np.datetime64(x, "ns"))
+                        ds = whittaker_smoothing(ds, var, new_x = new_x, chunks = chunks, **kwargs)
+                        ds = ds.rename_vars({f"{var}_smoothed": var})
+                        temporal_interp = "linear"
+                    else:
+                        ds = add_times(ds, bins, composite_type = composite_type).chunk(chunks)
+                        ds = ds.interpolate_na(dim = "time", method = temporal_interp, **kwargs)
 
-        # Save output
-        dst_path = os.path.join(folder, f"{var}_bin.nc")
-        ds = save_ds(ds, dst_path, label = f"Saving `{var}` composites.")
-        dss2[var] = ds
-        cleanup.append([ds])
+                # Make composites.
+                ds[var] = compositers[composite_type](ds[var].groupby_bins("time", bins, labels = bins[:-1]))
+
+            # Drop time coordinates.
+            if "time" in ds.coords:
+                ds = ds.drop_vars(["time"])
+
+            # Set dimension order.
+            ds = ds.transpose(*sorted(list(ds.sizes.keys()), key = lambda e: ["time_bins", "y", "x"].index(e)))
+
+            # Save output
+            ds = save_ds(ds, dst_path, label = f"Saving `{var}` composites.")
         log.sub()
+
+        dss2[var] = ds
+        # cleanup.append([ds])
+
 
     log.sub()
 
