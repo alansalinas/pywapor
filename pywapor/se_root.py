@@ -54,7 +54,7 @@ def se_root(folder, latlim, lonlim, timelim, sources = "level_1", bin_length = "
 
     return ds_out
 
-def main(input_data, se_root_version = "v2", export_vars = "default", chunks = {"time": 1, "x": 1000, "y": 1000}):
+def main(input_data, se_root_version = "v2", export_vars = "default", chunks = {"time": -1, "x": 500, "y": 500}):
     """Run the `se_root` model.
 
     Parameters
@@ -92,7 +92,7 @@ def main(input_data, se_root_version = "v2", export_vars = "default", chunks = {
     # Version
     ETLook = ETLook_v2_v3
 
-    log.info(f"--> Running `se_root` ({se_root_version}).")
+    log.info(f"--> Running `se_root` ({se_root_version}).").add()
 
     # Allow skipping of et_look-functions if not all of its required inputs are
     # available.
@@ -201,19 +201,20 @@ def main(input_data, se_root_version = "v2", export_vars = "default", chunks = {
 
     ds = g.variables.fill_attrs(ds)
 
+    log.sub()
     if len(ds.data_vars) == 0:
         log.info("--> No data to export, try adjusting `export_vars`.")
         ds = None
     else:
         fn = fn.replace("in", "out")
         fp_out = os.path.join(fp, fn)
-        if os.path.isfile(fp_out):
+        while os.path.isfile(fp_out):
             fp_out = fp_out.replace(".nc", "_.nc")
 
         with warnings.catch_warnings():
             warnings.filterwarnings("ignore", message="invalid value encountered in power")
             warnings.filterwarnings("ignore", message="invalid value encountered in log")
-            ds = save_ds(ds, fp_out, encoding = "initiate", chunks = chunks, label = f"Saving output to `{fn}`.")
+            ds = save_ds(ds, fp_out, encoding = "initiate", chunks = chunks, label = f"Saving output to `{os.path.split(fp_out)[-1]}`.")
 
     t2 = datetime.datetime.now()
     log.sub().info(f"< SE_ROOT ({str(t2 - t1)})")

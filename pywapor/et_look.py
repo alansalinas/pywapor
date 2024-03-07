@@ -11,7 +11,7 @@ from pywapor.general.processing_functions import save_ds, open_ds
 import copy
 import warnings
 
-def main(input_data, et_look_version = "v2", export_vars = "default", chunks = {"time_bins": 1, "x": 1000, "y": 1000}):
+def main(input_data, et_look_version = "v2", export_vars = "default", chunks = {"time_bins": -1, "x": 500, "y": 500}):
     """Runs the ETLook model over the provided input data.
 
     Parameters
@@ -180,7 +180,7 @@ def main(input_data, et_look_version = "v2", export_vars = "default", chunks = {
     ds["vhc"] = ETLook.radiation.volumetric_heat_capacity(ds["se_root"], porosity = ds["porosity"])    
     
     ds["dd"] = ETLook.radiation.damping_depth(ds["stc"], ds["vhc"])
-    ds["g0_bs"] = ETLook.radiation.bare_soil_heat_flux(ds["doy"], ds["dd"], ds["stc"], ds["t_amp_year"], ds["lat_rad"])
+    ds["g0_bs"] = ETLook.radiation.bare_soil_heat_flux(ds["doy"], ds["dd"], ds["stc"], ds["t_amp"], ds["lat_rad"])
     ds["g0_24"] = ETLook.radiation.soil_heat_flux(ds["g0_bs"], ds["sf_soil"], ds["land_mask"], ds["rn_24_soil"], ds["trans_24"], ds["ra_24"], ds["l_net"], ds["rn_slope"], ds["rn_offset"])
     ds["e_24_init"] = ETLook.neutral.initial_daily_evaporation(ds["rn_24_soil"], ds["g0_24"], ds["ssvp_24"], ds["ad_24"], ds["vpd_24"], ds["psy_24"], ds["r_soil"], ds["ra_soil_init"])
     ds["h_soil_24_init"] = ETLook.unstable.initial_sensible_heat_flux_soil_daily(ds["rn_24_soil"], ds["e_24_init"], ds["g0_24"])
@@ -230,7 +230,7 @@ def main(input_data, et_look_version = "v2", export_vars = "default", chunks = {
                     't_24_mm',
                     'e_24_mm',
                     'et_24_mm',
-                    'et_ref_24_mm',
+                    # 'et_ref_24_mm',
                     'se_root',
                     # 'biomass_prod',
                     'npp'
@@ -275,11 +275,13 @@ def check_for_non_chuncked_arrays(ds):
                 print(var)
 
 if __name__ == "__main__":
-    ...
 
-    chunks = {"time_bins": 1, "x": 1000, "y": 1000}
-    et_look_version = "v2"
+    chunks = {"time_bins": -1, "x": 1000, "y": 1000}
+    et_look_version = "v3"
     export_vars = "default"
+
+    input_data = '/Users/hmcoerver/Local/pywapor_se/et_look_in.nc'
+
     # input_data = r'/Users/hmcoerver/Local/test8/et_look_in_.nc'
     # et_look_version = "v2"
     # export_vars = "default"

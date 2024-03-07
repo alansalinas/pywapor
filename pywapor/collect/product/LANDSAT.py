@@ -37,7 +37,7 @@ import urllib3
 from pywapor.general.logger import log, adjust_logger
 from pywapor.general.processing_functions import open_ds, save_ds, remove_ds, adjust_timelim_dtype, make_example_ds
 from pywapor.collect.protocol.crawler import download_urls
-from pywapor.enhancers.apply_enhancers import apply_enhancer
+from pywapor.enhancers.apply_enhancers import apply_enhancer, apply_enhancers
 from pywapor.enhancers.gap_fill import gap_fill
 import xmltodict
 from pywapor.general import bitmasks
@@ -685,10 +685,7 @@ def process_scenes(fp, scene_paths, product_folder, product_name, variables, pos
     ds = xr.concat(dss, "time")
     
     # Apply general product functions.
-    for var, funcs in post_processors.items():
-        for func in funcs:
-            ds, label = apply_enhancer(ds, var, func)
-            log.info(label)
+    ds = apply_enhancers(post_processors, ds)
 
     # Remove unrequested variables.
     ds = ds[list(post_processors.keys())]

@@ -10,7 +10,7 @@ import rasterio.crs
 import itertools
 import copy
 import re
-from pywapor.enhancers.apply_enhancers import apply_enhancer
+from pywapor.enhancers.apply_enhancers import apply_enhancers
 from pywapor.general.logger import log, adjust_logger
 import shutil
 from pywapor.general.processing_functions import save_ds
@@ -254,10 +254,7 @@ def download(folder, product_name, latlim, lonlim, timelim, variables, post_proc
     ds.attrs = {}
 
     # Apply product specific functions.
-    for var, funcs in post_processors.items():
-        for func in funcs:
-            ds, label = apply_enhancer(ds, var, func)
-            log.info(label)
+    ds = apply_enhancers(post_processors, ds)
 
     # Save the netcdf.
     ds = save_ds(ds, fn_final, label = "Merging files.")

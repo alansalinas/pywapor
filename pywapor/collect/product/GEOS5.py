@@ -198,6 +198,9 @@ def download(folder, latlim, lonlim, timelim, product_name, req_vars,
     """
     folder = os.path.join(folder, "GEOS5")
 
+    if not os.path.exists(folder):
+        os.makedirs(folder)
+
     fn = os.path.join(folder, f"{product_name}.nc")
     req_vars_orig = copy.deepcopy(req_vars)
     if os.path.isfile(fn):

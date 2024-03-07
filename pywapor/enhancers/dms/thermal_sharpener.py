@@ -211,7 +211,7 @@ def plot_sharpening(lr_fn, hr_fn, var, workdir):
     lr = lr.close()
     hr = hr.close()
 
-def sharpen(dss, var, folder, make_plots = False, vars_for_sharpening = ['nmdi', 'bsi', 'mndwi',
+def sharpen(dss, var, folder, *args, make_plots = False, req_vars = ['nmdi', 'bsi', 'mndwi',
                 'vari_red_edge', 'psri', 'nir', 'green']):
     """Thermal sharpen datasets.
 
@@ -241,7 +241,7 @@ def sharpen(dss, var, folder, make_plots = False, vars_for_sharpening = ['nmdi',
         dss = {**{k: open_ds(v) for k, v in dss.items() if isinstance(v, str)}, 
                 **{k:v for k,v in dss.items() if not isinstance(v, str)}}
 
-        if 'cos_solar_zangle' in vars_for_sharpening and not 'cos_solar_zangle' in dss.keys():
+        if 'cos_solar_zangle' in req_vars and not 'cos_solar_zangle' in dss.keys():
             dss = get_cos_solar_zangle(dss, var, folder)
             remove_cos_solar_zangle = True
         else:
@@ -250,8 +250,8 @@ def sharpen(dss, var, folder, make_plots = False, vars_for_sharpening = ['nmdi',
         out_fns = list()
 
         temporal_lr_input_data = f"NETCDF:{dss[var].encoding['source']}:{var}"
-        temporal_hr_input_data = [f"NETCDF:{y.encoding['source']}:{x}" for x, y in dss.items() if "time" in y.dims and x in vars_for_sharpening]
-        static_hr_input_data = [f"NETCDF:{y.encoding['source']}:{x}" for x, y in dss.items() if "time" not in y.dims and x in vars_for_sharpening]
+        temporal_hr_input_data = [f"NETCDF:{y.encoding['source']}:{x}" for x, y in dss.items() if "time" in y.dims and x in req_vars]
+        static_hr_input_data = [f"NETCDF:{y.encoding['source']}:{x}" for x, y in dss.items() if "time" not in y.dims and x in req_vars]
 
         lowResFiles = sorted(lowres_inputs(workdir, temporal_lr_input_data))
         lowResDates = [os.path.split(x)[-1].split("_")[-2:] for x in lowResFiles]
@@ -262,7 +262,7 @@ def sharpen(dss, var, folder, make_plots = False, vars_for_sharpening = ['nmdi',
         
         assert np.all([x == y for x,y in zip(highResDates, lowResDates)])
 
-        missing_vars = [x for x in vars_for_sharpening if x not in dss.keys()]
+        missing_vars = [x for x in req_vars if x not in dss.keys()]
         if len(missing_vars) > 0:
             log.info(f"--> Sharpening {len(highResFiles)} `{var}` images, without `{'` and `'.join(missing_vars)}` features.").add()
         else:

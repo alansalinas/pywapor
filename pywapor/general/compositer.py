@@ -10,7 +10,7 @@ import pandas as pd
 import pywapor.general.levels as levels
 from itertools import chain
 from pywapor.general.logger import log
-from pywapor.general.processing_functions import save_ds, open_ds, remove_ds, adjust_timelim_dtype, log_example_ds
+from pywapor.general.processing_functions import save_ds, func_from_string, open_ds, remove_ds, adjust_timelim_dtype, log_example_ds
 from pywapor.general.reproject import align_pixels
 from pywapor.enhancers.apply_enhancers import apply_enhancer
 from pywapor.enhancers.smooth.whittaker import whittaker_smoothing
@@ -241,6 +241,8 @@ def main(dss, sources, folder, general_enhancers, bins):
     for var in variables:
         if var in dss2.keys():
             for func in sources[var]["variable_enhancers"]:
+                if isinstance(func, str):
+                    func = func_from_string(func)
                 dss2[var] = func(dss2, var, folder)
 
     # Align all the variables together.

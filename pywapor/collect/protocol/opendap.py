@@ -5,6 +5,7 @@ import tempfile
 import warnings
 import requests
 import copy
+import functools
 import urllib.parse
 import xarray as xr
 import multiprocessing
@@ -15,7 +16,7 @@ from rasterio.crs import CRS
 from bs4 import BeautifulSoup
 from urllib.parse import urlsplit, urlunsplit
 from pywapor.general.processing_functions import open_ds, is_corrupt_or_empty
-from pywapor.enhancers.apply_enhancers import apply_enhancer
+from pywapor.enhancers.apply_enhancers import apply_enhancers
 from pywapor.collect.protocol.crawler import download_url, download_urls
 from pywapor.general.processing_functions import save_ds, process_ds, remove_ds
 
@@ -97,10 +98,7 @@ def download(fp, product_name, coords, variables, post_processors,
     ds = ds.rio.clip_box(coords["x"][1][0], coords["y"][1][0], coords["x"][1][1], coords["y"][1][1])
 
     # Apply product specific functions.
-    for var, funcs in post_processors.items():
-        for func in funcs:
-            ds, label = apply_enhancer(ds, var, func)
-            log.info(label)
+    ds = apply_enhancers(post_processors, ds)
 
     if isinstance(timedelta, np.timedelta64):
         ds["time"] = ds["time"] + timedelta
@@ -378,10 +376,7 @@ def download_xarray(url, fp, coords, variables, post_processors,
     ds = xr.concat(out, dim="time")
 
     # Apply product specific functions.
-    for var, funcs in post_processors.items():
-        for func in funcs:
-            ds, label = apply_enhancer(ds, var, func)
-            log.info(label)
+    ds = apply_enhancers(post_processors, ds)
 
     if isinstance(timedelta, np.timedelta64):
         ds["time"] = ds["time"] + timedelta

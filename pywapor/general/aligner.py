@@ -3,7 +3,7 @@ Functions to prepare input for `pywapor.se_root`, more specifically to
 interpolate various parameters in time to match with land-surface-temperature
 times. 
 """
-from pywapor.general.processing_functions import save_ds, open_ds, remove_ds, log_example_ds
+from pywapor.general.processing_functions import save_ds, open_ds, remove_ds, log_example_ds, func_from_string
 from pywapor.general.reproject import align_pixels
 from pywapor.enhancers.apply_enhancers import apply_enhancer
 from pywapor.general.logger import log
@@ -62,11 +62,13 @@ def main(dss, sources, folder, general_enhancers, example_t_vars = ["lst"]):
     # Loop over the variables
     for var in variables:
 
-        dst_path = os.path.join(folder, f"{var}_i.nc")
+        dst_path = os.path.join(folder, "_instantaneous",f"{var}_i.nc")
 
         if os.path.isfile(dst_path):
             ds = open_ds(dst_path, chunks = chunks)
-            cleanup.append([ds])
+            if var in example_t_vars:
+                if isinstance(example_time, type(None)):
+                    example_time = ds["time"]
         else:
             config = sources[var]
             spatial_interp = config["spatial_interp"]
@@ -93,6 +95,7 @@ def main(dss, sources, folder, general_enhancers, example_t_vars = ["lst"]):
             if var in example_t_vars:
                 if "time" not in ds[var].dims:
                     ds[var] = ds[var].expand_dims("time").transpose("time", "y", "x")
+                
                 if isinstance(example_time, type(None)):
                     example_time = ds["time"]
                 else:
@@ -108,6 +111,7 @@ def main(dss, sources, folder, general_enhancers, example_t_vars = ["lst"]):
                         new_x = example_time.values
                     else:
                         new_x = None
+                        
                     if "weights" in kwargs.keys():
                         ds["sensor"] = xr.combine_nested([xr.ones_like(x.time.astype(int)) * i for i, x in enumerate(dss1)], concat_dim="time").sortby("time")
                         source_legend = {str(i): os.path.split(x.encoding["source"])[-1].replace(".nc", "") for i, x in enumerate(dss1)}
@@ -115,6 +119,7 @@ def main(dss, sources, folder, general_enhancers, example_t_vars = ["lst"]):
                     ds = whittaker_smoothing(ds, var, chunks = chunks, new_x = new_x, **kwargs)
                     ds = ds.rename_vars({f"{var}_smoothed": var})
                 else:
+                    # print(example_time)
                     if not ds.time.equals(example_time):
                         new_coords = xr.concat([ds.time, example_time], dim = "time").drop_duplicates("time").sortby("time")
                         ds = ds.reindex_like(new_coords).chunk(chunks)
@@ -123,14 +128,12 @@ def main(dss, sources, folder, general_enhancers, example_t_vars = ["lst"]):
                 lbl = f"Aligning times in `{var}` ({orig_time_size}) with `{'` and `'.join(example_t_vars)}` ({example_time.time.size}, {temporal_interp})."
                 ds = save_ds(ds, dst_path, chunks = chunks, encoding = "initiate", label = lbl)
                 log.add().info(f"> shape: {ds[var].shape}, kwargs: {list(kwargs.keys())}.").sub()
-                cleanup.append([ds])
             else:
                 lbl = f"Saving spatially aligned `{var}` data without temporal interpolation."
                 ds = save_ds(ds, dst_path, chunks = chunks, encoding = "initiate", label = lbl)
-                cleanup.append([ds])
 
         # Set dimension order.
-        ds = ds.transpose(*sorted(list(ds.dims.keys()), key = lambda e: ["time", "y", "x"].index(e)))
+        ds = ds.transpose(*sorted(list(ds.sizes.keys()), key = lambda e: ["time", "y", "x"].index(e)))
 
         dss2[var] = ds
 
@@ -138,6 +141,8 @@ def main(dss, sources, folder, general_enhancers, example_t_vars = ["lst"]):
     variables = levels.find_setting(sources, "variable_enhancers")
     for var in variables:
         for func in sources[var]["variable_enhancers"]:
+            if isinstance(func, str):
+                func = func_from_string(func)
             dss2 = func(dss2, var, folder)
 
     # TODO this info needs to be moved to `sources`.

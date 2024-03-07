@@ -21,7 +21,7 @@ from pywapor.general.processing_functions import save_ds, open_ds, unpack, make_
 from pywapor.general.logger import log
 from pywapor.collect.accounts import get
 from joblib import Memory
-from pywapor.enhancers.apply_enhancers import apply_enhancer
+from pywapor.enhancers.apply_enhancers import apply_enhancer, apply_enhancers
 
 @cached(cache=TTLCache(maxsize=2048, ttl=100))
 def get_access_token():
@@ -99,7 +99,7 @@ def download(folder, latlim, lonlim, timelim, product_name, product_type, node_f
     # Filter reprocessed scenes (select newest).
     overview = dict()
     for i, scene in enumerate(scenes):
-        mission_id, level, stime, baseline, rel_orbit, tile_number, rest = scene["Name"].split("_")
+        mission_id, level, stime, baseline, rel_orbit, tile_number = scene["Name"].split("_")[:6]
         key = "_".join([mission_id, level, stime, rel_orbit, tile_number])
         baseline_int = int(baseline[1:])
         if not key in list(overview.keys()):
@@ -295,10 +295,7 @@ def process_sentinel(scenes, variables, time_func, final_fn, post_processors, pr
     fp = os.path.join(folder, final_fn)
     
     # Apply general product functions.
-    for var, funcs in post_processors.items():
-        for func in funcs:
-            ds, label = apply_enhancer(ds, var, func)
-            log.info(label)
+    ds = apply_enhancers(post_processors, ds)
 
     # Remove unrequested variables.
     ds = ds[list(post_processors.keys())]

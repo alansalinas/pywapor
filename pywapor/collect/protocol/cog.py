@@ -3,7 +3,7 @@ import tqdm
 from pywapor.general.processing_functions import save_ds, open_ds, process_ds, remove_ds
 from osgeo import gdal
 import urllib
-from pywapor.enhancers.apply_enhancers import apply_enhancer
+from pywapor.enhancers.apply_enhancers import apply_enhancers
 from pywapor.general.logger import log
 
 def download(fp, product_name, coords, variables, post_processors, url_func, 
@@ -106,10 +106,7 @@ def download(fp, product_name, coords, variables, post_processors, url_func,
     ds = process_ds(ds, coords, variables)
 
     # Apply product specific functions.
-    for var, funcs in post_processors.items():
-        for func in funcs:
-            ds, label = apply_enhancer(ds, var, func)
-            log.info(label)
+    ds = apply_enhancers(post_processors, ds)
 
     # Save final output.
     out = save_ds(ds, fp, encoding = "initiate", label = f"Saving {fn}.")

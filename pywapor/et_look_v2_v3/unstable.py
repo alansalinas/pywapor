@@ -1,5 +1,6 @@
 import numpy as np
 from pywapor.et_look_v2_v3 import constants as c
+from pywapor.general.logger import log
 import xarray as xr
 import warnings
 
@@ -429,8 +430,10 @@ def ra_canopy(
     u_star_start = u_star_init
     iteration = 0
     epsilon = 10.0
+    log.add()
     while (iteration < iter_ra) and (np.nanmax(epsilon) > 0.01):
         iteration += 1
+        log.info(f"--> Starting iteration {iteration}.")
         monin = monin_obukhov_length(h_flux, ad, u_star_start, t_air_k)
         if isinstance(monin, xr.DataArray):
             x_b = xr.where(monin > 0, 1, stability_parameter(monin, disp, z_b))
@@ -440,6 +443,10 @@ def ra_canopy(
         u_star = friction_velocity(u_b, z_b, z0m, disp, sf)
         epsilon = abs(u_star - u_star_start)
         u_star_start = u_star
+        log.info(f"--> Iteration {iteration} finished.")
+
+    log.sub()
+
 
     if isinstance(monin, xr.DataArray):
         x_b_obs = xr.where(monin <= 0, stability_parameter_obs(monin, z_obs), 1)
@@ -563,6 +570,7 @@ def transpiration(
     iteration = 0
     epsilon = 10.0
     h_start = h_canopy_24_init
+    log.add()
 
     with warnings.catch_warnings():
 
@@ -575,7 +583,9 @@ def transpiration(
 
         while (iteration < iter_h) and (np.nanmax(epsilon) > 0.01):
             iteration += 1
+            log.info(f"--> Starting iteration {iteration}.")
             
+            log.info(f"--> Calculating `ra_canopy`.")
             ra_canopy_start = ra_canopy(
                 h_start, t_air_k_24, u_star_24_init, ad_24, z0m, disp, u_b_24, z_obs, z_b
             )
@@ -586,6 +596,10 @@ def transpiration(
             h = rn_24_canopy - t
             epsilon = abs(h - h_start)
             h_start = h
+
+            log.info(f"--> Iteration {iteration} finished.")
+
+    log.sub()
 
     return t
 

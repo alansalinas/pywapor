@@ -1,4 +1,22 @@
 from functools import partial
+import functools
+from pywapor.general.logger import log
+from pywapor.general.processing_functions import func_from_string
+
+def apply_enhancers(post_processors, ds):
+    for var, funcs in post_processors.items():
+        for func in funcs:
+            if isinstance(func, str):
+                func = func_from_string(func)
+            elif isinstance(func, dict):
+                args = func.get("args", ())
+                kwargs = func.get("keywords", {})
+                func = func_from_string(func["func"])
+                if kwargs or args:
+                    func = functools.partial(func, *args, **kwargs)
+            ds, label = apply_enhancer(ds, var, func)
+            log.info(label)
+    return ds
 
 def apply_enhancer(ds, variable, enhancer):
     """Apple a function to a (variable in a) dataset. 

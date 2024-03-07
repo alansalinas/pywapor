@@ -12,7 +12,7 @@ from osgeo import gdal
 from functools import partial
 from pywapor.collect import accounts
 from joblib import Parallel, delayed, Memory
-from pywapor.enhancers.apply_enhancers import apply_enhancer
+from pywapor.enhancers.apply_enhancers import apply_enhancers
 from pywapor.general.processing_functions import save_ds, remove_ds, open_ds, adjust_timelim_dtype
 from pywapor.general.logger import log, adjust_logger
 from pywapor.enhancers.other import drop_empty_times
@@ -383,10 +383,7 @@ def download(folder, latlim, lonlim, timelim, product_name, req_vars,
     ds = xr.open_mfdataset(all_proj_files, preprocess = preproc)
 
     # Apply product specific functions.
-    for var, funcs in post_processors.items():
-        for func in funcs:
-            ds, label = apply_enhancer(ds, var, func)
-            log.info(label)
+    ds = apply_enhancers(post_processors, ds)
 
     ds = save_ds(ds, fn, encoding = "initiate", label = "Merging files.")
 
