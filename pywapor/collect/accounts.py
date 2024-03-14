@@ -9,17 +9,56 @@ from pywapor.general.logger import log, adjust_logger
 from cryptography.fernet import Fernet
 from pywapor.collect.product.LANDSAT import espa_api
 
+PASSWORD_INSTRUCTIONS = {
+"NASA": """
+--> Used for `VIIRSL1`, `MODIS`, `SRTM`, `CHIRPS` and `MERRA2` data.\n
+--> Create an account at https://urs.earthdata.nasa.gov.\n
+--> Make sure to accept the terms of use: "Applications" > "Authorized Apps" > "Approve More Applications"\n
+    * NASA GESDISC DATA ARCHIVE \n
+    * LP DAAC OPeNDAP\n
+""",
+
+"TERRA": """
+--> Used for `TERRA` (VITO:PROVA-V).\n
+--> Create an account at https://viewer.terrascope.be.\n
+""",
+
+"ECMWF": """
+--> Used for `ERA5`.
+--> Create an account at https://cds.climate.copernicus.eu.\n
+    * On your profile page, scroll to the "API key" section.\n
+    * Accept conditions when running `setup("ECMWF")` for the first time.\n
+""",
+
+"EARTHEXPLORER": """
+--> Used for `LANDSAT`.\n
+--> Create an account at https://earthexplorer.usgs.gov.\n
+""",
+
+"COPERNICUS_DATA_SPACE": """
+--> Used for `SENTINEL2` and `SENTINEL3`.\n
+--> Create an account at https://dataspace.copernicus.eu.\n
+""",
+
+"VIIRSL1": """
+--> Used for `VIIRSL1` (ONLY when using requests.get method, which is not the default!)\n
+--> Create an account at https://ladsweb.modaps.eosdis.nasa.gov/.\n
+--> In the top right, press "Login" and "generate token".\n
+"""
+}
+
 def ask_pw(account):
+    instructions = PASSWORD_INSTRUCTIONS.get(account, "")
     if account == "WAPOR" or account == "VIIRSL1":
         account_name = ""
-        pwd = input(f"{account} API token: ")
+        pwd = input(instructions + f"\n{account} API token: ")
     elif account == "ECMWF":
         account_name = 'https://cds.climate.copernicus.eu/api/v2'
-        api_key_1 = input(f"{account} UID: ")
+        api_key_1 = input(instructions + f"\n{account} UID: ")
         api_key_2 = input(f"{account} CDS API key: ")
         pwd = f"{api_key_1}:{api_key_2}"
     else:
-        account_name = input(f"{account} username: ")
+        account_name = input(instructions + f"\n{account} username: ")
         pwd = getpass.getpass(f"{account} password: ")            
     return account_name, pwd
 
@@ -28,7 +67,7 @@ def setup(account):
 
     Parameters
     ----------
-    account : {"NASA" | "TERRA" | "ECMWF" | "COPERNICUS_DATA_SPACE" | "EARTHEXPLORER"}
+    account : {"NASA" | "TERRA" | "ECMWF" | "COPERNICUS_DATA_SPACE" | "EARTHEXPLORER" | "VIIRSL1"}
         Which un/pw combination to store.
     """
 
@@ -68,6 +107,7 @@ def setup(account):
             "TERRA": terra_account,
             "ECMWF": ecmwf_account,
             "COPERNICUS_DATA_SPACE": copernicus_data_space_account,
+            "VIIRSL1": viirs_account,
         }[account]((account_name, pwd))
 
         if succes:
@@ -94,7 +134,7 @@ def get(account):
 
     Parameters
     ----------
-    account : {"NASA" | "TERRA" | "ECMWF" | "COPERNICUS_DATA_SPACE" | "EARTHEXPLORER"}
+    account : {"NASA" | "TERRA" | "ECMWF" | "COPERNICUS_DATA_SPACE" | "EARTHEXPLORER" | "VIIRSL1}
         Which un/pw combination to load.
     """
 
@@ -139,7 +179,7 @@ def get(account):
     username = cipher_suite.decrypt(username_crypt.encode("utf-8"))
     pwd = cipher_suite.decrypt(pwd_crypt.encode("utf-8"))  
 
-    return(str(username.decode("utf-8")), str(pwd.decode("utf-8")))
+    return (str(username.decode("utf-8")), str(pwd.decode("utf-8")))
 
 def create_key():
     """Generates a key file.
@@ -251,6 +291,39 @@ def nasa_account(user_pw):
             ...
 
     return succes, error
+
+def viirs_account(user_pw):
+    """Check if the given or stored VIIRSL1 token is 
+    correct. Accounts can be created on https://ladsweb.modaps.eosdis.nasa.gov/.
+    Then in the top right, press "Login" and "generate token".
+
+    Parameters
+    ----------
+    user_pw : tuple, optional
+        ("", "token") to check, if `None` will try to load the 
+        password from the keychain, by default None.
+
+    Returns
+    -------
+    bool
+        True if the password works, otherwise False.
+    """
+
+    _, token = user_pw
+
+    headers = {'Authorization': 'Bearer ' + token}
+    test_url = "https://ladsweb.modaps.eosdis.nasa.gov/archive/allData/5110/CLDMSK_L2_VIIRS_SNPP/2023/060/CLDMSK_L2_VIIRS_SNPP.A2023060.0006.001.2023233192108.nc"
+    response = requests.Session().get(test_url, headers=headers, stream = True)
+    for data in response.iter_content(chunk_size=1024):
+        succes = b'DOCTYPE' not in data
+        if not succes:
+            error = "wrong token."
+        else:
+            error = ""
+        break
+
+    return succes, error
+
 
 def earthexplorer_account(user_pw):
     """Check if the given or stored WAPOR token is 
@@ -404,3 +477,8 @@ if __name__ == "__main__":
 
     un_pw7 = get("COPERNICUS_DATA_SPACE")
     check7 = copernicus_data_space_account(un_pw7)
+
+    un_pw8 = get("VIIRSL1")
+    check8 = viirs_account(un_pw8)
+
+    print(check1, check2, check4, check6, check7, check8)

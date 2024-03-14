@@ -122,9 +122,12 @@ def remove_ds(ds):
         except PermissionError:
             log.info(f"--> Unable to delete temporary file `{fp}`.")
 
-def is_corrupt_or_empty(fp):
+def is_corrupt_or_empty(fp, group = None):
     try:
-        ds = xr.open_dataset(fp, chunks = "auto")
+        if isinstance(group, type(None)):
+            ds = xr.open_dataset(fp, chunks = "auto")
+        else:
+            ds = xr.open_dataset(fp, chunks = "auto", group = group)
         corrupt = ds.sizes == {}
         ds = ds.close()
     except OSError:

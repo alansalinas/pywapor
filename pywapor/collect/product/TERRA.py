@@ -1,3 +1,6 @@
+"""
+https://docs.terrascope.be/#/Developers/WebServices/TerraCatalogue/ProductDownload
+"""
 import datetime
 import requests
 import os
@@ -9,8 +12,12 @@ import pywapor.general.bitmasks as bm
 import pywapor.collect.accounts as accounts
 from functools import partial
 from osgeo import gdal
+from joblib import Memory
+import time
+from requests.exceptions import ConnectionError
+from pywapor.enhancers.apply_enhancers import apply_enhancers
 from pywapor.general.logger import log, adjust_logger
-from pywapor.general.processing_functions import save_ds, open_ds, remove_ds, adjust_timelim_dtype
+from pywapor.general.processing_functions import save_ds, open_ds, remove_ds, adjust_timelim_dtype, process_ds, is_corrupt_or_empty
 
 def default_post_processors(product_name, req_vars = ["ndvi", "r0"]):
     """Given a `product_name` and a list of requested variables, returns a dictionary with a 
@@ -118,36 +125,6 @@ def calc_r0(ds, *args):
     ds["r0"] = 0.429 * ds["blue"] + 0.333 * ds["red"] + 0.133 * ds["nir"] + 0.105 * ds["swir"]
     return ds
 
-def create_header(folder):
-
-    un, pw = accounts.get("TERRA")
-
-    url = "https://sso.vgt.vito.be/auth/realms/terrascope/protocol/openid-connect/token"
-    params = {
-        "grant_type": "password",
-        "client_id": "public",
-        "username": un,
-        "password": pw,
-    }
-    headers = {'content-type': 'application/x-www-form-urlencoded'}
-
-    resp = requests.post(url, data = params, headers = headers)
-    resp.raise_for_status()
-    token = resp.json()["access_token"]
-
-    header_file = os.path.join(folder, "token.txt")
-    if os.path.isfile(header_file):
-        try:
-            os.remove(header_file)
-        except PermissionError:
-            log.warning("--> Unable to remove `token.txt` file (PermissionError).")
-
-
-    with open(header_file, "w") as text_file:
-        text_file.write(f"Authorization: Bearer {token}")
-
-    return header_file
-
 def download(folder, latlim, lonlim, timelim, product_name, req_vars = ["ndvi", "r0"],
                 variables = None, post_processors = None, timedelta = np.timedelta64(60, "h")):
     """Download MODIS data and store it in a single netCDF file.
@@ -222,39 +199,90 @@ def download(folder, latlim, lonlim, timelim, product_name, req_vars = ["ndvi", 
     params['datetime'] = search_dates
     params['collections'] = [product_name]
 
-    products = search_stac(params)
+    products = search_stac(params, os.path.join(folder, "cache"))
 
     dss = list()
 
     log.info(f"--> Processing {len(products)} scenes.").add()
 
+    un, pw = accounts.get("TERRA")
+
+    gdal_config_options = {
+        "GDAL_DISABLE_READDIR_ON_OPEN": "EMPTY_DIR",
+    }
+
+    warp_kwargs = dict()
+    warp_kwargs["outputBounds"] = [lonlim[0], latlim[0], lonlim[1], latlim[1]]
+    warp_kwargs["outputBoundsSRS"] = "epsg:4326"
+
+    outs = list()
+
     for i, product in enumerate(products):
 
         out_fp = os.path.join(folder, f"{product['properties']['title']}.nc")
 
-        header_file = create_header(folder)
-        all_cog_urls = [v.get("href") for k, v in product["assets"].items()]
-        cog_urls = [all_cog_urls[np.argmax([key in x for x in all_cog_urls])] for key in variables.keys()]
-        dl_urls = [f"/vsicurl?header_file={header_file}&url={cog_url}" for cog_url in cog_urls]
+        log.info(f"--> ({i+1}/{len(products)}) Processing `{product['properties']['title']}`.").add()
 
-        ds_ = gdal.BuildVRT(out_fp.replace(".nc", ".vrt"), dl_urls, options = gdal.BuildVRTOptions(separate = True))
-        ds_.FlushCache()
-        ds_ = None
+        if os.path.isfile(out_fp):
+            corrupt = is_corrupt_or_empty(out_fp)
+            if corrupt:
+                remove_ds(out_fp)
+            else:
+                out = open_ds(out_fp)
+                outs.append(out)
+        else:
+            all_cog_urls = [v.get("href") for k, v in product["assets"].items()]
+            cog_urls = [(key, all_cog_urls[np.argmax([key in x for x in all_cog_urls])]) for key in variables.keys()]
+            dl_urls = [(x[0], x[1].replace("https://services", f"/vsicurl/https://{un}:{pw}@services")) for x in cog_urls]
 
-        variables_ = {f"Band{np.argmax([key in x for x in dl_urls]) + 1}": variables[key] for key in variables.keys()}
+            dss = list()
+            for j, (var, url) in enumerate(dl_urls):
+                var_file = out_fp.replace(".nc", f"_{var}_temp.nc")
+                log.info(f"--> ({j+1}/{len(dl_urls)}) Downloading `{var}`.")
 
-        log.info(f"--> ({i+1}/{len(products)}) Downloading `{product['properties']['title']}`.").add()
+                if os.path.isfile(var_file):
+                    corrupt = is_corrupt_or_empty(var_file)
+                    if corrupt:
+                        remove_ds(var_file)
+                    else:
+                        ds = open_ds(var_file)
+                        dss.append(ds)
+                else:
+                    try:
+                        for k, v in gdal_config_options.items():
+                            gdal.SetConfigOption(k, v)
+                        var_file = cog.cog_dl([url], var_file, warp_kwargs = warp_kwargs)
+                    except Exception as e:
+                        raise e
+                    finally:
+                        for k, v in gdal_config_options.items():
+                            gdal.SetConfigOption(k, None)
+                    ds = open_ds(var_file)
+                    ds = ds.rename({"Band1": var})
+                    dss.append(ds)
+                    if var != dl_urls[-1][0]:
+                        # NOTE VERY IMPORTANT, otherwise easily hitting "429" errors, 
+                        # resulting in very strange behaviour.
+                        time.sleep(10)
 
-        ds = cog.download(out_fp, product_name, coords, variables_, post_processors=post_processors, url_func=lambda x: out_fp.replace(".nc", ".vrt"))
+        ds = xr.merge(dss)
+        ds = process_ds(ds, coords, variables)
         ds = ds.expand_dims({"time": 1}).assign_coords({"time": [datetime.datetime.strptime(product["properties"]["datetime"], "%Y-%m-%dT%H:%M:%SZ")]})
 
-        dss.append(ds)
+        # # Apply product specific functions.
+        ds = apply_enhancers(post_processors, ds)
+
+        out = save_ds(ds, out_fp, encoding = "initiate", label = f"Saving {os.path.split(out_fp)[-1]}.")
+        outs.append(out)
+
+        for x in dss:
+            remove_ds(x)
 
         log.sub()
     
     log.sub()
 
-    ds = xr.merge(dss)
+    ds = xr.merge(outs)
 
     if not isinstance(timedelta, type(None)):
         ds["time"] = ds["time"] + timedelta
@@ -264,43 +292,51 @@ def download(folder, latlim, lonlim, timelim, product_name, req_vars = ["ndvi", 
 
     ds = save_ds(ds, fn, label = f"Merging files.")
 
-    for nc in dss:
+    for nc in outs:
         remove_ds(nc)
 
     return ds[req_vars_orig]
 
-def search_stac(params):
-    endpoint = 'https://services.terrascope.be/stac'
-    stac_response = requests.get(endpoint)
-    stac_response.raise_for_status()
-    catalog_links = stac_response.json()['links']
-    search = [l['href'] for l in catalog_links if l['rel'] == 'search'][0]
+def search_stac(params, cachedir):
 
-    all_scenes = list()
+    memory = Memory(cachedir, verbose=0)
 
-    links = [{"body": params, "rel": "next"}]
+    search = 'https://services.terrascope.be/stac/search'
 
-    while "next" in [x.get("rel", None) for x in links]:
-        params_ = [x.get("body") for x in links if x.get("rel") == "next"][0]
-        query = requests.post(search, json = params_)
-        query.raise_for_status()
-        out = query.json()
-        all_scenes += out["features"]
-        links = out["links"]
+    @memory.cache()
+    def _post_query(params):
+        all_scenes = list()
+        links = [{"body": params, "rel": "next"}]
+        while "next" in [x.get("rel", None) for x in links]:
+            params_ = [x.get("body") for x in links if x.get("rel") == "next"][0]
+            try:
+                query = requests.post(search, json = params_)
+            except ConnectionError as e:
+                log.info(f"--> The TERRA server is not responding (check `{search}`).")
+                raise(e)
+            query.raise_for_status()
+            out = query.json()
+            all_scenes += out["features"]
+            links = out["links"]
+        return all_scenes
+
+    all_scenes = _post_query(params)
 
     return all_scenes
     
 if __name__ == "__main__":
 
-    product_name = "urn:eop:VITO:PROBAV_S5_TOC_100M_COG_V2"
+    variables = None
+    post_processors = None
 
-    folder = r"/Users/hmcoerver/Local/bla_test"
-    latlim = [28.9, 29.7]
-    lonlim = [30.2, 31.2]
-    timelim = [datetime.date(2020, 7, 2), datetime.date(2020, 7, 12)]
+    folder = "/Users/hmcoerver/local/test_dl_TERRA_0"
+    latlim = [29.4, 29.7]
+    lonlim = [30.7, 31.0]
+    timelim = [datetime.date(2020, 7, 2), datetime.date(2020, 7, 9)]
+    product_name = "urn:eop:VITO:PROBAV_S5_TOC_100M_COG_V2"
+    req_vars = ['r0']
+    timedelta = np.timedelta64(60, "h")
 
     adjust_logger(True, folder, "INFO")
 
-    variables = None
-    post_processors = None
-    req_vars = ["r0", "ndvi"]
+

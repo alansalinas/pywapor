@@ -140,7 +140,9 @@ def download(folder, product_name, latlim, lonlim, timelim, variables, post_proc
                                 **{"variable": var}, **area_settings})
 
     # Make sure the the individual request don't exceed the max allowed request size.
-    max_size = {"sis-agrometeorological-indicators": 100}.get(product_name)
+    max_size = {"sis-agrometeorological-indicators": 100,
+                "reanalysis-era5-single-levels": 100,
+                }.get(product_name)
     if isinstance(max_size, int):
         settings = split_settings(settings, max_size = max_size)
 

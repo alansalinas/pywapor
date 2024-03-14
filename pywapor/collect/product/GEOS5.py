@@ -243,15 +243,31 @@ def download(folder, latlim, lonlim, timelim, product_name, req_vars,
 if __name__ == "__main__":
 
     from pywapor.general.logger import adjust_logger
+    import datetime
 
-    timelim = ["2022-01-01", "2022-12-31"]
-    latlim = [21.9692194682626933, 21.9939120838340507]
-    lonlim = [91.9371349243682801, 91.9657566608824339]
-    product_name = 'tavg1_2d_slv_Nx'
-    req_vars = ['u2m', 'v2m', 'qv', 'p_air_0', 'p_air', 't_air', 'wv']
+    args = {'folder': '/Users/hmcoerver/Local/test_dl_GEOS5_0',
+            'latlim': [29.4, 29.7],
+            'lonlim': [30.7, 31.0],
+            'timelim': [datetime.date(2022, 3, 1), datetime.date(2022, 3, 3)],
+            'product_name': 'inst3_2d_asm_Nx',
+            'req_vars': ['t_air',
+            't_air_max',
+            't_air_min',
+            'u2m',
+            'v2m',
+            'qv',
+            'wv',
+            'p_air',
+            'p_air_0']}
+    
     variables = None
     post_processors = None
-    folder = r"/Users/hmcoerver/Local/geos_test"
 
-    adjust_logger(True, folder, "INFO")
+    for var, value in args.items():
+        if isinstance(value, str):
+            exec(f"{var} = '{value}'")
+        else:
+            exec(f"{var} = {value}")
+
+    # adjust_logger(True, folder, "INFO")
 

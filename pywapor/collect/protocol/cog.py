@@ -78,7 +78,7 @@ def download(fp, product_name, coords, variables, post_processors, url_func,
         # Check if url is local or online path.
         url = url_func(product_name)
         is_not_local = urllib.parse.urlparse(url).scheme in ('http', 'https',)
-        if is_not_local:
+        if is_not_local and not "vsicurl" in url:
             url = f"/vsicurl/{url}"
 
         # Check if path is free.
@@ -89,9 +89,6 @@ def download(fp, product_name, coords, variables, post_processors, url_func,
         # Run gdal.Translate.
         ds_ = gdal.Translate(temp_path, url, options = options)
 
-        # Reset the gdal.Dataset.
-        ds_.FlushCache()
-        ds_ = None
     except Exception as e:
         raise e
     finally:
@@ -109,9 +106,43 @@ def download(fp, product_name, coords, variables, post_processors, url_func,
     ds = apply_enhancers(post_processors, ds)
 
     # Save final output.
-    out = save_ds(ds, fp, encoding = "initiate", label = f"Saving {fn}.")
+    out = save_ds(ds, temp_path.replace("_temp", ""), encoding = "initiate", label = f"Saving {fn}.")
 
     # Remove the temporary file.
     remove_ds(ds)
 
     return out
+
+def cog_dl(urls, out_fn, overview = "NONE", warp_kwargs = {}, vrt_options = {"separate": True}):
+
+    out_ext = os.path.splitext(out_fn)[-1]
+    valid_ext = {".nc": "netCDF", ".tif": "GTiff"}
+    valid_cos = {".nc": ["COMPRESS=DEFLATE", "FORMAT=NC4C"], ".tif": ["COMPRESS=LZW"]}
+    vrt_fn = out_fn.replace(out_ext, ".vrt")
+
+    ## Build VRT with all the required data.
+    vrt_options_ = gdal.BuildVRTOptions(
+        **vrt_options
+    )
+    vrt = gdal.BuildVRT(vrt_fn, urls, options = vrt_options_)
+    vrt.FlushCache()
+
+    ## Download the data.
+    warp_options = gdal.WarpOptions(
+        format = valid_ext[out_ext],
+        cropToCutline = True,
+        overviewLevel = overview,
+        multithread = True,
+        creationOptions = valid_cos[out_ext],
+        **warp_kwargs,
+    )
+    warp = gdal.Warp(out_fn, vrt_fn, options = warp_options)
+    warp.FlushCache() # NOTE do not remove this.
+
+    if os.path.isfile(vrt_fn):
+        try:
+            os.remove(vrt_fn)
+        except PermissionError:
+            ...
+
+    return out_fn

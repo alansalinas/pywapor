@@ -96,19 +96,20 @@ def download(folder, latlim, lonlim, timelim, product_name, product_type, node_f
     scene_names = {x["Name"]: i for i, x in enumerate(scenes)}
     scenes = [scenes[i] for i in scene_names.values()]
 
-    # Filter reprocessed scenes (select newest).
-    overview = dict()
-    for i, scene in enumerate(scenes):
-        mission_id, level, stime, baseline, rel_orbit, tile_number = scene["Name"].split("_")[:6]
-        key = "_".join([mission_id, level, stime, rel_orbit, tile_number])
-        baseline_int = int(baseline[1:])
-        if not key in list(overview.keys()):
-            overview[key] = (baseline_int, scene)
-        else:
-            if baseline_int > overview[key][0]:
+    if product_name == "SENTINEL-2":
+        # Filter reprocessed scenes (select newest).
+        overview = dict()
+        for i, scene in enumerate(scenes):
+            mission_id, level, stime, baseline, rel_orbit, tile_number = scene["Name"].split("_")[:6]
+            key = "_".join([mission_id, level, stime, rel_orbit, tile_number])
+            baseline_int = int(baseline[1:])
+            if not key in list(overview.keys()):
                 overview[key] = (baseline_int, scene)
+            else:
+                if baseline_int > overview[key][0]:
+                    overview[key] = (baseline_int, scene)
 
-    scenes = [x[1] for x in overview.values()]
+        scenes = [x[1] for x in overview.values()]
 
     @memory.cache()
     def get_scene_nodes(scene_id):
@@ -175,7 +176,7 @@ def download(folder, latlim, lonlim, timelim, product_name, product_type, node_f
         if not os.path.isfile(fp_):
             log.warning(f"--> `{fp}` missing.")
 
-    if "3" in product_name: # NOTE this is lazy...
+    if "3" in product_name:
         dled_scenes = sorted(list(set([re.compile(r".*\.SEN3").search(x).group() for x in fp_checks])))
     if "2" in product_name:
         dled_scenes = sorted(list(set([re.compile(r".*\.SAFE").search(x).group() for x in fp_checks])))
@@ -322,11 +323,11 @@ def process_sentinel(scenes, variables, time_func, final_fn, post_processors, pr
 
 if __name__ == "__main__":
 
-    product_name = "SENTINEL-2"
-    product_type = "S2MSI2A"
+    # product_name = "SENTINEL-2"
+    # product_type = "S2MSI2A"
 
-    # product_name = "SENTINEL-3"
-    # product_type = "SL_2_LST___"
+    product_name = "SENTINEL-3"
+    product_type = "SL_2_LST___"
 
     timelim = [datetime.date(2023, 3, 1), datetime.date(2023, 3, 3)]
     latlim = [29.4, 29.7]
@@ -335,22 +336,25 @@ if __name__ == "__main__":
 
     adjust_logger(True, folder, "INFO")
 
-    variables = {
-        "_B01_60m.jp2": [(), "coastal_aerosol", []],
-        "_B02_60m.jp2": [(), "blue", []],
-        "_B03_60m.jp2": [(), "green", []],
-        "_B04_60m.jp2": [(), "red", []],
-    }
-
     # variables = {
-    #     "LST_in.nc": [(), "lst", []],
-    #     "geodetic_in.nc": [(), "coords", []],
+    #     "_B01_60m.jp2": [(), "coastal_aerosol", []],
+    #     "_B02_60m.jp2": [(), "blue", []],
+    #     "_B03_60m.jp2": [(), "green", []],
+    #     "_B04_60m.jp2": [(), "red", []],
     # }
+
+    variables = {
+        "LST_in.nc": [(), "lst", []],
+        "geodetic_in.nc": [(), "coords", []],
+    }
 
     def node_filter(node_info):
         fn = os.path.split(node_info)[-1]
         to_dl = list(variables.keys()) + ["MTD_MSIL2A.xml"]
         return np.any([x in fn for x in to_dl])
     
-    dled_scenes = download(folder, latlim, lonlim, timelim, product_name, product_type, node_filter = node_filter)
+    # dled_scenes = download(folder, latlim, lonlim, timelim, product_name, product_type, node_filter = node_filter)
 
+    s3_scene_name = 'S3A_SL_2_LST____20230303T194903_20230303T195203_20230305T053809_0179_096_128_0360_PS1_O_NT_004.SEN3'
+
+    s2_scene_name = 'S2B_MSIL2A_20230302T083759_N0509_R064_T36RTT_20230302T132852.SAFE'

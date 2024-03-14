@@ -61,6 +61,9 @@ def download_mod(mod, workdir, timelim, latlim, lonlim, products = None, req_dl_
             "req_vars": req_vars,
         })
 
+        for k, v in args.items():
+            log.info(f"{k} = {v}")
+
         dss[product_name] = mod.download(**args)
 
     return dss
@@ -113,11 +116,8 @@ def test_dl(product_name, tmp_path):
     latlim = [29.4, 29.7]
     lonlim = [30.7, 31.0]
 
-    # lonlim = [-75.25, -75.15]
-    # latlim = [-13.6, -13.5]
-
     if product_name == "LANDSAT":
-        products = ["LT05_SR", "LE07_SR", "LC08_SR", "LC09_SR"]
+        products = ["LE07_SR", "LC08_SR", "LC09_SR"]
         req_dl_vars = {k: {"ndvi":None} for k in products}
     else:
         req_dl_vars = None
@@ -137,4 +137,5 @@ def test_dl(product_name, tmp_path):
 
 if __name__ == "__main__":
 
-    tmp_path = r"/Users/hmcoerver/Local/test_dl_LANDSAT_0"
+    tmp_path = r"/Users/hmcoerver/Local/test_dl_GEOS5_0"
+    product_name = "GEOS5"

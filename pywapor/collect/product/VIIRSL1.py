@@ -1,32 +1,32 @@
+"""
+https://github.com/nsidc/earthaccess/discussions/489
+https://search.earthdata.nasa.gov/search/granules/collection-details?p=C2105091501-LAADS&pg[0][v]=f&pg[0][gsk]=-start_date&q=VNP02IMG&tl=1689845353!3!!
+"""
+
 import requests
 import datetime
 import base64
+import urllib
 import copy
 import os
 import multiprocessing
 import xarray as xr
 import numpy as np
 import tqdm
-import warnings
 from osgeo import gdal
 from functools import partial
 from pywapor.collect import accounts
+from pywapor.collect.protocol.crawler import download_urls, download_url
 from joblib import Parallel, delayed, Memory
 from pywapor.enhancers.apply_enhancers import apply_enhancers
-from pywapor.general.processing_functions import save_ds, remove_ds, open_ds, adjust_timelim_dtype
+from pywapor.general.processing_functions import save_ds, remove_ds, adjust_timelim_dtype, is_corrupt_or_empty, open_ds
 from pywapor.general.logger import log, adjust_logger
 from pywapor.enhancers.other import drop_empty_times
 from pywapor.general.curvilinear import curvi_to_recto, create_grid
+from pywapor.collect.protocol.opendap import make_opendap_url
 gdal.UseExceptions()
 
 def get_token():
-    """_summary_
-
-    Returns
-    -------
-    _type_
-        _description_
-    """
     s3_endpoint = "https://data.laadsdaac.earthdatacloud.nasa.gov/s3credentials"
     
     login_resp = requests.get(s3_endpoint, allow_redirects=False)
@@ -52,7 +52,25 @@ def get_token():
     results.raise_for_status()
 
     return results.json()
-    
+
+def adj(number, make):
+    """
+    Check if a number is odd or even and adjust it
+    if necessary.
+    """
+    is_even = number % 2 == 0
+    if is_even:
+        if make == "odd_up":
+            number += 1
+        if make == "odd_down":
+            number -= 1
+    else:
+        if make == "even_down":
+            number -= 1
+        if make == "even_up":
+            number += 1
+    return int(number)
+
 def download_arrays(path, subdss, folder, path_appendix = ".nc", creation_options = ["ARRAY:COMPRESS=DEFLATE"], dtype_is_8bit = False):
 
     fn = os.path.splitext(os.path.split(path)[-1])[0]
@@ -61,14 +79,20 @@ def download_arrays(path, subdss, folder, path_appendix = ".nc", creation_option
     if os.path.isfile(path_local):
         remove_ds(path_local)
 
-    creds = get_token()
+    # check if file is local or vsicurl or vsis3
+    local = not urllib.parse.urlparse(path).scheme in ('http', 'https',)
 
-    gdal_config_options = {
-        "AWS_ACCESS_KEY_ID": creds["accessKeyId"],
-        "AWS_SESSION_TOKEN": creds["sessionToken"],
-        "AWS_SECRET_ACCESS_KEY": creds["secretAccessKey"],
-        "GDAL_DISABLE_READDIR_ON_OPEN": "EMPTY_DIR",
-    }
+    if (not local) and ("vsis3" in path):
+        creds = get_token()
+
+        gdal_config_options = {
+            "AWS_ACCESS_KEY_ID": creds["accessKeyId"],
+            "AWS_SESSION_TOKEN": creds["sessionToken"],
+            "AWS_SECRET_ACCESS_KEY": creds["secretAccessKey"],
+            "GDAL_DISABLE_READDIR_ON_OPEN": "EMPTY_DIR",
+        }
+    else:
+        gdal_config_options = {}
 
     try:
         for k, v in gdal_config_options.items():
@@ -238,9 +262,15 @@ def preproc(ds):
 
 def combine_unprojected_data(nc02_file, ncqa_file, lut_file, unproj_fn):
 
-    ds1 = xr.open_dataset(nc02_file, mask_and_scale=False)
-    ds2 = xr.open_dataset(lut_file, mask_and_scale=False)
-    ds3 = xr.open_dataset(ncqa_file, chunks = "auto")
+    if isinstance(lut_file, type(None)):
+        ds_ = xr.open_dataset(nc02_file, mask_and_scale=False, group = "observation_data")
+        ds1 = ds_[["I05", "I05_quality_flags"]]
+        ds2 = ds_[["I05_brightness_temperature_lut"]]
+        ds3 = xr.open_dataset(ncqa_file, chunks = "auto", group = "geophysical_data")
+    else:
+        ds1 = xr.open_dataset(nc02_file, mask_and_scale=False)
+        ds2 = xr.open_dataset(lut_file, mask_and_scale=False)
+        ds3 = xr.open_dataset(ncqa_file, chunks = "auto")
 
     # Create cloud mask. (0=cloudy, 1=probably cloudy, 2=probably clear, 3=confident clear, -1=no result)
     cmask = ds3["Integer_Cloud_Mask"].interp({
@@ -340,6 +370,14 @@ def download(folder, latlim, lonlim, timelim, product_name, req_vars,
 
     log.info(f"--> {len(all_proj_files)} scenes already downloaded, {len(all_urls)} remaining.").add()
 
+    dl_method = "opendap"
+    if dl_method == "get_request":
+        token = accounts.get("VIIRSL1")[1]
+
+    # i = 0
+    # date = list(all_urls.keys())[i]
+    # nc02, nc03, nc_cloud = all_urls[date]
+
     for i, (date, (nc02, nc03, nc_cloud)) in enumerate(all_urls.items()):
 
         date_str = str(date).replace(" ", "_").replace(":","_")
@@ -348,23 +386,139 @@ def download(folder, latlim, lonlim, timelim, product_name, req_vars,
 
         log.info(f"--> ({i+1}/{len(all_urls)}) Processing '{os.path.split(nc02)[-1]}'.").add()
 
-        parallel = True
-        if parallel:
-            inputs = [
-                {"path": nc03, "subdss": ["/geolocation_data/latitude"], "folder": folder, "path_appendix": "_lat.nc"},
-                {"path": nc03, "subdss": ["/geolocation_data/longitude"], "folder": folder, "path_appendix": "_lon.nc"},
-                {"path": nc02, "subdss": ["/observation_data/I05_quality_flags", "/observation_data/I05"], "folder": folder},
-                {"path": nc02, "subdss": ["/observation_data/I05_brightness_temperature_lut"], "folder": folder, "path_appendix": "_lut.nc"},
-                {"path": nc_cloud, "subdss": ["/geophysical_data/Integer_Cloud_Mask"], "folder": folder, "creation_options":["COMPRESS=DEFLATE"], "dtype_is_8bit": True},
-            ]
-            n_jobs = min(5, multiprocessing.cpu_count())
-            lats_file, lons_file, nc02_file, lut_file, ncqa_file = Parallel(n_jobs=n_jobs)(delayed(download_arrays)(**i) for i in inputs)
+        cleanup = []
+
+        if dl_method == "s3_bucket": # NOTE only works in-region, see https://github.com/nsidc/earthaccess/discussions/489
+            log.warning("--> The `s3_bucket` method only works if you are running this script from the correct region.")
+            parallel = True
+            if parallel:
+                inputs = [
+                    {"path": nc03, "subdss": ["/geolocation_data/latitude"], "folder": folder, "path_appendix": "_lat.nc"},
+                    {"path": nc03, "subdss": ["/geolocation_data/longitude"], "folder": folder, "path_appendix": "_lon.nc"},
+                    {"path": nc02, "subdss": ["/observation_data/I05_quality_flags", "/observation_data/I05"], "folder": folder},
+                    {"path": nc02, "subdss": ["/observation_data/I05_brightness_temperature_lut"], "folder": folder, "path_appendix": "_lut.nc"},
+                    {"path": nc_cloud, "subdss": ["/geophysical_data/Integer_Cloud_Mask"], "folder": folder, "creation_options":["COMPRESS=DEFLATE"], "dtype_is_8bit": True},
+                ]
+                n_jobs = min(5, multiprocessing.cpu_count())
+                lats_file, lons_file, nc02_file, lut_file, ncqa_file = Parallel(n_jobs=n_jobs)(delayed(download_arrays)(**i) for i in inputs)
+            else:
+                lats_file = download_arrays(nc03, ["/geolocation_data/latitude"], folder, path_appendix="_lat.nc")
+                lons_file = download_arrays(nc03, ["/geolocation_data/longitude"], folder, path_appendix="_lon.nc")
+                nc02_file = download_arrays(nc02, ["/observation_data/I05_quality_flags", "/observation_data/I05"], folder)
+                lut_file = download_arrays(nc02, ["/observation_data/I05_brightness_temperature_lut"], folder, path_appendix = "_lut.nc")
+                ncqa_file = download_arrays(nc_cloud, ["/geophysical_data/Integer_Cloud_Mask"], folder, creation_options=["COMPRESS=DEFLATE"], dtype_is_8bit=True)
+
+        elif dl_method == "get_request":
+            base_url = "https://ladsweb.modaps.eosdis.nasa.gov/archive/allData/"
+            nc02_parts = os.path.normpath(nc02).split(os.sep)
+            nc03_parts = os.path.normpath(nc03).split(os.sep)
+            nc_cloud_parts = os.path.normpath(nc_cloud).split(os.sep)
+            year_doy = nc02_parts[-1].split(".")[1][1:]
+            nc02_url = os.path.join(base_url, "5200", nc02_parts[-2], year_doy[:4], year_doy[4:], nc02_parts[-1])
+            nc03_url = os.path.join(base_url, "5200", nc03_parts[-2], year_doy[:4], year_doy[4:], nc03_parts[-1])
+            ncqa_url = os.path.join(base_url, "5110", nc_cloud_parts[-2], year_doy[:4], year_doy[4:], nc_cloud_parts[-1])
+            urls = [nc02_url, nc03_url, ncqa_url]
+            groups = ["observation_data", "geolocation_data", "geophysical_data"]
+            for group, url in zip(groups, urls.copy()):
+                fp_ = os.path.join(folder, os.path.split(url)[-1])
+                if os.path.isfile(fp_):
+                    corrupt = is_corrupt_or_empty(fp_, group = group)
+                    if corrupt:
+                        remove_ds(fp_)
+                    else:
+                        log.info(f"--> Skipping downloading of `{os.path.split(url)[-1]}`.")
+                        urls.remove(url)
+            headers = {'Authorization': 'Bearer ' + token}
+            n_jobs = min(len(urls), multiprocessing.cpu_count())
+            _ = download_urls(urls, folder, headers = headers, parallel = n_jobs)
+            nc02_file_ = os.path.join(folder, os.path.split(nc02_url)[-1])
+            nc03_file = os.path.join(folder, os.path.split(nc03_url)[-1])
+            ncqa_file_ = os.path.join(folder, os.path.split(ncqa_url)[-1])
+            # NOTE The data has already been downloaded, just running this to align the files
+            # with the `method = s3_bucket` branch.
+            lats_file = download_arrays(nc03_file, ["/geolocation_data/latitude"], folder, path_appendix="_lat.nc")
+            lons_file = download_arrays(nc03_file, ["/geolocation_data/longitude"], folder, path_appendix="_lon.nc")
+            lut_file = download_arrays(nc02_file_, ["/observation_data/I05_brightness_temperature_lut"], folder, path_appendix = "_lut.nc")
+            nc02_file = download_arrays(nc02_file_, ["/observation_data/I05_quality_flags", "/observation_data/I05"], folder, path_appendix = "_data.nc")
+            ncqa_file = download_arrays(ncqa_file_, ["/geophysical_data/Integer_Cloud_Mask"], folder, creation_options=["COMPRESS=DEFLATE"], path_appendix = "_cloud.nc", dtype_is_8bit=True)
+            cleanup += [nc03_file, nc02_file_, ncqa_file_]
+
+        elif dl_method == "opendap":
+
+            base_url = "https://ladsweb.modaps.eosdis.nasa.gov/opendap/RemoteResources/laads/allData"
+            nc02_parts = os.path.normpath(nc02).split(os.sep)
+            nc03_parts = os.path.normpath(nc03).split(os.sep)
+            nc_cloud_parts = os.path.normpath(nc_cloud).split(os.sep)
+            year_doy = nc02_parts[-1].split(".")[1][1:]
+            base_url02 = os.path.join(base_url, "5200", nc02_parts[-2], year_doy[:4], year_doy[4:], nc02_parts[-1])
+            base_url03 = os.path.join(base_url, "5200", nc03_parts[-2], year_doy[:4], year_doy[4:], nc03_parts[-1])
+            base_cloud = os.path.join(base_url, "5110", nc_cloud_parts[-2], year_doy[:4], year_doy[4:], nc_cloud_parts[-1])
+
+            # Download geolocation data.
+            order = {
+                "/geolocation_data/longitude": {},
+                "/geolocation_data/latitude": {},
+            }
+            url = make_opendap_url(base_url03, order)
+            log.info(f"--> Downloading `{nc03_parts[-1]}`.")
+            nc03_file = download_url(url, os.path.join(folder, nc03_parts[-1]))
+
+            # Determine AOI inside scene.
+            log.info(f"--> Determining indices of AOI inside scene.").add()
+            geoloc_ = xr.open_dataset(nc03_file, group = "geolocation_data")
+            coords = {
+                **{f"{k}_750": (k, np.repeat(np.arange(0, v/2), 2)) for k, v in geoloc_.sizes.items()},
+                **{f"{k}_375": (k, np.arange(0, v)) for k, v in geoloc_.sizes.items()},
+            }
+            geoloc = geoloc_.assign_coords(coords)
+            geoloc = geoloc.where(
+                        (geoloc.longitude < lonlim[1]) &
+                        (geoloc.longitude > lonlim[0]) &
+                        (geoloc.latitude > latlim[0]) &
+                        (geoloc.latitude < latlim[1]), drop = True
+                        )
+            domain_375 = {k.replace("_375", ""): [adj(geoloc[k].min(), "even_down"), adj(geoloc[k].max(), "odd_up")] for k in geoloc.coords if "_375" in k}
+            domain_750 = {k.replace("_750", ""): [int(geoloc[k].min()), int(geoloc[k].max())] for k in geoloc.coords if "_750" in k}
+            log.info(f"--> Found {np.prod([v[1] - v[0] + 1 for v in domain_375.values()]):,} pixels inside AOI.").sub()
+
+            geoloc_ds = geoloc_.isel({k: slice(v[0], v[1]+1) for k, v in domain_375.items()})
+            lats_file_ds = save_ds(geoloc_ds[["latitude"]], os.path.join(folder, nc03_parts[-1].replace(".nc", "_lat.nc")), label = "Saving latitudes.")
+            lats_file = lats_file_ds.encoding["source"]
+            lats_file_ds.close()
+            
+            lons_file_ds = save_ds(geoloc_ds[["longitude"]], os.path.join(folder, nc03_parts[-1].replace(".nc", "_lon.nc")), label = "Saving longitudes.")
+            lons_file = lons_file_ds.encoding["source"]
+            lons_file_ds.close()
+
+            # # Check domains
+            # for dim in list(domain_750.keys()):
+            #     size_750 = domain_750[dim][1] - domain_750[dim][0] + 1
+            #     size_375 = domain_375[dim][1] - domain_375[dim][0] + 1
+            #     print(dim, size_750, size_375)
+            #     print(size_750 == size_375/2)
+
+            # Download observation data.
+            log.info(f"--> Downloading `{nc02_parts[-1]}` for AOI.")
+            order = {
+                "/observation_data/I05_quality_flags": domain_375,
+                "/observation_data/I05": domain_375,
+                "/observation_data/I05_brightness_temperature_lut": {}
+            }
+            url = make_opendap_url(base_url02, order)
+            nc02_file = download_url(url, os.path.join(folder, nc02_parts[-1].replace(".nc", "_data_lut.nc")))
+
+            # Download cloud mask.
+            log.info(f"--> Downloading `{nc_cloud_parts[-1]}` for AOI.")
+            order = {
+                "/geophysical_data/Integer_Cloud_Mask": domain_750,
+            }
+            url = make_opendap_url(base_cloud, order)
+            ncqa_file = download_url(url, os.path.join(folder, nc_cloud_parts[-1].replace(".nc", "_cloud.nc")))
+
+            lut_file = None
+            cleanup += [nc03_file]
         else:
-            lats_file = download_arrays(nc03, ["/geolocation_data/latitude"], folder, path_appendix="_lat.nc")
-            lons_file = download_arrays(nc03, ["/geolocation_data/longitude"], folder, path_appendix="_lon.nc")
-            nc02_file = download_arrays(nc02, ["/observation_data/I05_quality_flags", "/observation_data/I05"], folder)
-            lut_file = download_arrays(nc02, ["/observation_data/I05_brightness_temperature_lut"], folder, path_appendix = "_lut.nc")
-            ncqa_file = download_arrays(nc_cloud, ["/geophysical_data/Integer_Cloud_Mask"], folder, creation_options=["COMPRESS=DEFLATE"], dtype_is_8bit=True)
+            raise ValueError
 
         if not os.path.isfile(unproj_fn):
             combine_unprojected_data(nc02_file, ncqa_file, lut_file, unproj_fn)
@@ -373,8 +527,10 @@ def download(folder, latlim, lonlim, timelim, product_name, req_vars,
         _ = curvi_to_recto(lats_file, lons_file, {"bt": unproj_fn}, proj_fn, warp_kwargs = warp_kwargs)
         all_proj_files.append(proj_fn)
 
-        for x in [nc02_file, ncqa_file, lut_file, unproj_fn, lats_file, lons_file]:
-            remove_ds(x)
+        cleanup += [nc02_file, ncqa_file, lut_file, unproj_fn, lats_file, lons_file]
+        for x in cleanup:
+            if not isinstance(x, type(None)):
+                remove_ds(x)
 
         log.sub()
 
@@ -391,49 +547,70 @@ def download(folder, latlim, lonlim, timelim, product_name, req_vars,
 
 if __name__ == "__main__":
 
+    folder = "/Users/hmcoerver/Local/test_dl_VIIRSL1_0"
+    latlim = [29.4, 29.7]
+    lonlim = [30.7, 31.0]
+    timelim = [datetime.date(2023, 3, 1), datetime.date(2023, 3, 2)]
+    product_name = "VNP02IMG"
+
+    variables = None
+    post_processors = None
+
+    req_vars = ["bt"]
+
+    adjust_logger(True, folder, "INFO")
+
+
+
+
+
+
+
+
+
     # timelim = [np.datetime64 ('2023-07-03T00:00:00.000000000'), 
     #            np.datetime64('2023-07-10T00:00:00.000000000')]
     # latlim = [29.4, 29.6]
     # lonlim = [30.7, 30.9]
 
-    timelim = [datetime.datetime(2021, 3, 4), datetime.datetime(2021, 5, 5)]
-    lonlim = [22.78125, 32.48438]
-    latlim = [23.72777, 32.1612]
-    # folder = workdir = r"/Users/hmcoerver/Local/viirs"
-    product_name = "VNP02IMG"
-    req_vars = ["bt"]
-    variables = None
-    post_processors = None
-    folder = r"/Users/hmcoerver/Local/viirs_test"
+    # timelim = [datetime.datetime(2021, 3, 4), datetime.datetime(2021, 5, 5)]
+    # lonlim = [22.78125, 32.48438]
+    # latlim = [23.72777, 32.1612]
+    # # folder = workdir = r"/Users/hmcoerver/Local/viirs"
+    # product_name = "VNP02IMG"
+    # req_vars = ["bt"]
+    # variables = None
+    # post_processors = None
+    # folder = r"/Users/hmcoerver/Local/viirs_test"
 
-    adjust_logger(True, folder, "INFO")
+    # adjust_logger(True, folder, "INFO")
 
-    i = 2
+    # i = 2
 
-    folder = os.path.join(folder, "VIIRSL1")
-    date = datetime.datetime(2022, 4, 30, 7, 54)
-    nc02 = '/vsis3/prod-lads/VNP02IMG/VNP02IMG.A2022120.0754.002.2022270171852.nc'
-    nc03 = '/vsis3/prod-lads/VNP03IMG/VNP03IMG.A2022120.0754.002.2022120162348.nc'
-    nc_cloud = '/vsis3/prod-lads/CLDMSK_L2_VIIRS_SNPP/CLDMSK_L2_VIIRS_SNPP.A2022120.0754.001.2022120192728.nc'
+    # folder = os.path.join(folder, "VIIRSL1")
+    # date = datetime.datetime(2022, 4, 30, 7, 54)
+    # nc02 = '/vsis3/prod-lads/VNP02IMG/VNP02IMG.A2022120.0754.002.2022270171852.nc'
+    # nc03 = '/vsis3/prod-lads/VNP03IMG/VNP03IMG.A2022120.0754.002.2022120162348.nc'
+    # nc_cloud = '/vsis3/prod-lads/CLDMSK_L2_VIIRS_SNPP/CLDMSK_L2_VIIRS_SNPP.A2022120.0754.001.2022120192728.nc'
 
-    path, subdss, folder = (nc03, ["/geolocation_data/latitude"], folder)
-    path_appendix="_lat.nc"
+    # path, subdss, folder = (nc03, ["/geolocation_data/latitude"], folder)
+    # path_appendix="_lat.nc"
 
-    creation_options = ["ARRAY:COMPRESS=DEFLATE"]
-    dtype_is_8bit = False
+    # creation_options = ["ARRAY:COMPRESS=DEFLATE"]
+    # dtype_is_8bit = False
 
-    bb, nx, ny = create_grid(latlim, lonlim, dx_dy = (0.0033, 0.0033))
-    timelim = adjust_timelim_dtype(timelim)
+    # bb, nx, ny = create_grid(latlim, lonlim, dx_dy = (0.0033, 0.0033))
+    # timelim = adjust_timelim_dtype(timelim)
 
-    params = {'limit': 250,
-                'bbox': [22.78125, 23.72777, 32.48655, 32.16257],
-                'datetime': '2021-03-04T00:00:00Z/2021-05-05T23:59:59Z',
-                'collections': ['VNP02IMG.v2']}
+    # params = {'limit': 250,
+    #             'bbox': [22.78125, 23.72777, 32.48655, 32.16257],
+    #             'datetime': '2021-03-04T00:00:00Z/2021-05-05T23:59:59Z',
+    #             'collections': ['VNP02IMG.v2']}
 
-    endpoint = 'https://cmr.earthdata.nasa.gov/stac/LAADS'
-    extra_filters = {"day_night_flag": "DAY"}
+    # endpoint = 'https://cmr.earthdata.nasa.gov/stac/LAADS'
+    # extra_filters = {"day_night_flag": "DAY"}
 
-    # cachedir = 'your_cache_location_directory'
-    cachedir = os.path.join(folder, "VIIRS_API_cache")
+    # # cachedir = 'your_cache_location_directory'
+    # cachedir = os.path.join(folder, "VIIRS_API_cache")
 
-    # memory = Memory(cachedir, verbose=0)
+    # # memory = Memory(cachedir, verbose=0)
