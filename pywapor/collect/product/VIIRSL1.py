@@ -257,7 +257,7 @@ def preproc(ds):
     ds = ds.rio.write_crs("epsg:4326")
     ds = ds.rio.write_transform(ds.rio.transform(recalc=True))
     fn = os.path.split(ds.encoding["source"])[-1]
-    date = np.datetime64(fn[3:13] + " " + fn[14:22].replace("_", ":"))
+    date = np.datetime64(fn[3:13] + " " + fn[14:22].replace("_", ":"), "ns")
     return ds.expand_dims("time").assign_coords({"time": [date]})
 
 def combine_unprojected_data(nc02_file, ncqa_file, lut_file, unproj_fn):
