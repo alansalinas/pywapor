@@ -6,7 +6,7 @@ This repository contains a Python implementation of the algorithm used to genera
 
 ### Installation
 
-Its recommended to install in a clean [conda environment](https://docs.conda.io/projects/conda/en/latest/user-guide/concepts/environments.html).
+Its recommended to install in a new [conda environment](https://docs.conda.io/projects/conda/en/latest/user-guide/concepts/environments.html).
 
 ```bash
 conda create -n my_pywapor_env -c conda-forge pywapor
@@ -14,26 +14,99 @@ conda create -n my_pywapor_env -c conda-forge pywapor
 
 ### Usage
 
-To run the model for one dekad (from 2021-07-01 to 2021-07-11 in this case) for the Fayoum irrigation scheme in Egypt (but feel free to change the [boundingbox](http://bboxfinder.com) defined by `latlim` and `lonlim`) using mainly VIIRS and Sentinel-2 data, run the following code (run `python` in your console to activate Python and `exit()` to deactivate). 
+Run the model for a selected bounding-box and period of time:
 
 ```python
 import pywapor
 
-# User inputs.
-timelim = ["2021-07-01", "2021-07-03"]
-latlim = [28.9, 29.7]
-lonlim = [30.2, 31.2]
 project_folder = r"/my_first_ETLook_run/"
-level = "level_2_v3"
+bb = [30.2, 28.9, 31.2, 29.7] # [xmin, ymin, xmax, ymax]
+period = ["2021-07-01", "2021-07-03"]
 
-# Load a model configuration.
-configuration = pywapor.general.levels.pre_et_look_levels(level = level)
+# Set up a project.
+project = pywapor.Project(project_folder, bb, period)
 
-# Download and prepare input data.
-ds_in  = pywapor.pre_et_look.main(project_folder, latlim, lonlim, timelim, sources = configuration)
+# Load a configuration.
+project.load_configuration(name = "WaPOR3_level_2")
 
-# Run the model.
-ds_out = pywapor.et_look.main(ds_in)
+# Set up required accounts.
+project.set_passwords()
+
+# Download the input data.
+dss = project.download_data()
+
+# Run the models.
+se_root_in = project.run_pre_se_root()
+se_root = project.run_se_root()
+
+et_look_in = project.run_pre_et_look()
+et_look = project.run_et_look()
+```
+
+To see a summary of your configuration, checkout the `summary` attribute of the configuration. For more detailed information, check the `full`, `se_root` and `et_look` attributes:
+
+```python
+print(project.configuration.summary)
+print(project.configuration.full)
+print(project.configuration.se_root)
+print(project.configuration.et_look)
+```
+
+Making configurations yourself can be done by passing a name to `Project.load_configuration` (as done above), by passing a summary or by loading a configuration from a JSON-file:
+
+```python
+summary = {
+    # Define which products to use.
+    'elevation': {'COPERNICUS.GLO30'},
+    'meteorological': {'GEOS5.tavg1_2d_slv_Nx'},
+    'optical': {'SENTINEL2.S2MSI2A_R20m'},
+    'precipitation': {'CHIRPS.P05'},
+    'solar radiation': {'ERA5.sis-agrometeorological-indicators'},
+    'statics': {'STATICS.WaPOR3'},
+    'thermal': {'VIIRSL1.VNP02IMG'},
+    'soil moisture': {'FILE:{folder}{sep}se_root_out*.nc.from_file'},
+
+    # Define which product to reproject the other products to.
+    '_EXAMPLE_': 'SENTINEL2.S2MSI2A_R20m', 
+
+    # Define any special functions to apply to a specific variable.
+    '_ENHANCE_': {"bt": ["pywapor.enhancers.dms.thermal_sharpener.sharpen"],},
+
+    # Choose which products should be gapfilled.
+    '_WHITTAKER_': {
+        'SENTINEL2.S2MSI2A_R20m': {'lmbdas': 1000.0, 'method': 'whittaker'}, 
+        'VIIRSL1.VNP02IMG': {'a': 0.85, 'lmbdas': 1000.0, 'method': 'whittaker'}},
+    }
+
+project.load_configuration(summary = summary)
+```
+
+Save a configuration to a JSON-file like this:
+
+```python
+project.configuration.to_json("/path/to/my/configuration.json")
+```
+
+Load a configuration from a JSON-file:
+
+```python
+project.load_configuration(json_fp = "/path/to/my/configuration.json")
+```
+
+Changing model parameters (or entire variables) can be done in between the `project.run_pre_se_root()` and `project.run_se_root()` steps (same goes for `et_look`) by making changes to the `xarray.Dataset` returned by `project.run_pre_se_root` (and stored at `project.se_root_in`):
+
+```python
+se_root_in = project.run_pre_se_root()
+
+print(se_root_in["r0_bare"].values)
+>>> 0.38
+
+se_root_in["r0_bare"] = 0.32
+
+print(se_root_in["r0_bare"].values)
+print(project.se_root_in["r0_bare"].values)
+>>> 0.32
+>>> 0.32
 ```
 
 Check out the documentation and the notebooks below to learn more!
@@ -75,13 +148,13 @@ Go [here](https://www.fao.org/aquastat/py-wapor/) for the full pyWaPOR documenta
    </tbody>
 </table>
 
-#### WaPOR v3
-
+### WaPOR Documentation
+###### WaPOR v3
 <ul>
 <li><a href="https://bitbucket.org/cioapps/wapor-et-look/wiki/Home">WaPOR-ETLook Online Manual (v3)</a></li>
 </ul>
 
-#### WaPOR v2
+###### WaPOR v2
 
 <ul>
 <li><a href="https://bitbucket.org/cioapps/pywapor/downloads/FRAME_ET_v2_data_manual_finaldraft_v2.2.pdf">WaPOR-ETLook Data Manual (v2)</a></li>
@@ -89,7 +162,7 @@ Go [here](https://www.fao.org/aquastat/py-wapor/) for the full pyWaPOR documenta
 <li><a href="https://bitbucket.org/cioapps/pywapor/downloads/FRAME_NPP_v2_data_manual_finaldraft_v2.2.pdf">WaPOR-Biomass Data Manual (v2)</a></li>
 </ul>
 
-#### WaPOR v1
+###### WaPOR v1
 
 <ul>
 <li><a href="https://bitbucket.org/cioapps/pywapor/downloads/20190522_V1_WaPOR_v_1_Data_Manual_Evapotranspiration.pdf">WaPOR-ETLook Data Manual (v1)</a></li>
@@ -104,6 +177,42 @@ The code in the pywapor.et_look_v2_v3 module of this repository, containing all 
 For questions, requests or issues with this repository, please contact Bert Coerver at [bert.coerver@fao.org](mailto:bert.coerver@fao.org) or the WaPOR team at [wapor@fao.org](mailto:wapor@fao.org).
 
 ### Release Notes
+
+#### 3.5.0 (2023-09-15)
+<br>
+<ul>
+<li> Restructured the overall workflow (see below), there are now clear sequential phases instead of a nested process.</li>
+<li> Only one configuration needs to be made, instead of two separate ones for et_look and se_root.</li>
+<li> There is now much more recycling of previously created files and API responses are cached on disk wherever possible, making rerunning after a crash or configuration change much faster.</li>
+<li> Quickly set up the passwords needed for the configuration you're running using the logged/printed instructions.</li>
+<li> The process prior to the start of downloading VIIRS data is now roughly 3 times faster.</li>
+<li> VIIRS data is now downloaded using OPeNDAP.</li>
+<li> Downloading of GEOS5 data is now chunked, making it more stable when downloading long time-series.</li>
+<li> Fixed a bug in the thermal sharpener that caused it to return only missing data in some cases.</li>
+<li> The static variables are now available globally.</li>
+</ul>
+
+<ul>
+
+##### pyWaPOR Workflow >= 3.5.0
+- Set up a project
+- Define a configuration
+- Download data (for both et_look and se_root)
+- Run pre_se_root (temporal interpolate data to match LST)
+- Run se_root (calculate root zone soil moisture)
+- Run pre_et_look (make daily composites)
+- Run et_look (calculate evapotranspiration and others)
+
+##### pyWaPOR Workflow < 3.5.0
+- (1) run pre_et_look
+    - (1.1) download data for et_look
+        - (1.1.1) run pre_se_root
+            - (1.1.1a) download data for se_root
+            - (1.1.1.b) temporal interpolate data to match LST
+        - (1.1.2) run se_root
+    - (1.2) make daily composites
+- (2) run et_look
+</ul>
 
 #### 3.4.0 (2023-09-15)
 <br>
