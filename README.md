@@ -139,7 +139,7 @@ For questions, requests or issues with this repository, please contact Bert Coer
 
 ### Release Notes
 
-#### 3.5.0 (2023-09-15)
+#### 3.5.0 (2024-03-19)
 <br>
 <ul>
 <li> Restructured the overall workflow, there are now clear sequential phases instead of a nested process.</li>
