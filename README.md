@@ -33,7 +33,7 @@ project.load_configuration(name = "WaPOR3_level_2")
 project.set_passwords()
 
 # Download the input data.
-dss = project.download_data()
+datasets = project.download_data()
 
 # Run the models.
 se_root_in = project.run_pre_se_root()
@@ -64,14 +64,12 @@ summary = {
     'solar radiation': {'ERA5.sis-agrometeorological-indicators'},
     'statics': {'STATICS.WaPOR3'},
     'thermal': {'VIIRSL1.VNP02IMG'},
+    # Use se_root output as soil moisture data.
     'soil moisture': {'FILE:{folder}{sep}se_root_out*.nc.from_file'},
-
     # Define which product to reproject the other products to.
     '_EXAMPLE_': 'SENTINEL2.S2MSI2A_R20m', 
-
     # Define any special functions to apply to a specific variable.
     '_ENHANCE_': {"bt": ["pywapor.enhancers.dms.thermal_sharpener.sharpen"],},
-
     # Choose which products should be gapfilled.
     '_WHITTAKER_': {
         'SENTINEL2.S2MSI2A_R20m': {'lmbdas': 1000.0, 'method': 'whittaker'}, 
@@ -90,7 +88,7 @@ project.configuration.to_json("/path/to/my/configuration.json")
 Load a configuration from a JSON-file:
 
 ```python
-project.load_configuration(json_fp = "/path/to/my/configuration.json")
+project.load_configuration(json = "/path/to/my/configuration.json")
 ```
 
 Changing model parameters (or entire variables) can be done in between the `project.run_pre_se_root()` and `project.run_se_root()` steps (same goes for `et_look`) by making changes to the `xarray.Dataset` returned by `project.run_pre_se_root` (and stored at `project.se_root_in`):
@@ -108,8 +106,6 @@ print(project.se_root_in["r0_bare"].values)
 >>> 0.32
 >>> 0.32
 ```
-
-Check out the documentation and the notebooks below to learn more!
 
 ### Documentation
 Go [here](https://www.fao.org/aquastat/py-wapor/) for the full pyWaPOR documentation.
@@ -181,7 +177,7 @@ For questions, requests or issues with this repository, please contact Bert Coer
 #### 3.5.0 (2023-09-15)
 <br>
 <ul>
-<li> Restructured the overall workflow (see below), there are now clear sequential phases instead of a nested process.</li>
+<li> Restructured the overall workflow, there are now clear sequential phases instead of a nested process.</li>
 <li> Only one configuration needs to be made, instead of two separate ones for et_look and se_root.</li>
 <li> There is now much more recycling of previously created files and API responses are cached on disk wherever possible, making rerunning after a crash or configuration change much faster.</li>
 <li> Quickly set up the passwords needed for the configuration you're running using the logged/printed instructions.</li>
@@ -190,28 +186,6 @@ For questions, requests or issues with this repository, please contact Bert Coer
 <li> Downloading of GEOS5 data is now chunked, making it more stable when downloading long time-series.</li>
 <li> Fixed a bug in the thermal sharpener that caused it to return only missing data in some cases.</li>
 <li> The static variables are now available globally.</li>
-</ul>
-
-<ul>
-
-##### pyWaPOR Workflow >= 3.5.0
-- Set up a project
-- Define a configuration
-- Download data (for both et_look and se_root)
-- Run pre_se_root (temporal interpolate data to match LST)
-- Run se_root (calculate root zone soil moisture)
-- Run pre_et_look (make daily composites)
-- Run et_look (calculate evapotranspiration and others)
-
-##### pyWaPOR Workflow < 3.5.0
-- (1) run pre_et_look
-    - (1.1) download data for et_look
-        - (1.1.1) run pre_se_root
-            - (1.1.1a) download data for se_root
-            - (1.1.1.b) temporal interpolate data to match LST
-        - (1.1.2) run se_root
-    - (1.2) make daily composites
-- (2) run et_look
 </ul>
 
 #### 3.4.0 (2023-09-15)

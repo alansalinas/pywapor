@@ -1,15 +1,17 @@
 <!DOCTYPE html>
-<html class="writer-html5" lang="en" >
+<html class="writer-html5" lang="en">
 <head>
   <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17: http://docutils.sourceforge.net/" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Enhancing data &mdash; pyWaPOR  documentation</title>
-      <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
-      <link rel="stylesheet" href="../../_static/css/theme.css" type="text/css" />
-      <link rel="stylesheet" href="../../_static/copybutton.css" type="text/css" />
-      <link rel="stylesheet" href="../../_static/nbsphinx-code-cells.css" type="text/css" />
-      <link rel="stylesheet" href="../../_static/css/custom.css" type="text/css" />
+      <link rel="stylesheet" type="text/css" href="../../_static/pygments.css" />
+      <link rel="stylesheet" type="text/css" href="../../_static/css/theme.css" />
+      <link rel="stylesheet" type="text/css" href="../../_static/copybutton.css" />
+      <link rel="stylesheet" type="text/css" href="../../_static/nbsphinx-code-cells.css" />
+      <link rel="stylesheet" type="text/css" href="../../_static/css/custom.css" />
+
+  
   <!--[if lt IE 9]>
     <script src="../../_static/js/html5shiv.min.js"></script>
   <![endif]-->
@@ -91,7 +93,10 @@
           <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
            <div itemprop="articleBody">
              
-  <section id="Enhancing-data">
+  <blockquote>
+<div><p>❗️ This notebook refers to WaPOR 3.4 and is outdated ❗️</p>
+</div></blockquote>
+<section id="Enhancing-data">
 <h1>Enhancing data<a class="headerlink" href="#Enhancing-data" title="Permalink to this heading"></a></h1>
 <p>When running <code class="docutils literal notranslate"><span class="pre">pre_et_look</span></code>, on some variables extra functions are applied. In this notebook we’ll take a closer look at those functions and how to modify them.</p>
 <p>First we install pywapor, in case it’s not installed yet.</p>
@@ -247,7 +252,7 @@ OMP: Info #276: omp_set_nested routine deprecated, please use omp_set_max_active
 <div class="prompt empty docutils container">
 </div>
 <div class="output_area docutils container">
-<img alt="../../_images/notebooks_pyWaPOR_enhancers_12_1.png" src="../../_images/notebooks_pyWaPOR_enhancers_12_1.png" />
+<img alt="../../_images/notebooks_pyWaPOR_enhancers_13_1.png" src="../../_images/notebooks_pyWaPOR_enhancers_13_1.png" />
 </div>
 </div>
 <p>The default enhancers for a specific product can be accessed like this.</p>
@@ -393,7 +398,7 @@ OMP: Info #276: omp_set_nested routine deprecated, please use omp_set_max_active
 <div class="prompt empty docutils container">
 </div>
 <div class="output_area docutils container">
-<img alt="../../_images/notebooks_pyWaPOR_enhancers_22_1.png" src="../../_images/notebooks_pyWaPOR_enhancers_22_1.png" />
+<img alt="../../_images/notebooks_pyWaPOR_enhancers_23_1.png" src="../../_images/notebooks_pyWaPOR_enhancers_23_1.png" />
 </div>
 </div>
 <p>Another type of enhancement is applied near the end of <code class="docutils literal notranslate"><span class="pre">pre_et_look</span></code>. These functions can be adjusted through the keyword argument <code class="docutils literal notranslate"><span class="pre">enhancers</span></code> in the <code class="docutils literal notranslate"><span class="pre">pywapor.pre_et_look.main</span></code> function.</p>
@@ -482,7 +487,7 @@ OMP: Info #276: omp_set_nested routine deprecated, please use omp_set_max_active
 <div class="prompt empty docutils container">
 </div>
 <div class="output_area docutils container">
-<img alt="../../_images/notebooks_pyWaPOR_enhancers_25_1.png" src="../../_images/notebooks_pyWaPOR_enhancers_25_1.png" />
+<img alt="../../_images/notebooks_pyWaPOR_enhancers_26_1.png" src="../../_images/notebooks_pyWaPOR_enhancers_26_1.png" />
 </div>
 </div>
 <p>Besides turning off these enhancers, it is also possible to apply other enhancers to variables, e.g. your own gap-filling algorithm or your custom image sharpener.</p>

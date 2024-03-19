@@ -468,7 +468,7 @@ class Project():
         > {pywapor.__version__}"""
         return project_str
 
-    def load_configuration(self, name = None, summary = None, json_fp = None):
+    def load_configuration(self, name = None, summary = None, json = None):
         if not isinstance(name, type(None)) and not isinstance(summary, type(None)):
             raise ValueError("Only one of `level` and `summary` can be specified.")
         log.info("> CONFIGURATION").add()
@@ -477,8 +477,8 @@ class Project():
         elif not isinstance(summary, type(None)):
             summary = summary.copy()
             self.configuration = Configuration.from_summary(summary)
-        elif not isinstance(json_fp, type(None)):
-            self.configuration = Configuration.from_json(json_fp)
+        elif not isinstance(json, type(None)):
+            self.configuration = Configuration.from_json(json)
         else:
             raise ValueError("At least one of `level` or `summary` needs to be specified.")
         
@@ -600,50 +600,41 @@ if __name__ == "__main__":
         "all_in",
     }
 
-    # for x in all_configs:
-    #     x_ = Configuration.from_name(x)
-    #     summary = x_.summary
+    project = pywapor.Project(project_folder, bb, timelim)
 
-    #     print(x)
-    #     pprint.pprint(summary)
-    #     print("")
+    # project.load_configuration(name = "WaPOR3_level_2")
 
+    summary = {
+        # Define which products to use.
+        'elevation': {'COPERNICUS.GLO30'},
+        'meteorological': {'GEOS5.tavg1_2d_slv_Nx'},
+        'optical': {'SENTINEL2.S2MSI2A_R20m'},
+        'precipitation': {'CHIRPS.P05'},
+        'solar radiation': {'ERA5.sis-agrometeorological-indicators'},
+        'statics': {'STATICS.WaPOR3'},
+        'thermal': {'VIIRSL1.VNP02IMG'},
+        'soil moisture': {'FILE:{folder}{sep}se_root_out*.nc.from_file'},
 
+        # Define which product to reproject the other products to.
+        '_EXAMPLE_': 'SENTINEL2.S2MSI2A_R20m', 
 
+        # Define any special functions to apply to a specific variable.
+        '_ENHANCE_': {"bt": ["pywapor.enhancers.dms.thermal_sharpener.sharpen"],},
 
-    # summary = {
-
-    #     'optical': {'SENTINEL2.S2MSI2A_R20m'},
-    #     'thermal': {'VIIRSL1.VNP02IMG'},
-    #     'meteorological': {'GEOS5.tavg1_2d_slv_Nx'},
-    #     'elevation': {'COPERNICUS.GLO30'},
-    #     'precipitation': {'CHIRPS.P05'},
-    #     'solar radiation': {'ERA5.sis-agrometeorological-indicators'},
-    #     'statics': {'STATICS.WaPOR3'},
-    #     'soil moisture': {"FILE:{folder}{sep}se_root_out*.nc"},
-
-    #     '_EXAMPLE_': "SENTINEL2.S2MSI2A_R20m",
-    #     '_ENHANCE_': {"bt": ["pywapor.enhancers.dms.thermal_sharpener.sharpen"],},
-    #     '_TEMP_INTERP_': {
-    #                     "SENTINEL2.S2MSI2A_R20m": {
-    #                         "method": "whittaker",
-    #                         "lmbdas": 1000.,
-    #                     },
-    #                     "VIIRSL1.VNP02IMG": {
-    #                         "method": "whittaker",
-    #                         'a': 0.85,
-    #                         'lmbdas': 1000.
-    #                     }
-    #                 }
-    #     }
-
-    # project = pywapor.Project(project_folder, bb, timelim)
-
-    # project.load_configuration(summary = summary)
-    # project.set_passwords()
-    # dss = project.download_data()
+        # Choose which products should be gapfilled.
+        '_WHITTAKER_': {
+            'SENTINEL2.S2MSI2A_R20m': {'lmbdas': 1000.0, 'method': 'whittaker'}, 
+            'VIIRSL1.VNP02IMG': {'a': 0.85, 'lmbdas': 1000.0, 'method': 'whittaker'}},
+        }
     
-    # se_root_in = project.run_pre_se_root()
+    project.load_configuration(summary = summary)
+
+
+
+    project.set_passwords()
+    dss = project.download_data()
+    
+    se_root_in = project.run_pre_se_root()
     # se_root = project.run_se_root()
     # et_look_in = project.run_pre_et_look()
     # et_look = project.run_et_look()
