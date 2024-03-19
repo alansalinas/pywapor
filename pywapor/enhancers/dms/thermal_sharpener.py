@@ -65,7 +65,7 @@ def highres_inputs(workdir, temporal_hr_input_data, static_hr_input_data, filter
     bounds = (geot[0], geot[3] + template_ds.RasterYSize * geot[5], geot[0] + template_ds.RasterXSize * geot[1], geot[3])
     template_ds = None
 
-    buildvrt_options = gdal.BuildVRTOptions(outputBounds = bounds, xRes = xres, yRes = yres, separate = True)
+    buildvrt_options = gdal.BuildVRTOptions(outputBounds = bounds, xRes = xres, yRes = yres, separate = True, bandList=[1])
     output_vrt = os.path.join(workdir, "highres_input_template.vrt")
     if os.path.isfile(output_vrt):
         try:
@@ -211,8 +211,8 @@ def plot_sharpening(lr_fn, hr_fn, var, workdir):
     lr = lr.close()
     hr = hr.close()
 
-def sharpen(dss, var, folder, make_plots = False, vars_for_sharpening = ['nmdi', 'bsi', 'mndwi', 'cos_solar_zangle',
-                'vari_red_edge', 'psri', 'nir', 'green', 'z', 'aspect', 'slope']):
+def sharpen(dss, var, folder, *args, make_plots = False, req_vars = ['nmdi', 'bsi', 'mndwi',
+                'vari_red_edge', 'psri', 'nir', 'green']):
     """Thermal sharpen datasets.
 
     Parameters
@@ -233,91 +233,92 @@ def sharpen(dss, var, folder, make_plots = False, vars_for_sharpening = ['nmdi',
     dict
         Keys are variable names, values are (sharpened) datasets.
     """
-    # Open unopened netcdf files.
-    dss = {**{k: open_ds(v) for k, v in dss.items() if isinstance(v, str)}, 
-            **{k:v for k,v in dss.items() if not isinstance(v, str)}}
-
-    if 'cos_solar_zangle' in vars_for_sharpening and not 'cos_solar_zangle' in dss.keys():
-        dss = get_cos_solar_zangle(dss, var, folder)
-        remove_cos_solar_zangle = True
-    else:
-        remove_cos_solar_zangle = False
-
-    out_fns = list()
-
     workdir = os.path.join(folder, "DMS")
-
-    temporal_lr_input_data = f"NETCDF:{dss[var].encoding['source']}:{var}"
-    temporal_hr_input_data = [f"NETCDF:{y.encoding['source']}:{x}" for x, y in dss.items() if "time" in y.dims and x in vars_for_sharpening]
-    static_hr_input_data = [f"NETCDF:{y.encoding['source']}:{x}" for x, y in dss.items() if "time" not in y.dims and x in vars_for_sharpening]
-
-    lowResFiles = sorted(lowres_inputs(workdir, temporal_lr_input_data))
-    lowResDates = [os.path.split(x)[-1].split("_")[-2:] for x in lowResFiles]
-    filter_times = [os.path.split(x)[-1].replace(".vrt", "").replace("lowres_input_", "") for x in lowResFiles]
-
-    highResFiles = sorted(highres_inputs(workdir, temporal_hr_input_data, static_hr_input_data, filter_times = filter_times))
-    highResDates = [os.path.split(x)[-1].split("_")[-2:] for x in highResFiles]
-    
-    assert np.all([x == y for x,y in zip(highResDates, lowResDates)])
-
-    missing_vars = [x for x in vars_for_sharpening if x not in dss.keys()]
-    if len(missing_vars) > 0:
-        log.info(f"--> Sharpening {len(highResFiles)} `{var}` images, without `{'` and `'.join(missing_vars)}` features.").add()
-    else:
-        log.info(f"--> Sharpening {len(highResFiles)} `{var}` images.").add()
-
-    for i, (highResFilename, lowResFilename) in enumerate(zip(highResFiles, lowResFiles)):
-        fp, fn = os.path.split(highResFilename)
-
-        lbl = f"({i+1}/{len(highResFiles)}) Sharpening `{os.path.split(lowResFilename)[-1]}` with `{fn}`."
-
-        _, correctedImage = thermal_sharpen(highResFilename, lowResFilename, label = lbl)
-
-        fp_out = os.path.join(fp, fn.replace("input", "output").replace(".vrt", ".nc"))
-        ds = gdal.Translate(fp_out, correctedImage)
-        ds.FlushCache()
-        ds = None
-
-        if make_plots:
-            plot_sharpening(lowResFilename, fp_out, var, workdir)
-
-        out_fns.append(fp_out)
-
-        try:
-            os.remove(highResFilename)
-        except PermissionError:
-            log.info(f"--> Unable to delete temporary file `{highResFilename}`.")
-
-        try:
-            os.remove(lowResFilename)
-        except PermissionError:
-            log.info(f"--> Unable to delete temporary file `{lowResFilename}`.")
-
-    log.sub()
-
-    dss_ = [preprocess(open_ds(x)) for x in out_fns]
-    ds_ = xr.concat(dss_, dim = "time").sortby("time")
-    ds_ = ds_.rename_dims({"lat": "y", "lon": "x"})
-    ds_ = ds_.transpose("time", "y", "x")
-    ds_ = ds_.rename_vars({"crs": "spatial_ref", "Band1": var, "lat": "y", "lon": "x"})
-    ds_ = ds_.rio.write_grid_mapping("spatial_ref")
-    ds_ = ds_.sortby("y", ascending = False)
-    ds_ = ds_.sortby("x")
-    ds_.attrs = {}
-
     fp = os.path.join(workdir, f"{var}_i.nc")
 
-    ds = save_ds(ds_, fp, encoding = "initiate", label = f"Merging sharpened `{var}` files.")
+    if not os.path.isfile(fp):
+        # Open unopened netcdf files.
+        dss = {**{k: open_ds(v) for k, v in dss.items() if isinstance(v, str)}, 
+                **{k:v for k,v in dss.items() if not isinstance(v, str)}}
 
-    ds_ = ds_.close()
+        if 'cos_solar_zangle' in req_vars and not 'cos_solar_zangle' in dss.keys():
+            dss = get_cos_solar_zangle(dss, var, folder)
+            remove_cos_solar_zangle = True
+        else:
+            remove_cos_solar_zangle = False
+
+        out_fns = list()
+
+        temporal_lr_input_data = f"NETCDF:{dss[var].encoding['source']}:{var}"
+        temporal_hr_input_data = [f"NETCDF:{y.encoding['source']}:{x}" for x, y in dss.items() if "time" in y.dims and x in req_vars]
+        static_hr_input_data = [f"NETCDF:{y.encoding['source']}:{x}" for x, y in dss.items() if "time" not in y.dims and x in req_vars]
+
+        lowResFiles = sorted(lowres_inputs(workdir, temporal_lr_input_data))
+        lowResDates = [os.path.split(x)[-1].split("_")[-2:] for x in lowResFiles]
+        filter_times = [os.path.split(x)[-1].replace(".vrt", "").replace("lowres_input_", "") for x in lowResFiles]
+
+        highResFiles = sorted(highres_inputs(workdir, temporal_hr_input_data, static_hr_input_data, filter_times = filter_times))
+        highResDates = [os.path.split(x)[-1].split("_")[-2:] for x in highResFiles]
+        
+        assert np.all([x == y for x,y in zip(highResDates, lowResDates)])
+
+        missing_vars = [x for x in req_vars if x not in dss.keys()]
+        if len(missing_vars) > 0:
+            log.info(f"--> Sharpening {len(highResFiles)} `{var}` images, without `{'` and `'.join(missing_vars)}` features.").add()
+        else:
+            log.info(f"--> Sharpening {len(highResFiles)} `{var}` images.").add()
+
+        for i, (highResFilename, lowResFilename) in enumerate(zip(highResFiles, lowResFiles)):
+            fp_, fn = os.path.split(highResFilename)
+
+            lbl = f"({i+1}/{len(highResFiles)}) Sharpening `{os.path.split(lowResFilename)[-1]}` with `{fn}`."
+
+            _, correctedImage = thermal_sharpen(highResFilename, lowResFilename, label = lbl)
+
+            fp_out = os.path.join(fp_, fn.replace("input", "output").replace(".vrt", ".nc"))
+            ds = gdal.Translate(fp_out, correctedImage)
+            ds.FlushCache()
+            ds = None
+
+            if make_plots:
+                plot_sharpening(lowResFilename, fp_out, var, workdir)
+
+            out_fns.append(fp_out)
+
+            try:
+                os.remove(highResFilename)
+            except PermissionError:
+                log.info(f"--> Unable to delete temporary file `{highResFilename}`.")
+
+            try:
+                os.remove(lowResFilename)
+            except PermissionError:
+                log.info(f"--> Unable to delete temporary file `{lowResFilename}`.")
+
+        log.sub()
+
+        dss_ = [preprocess(open_ds(x)) for x in out_fns]
+        ds_ = xr.concat(dss_, dim = "time").sortby("time")
+        ds_ = ds_.rename_dims({"lat": "y", "lon": "x"})
+        ds_ = ds_.transpose("time", "y", "x")
+        ds_ = ds_.rename_vars({"crs": "spatial_ref", "Band1": var, "lat": "y", "lon": "x"})
+        ds_ = ds_.rio.write_grid_mapping("spatial_ref")
+        ds_ = ds_.sortby("y", ascending = False)
+        ds_ = ds_.sortby("x")
+        ds_.attrs = {}
+
+        ds = save_ds(ds_, fp, encoding = "initiate", label = f"Merging sharpened `{var}` files.")
+
+        ds_ = ds_.close()
+
+        for x in dss_:
+            remove_ds(x)
+        
+        if 'cos_solar_zangle' in dss.keys() and remove_cos_solar_zangle:
+            remove_ds(dss['cos_solar_zangle'])
+            _ = dss.pop("cos_solar_zangle")
+
     dss[var] = fp
-
-    for x in dss_:
-        remove_ds(x)
-    
-    if 'cos_solar_zangle' in dss.keys() and remove_cos_solar_zangle:
-        remove_ds(dss['cos_solar_zangle'])
-        _ = dss.pop("cos_solar_zangle")
 
     return dss
 
@@ -343,7 +344,7 @@ def thermal_sharpen(highres_fn, lowres_fn):
                 "lowResFiles":                      [lowres_fn],
                 "lowResQualityFiles":               [],
                 "lowResGoodQualityFlags":           [],
-                "cvHomogeneityThreshold":           0.20,
+                "cvHomogeneityThreshold":           0.0,
                 "movingWindowSize":                 0,
                 "disaggregatingTemperature":        True,
             }
@@ -401,28 +402,33 @@ def get_cos_solar_zangle(dss, var, folder):
 
     return dss
 
-# if __name__ == "__main__":
+if __name__ == "__main__":
 
-#     folder = r"/Users/hmcoerver/Local/therm_sharpener"
+    folder = "/Users/hmcoerver/Local/pywapor_se"
 
-#     adjust_logger(True, folder, "INFO")
+    adjust_logger(True, folder, "INFO")
+    make_plots = False
 
-#     vars_for_sharpening = ['nmdi', 'bsi', 'mndwi', 'vari_red_edge', 'psri', 'nir', 'green', 'z', 'aspect', 'slope']
+    # vars_for_sharpening = ['ndvi', 'bsi', 'mndwi', 'green', 'z']
 
-#     var = "bt"
-#     ds = open_ds(r"/Users/hmcoerver/Local/therm_sharpener/VIIRSL1/VNP02IMG.nc")
+    # var = "bt"
+    # ds = open_ds(r"/Users/hmcoerver/Local/pywapor_se/VIIRSL1/VNP02IMG.nc")
 
-#     dss = {
-#         'nmdi':             open_ds('/Users/hmcoerver/Local/therm_sharpener/nmdi_i.nc'),
-#         'bsi':              open_ds('/Users/hmcoerver/Local/therm_sharpener/bsi_i.nc'),
-#         'mndwi':            open_ds('/Users/hmcoerver/Local/therm_sharpener/mndwi_i.nc'),
-#         'vari_red_edge':    open_ds('/Users/hmcoerver/Local/therm_sharpener/vari_red_edge_i.nc'),
-#         'psri':             open_ds('/Users/hmcoerver/Local/therm_sharpener/psri_i.nc'),
-#         'nir':              open_ds('/Users/hmcoerver/Local/therm_sharpener/nir_i.nc'),
-#         'green':            open_ds('/Users/hmcoerver/Local/therm_sharpener/green_i.nc'),
-#         'z':                open_ds('/Users/hmcoerver/Local/therm_sharpener/COPERNICUS/GLO90.nc'),
-#         'aspect':           open_ds('/Users/hmcoerver/Local/therm_sharpener/COPERNICUS/GLO90.nc'),
-#         'slope':            open_ds('/Users/hmcoerver/Local/therm_sharpener/COPERNICUS/GLO90.nc'),
-#         }
+    # dss = {
+    #     'bt': ds,
+    #     'z': open_ds('/Users/hmcoerver/Local/pywapor_se/z_i.nc'),
+    #     'ndvi':             open_ds('/Users/hmcoerver/Local/pywapor_se/ndvi_i.nc'),
+    #     'bsi':              open_ds('/Users/hmcoerver/Local/pywapor_se/bsi_i.nc'),
+    #     'mndwi':            open_ds('/Users/hmcoerver/Local/pywapor_se/mndwi_i.nc'),
+    #     'green':            open_ds('/Users/hmcoerver/Local/pywapor_se/green_i.nc'),
+    #     }
+
+    # highres_fn = "/Users/hmcoerver/Local/pywapor_se/DMS/highres_input_20220108_061800.vrt"
+    # lowres_fn = "/Users/hmcoerver/Local/pywapor_se/DMS/lowres_input_20220108_061800.vrt"
+    import matplotlib.pyplot as plt
+
+    highres_fn = "/Users/hmcoerver/Local/pywapor_se/DMS/highres_input_20220108_080000.vrt"
+    lowres_fn = "/Users/hmcoerver/Local/pywapor_se/DMS/lowres_input_20220108_080000.vrt"
+
 
     # out = sharpen(dss, var, folder)

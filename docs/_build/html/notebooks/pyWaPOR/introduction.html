@@ -1,15 +1,17 @@
 <!DOCTYPE html>
-<html class="writer-html5" lang="en" >
+<html class="writer-html5" lang="en">
 <head>
   <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17: http://docutils.sourceforge.net/" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Introduction &mdash; pyWaPOR  documentation</title>
-      <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
-      <link rel="stylesheet" href="../../_static/css/theme.css" type="text/css" />
-      <link rel="stylesheet" href="../../_static/copybutton.css" type="text/css" />
-      <link rel="stylesheet" href="../../_static/nbsphinx-code-cells.css" type="text/css" />
-      <link rel="stylesheet" href="../../_static/css/custom.css" type="text/css" />
+      <link rel="stylesheet" type="text/css" href="../../_static/pygments.css" />
+      <link rel="stylesheet" type="text/css" href="../../_static/css/theme.css" />
+      <link rel="stylesheet" type="text/css" href="../../_static/copybutton.css" />
+      <link rel="stylesheet" type="text/css" href="../../_static/nbsphinx-code-cells.css" />
+      <link rel="stylesheet" type="text/css" href="../../_static/css/custom.css" />
+
+  
   <!--[if lt IE 9]>
     <script src="../../_static/js/html5shiv.min.js"></script>
   <![endif]-->
@@ -96,7 +98,10 @@
           <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
            <div itemprop="articleBody">
              
-  <section id="Introduction">
+  <blockquote>
+<div><p>❗️ This notebook refers to WaPOR 3.4 and is outdated ❗️</p>
+</div></blockquote>
+<section id="Introduction">
 <h1>Introduction<a class="headerlink" href="#Introduction" title="Permalink to this heading"></a></h1>
 <section id="Installation">
 <h2>Installation<a class="headerlink" href="#Installation" title="Permalink to this heading"></a></h2>
@@ -3771,7 +3776,7 @@ EPSG:4326
 <div class="prompt empty docutils container">
 </div>
 <div class="output_area docutils container">
-<img alt="../../_images/notebooks_pyWaPOR_introduction_18_1.png" src="../../_images/notebooks_pyWaPOR_introduction_18_1.png" />
+<img alt="../../_images/notebooks_pyWaPOR_introduction_19_1.png" src="../../_images/notebooks_pyWaPOR_introduction_19_1.png" />
 </div>
 </div>
 <p>If we want to make a map of a 3-dimensional variable, we’ll have to select for which time (i.e. <code class="docutils literal notranslate"><span class="pre">time_bins</span></code>) we want to create the map. Here I’m selecting the sixth map, i.e. at index 5.</p>
@@ -3796,7 +3801,7 @@ EPSG:4326
 <div class="prompt empty docutils container">
 </div>
 <div class="output_area docutils container">
-<img alt="../../_images/notebooks_pyWaPOR_introduction_20_1.png" src="../../_images/notebooks_pyWaPOR_introduction_20_1.png" />
+<img alt="../../_images/notebooks_pyWaPOR_introduction_21_1.png" src="../../_images/notebooks_pyWaPOR_introduction_21_1.png" />
 </div>
 </div>
 <p>If for some reason you have lost the variable <code class="docutils literal notranslate"><span class="pre">ds</span></code> (maybe you restarted you computer) and don’t want to run <code class="docutils literal notranslate"><span class="pre">pre_et_look</span></code> again, you can simply open the file specified by <code class="docutils literal notranslate"><span class="pre">fh</span></code> like this. (The <code class="docutils literal notranslate"><span class="pre">decode_coords</span></code> keyword is used to make sure the CRS information is loaded correctly.)</p>
@@ -5093,7 +5098,7 @@ Data variables:
 <div class="prompt empty docutils container">
 </div>
 <div class="output_area docutils container">
-<img alt="../../_images/notebooks_pyWaPOR_introduction_30_1.png" src="../../_images/notebooks_pyWaPOR_introduction_30_1.png" />
+<img alt="../../_images/notebooks_pyWaPOR_introduction_31_1.png" src="../../_images/notebooks_pyWaPOR_introduction_31_1.png" />
 </div>
 </div>
 <p>If you want to do some calulcations with the data, you can get easily get a numpy-array (e.g. for <code class="docutils literal notranslate"><span class="pre">et_24_mm</span></code>). Note that this loads the array into you working memory.</p>

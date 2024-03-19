@@ -1,14 +1,16 @@
 <!DOCTYPE html>
-<html class="writer-html5" lang="en" >
+<html class="writer-html5" lang="en">
 <head>
   <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17: http://docutils.sourceforge.net/" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>pyWaPOR &mdash; pyWaPOR  documentation</title>
-      <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
-      <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
-      <link rel="stylesheet" href="_static/copybutton.css" type="text/css" />
-      <link rel="stylesheet" href="_static/css/custom.css" type="text/css" />
+      <link rel="stylesheet" type="text/css" href="_static/pygments.css" />
+      <link rel="stylesheet" type="text/css" href="_static/css/theme.css" />
+      <link rel="stylesheet" type="text/css" href="_static/copybutton.css" />
+      <link rel="stylesheet" type="text/css" href="_static/css/custom.css" />
+
+  
   <!--[if lt IE 9]>
     <script src="_static/js/html5shiv.min.js"></script>
   <![endif]-->
@@ -89,34 +91,94 @@
 <p>This repository contains a Python implementation of the algorithm used to generate the <a class="reference external" href="http://www.fao.org/in-action/remote-sensing-for-water-productivity/en/">WaPOR</a> <a class="reference external" href="https://wapor.apps.fao.org/home/WAPOR_2/1">datasets</a>. It can be used to calculate evaporation, transpiration and biomass production maps.</p>
 <section id="installation">
 <h2>Installation<a class="headerlink" href="#installation" title="Permalink to this heading"></a></h2>
-<p>Its recommended to install in a clean <a class="reference external" href="https://docs.conda.io/projects/conda/en/latest/user-guide/concepts/environments.html">conda environment</a>.</p>
+<p>Its recommended to install in a new <a class="reference external" href="https://docs.conda.io/projects/conda/en/latest/user-guide/concepts/environments.html">conda environment</a>.</p>
 <div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>conda<span class="w"> </span>create<span class="w"> </span>-n<span class="w"> </span>my_pywapor_env<span class="w"> </span>-c<span class="w"> </span>conda-forge<span class="w"> </span>pywapor
 </pre></div>
 </div>
 </section>
 <section id="usage">
 <h2>Usage<a class="headerlink" href="#usage" title="Permalink to this heading"></a></h2>
-<p>To run the model for one dekad (from 2021-07-01 to 2021-07-11 in this case) for the Fayoum irrigation scheme in Egypt (but feel free to change the <a class="reference external" href="http://bboxfinder.com">boundingbox</a> defined by <code class="docutils literal notranslate"><span class="pre">latlim</span></code> and <code class="docutils literal notranslate"><span class="pre">lonlim</span></code>) using mainly VIIRS and Sentinel-2 data, run the following code (run <code class="docutils literal notranslate"><span class="pre">python</span></code> in your console to activate Python and <code class="docutils literal notranslate"><span class="pre">exit()</span></code> to deactivate).</p>
+<p>Run the model for a selected bounding-box and period of time:</p>
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">pywapor</span>
 
-<span class="c1"># User inputs.</span>
-<span class="n">timelim</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;2021-07-01&quot;</span><span class="p">,</span> <span class="s2">&quot;2021-07-03&quot;</span><span class="p">]</span>
-<span class="n">latlim</span> <span class="o">=</span> <span class="p">[</span><span class="mf">28.9</span><span class="p">,</span> <span class="mf">29.7</span><span class="p">]</span>
-<span class="n">lonlim</span> <span class="o">=</span> <span class="p">[</span><span class="mf">30.2</span><span class="p">,</span> <span class="mf">31.2</span><span class="p">]</span>
 <span class="n">project_folder</span> <span class="o">=</span> <span class="sa">r</span><span class="s2">&quot;/my_first_ETLook_run/&quot;</span>
-<span class="n">level</span> <span class="o">=</span> <span class="s2">&quot;level_2_v3&quot;</span>
+<span class="n">bb</span> <span class="o">=</span> <span class="p">[</span><span class="mf">30.2</span><span class="p">,</span> <span class="mf">28.9</span><span class="p">,</span> <span class="mf">31.2</span><span class="p">,</span> <span class="mf">29.7</span><span class="p">]</span> <span class="c1"># [xmin, ymin, xmax, ymax]</span>
+<span class="n">period</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;2021-07-01&quot;</span><span class="p">,</span> <span class="s2">&quot;2021-07-03&quot;</span><span class="p">]</span>
 
-<span class="c1"># Load a model configuration.</span>
-<span class="n">configuration</span> <span class="o">=</span> <span class="n">pywapor</span><span class="o">.</span><span class="n">general</span><span class="o">.</span><span class="n">levels</span><span class="o">.</span><span class="n">pre_et_look_levels</span><span class="p">(</span><span class="n">level</span> <span class="o">=</span> <span class="n">level</span><span class="p">)</span>
+<span class="c1"># Set up a project.</span>
+<span class="n">project</span> <span class="o">=</span> <span class="n">pywapor</span><span class="o">.</span><span class="n">Project</span><span class="p">(</span><span class="n">project_folder</span><span class="p">,</span> <span class="n">bb</span><span class="p">,</span> <span class="n">period</span><span class="p">)</span>
 
-<span class="c1"># Download and prepare input data.</span>
-<span class="n">ds_in</span>  <span class="o">=</span> <span class="n">pywapor</span><span class="o">.</span><span class="n">pre_et_look</span><span class="o">.</span><span class="n">main</span><span class="p">(</span><span class="n">project_folder</span><span class="p">,</span> <span class="n">latlim</span><span class="p">,</span> <span class="n">lonlim</span><span class="p">,</span> <span class="n">timelim</span><span class="p">,</span> <span class="n">sources</span> <span class="o">=</span> <span class="n">configuration</span><span class="p">)</span>
+<span class="c1"># Load a configuration.</span>
+<span class="n">project</span><span class="o">.</span><span class="n">load_configuration</span><span class="p">(</span><span class="n">name</span> <span class="o">=</span> <span class="s2">&quot;WaPOR3_level_2&quot;</span><span class="p">)</span>
 
-<span class="c1"># Run the model.</span>
-<span class="n">ds_out</span> <span class="o">=</span> <span class="n">pywapor</span><span class="o">.</span><span class="n">et_look</span><span class="o">.</span><span class="n">main</span><span class="p">(</span><span class="n">ds_in</span><span class="p">)</span>
+<span class="c1"># Set up required accounts.</span>
+<span class="n">project</span><span class="o">.</span><span class="n">set_passwords</span><span class="p">()</span>
+
+<span class="c1"># Download the input data.</span>
+<span class="n">datasets</span> <span class="o">=</span> <span class="n">project</span><span class="o">.</span><span class="n">download_data</span><span class="p">()</span>
+
+<span class="c1"># Run the models.</span>
+<span class="n">se_root_in</span> <span class="o">=</span> <span class="n">project</span><span class="o">.</span><span class="n">run_pre_se_root</span><span class="p">()</span>
+<span class="n">se_root</span> <span class="o">=</span> <span class="n">project</span><span class="o">.</span><span class="n">run_se_root</span><span class="p">()</span>
+
+<span class="n">et_look_in</span> <span class="o">=</span> <span class="n">project</span><span class="o">.</span><span class="n">run_pre_et_look</span><span class="p">()</span>
+<span class="n">et_look</span> <span class="o">=</span> <span class="n">project</span><span class="o">.</span><span class="n">run_et_look</span><span class="p">()</span>
 </pre></div>
 </div>
-<p>Check out the documentation and the notebooks below to learn more!</p>
+<p>To see a summary of your configuration, checkout the <code class="docutils literal notranslate"><span class="pre">summary</span></code> attribute of the configuration. For more detailed information, check the <code class="docutils literal notranslate"><span class="pre">full</span></code>, <code class="docutils literal notranslate"><span class="pre">se_root</span></code> and <code class="docutils literal notranslate"><span class="pre">et_look</span></code> attributes:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="nb">print</span><span class="p">(</span><span class="n">project</span><span class="o">.</span><span class="n">configuration</span><span class="o">.</span><span class="n">summary</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">project</span><span class="o">.</span><span class="n">configuration</span><span class="o">.</span><span class="n">full</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">project</span><span class="o">.</span><span class="n">configuration</span><span class="o">.</span><span class="n">se_root</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">project</span><span class="o">.</span><span class="n">configuration</span><span class="o">.</span><span class="n">et_look</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>Making configurations yourself can be done by passing a name to <code class="docutils literal notranslate"><span class="pre">Project.load_configuration</span></code> (as done above), by passing a summary or by loading a configuration from a JSON-file:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">summary</span> <span class="o">=</span> <span class="p">{</span>
+    <span class="c1"># Define which products to use.</span>
+    <span class="s1">&#39;elevation&#39;</span><span class="p">:</span> <span class="p">{</span><span class="s1">&#39;COPERNICUS.GLO30&#39;</span><span class="p">},</span>
+    <span class="s1">&#39;meteorological&#39;</span><span class="p">:</span> <span class="p">{</span><span class="s1">&#39;GEOS5.tavg1_2d_slv_Nx&#39;</span><span class="p">},</span>
+    <span class="s1">&#39;optical&#39;</span><span class="p">:</span> <span class="p">{</span><span class="s1">&#39;SENTINEL2.S2MSI2A_R20m&#39;</span><span class="p">},</span>
+    <span class="s1">&#39;precipitation&#39;</span><span class="p">:</span> <span class="p">{</span><span class="s1">&#39;CHIRPS.P05&#39;</span><span class="p">},</span>
+    <span class="s1">&#39;solar radiation&#39;</span><span class="p">:</span> <span class="p">{</span><span class="s1">&#39;ERA5.sis-agrometeorological-indicators&#39;</span><span class="p">},</span>
+    <span class="s1">&#39;statics&#39;</span><span class="p">:</span> <span class="p">{</span><span class="s1">&#39;STATICS.WaPOR3&#39;</span><span class="p">},</span>
+    <span class="s1">&#39;thermal&#39;</span><span class="p">:</span> <span class="p">{</span><span class="s1">&#39;VIIRSL1.VNP02IMG&#39;</span><span class="p">},</span>
+    <span class="c1"># Use se_root output as soil moisture data.</span>
+    <span class="s1">&#39;soil moisture&#39;</span><span class="p">:</span> <span class="p">{</span><span class="s1">&#39;FILE:</span><span class="si">{folder}{sep}</span><span class="s1">se_root_out*.nc.from_file&#39;</span><span class="p">},</span>
+    <span class="c1"># Define which product to reproject the other products to.</span>
+    <span class="s1">&#39;_EXAMPLE_&#39;</span><span class="p">:</span> <span class="s1">&#39;SENTINEL2.S2MSI2A_R20m&#39;</span><span class="p">,</span>
+    <span class="c1"># Define any special functions to apply to a specific variable.</span>
+    <span class="s1">&#39;_ENHANCE_&#39;</span><span class="p">:</span> <span class="p">{</span><span class="s2">&quot;bt&quot;</span><span class="p">:</span> <span class="p">[</span><span class="s2">&quot;pywapor.enhancers.dms.thermal_sharpener.sharpen&quot;</span><span class="p">],},</span>
+    <span class="c1"># Choose which products should be gapfilled.</span>
+    <span class="s1">&#39;_WHITTAKER_&#39;</span><span class="p">:</span> <span class="p">{</span>
+        <span class="s1">&#39;SENTINEL2.S2MSI2A_R20m&#39;</span><span class="p">:</span> <span class="p">{</span><span class="s1">&#39;lmbdas&#39;</span><span class="p">:</span> <span class="mf">1000.0</span><span class="p">,</span> <span class="s1">&#39;method&#39;</span><span class="p">:</span> <span class="s1">&#39;whittaker&#39;</span><span class="p">},</span>
+        <span class="s1">&#39;VIIRSL1.VNP02IMG&#39;</span><span class="p">:</span> <span class="p">{</span><span class="s1">&#39;a&#39;</span><span class="p">:</span> <span class="mf">0.85</span><span class="p">,</span> <span class="s1">&#39;lmbdas&#39;</span><span class="p">:</span> <span class="mf">1000.0</span><span class="p">,</span> <span class="s1">&#39;method&#39;</span><span class="p">:</span> <span class="s1">&#39;whittaker&#39;</span><span class="p">}},</span>
+    <span class="p">}</span>
+
+<span class="n">project</span><span class="o">.</span><span class="n">load_configuration</span><span class="p">(</span><span class="n">summary</span> <span class="o">=</span> <span class="n">summary</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>Save a configuration to a JSON-file like this:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">project</span><span class="o">.</span><span class="n">configuration</span><span class="o">.</span><span class="n">to_json</span><span class="p">(</span><span class="s2">&quot;/path/to/my/configuration.json&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>Load a configuration from a JSON-file:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">project</span><span class="o">.</span><span class="n">load_configuration</span><span class="p">(</span><span class="n">json</span> <span class="o">=</span> <span class="s2">&quot;/path/to/my/configuration.json&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>Changing model parameters (or entire variables) can be done in between the <code class="docutils literal notranslate"><span class="pre">project.run_pre_se_root()</span></code> and <code class="docutils literal notranslate"><span class="pre">project.run_se_root()</span></code> steps (same goes for <code class="docutils literal notranslate"><span class="pre">et_look</span></code>) by making changes to the <code class="docutils literal notranslate"><span class="pre">xarray.Dataset</span></code> returned by <code class="docutils literal notranslate"><span class="pre">project.run_pre_se_root</span></code> (and stored at <code class="docutils literal notranslate"><span class="pre">project.se_root_in</span></code>):</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">se_root_in</span> <span class="o">=</span> <span class="n">project</span><span class="o">.</span><span class="n">run_pre_se_root</span><span class="p">()</span>
+
+<span class="nb">print</span><span class="p">(</span><span class="n">se_root_in</span><span class="p">[</span><span class="s2">&quot;r0_bare&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">values</span><span class="p">)</span>
+<span class="o">&gt;&gt;&gt;</span> <span class="mf">0.38</span>
+
+<span class="n">se_root_in</span><span class="p">[</span><span class="s2">&quot;r0_bare&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="mf">0.32</span>
+
+<span class="nb">print</span><span class="p">(</span><span class="n">se_root_in</span><span class="p">[</span><span class="s2">&quot;r0_bare&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">values</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">project</span><span class="o">.</span><span class="n">se_root_in</span><span class="p">[</span><span class="s2">&quot;r0_bare&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">values</span><span class="p">)</span>
+<span class="o">&gt;&gt;&gt;</span> <span class="mf">0.32</span>
+<span class="o">&gt;&gt;&gt;</span> <span class="mf">0.32</span>
+</pre></div>
+</div>
 </section>
 <section id="documentation">
 <h2>Documentation<a class="headerlink" href="#documentation" title="Permalink to this heading"></a></h2>
@@ -185,6 +247,19 @@
 <section id="release-notes">
 <h2>Release Notes<a class="headerlink" href="#release-notes" title="Permalink to this heading"></a></h2>
 <p><details open>
+<summary><b>3.5.0 (2024-03-19)</b></summary>
+<ul>
+    <li> Restructured the overall workflow, there are now clear sequential phases instead of a nested process.</li>
+    <li> Only one configuration needs to be made, instead of two separate ones for et_look and se_root.</li>
+    <li> There is now much more recycling of previously created files and API responses are cached on disk wherever possible, making rerunning after a crash or configuration change much faster.</li>
+    <li> Quickly set up the passwords needed for the configuration you're running using the logged/printed instructions.</li>
+    <li> The process prior to the start of downloading VIIRS data is now roughly 3 times faster.</li>
+    <li> VIIRS data is now downloaded using OPeNDAP.</li>
+    <li> Downloading of GEOS5 data is now chunked, making it more stable when downloading long time-series.</li>
+    <li> Fixed a bug in the thermal sharpener that caused it to return only missing data in some cases.</li>
+    <li> The static variables are now available globally.</li>
+</ul>
+</details></p><p><details>
 <summary><b>3.4.0 (2023-09-15)</b></summary>
 <ul>
     <li> Rewritten code to download and process VIIRSL1 data, which is now available from an S3 bucket.</li>

@@ -1,7 +1,7 @@
 import os
 from pywapor.collect.protocol import cds
 from pywapor.general.processing_functions import open_ds, remove_ds
-from pywapor.general.logger import log
+from pywapor.general.logger import log, adjust_logger
 from pywapor.enhancers.pressure import pa_to_kpa
 from pywapor.enhancers.wind import adjust_wind_height, windspeed
 from pywapor.enhancers.temperature import kelvin_to_celsius
@@ -199,11 +199,13 @@ if __name__ == "__main__":
 
     # product_name = "sis-agrometeorological-indicators"
     product_name = "reanalysis-era5-single-levels"
-    # req_vars = ["t_air", "t_dew", "rh", "u"]#, "vp", "ra"]
-    req_vars = ["u"]
+    req_vars = ["t_air", "t_dew"]#, "vp", "ra"]
+    # req_vars = ["u"]
 
     variables = None
     post_processors = None
+
+    adjust_logger(True, folder, "INFO")
 
     ds = download(folder, latlim, lonlim, timelim, product_name = product_name, 
                 req_vars = req_vars, variables = variables, post_processors = post_processors)

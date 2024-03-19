@@ -14,13 +14,14 @@ import warnings
 import rasterio.crs
 import numpy as np
 import xarray as xr
-from cachetools import cached, FIFOCache, TTLCache
+from cachetools import cached, TTLCache
 from pywapor.general.logger import adjust_logger, log
 from pywapor.collect.protocol.crawler import download_urls
 from pywapor.general.processing_functions import save_ds, open_ds, unpack, make_example_ds, remove_ds
 from pywapor.general.logger import log
 from pywapor.collect.accounts import get
-from pywapor.enhancers.apply_enhancers import apply_enhancer
+from joblib import Memory
+from pywapor.enhancers.apply_enhancers import apply_enhancer, apply_enhancers
 
 @cached(cache=TTLCache(maxsize=2048, ttl=100))
 def get_access_token():
@@ -52,34 +53,13 @@ def get_access_token():
 
     return token
 
-@cached(cache=FIFOCache(maxsize=2048))
-def get_scene_nodes(scene_id):
-    files = list()
-    nodes_to_crawl = [f"https://catalogue.dataspace.copernicus.eu/odata/v1/Products({scene_id})/Nodes"]
-    
-    while len(nodes_to_crawl) > 0:
-        node_path = nodes_to_crawl[0]
-
-        node_ = requests.get(node_path)
-        node_.raise_for_status()
-        node = node_.json()["result"]
-
-        for sub_node in node:
-            sub_node_name = sub_node["Name"]
-            if sub_node["ChildrenNumber"] != 0:
-                nodes_to_crawl.append(node_path + f"({sub_node_name})/Nodes")
-            else:
-                uri = sub_node["Nodes"]["uri"]
-                files.append(uri[:-6] if uri[-6:] == "/Nodes" else uri)
-
-        nodes_to_crawl.remove(node_path)
-    
-    return files
-
 def download(folder, latlim, lonlim, timelim, product_name, product_type, node_filter = None):
 
     sd = datetime.datetime.strftime(timelim[0], "%Y-%m-%dT00:00:00Z")
     ed = datetime.datetime.strftime(timelim[1], "%Y-%m-%dT23:59:59Z")
+
+    cachedir = os.path.join(folder, "cache")
+    memory = Memory(cachedir, verbose=0)
 
     product_name_ = {"SENTINEL3": "SENTINEL-3", 
                     "SENTINEL2": "SENTINEL-2",
@@ -99,30 +79,61 @@ def download(folder, latlim, lonlim, timelim, product_name, product_type, node_f
     query = base_url + "?$filter=" + " and ".join(filters)
 
     results = {"@odata.nextLink": query}
-    scenes = list()    
-    while "@odata.nextLink" in results.keys():
-        out = requests.get(results["@odata.nextLink"])
-        out.raise_for_status()
-        results = out.json()
-        scenes += results["value"]
+
+    @memory.cache()
+    def query_results(results):
+        scenes = list()    
+        while "@odata.nextLink" in results.keys():
+            out = requests.get(results["@odata.nextLink"])
+            out.raise_for_status()
+            results = out.json()
+            scenes += results["value"]
+        return scenes
+    
+    scenes = query_results(results)
 
     # Drop identical scenes.
     scene_names = {x["Name"]: i for i, x in enumerate(scenes)}
     scenes = [scenes[i] for i in scene_names.values()]
 
-    # Filter reprocessed scenes (select newest).
-    overview = dict()
-    for i, scene in enumerate(scenes):
-        mission_id, level, stime, baseline, rel_orbit, tile_number, rest = scene["Name"].split("_")
-        key = "_".join([mission_id, level, stime, rel_orbit, tile_number])
-        baseline_int = int(baseline[1:])
-        if not key in list(overview.keys()):
-            overview[key] = (baseline_int, scene)
-        else:
-            if baseline_int > overview[key][0]:
+    if product_name == "SENTINEL-2":
+        # Filter reprocessed scenes (select newest).
+        overview = dict()
+        for i, scene in enumerate(scenes):
+            mission_id, level, stime, baseline, rel_orbit, tile_number = scene["Name"].split("_")[:6]
+            key = "_".join([mission_id, level, stime, rel_orbit, tile_number])
+            baseline_int = int(baseline[1:])
+            if not key in list(overview.keys()):
                 overview[key] = (baseline_int, scene)
+            else:
+                if baseline_int > overview[key][0]:
+                    overview[key] = (baseline_int, scene)
 
-    scenes = [x[1] for x in overview.values()]
+        scenes = [x[1] for x in overview.values()]
+
+    @memory.cache()
+    def get_scene_nodes(scene_id):
+        files = list()
+        nodes_to_crawl = [f"https://catalogue.dataspace.copernicus.eu/odata/v1/Products({scene_id})/Nodes"]
+        
+        while len(nodes_to_crawl) > 0:
+            node_path = nodes_to_crawl[0]
+
+            node_ = requests.get(node_path)
+            node_.raise_for_status()
+            node = node_.json()["result"]
+
+            for sub_node in node:
+                sub_node_name = sub_node["Name"]
+                if sub_node["ChildrenNumber"] != 0:
+                    nodes_to_crawl.append(node_path + f"({sub_node_name})/Nodes")
+                else:
+                    uri = sub_node["Nodes"]["uri"]
+                    files.append(uri[:-6] if uri[-6:] == "/Nodes" else uri)
+
+            nodes_to_crawl.remove(node_path)
+        
+        return files
 
     log.info(f"--> Searching nodes for {len(scenes)} `{product_name_}.{product_type}` scenes.")
 
@@ -138,7 +149,7 @@ def download(folder, latlim, lonlim, timelim, product_name, product_type, node_f
             filtered_nodes = set(nodes)
 
         for node in filtered_nodes:
-            node_path_rel = re.findall("Nodes\((.*?)\)", node)
+            node_path_rel = re.findall(r"Nodes\((.*?)\)", node)
             fp = os.path.join(folder, *node_path_rel)
             url = node + "/$value"
             fp_checks.append(fp)
@@ -165,10 +176,10 @@ def download(folder, latlim, lonlim, timelim, product_name, product_type, node_f
         if not os.path.isfile(fp_):
             log.warning(f"--> `{fp}` missing.")
 
-    if "3" in product_name: # NOTE this is lazy...
-        dled_scenes = sorted(list(set([re.compile(".*\.SEN3").search(x).group() for x in fp_checks])))
+    if "3" in product_name:
+        dled_scenes = sorted(list(set([re.compile(r".*\.SEN3").search(x).group() for x in fp_checks])))
     if "2" in product_name:
-        dled_scenes = sorted(list(set([re.compile(".*\.SAFE").search(x).group() for x in fp_checks])))
+        dled_scenes = sorted(list(set([re.compile(r".*\.SAFE").search(x).group() for x in fp_checks])))
 
     return list(dled_scenes)
 
@@ -285,10 +296,7 @@ def process_sentinel(scenes, variables, time_func, final_fn, post_processors, pr
     fp = os.path.join(folder, final_fn)
     
     # Apply general product functions.
-    for var, funcs in post_processors.items():
-        for func in funcs:
-            ds, label = apply_enhancer(ds, var, func)
-            log.info(label)
+    ds = apply_enhancers(post_processors, ds)
 
     # Remove unrequested variables.
     ds = ds[list(post_processors.keys())]
@@ -315,11 +323,11 @@ def process_sentinel(scenes, variables, time_func, final_fn, post_processors, pr
 
 if __name__ == "__main__":
 
-    product_name = "SENTINEL-2"
-    product_type = "S2MSI2A"
+    # product_name = "SENTINEL-2"
+    # product_type = "S2MSI2A"
 
-    # product_name = "SENTINEL-3"
-    # product_type = "SL_2_LST___"
+    product_name = "SENTINEL-3"
+    product_type = "SL_2_LST___"
 
     timelim = [datetime.date(2023, 3, 1), datetime.date(2023, 3, 3)]
     latlim = [29.4, 29.7]
@@ -328,22 +336,25 @@ if __name__ == "__main__":
 
     adjust_logger(True, folder, "INFO")
 
-    variables = {
-        "_B01_60m.jp2": [(), "coastal_aerosol", []],
-        "_B02_60m.jp2": [(), "blue", []],
-        "_B03_60m.jp2": [(), "green", []],
-        "_B04_60m.jp2": [(), "red", []],
-    }
-
     # variables = {
-    #     "LST_in.nc": [(), "lst", []],
-    #     "geodetic_in.nc": [(), "coords", []],
+    #     "_B01_60m.jp2": [(), "coastal_aerosol", []],
+    #     "_B02_60m.jp2": [(), "blue", []],
+    #     "_B03_60m.jp2": [(), "green", []],
+    #     "_B04_60m.jp2": [(), "red", []],
     # }
+
+    variables = {
+        "LST_in.nc": [(), "lst", []],
+        "geodetic_in.nc": [(), "coords", []],
+    }
 
     def node_filter(node_info):
         fn = os.path.split(node_info)[-1]
         to_dl = list(variables.keys()) + ["MTD_MSIL2A.xml"]
         return np.any([x in fn for x in to_dl])
     
-    dled_scenes = download(folder, latlim, lonlim, timelim, product_name, product_type, node_filter = node_filter)
+    # dled_scenes = download(folder, latlim, lonlim, timelim, product_name, product_type, node_filter = node_filter)
 
+    s3_scene_name = 'S3A_SL_2_LST____20230303T194903_20230303T195203_20230305T053809_0179_096_128_0360_PS1_O_NT_004.SEN3'
+
+    s2_scene_name = 'S2B_MSIL2A_20230302T083759_N0509_R064_T36RTT_20230302T132852.SAFE'

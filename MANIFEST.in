@@ -2,6 +2,13 @@ include pywapor/collect/product/MODIS_tiles.geojson
 include pywapor/collect/product/SRTM30_tiles.geojson
 include pywapor/collect/product/GLO30.txt
 include pywapor/collect/product/GLO90.txt
+include pywapor/configs/all_in.json
+include pywapor/configs/nrt.json
+include pywapor/configs/WaPOR2_level_1.json
+include pywapor/configs/WaPOR2_level_2.json
+include pywapor/configs/WaPOR2_level_3.json
+include pywapor/configs/WaPOR3_level_2.json
+include pywapor/configs/WaPOR3_level_3.json
 prune tests/
 prune docs/
 prune examples/

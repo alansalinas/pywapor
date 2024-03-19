@@ -203,7 +203,7 @@ def download_urls(urls, folder, session = None, fps = None, parallel = 0,
 
     while try_again:
 
-        dled_files = _download_urls(urls, folder, session, fps = fps, parallel = False, headers = headers, max_tries = max_tries, wait_sec = wait_sec)
+        dled_files = _download_urls(urls, folder, session, fps = fps, parallel = parallel, headers = headers, max_tries = max_tries, wait_sec = wait_sec)
 
         if not isinstance(fps, type(None)):
             urls = zip(urls, fps)

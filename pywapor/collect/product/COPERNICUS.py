@@ -7,7 +7,7 @@ from itertools import product
 from pywapor.collect.protocol import cog
 from functools import partial
 from pywapor.general.processing_functions import open_ds, save_ds, remove_ds
-from pywapor.enhancers.apply_enhancers import apply_enhancer
+from pywapor.enhancers.apply_enhancers import apply_enhancers
 from pywapor.enhancers.dem import calc_slope_or_aspect
 from pywapor.general.logger import log, adjust_logger
 from pywapor.collect.protocol.crawler import download_urls
@@ -218,10 +218,7 @@ def download(folder, latlim, lonlim, product_name = "GLO30", req_vars = ["z"],
     ds = save_ds(ds, final_fp.replace(".nc", "_stitched.nc"), encoding="initiate", label = "Merging tiles.")
 
     # Apply product specific functions.
-    for var, funcs in post_processors.items():
-        for func in funcs:
-            ds, label = apply_enhancer(ds, var, func)
-            log.info(label)
+    ds = apply_enhancers(post_processors, ds)
     
     # Remove unrequested variables.
     ds = ds[list(post_processors.keys())]

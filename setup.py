@@ -2,7 +2,7 @@ from setuptools import setup, find_packages
 
 setup(
     name = 'pywapor',
-    version = '3.4.6',
+    version = '3.5.0',
     url = 'https://www.fao.org/aquastat/py-wapor/',
     author = "FAO",
     author_email = "bert.coerver@fao.org",
@@ -14,7 +14,7 @@ setup(
 # - NOTE set libnetcdf=4.8 in conda otherwise this happend:
 # https://github.com/pydata/xarray/issues/7549 (also see https://github.com/SciTools/iris/issues/5187)
         'netcdf4',
-        'gdal',
+        'gdal>=3,<4',
         'xarray',
         'numpy',
         'pandas',

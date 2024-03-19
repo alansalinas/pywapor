@@ -15,6 +15,15 @@ import glob
 import os
 import re
 
+def func_from_string(string):
+    parts = string.split(".")
+    mod_str = parts.pop(0)
+    func = __import__(mod_str)
+    while parts:
+        sub = parts.pop(0)
+        func = getattr(func, sub)
+    return func
+
 def remove_temp_files(folder):
 
     log_files = glob.glob(os.path.join(folder, "log.txt"))
@@ -102,12 +111,29 @@ def remove_ds(ds):
             fp = ds
 
     if not isinstance(fp, type(None)):
-        ds = xr.open_dataset(fp, chunks = "auto")
-        ds = ds.close()
+        try:
+            ds = xr.open_dataset(fp, chunks = "auto")
+            ds = ds.close()
+        except OSError:
+            ... # file is corrupt/incomplete
+
         try:
             os.remove(fp)
         except PermissionError:
             log.info(f"--> Unable to delete temporary file `{fp}`.")
+
+def is_corrupt_or_empty(fp, group = None):
+    try:
+        if isinstance(group, type(None)):
+            ds = xr.open_dataset(fp, chunks = "auto")
+        else:
+            ds = xr.open_dataset(fp, chunks = "auto", group = group)
+        corrupt = ds.sizes == {}
+        ds = ds.close()
+    except OSError:
+        corrupt = True
+    return corrupt
+
 
 def process_ds(ds, coords, variables, crs = None):
     """Apply some rioxarray related transformations to a dataset.
@@ -193,7 +219,7 @@ def make_example_ds(ds, folder, target_crs, bb = None, example_ds_fp = None):
     return example_ds
 
 @performance_check
-def save_ds(ds, fp, decode_coords = "all", encoding = None, chunks = "auto", precision = 4):
+def save_ds(ds, fp, decode_coords = "all", encoding = None, chunks = "auto", precision = 8):
     """Save a `xr.Dataset` as netcdf.
 
     Parameters
@@ -251,7 +277,7 @@ def save_ds(ds, fp, decode_coords = "all", encoding = None, chunks = "auto", pre
                         "zlib": True,
                         "_FillValue": -9999,
                         "chunksizes": tuple([v[0] for _, v in ds[var].chunksizes.items()]),
-                        "dtype": "int32", # determine_dtype(ds[var], -9999, precision.get(var)),
+                        "dtype": "int64", # determine_dtype(ds[var], -9999, precision.get(var)),
                         "scale_factor": 10**-precision.get(var, 0), 
                         } for var in ds.data_vars if np.all([spat in ds[var].coords for spat in ["x", "y"]])}
         for var in ds.data_vars:
@@ -298,7 +324,9 @@ def open_ds(fp, decode_coords = "all", chunks = "auto", **kwargs):
     xr.Dataset
         Opened file.
     """
-    ds = xr.open_dataset(fp, decode_coords = decode_coords, chunks = chunks, **kwargs)
+    with warnings.catch_warnings():
+        warnings.filterwarnings("ignore")
+        ds = xr.open_dataset(fp, decode_coords = decode_coords, chunks = chunks, **kwargs)
     return ds
 
 def create_dummy_mask(x, y, sign = None, slope = None, xshift_fact = None, yshift_fact = None):

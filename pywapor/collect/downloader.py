@@ -1,10 +1,26 @@
 from pywapor.general.logger import log, adjust_logger
-from pywapor.general.processing_functions import adjust_timelim_dtype
+from pywapor.general.processing_functions import adjust_timelim_dtype, open_ds
 import types
 import functools
 import numpy as np
+import glob
+import os
 from collections import OrderedDict
 import copy
+
+def print_ds_info(fp, req_vars):
+    if isinstance(fp, str):
+        x = open_ds(fp)
+    else:
+        x = fp
+    if "time" in x.coords:
+        stime = np.datetime_as_string(x.time.values[0], unit = "m")
+        etime = np.datetime_as_string(x.time.values[-1], unit = "m")
+        log.add().info(f"> timesize: {x.time.size} [{stime}, ..., {etime}]").sub()
+    fp = x.encoding["source"]
+    assert set(req_vars) & set(x.data_vars) == set(req_vars)
+    x = x.close()
+    return fp
 
 def collect_sources(folder, sources, latlim, lonlim, timelim, landsat_order_only = False):
     """Download different sources and products within defined limits.
@@ -57,10 +73,34 @@ def collect_sources(folder, sources, latlim, lonlim, timelim, landsat_order_only
         for (source, product_name), req_vars in reversed_sources.items():
             
             if isinstance(source, str):
-                dl_module = __import__(f"pywapor.collect.product.{source}", 
-                                    fromlist=[source])
-                dler = dl_module.download
-                source_name = source
+                if "FILE:" in source:
+                    search_path = source.replace("FILE:", "").format(folder = folder, sep = os.sep)
+                    fhs = glob.glob(search_path)
+                    nfhs = len(fhs)
+                    if nfhs == 1:
+                        fp = fhs[0]
+                    elif nfhs > 1:
+                        fp = max(fhs, key=os.path.getmtime)
+                        log.info(f"--> Multiple files found for `{search_path}`, selecting most recent file.")
+                    else:
+                        log.warning(f"--> No files found (yet) at `{search_path}`.")
+                        attempts[(source, product_name)] += max_attempts * 10
+                        continue
+                    
+                    source_name = os.path.split(fp)[-1]
+                    log.info(f"--> Collecting `{'`, `'.join(req_vars)}` from `{source_name}`.")
+                    
+                    _ = print_ds_info(fp, req_vars)
+                    # log.add().info(f"> timesize: unknown").sub()
+                    
+                    dss[(source_name, product_name)] = fp
+                    attempts[(source, product_name)] += max_attempts * 10
+                    continue
+                else:
+                    dl_module = __import__(f"pywapor.collect.product.{source}", 
+                                        fromlist=[source])
+                    dler = dl_module.download
+                    source_name = source
             elif isinstance(source, types.FunctionType):
                 dler = source
                 source_name = source.__name__
@@ -116,12 +156,7 @@ def collect_sources(folder, sources, latlim, lonlim, timelim, landsat_order_only
 
             else:
                 if not isinstance(x, type(None)):
-                    if "time" in x.coords:
-                        stime = np.datetime_as_string(x.time.values[0], unit = "m")
-                        etime = np.datetime_as_string(x.time.values[-1], unit = "m")
-                        log.add().info(f"> timesize: {x.time.size} [{stime}, ..., {etime}]").sub()
-                    fp = x.encoding["source"]
-                    x = x.close()
+                    fp = print_ds_info(x, req_vars)
                     dss[(source_name, product_name)] = fp
             finally:
                 log.pop()

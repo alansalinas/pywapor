@@ -177,7 +177,7 @@ def choose_reprojecter(src_ds, max_bytes = 2e9, min_times = 10, stack_dim = "tim
     """
 
     if stack_dim in src_ds.dims:
-        tsize = src_ds.dims[stack_dim]
+        tsize = src_ds.sizes[stack_dim]
     else:
         tsize = 1
 
@@ -220,6 +220,7 @@ def reproject_bulk(src_ds, example_ds, dst_path, spatial_interp = "nearest", **k
     ds_match = ds_match.assign_coords({"x": example_ds.x, "y": example_ds.y})
 
     label = f"Applying `reproject_bulk` to {os.path.split(src_ds.encoding['source'])[-1]}:{list(src_ds.data_vars)[0]} ({spatial_interp})."
+    
     ds_match = save_ds(ds_match, dst_path, encoding = "initiate", label = label)
 
     return ds_match
