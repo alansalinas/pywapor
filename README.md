@@ -94,8 +94,6 @@ project.load_configuration(json = "/path/to/my/configuration.json")
 Changing model parameters (or entire variables) can be done in between the `project.run_pre_se_root()` and `project.run_se_root()` steps (same goes for `et_look`) by making changes to the `xarray.Dataset` returned by `project.run_pre_se_root` (and stored at `project.se_root_in`):
 
 ```python
-se_root_in = project.run_pre_se_root()
-
 print(se_root_in["r0_bare"].values)
 >>> 0.38
 
