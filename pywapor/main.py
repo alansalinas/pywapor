@@ -397,7 +397,7 @@ class Configuration():
             if isinstance(v["temporal_interp"], dict):
                 if v["temporal_interp"].get("method", "") == "whittaker":
                     for prod in v["products"]:
-                        whittaker[f"{prod["source"]}.{prod["product_name"]}"] = v["temporal_interp"]
+                        whittaker[f"{prod['source']}.{prod['product_name']}"] = v["temporal_interp"]
             if any(["sharpen" in x for x in v["variable_enhancers"]]):
                 sharpen.add(k)
 
