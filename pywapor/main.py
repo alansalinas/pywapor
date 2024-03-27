@@ -391,7 +391,7 @@ class Configuration():
         whittaker = dict()
         sharpen = set()
         for k,v in self.full.items():
-            example_ = [f"{prod["source"]}.{prod["product_name"]}" for prod in v["products"] if prod["is_example"]]
+            example_ = [f"{prod['source']}.{prod['product_name']}" for prod in v["products"] if prod["is_example"]]
             if len(example_) > 0:
                 example = example_[0]
             if isinstance(v["temporal_interp"], dict):
