@@ -324,7 +324,8 @@ class Configuration():
                         _ = se_root_config[var_].pop("composite_type")
                     break
                 elif var == var_group[-1]:
-                    log.warning(f"--> No configuration found for {' or '.join([f"[`{'` and `'.join(x)}`]" for x in var_group])}.")
+                    substring = [f"[`{'` and `'.join(x)}`]" for x in var_group]
+                    log.warning(f"--> No configuration found for {' or '.join(substring)}.")
                 else:
                     continue
         
@@ -353,10 +354,12 @@ class Configuration():
                     for var_ in var:
                         et_look_config[var_] = self.full[var_].copy()
                     if len(var) == 0 and var == var_group[-1]:
-                        log.info(f"--> No configuration found for {' or '.join([f"[`{'` and `'.join(x)}`]" for x in var_group[:-1]])}, will use constant value.")
+                        substring = [f"[`{'` and `'.join(x)}`]" for x in var_group[:-1]]
+                        log.info(f"--> No configuration found for {' or '.join(substring)}, will use constant value.")
                     break
                 elif var == var_group[-1]:
-                    log.warning(f"--> No configuration found for {' or '.join([f"[`{'` and `'.join(x)}`]" for x in var_group])}.")
+                    substring = [f"[`{'` and `'.join(x)}`]" for x in var_group]
+                    log.warning(f"--> No configuration found for {' or '.join(substring)}.")
                 else:
                     continue
         
