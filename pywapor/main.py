@@ -214,7 +214,7 @@ class Configuration():
     def from_summary(cls, summary):
         log.info(f"--> Creating configuration from summary.").add()
         example_product = summary.pop('_EXAMPLE_', '')
-        temporal_interp = summary.pop('_TEMP_INTERP_', {})
+        temporal_interp = summary.pop('_WHITTAKER_', {})
         enhance = summary.pop('_ENHANCE_', {})
 
         full = dict()

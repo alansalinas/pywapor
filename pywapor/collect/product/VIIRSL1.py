@@ -477,6 +477,13 @@ def download(folder, latlim, lonlim, timelim, product_name, req_vars,
                         (geoloc.latitude > latlim[0]) &
                         (geoloc.latitude < latlim[1]), drop = True
                         )
+
+            if np.prod(list(geoloc.sizes.values())) == 0:
+                cleanup += [nc03_file]
+                log.info(f"--> Found 0 pixels inside AOI, skipping scene.").sub()
+                log.sub()
+                continue
+
             domain_375 = {k.replace("_375", ""): [adj(geoloc[k].min(), "even_down"), adj(geoloc[k].max(), "odd_up")] for k in geoloc.coords if "_375" in k}
             domain_750 = {k.replace("_750", ""): [int(geoloc[k].min()), int(geoloc[k].max())] for k in geoloc.coords if "_750" in k}
             log.info(f"--> Found {np.prod([v[1] - v[0] + 1 for v in domain_375.values()]):,} pixels inside AOI.").sub()
