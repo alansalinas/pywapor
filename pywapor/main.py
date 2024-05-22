@@ -214,7 +214,7 @@ class Configuration():
     def from_summary(cls, summary):
         log.info(f"--> Creating configuration from summary.").add()
         example_product = summary.pop('_EXAMPLE_', '')
-        temporal_interp = summary.pop('_TEMP_INTERP_', {})
+        temporal_interp = summary.pop('_WHITTAKER_', {})
         enhance = summary.pop('_ENHANCE_', {})
 
         full = dict()
@@ -244,7 +244,10 @@ class Configuration():
                                 "enhancers": enhancers,
                                 "is_example": prod == example_product,
                                 }]
-                        t_interps += [temporal_interp.get(prod, [])]
+                            
+                        x = temporal_interp.get(prod, None)
+                        if not isinstance(x, type(None)):
+                            t_interps += [x]
                     
                     if len(products) == 0:
                         continue
@@ -324,7 +327,8 @@ class Configuration():
                         _ = se_root_config[var_].pop("composite_type")
                     break
                 elif var == var_group[-1]:
-                    log.warning(f"--> No configuration found for {' or '.join([f"[`{'` and `'.join(x)}`]" for x in var_group])}.")
+                    substring = [f"[`{'` and `'.join(x)}`]" for x in var_group]
+                    log.warning(f"--> No configuration found for {' or '.join(substring)}.")
                 else:
                     continue
         
@@ -353,10 +357,12 @@ class Configuration():
                     for var_ in var:
                         et_look_config[var_] = self.full[var_].copy()
                     if len(var) == 0 and var == var_group[-1]:
-                        log.info(f"--> No configuration found for {' or '.join([f"[`{'` and `'.join(x)}`]" for x in var_group[:-1]])}, will use constant value.")
+                        substring = [f"[`{'` and `'.join(x)}`]" for x in var_group[:-1]]
+                        log.info(f"--> No configuration found for {' or '.join(substring)}, will use constant value.")
                     break
                 elif var == var_group[-1]:
-                    log.warning(f"--> No configuration found for {' or '.join([f"[`{'` and `'.join(x)}`]" for x in var_group])}.")
+                    substring = [f"[`{'` and `'.join(x)}`]" for x in var_group]
+                    log.warning(f"--> No configuration found for {' or '.join(substring)}.")
                 else:
                     continue
         
@@ -388,13 +394,13 @@ class Configuration():
         whittaker = dict()
         sharpen = set()
         for k,v in self.full.items():
-            example_ = [f"{prod["source"]}.{prod["product_name"]}" for prod in v["products"] if prod["is_example"]]
+            example_ = [f"{prod['source']}.{prod['product_name']}" for prod in v["products"] if prod["is_example"]]
             if len(example_) > 0:
                 example = example_[0]
             if isinstance(v["temporal_interp"], dict):
                 if v["temporal_interp"].get("method", "") == "whittaker":
                     for prod in v["products"]:
-                        whittaker[f"{prod["source"]}.{prod["product_name"]}"] = v["temporal_interp"]
+                        whittaker[f"{prod['source']}.{prod['product_name']}"] = v["temporal_interp"]
             if any(["sharpen" in x for x in v["variable_enhancers"]]):
                 sharpen.add(k)
 
@@ -613,7 +619,7 @@ if __name__ == "__main__":
         'solar radiation': {'ERA5.sis-agrometeorological-indicators'},
         'statics': {'STATICS.WaPOR3'},
         'thermal': {'VIIRSL1.VNP02IMG'},
-        'soil moisture': {'FILE:{folder}{sep}se_root_out*.nc.from_file'},
+        'soil moisture': {'FILE:{folder}{sep}se_root_out*.nc'},
 
         # Define which product to reproject the other products to.
         '_EXAMPLE_': 'SENTINEL2.S2MSI2A_R20m', 

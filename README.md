@@ -65,7 +65,7 @@ summary = {
     'statics': {'STATICS.WaPOR3'},
     'thermal': {'VIIRSL1.VNP02IMG'},
     # Use se_root output as soil moisture data.
-    'soil moisture': {'FILE:{folder}{sep}se_root_out*.nc.from_file'},
+    'soil moisture': {'FILE:{folder}{sep}se_root_out*.nc'},
     # Define which product to reproject the other products to.
     '_EXAMPLE_': 'SENTINEL2.S2MSI2A_R20m', 
     # Define any special functions to apply to a specific variable.
@@ -139,7 +139,7 @@ For questions, requests or issues with this repository, please contact Bert Coer
 
 ### Release Notes
 
-#### 3.5.0 (2023-09-15)
+#### 3.5.0 (2024-03-19)
 <br>
 <ul>
 <li> Restructured the overall workflow, there are now clear sequential phases instead of a nested process.</li>

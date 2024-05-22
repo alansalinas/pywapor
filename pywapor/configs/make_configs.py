@@ -16,7 +16,7 @@ all_configs = {
             'meteorological': {'ERA5.reanalysis-era5-single-levels'},
             'optical': {'SENTINEL2.S2MSI2A_R60m'},
             'precipitation': {'CHIRPS.P05'},
-            'soil moisture': {'FILE:{folder}{sep}se_root_out*.nc.from_file'},
+            'soil moisture': {'FILE:{folder}{sep}se_root_out*.nc'},
             'solar radiation': {'ERA5.sis-agrometeorological-indicators'},
             'statics': {'STATICS.WaPOR3'},
             'thermal': {'VIIRSL1.VNP02IMG'}
@@ -34,7 +34,7 @@ all_configs = {
             'meteorological': {'ERA5.reanalysis-era5-single-levels'},
             'optical': {'SENTINEL2.S2MSI2A_R20m'},
             'precipitation': {'CHIRPS.P05'},
-            'soil moisture': {'FILE:{folder}{sep}se_root_out*.nc.from_file'},
+            'soil moisture': {'FILE:{folder}{sep}se_root_out*.nc'},
             'solar radiation': {'ERA5.sis-agrometeorological-indicators'},
             'statics': {'STATICS.WaPOR3'},
             'thermal': {'VIIRSL1.VNP02IMG'}
@@ -48,7 +48,7 @@ all_configs = {
             'meteorological': {'GEOS5.inst3_2d_asm_Nx'},
             'optical': {'MODIS.MYD13Q1.061', 'MODIS.MOD13Q1.061', 'MODIS.MCD43A3.061'},
             'precipitation': {'CHIRPS.P05'},
-            'soil moisture': {'FILE:{folder}{sep}se_root_out*.nc.from_file'},
+            'soil moisture': {'FILE:{folder}{sep}se_root_out*.nc'},
             'solar radiation': {'MERRA2.M2T1NXRAD.5.12.4'},
             'statics': {'STATICS.WaPOR2'},
             'thermal': {'MODIS.MOD11A1.061', 'MODIS.MYD11A1.061'}
@@ -62,7 +62,7 @@ all_configs = {
             'meteorological': {'GEOS5.inst3_2d_asm_Nx'},
             'optical': {'TERRA.urn:eop:VITO:PROBAV_S5_TOC_100M_COG_V2'},
             'precipitation': {'CHIRPS.P05'},
-            'soil moisture': {'FILE:{folder}{sep}se_root_out*.nc.from_file'},
+            'soil moisture': {'FILE:{folder}{sep}se_root_out*.nc'},
             'solar radiation': {'MERRA2.M2T1NXRAD.5.12.4'},
             'statics': {'STATICS.WaPOR2'},
             'thermal': {'MODIS.MOD11A1.061', 'MODIS.MYD11A1.061'}
@@ -79,7 +79,7 @@ all_configs = {
                         'LANDSAT.LE07_SR',
                         'LANDSAT.LT05_SR'},
             'precipitation': {'CHIRPS.P05'},
-            'soil moisture': {'FILE:{folder}{sep}se_root_out*.nc.from_file'},
+            'soil moisture': {'FILE:{folder}{sep}se_root_out*.nc'},
             'solar radiation': {'MERRA2.M2T1NXRAD.5.12.4'},
             'statics': {'STATICS.WaPOR2'},
             'thermal': {'LANDSAT.LC08_ST',
@@ -100,7 +100,7 @@ all_configs = {
             'meteorological': {'GEOS5.tavg1_2d_slv_Nx'},
             'optical': {'SENTINEL2.S2MSI2A_R20m'},
             'precipitation': {'CHIRPS.P05'},
-            'soil moisture': {'FILE:{folder}{sep}se_root_out*.nc.from_file'},
+            'soil moisture': {'FILE:{folder}{sep}se_root_out*.nc'},
             'solar radiation': {'ERA5.sis-agrometeorological-indicators'},
             'statics': {'STATICS.WaPOR3'},
             'thermal': {'VIIRSL1.VNP02IMG'}
@@ -129,7 +129,7 @@ all_configs = {
                         'LANDSAT.LT05_SR',
                         'SENTINEL2.S2MSI2A_R20m'},
             'precipitation': {'CHIRPS.P05'},
-            'soil moisture': {'FILE:{folder}{sep}se_root_out*.nc.from_file'},
+            'soil moisture': {'FILE:{folder}{sep}se_root_out*.nc'},
             'solar radiation': {'ERA5.sis-agrometeorological-indicators'},
             'statics': {'STATICS.WaPOR3'},
             'thermal': {
