@@ -244,7 +244,10 @@ class Configuration():
                                 "enhancers": enhancers,
                                 "is_example": prod == example_product,
                                 }]
-                        t_interps += [temporal_interp.get(prod, [])]
+                            
+                        x = temporal_interp.get(prod, None)
+                        if not isinstance(x, type(None)):
+                            t_interps += [x]
                     
                     if len(products) == 0:
                         continue
@@ -616,7 +619,7 @@ if __name__ == "__main__":
         'solar radiation': {'ERA5.sis-agrometeorological-indicators'},
         'statics': {'STATICS.WaPOR3'},
         'thermal': {'VIIRSL1.VNP02IMG'},
-        'soil moisture': {'FILE:{folder}{sep}se_root_out*.nc.from_file'},
+        'soil moisture': {'FILE:{folder}{sep}se_root_out*.nc'},
 
         # Define which product to reproject the other products to.
         '_EXAMPLE_': 'SENTINEL2.S2MSI2A_R20m', 
