@@ -536,6 +536,10 @@ class Project():
 
         log.info("> DOWNLOADER").add()
 
+        example_t_vars = [x for x in ["lst", "bt"] if x in self.configuration.full.keys()]
+        example_sources = {k:v for k,v in self.configuration.full.items() if k in example_t_vars}
+        other_sources = {k:v for k,v in self.configuration.full.items() if k not in example_t_vars}
+
         if buffer_timelim:
             bins = time_bins(self.period, 1)
             adjusted_timelim = [bins[0], bins[-1]]
@@ -545,13 +549,34 @@ class Project():
             adjusted_timelim = self.period
             buffered_timelim = self.period
 
-        self.dss, _ = collect_sources(
+        example_dss, _ = collect_sources(
                             self.folder,
-                            self.configuration.full,
+                            example_sources,
+                            self.latlim,
+                            self.lonlim,
+                            adjusted_timelim,
+                            landsat_order_only = True
+                            )
+        
+        other_dss, _ = collect_sources(
+                            self.folder,
+                            other_sources,
                             self.latlim,
                             self.lonlim,
                             buffered_timelim,
                             )
+        
+        # If there are example-t variables that rely on landsat, try one more time to collect them.
+        if np.any(list({var: np.any([product_info["source"] == "LANDSAT" for product_info in info["products"]]) for var, info in example_sources.items()}.values())):
+            example_dss, _ = collect_sources(
+                                            self.folder, 
+                                            example_sources, 
+                                            self.latlim, 
+                                            self.lonlim, 
+                                            adjusted_timelim
+                                            )
+
+        self.dss = {**example_dss, **other_dss}
         
         log.sub().info("< DOWNLOADER")
     
@@ -643,7 +668,7 @@ if __name__ == "__main__":
     se_root_in = project.run_pre_se_root()
     # se_root = project.run_se_root()
     # et_look_in = project.run_pre_et_look()
-    # et_look = project.run_et_look()
+    et_look = project.run_et_look()
 
 
 
