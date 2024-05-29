@@ -20,7 +20,7 @@ from pywapor.collect import accounts
 from pywapor.collect.protocol.crawler import download_urls, download_url
 from joblib import Parallel, delayed, Memory
 from pywapor.enhancers.apply_enhancers import apply_enhancers
-from pywapor.general.processing_functions import save_ds, remove_ds, adjust_timelim_dtype, is_corrupt_or_empty, open_ds, urljoin
+from pywapor.general.processing_functions import save_ds, remove_ds, adjust_timelim_dtype, is_corrupt_or_empty, open_ds
 from pywapor.general.logger import log, adjust_logger
 from pywapor.enhancers.other import drop_empty_times
 from pywapor.general.curvilinear import curvi_to_recto, create_grid
