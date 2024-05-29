@@ -13,13 +13,14 @@ import multiprocessing
 import xarray as xr
 import numpy as np
 import tqdm
+import posixpath
 from osgeo import gdal
 from functools import partial
 from pywapor.collect import accounts
 from pywapor.collect.protocol.crawler import download_urls, download_url
 from joblib import Parallel, delayed, Memory
 from pywapor.enhancers.apply_enhancers import apply_enhancers
-from pywapor.general.processing_functions import save_ds, remove_ds, adjust_timelim_dtype, is_corrupt_or_empty, open_ds
+from pywapor.general.processing_functions import save_ds, remove_ds, adjust_timelim_dtype, is_corrupt_or_empty, open_ds, urljoin
 from pywapor.general.logger import log, adjust_logger
 from pywapor.enhancers.other import drop_empty_times
 from pywapor.general.curvilinear import curvi_to_recto, create_grid
@@ -414,9 +415,9 @@ def download(folder, latlim, lonlim, timelim, product_name, req_vars,
             nc03_parts = os.path.normpath(nc03).split(os.sep)
             nc_cloud_parts = os.path.normpath(nc_cloud).split(os.sep)
             year_doy = nc02_parts[-1].split(".")[1][1:]
-            nc02_url = os.path.join(base_url, "5200", nc02_parts[-2], year_doy[:4], year_doy[4:], nc02_parts[-1])
-            nc03_url = os.path.join(base_url, "5200", nc03_parts[-2], year_doy[:4], year_doy[4:], nc03_parts[-1])
-            ncqa_url = os.path.join(base_url, "5110", nc_cloud_parts[-2], year_doy[:4], year_doy[4:], nc_cloud_parts[-1])
+            nc02_url = posixpath.join(base_url, "5200", nc02_parts[-2], year_doy[:4], year_doy[4:], nc02_parts[-1])
+            nc03_url = posixpath.join(base_url, "5200", nc03_parts[-2], year_doy[:4], year_doy[4:], nc03_parts[-1])
+            ncqa_url = posixpath.join(base_url, "5110", nc_cloud_parts[-2], year_doy[:4], year_doy[4:], nc_cloud_parts[-1])
             urls = [nc02_url, nc03_url, ncqa_url]
             groups = ["observation_data", "geolocation_data", "geophysical_data"]
             for group, url in zip(groups, urls.copy()):
@@ -450,9 +451,10 @@ def download(folder, latlim, lonlim, timelim, product_name, req_vars,
             nc03_parts = os.path.normpath(nc03).split(os.sep)
             nc_cloud_parts = os.path.normpath(nc_cloud).split(os.sep)
             year_doy = nc02_parts[-1].split(".")[1][1:]
-            base_url02 = os.path.join(base_url, "5200", nc02_parts[-2], year_doy[:4], year_doy[4:], nc02_parts[-1])
-            base_url03 = os.path.join(base_url, "5200", nc03_parts[-2], year_doy[:4], year_doy[4:], nc03_parts[-1])
-            base_cloud = os.path.join(base_url, "5110", nc_cloud_parts[-2], year_doy[:4], year_doy[4:], nc_cloud_parts[-1])
+
+            base_url02 = posixpath.join(base_url, "5200", nc02_parts[-2], year_doy[:4], year_doy[4:], nc02_parts[-1])
+            base_url03 = posixpath.join(base_url, "5200", nc03_parts[-2], year_doy[:4], year_doy[4:], nc03_parts[-1])
+            base_cloud = posixpath.join(base_url, "5110", nc_cloud_parts[-2], year_doy[:4], year_doy[4:], nc_cloud_parts[-1])
 
             # Download geolocation data.
             order = {
