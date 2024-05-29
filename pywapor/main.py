@@ -591,8 +591,13 @@ class Project():
             log.sub().info("< PRE_SE_ROOT")
         return self.se_root_in
 
-    def run_se_root(self, se_root_version = "v3"):
-        self.se_root_out = pywapor.se_root.main(self.se_root_in, se_root_version = se_root_version)
+    def run_se_root(self, se_root_version = "v3", export_vars = "default", chunks = {"time": -1, "x": 500, "y": 500}):
+        self.se_root_out = pywapor.se_root.main(
+                                                self.se_root_in, 
+                                                se_root_version = se_root_version, 
+                                                export_vars = export_vars, 
+                                                chunks = chunks
+                                                )
         return self.se_root_out
     
     def run_pre_et_look(self, forced = False):
@@ -604,8 +609,13 @@ class Project():
             log.sub().info("< PRE_ET_LOOK")
         return self.et_look_in
 
-    def run_et_look(self, et_look_version = "v3"):
-        self.et_look_out = pywapor.et_look.main(self.et_look_in, et_look_version = et_look_version)
+    def run_et_look(self, et_look_version = "v3", export_vars = "default", chunks = {"time_bins": -1, "x": 500, "y": 500}):
+        self.et_look_out = pywapor.et_look.main(
+                                                self.et_look_in, 
+                                                et_look_version = et_look_version, 
+                                                export_vars = export_vars, 
+                                                chunks = chunks
+                                                )
         return self.et_look_out
 
 if __name__ == "__main__":
