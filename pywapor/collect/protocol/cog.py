@@ -88,6 +88,8 @@ def download(fp, product_name, coords, variables, post_processors, url_func,
 
         # Run gdal.Translate.
         ds_ = gdal.Translate(temp_path, url, options = options)
+        ds_.FlushCache()
+        ds_ = None
 
     except Exception as e:
         raise e
