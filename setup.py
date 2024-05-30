@@ -29,7 +29,7 @@ setup(
         'bottleneck',
         'tqdm',
         'dask',
-        'rioxarray',
+        'rioxarray>=0.15.5',
         'cryptography',
         'cachetools',
         'cdsapi',
