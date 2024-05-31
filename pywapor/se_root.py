@@ -11,7 +11,6 @@ import datetime
 import pywapor.general as g
 import pywapor.et_look_v2_v3 as ETLook_v2_v3
 from pywapor.general.logger import log, adjust_logger
-from pywapor.enhancers.other import drop_empty_times
 from pywapor.general.processing_functions import save_ds, open_ds
 import copy
 import pywapor.pre_se_root as pre_se_root
@@ -186,18 +185,18 @@ def main(input_data, se_root_version = "v2", export_vars = "default", chunks = {
     ds["se_root"] = ETLook.soil_moisture.soil_moisture_from_maximum_temperature(ds["lst_max"], ds["lst"], ds["lst_min"])
 
     if export_vars == "all":
-        keep_vars = [var for var in ds.data_vars if "x" in ds[var].dims and "y" in ds[var].dims]
-        ds = ds[keep_vars]
+        ...
     elif export_vars == "default":
-        keep_vars = ['se_root']
-        ds = drop_empty_times(ds, None, drop_vars=keep_vars)
+        keep_vars = [
+            'se_root'
+            ]
+        keep_vars = [x for x in keep_vars if x in ds.variables]
         ds = ds[keep_vars]
     elif isinstance(export_vars, list):
         keep_vars = copy.copy(export_vars)
-        ds = drop_empty_times(ds, None, drop_vars=keep_vars)
         ds = ds[keep_vars]
     else:
-        return None
+        raise ValueError(f"Please provide a valid `export_vars` ('all', 'default' or a list).")
 
     ds = g.variables.fill_attrs(ds)
 
