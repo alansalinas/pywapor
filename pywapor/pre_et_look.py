@@ -157,7 +157,11 @@ def main(folder, latlim, lonlim, timelim, sources = "level_2_v3", bin_length = 1
 
     dss, sources = downloader.collect_sources(folder, sources, latlim, lonlim, buffered_timelim)
 
-    ds = compositer.main(dss, sources, folder, general_enhancers, bins)
+    try:
+        ds = compositer.main(dss, sources, folder, general_enhancers, bins)
+    except Exception as e:
+        log.exception("")
+        raise e
 
     t2 = datetime.datetime.now()
     log.sub().info(f"< PRE_ET_LOOK ({str(t2 - t1)})")

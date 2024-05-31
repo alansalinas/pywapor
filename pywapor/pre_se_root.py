@@ -141,7 +141,11 @@ def main(folder, latlim, lonlim, timelim, sources = "level_1", bin_length = 1, e
 
     dss= {**example_dss, **other_dss}
 
-    ds = aligner.main(dss, sources, folder, general_enhancers, example_t_vars = example_t_vars)
+    try:
+        ds = aligner.main(dss, sources, folder, general_enhancers, example_t_vars = example_t_vars)
+    except Exception as e:
+        log.exception("")
+        raise e
 
     t2 = datetime.datetime.now()
     log.sub().info(f"< PRE_SE_ROOT ({str(t2 - t1)})")
