@@ -174,8 +174,10 @@ def download(folder, latlim, lonlim, timelim, product_name, req_vars,
 
     spatial_buffer = True
     if spatial_buffer:
-        latlim = [latlim[0] - 0.1, latlim[1] + 0.1]
-        lonlim = [lonlim[0] - 0.1, lonlim[1] + 0.1]
+        buffer = {"sis-agrometeorological-indicators": 0.1, 
+                  "reanalysis-era5-single-levels": 0.25}[product_name]
+        latlim = [latlim[0] - buffer, latlim[1] + buffer]
+        lonlim = [lonlim[0] - buffer, lonlim[1] + buffer]
 
     if isinstance(variables, type(None)):
         variables = default_vars(product_name, req_vars)
