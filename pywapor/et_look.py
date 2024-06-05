@@ -226,13 +226,12 @@ def main(input_data, et_look_version = "v2", export_vars = "default", chunks = {
     if export_vars == "all":
         ...
     elif export_vars == "default":
-        keep_vars = ['int_mm',
+        keep_vars = [
+                    'int_mm',
                     't_24_mm',
                     'e_24_mm',
                     'et_24_mm',
-                    # 'et_ref_24_mm',
                     'se_root',
-                    # 'biomass_prod',
                     'npp'
                     ]
         keep_vars = [x for x in keep_vars if x in ds.variables]
@@ -241,7 +240,7 @@ def main(input_data, et_look_version = "v2", export_vars = "default", chunks = {
         keep_vars = copy.copy(export_vars)
         ds = ds[keep_vars]
     else:
-        raise ValueError
+        raise ValueError(f"Please provide a valid `export_vars` ('all', 'default' or a list).")
 
     if len(ds.data_vars) == 0:
         log.info("--> No data to export, try adjusting `export_vars` or make sure to provide required inputs.")
