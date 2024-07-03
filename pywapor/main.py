@@ -188,7 +188,7 @@ class Configuration():
                 return super(EncodeSetTuple, self).encode(hint_tuples(obj))
         
         json_string = json.dumps(out, cls = EncodeSetTuple)
-        with open(fh, "w") as x:
+        with open(fh, "w", encoding='utf8') as x:
             x.write(json_string)
 
     @classmethod
@@ -200,7 +200,7 @@ class Configuration():
             if dct.get("type", None) == "tuple":
                 return tuple(dct.get('value'))
             return dct
-        with open(fh, "r") as fp:
+        with open(fh, "r", encoding='utf8') as fp:
             config_ = json.load(fp, object_hook=decode_set)
         
         config = cls(full = config_["full"], summary = config_["summary"], se_root = config_["se_root"], 
