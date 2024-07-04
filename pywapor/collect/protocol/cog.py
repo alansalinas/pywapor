@@ -98,9 +98,9 @@ def download(fp, product_name, coords, variables, post_processors, url_func,
             gdal.SetConfigOption(k, None)
 
     # Process the new netCDF.
-    ds = open_ds(temp_path)
+    ds_ = open_ds(temp_path)
 
-    ds = ds.rename_vars({k: f"Band{v}" for k,v in zip(list(ds.data_vars), bands)})
+    ds = ds_.rename_vars({k: f"Band{v}" for k,v in zip(list(ds_.data_vars), bands)})
 
     ds = process_ds(ds, coords, variables)
 
@@ -111,7 +111,7 @@ def download(fp, product_name, coords, variables, post_processors, url_func,
     out = save_ds(ds, temp_path.replace("_temp", ""), encoding = "initiate", label = f"Saving {fn}.")
 
     # Remove the temporary file.
-    remove_ds(ds)
+    remove_ds(ds_)
 
     return out
 
