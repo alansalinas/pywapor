@@ -236,6 +236,7 @@ def download(folder, latlim, lonlim, timelim, product_name, req_vars = ["ndvi", 
             dl_urls = [(x[0], x[1].replace("https://services", f"/vsicurl/https://{un}:{pw}@services")) for x in cog_urls]
 
             dss = list()
+            cleanup = list()
             for j, (var, url) in enumerate(dl_urls):
                 var_file = out_fp.replace(".nc", f"_{var}_temp.nc")
                 log.info(f"--> ({j+1}/{len(dl_urls)}) Downloading `{var}`.")
@@ -245,8 +246,9 @@ def download(folder, latlim, lonlim, timelim, product_name, req_vars = ["ndvi", 
                     if corrupt:
                         remove_ds(var_file)
                     else:
-                        ds = open_ds(var_file)
-                        dss.append(ds)
+                        ds_ = open_ds(var_file)
+                        cleanup.append(ds_)
+                        dss.append(ds_)
                 else:
                     try:
                         for k, v in gdal_config_options.items():
@@ -257,8 +259,9 @@ def download(folder, latlim, lonlim, timelim, product_name, req_vars = ["ndvi", 
                     finally:
                         for k, v in gdal_config_options.items():
                             gdal.SetConfigOption(k, None)
-                    ds = open_ds(var_file)
-                    ds = ds.rename({"Band1": var})
+                    ds_ = open_ds(var_file)
+                    cleanup.append(ds_)
+                    ds = ds_.rename({"Band1": var})
                     dss.append(ds)
                     if var != dl_urls[-1][0]:
                         # NOTE VERY IMPORTANT, otherwise easily hitting "429" errors, 
@@ -275,7 +278,7 @@ def download(folder, latlim, lonlim, timelim, product_name, req_vars = ["ndvi", 
         out = save_ds(ds, out_fp, encoding = "initiate", label = f"Saving {os.path.split(out_fp)[-1]}.")
         outs.append(out)
 
-        for x in dss:
+        for x in cleanup:
             remove_ds(x)
 
         log.sub()
