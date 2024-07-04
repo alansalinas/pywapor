@@ -7,10 +7,23 @@ import os
 from tqdm.contrib.logging import logging_redirect_tqdm
 import warnings
 
+class MyCoolFormatter(logging.Formatter):
+    """
+    See https://jupyterbook.org/en/stable/content/code-outputs.html#ansi-outputs
+    for colors. E.g. below:
+    30 gives black font (and 1;30 would give bold-black font)
+    41 gives red background.
+    """
+    def format(self, record):
+        if record.levelno > logging.INFO:
+            self._style._fmt = "\x1b[30;41m %(message)s \x1b[0m"
+        else:
+            self._style._fmt = "%(message)s"
+        return super().format(record)
+
 log_settings = logging.getLogger(__name__)
-__formatter__ = logging.Formatter(fmt='%(message)s', datefmt = '%Y/%m/%d %H:%M:%S')
 __handler__ = logging.StreamHandler()
-__handler__.setFormatter(__formatter__)
+__handler__.setFormatter(MyCoolFormatter())
 __handler__.setLevel("INFO")
 log_settings.addHandler(__handler__)
 log = IndentedLoggerAdapter(log_settings)
@@ -56,3 +69,14 @@ def adjust_logger(log_write, folder, log_level, testing = False):
     if testing:
         from osgeo import gdal
         log.info(f"--> Using GDAL ({gdal.__version__}) from `{gdal.__file__}`.")
+
+if __name__ == "__main__":
+
+    adjust_logger(True, r"/Users/hmcoerver/Local/cog_test", "INFO")
+
+    log.info("tst").add().info("tralala").sub()
+    log.warning("balblblblasdas").add()
+    log.info("hihihi").add()
+    log.sub()
+    log.warning("no").add()
+    log.sub().sub().info("yes")
