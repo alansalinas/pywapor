@@ -139,10 +139,11 @@ def download(fp, product_name, coords, variables, post_processors,
     # Merge spatial tiles.
     coords_ = {k: [v[0], selection[v[0]]] for k,v in coords.items()}
     if spatial_tiles:
-        dss = [process_ds(xr.open_dataset(x, decode_coords = "all"), coords_, variables, crs = data_source_crs) for x in files]
+        dss_ = [xr.open_dataset(x, decode_coords = "all") for x in files]
+        dss = [process_ds(x, coords_, variables, crs = data_source_crs) for x in dss_]
         ds = rioxarray.merge.merge_datasets(dss)
     else:
-        dss = files
+        dss_ = files
         ds = xr.concat([xr.open_dataset(x, decode_coords="all") for x in files], dim = "time")
         ds = process_ds(ds, coords_, variables, crs = data_source_crs)
 
@@ -170,8 +171,8 @@ def download(fp, product_name, coords, variables, post_processors,
     ds = save_ds(ds, fp, encoding = "initiate", label = "Saving merged data.")
 
     # Remove temporary files.
-    if not isinstance(dss, type(None)):
-        for x in dss:
+    if not isinstance(dss_, type(None)):
+        for x in dss_:
             remove_ds(x)
 
     return ds
