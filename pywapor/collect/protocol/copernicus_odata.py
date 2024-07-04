@@ -58,7 +58,13 @@ def download(folder, latlim, lonlim, timelim, product_name, product_type, node_f
     sd = datetime.datetime.strftime(timelim[0], "%Y-%m-%dT00:00:00Z")
     ed = datetime.datetime.strftime(timelim[1], "%Y-%m-%dT23:59:59Z")
 
-    cachedir = os.path.join(folder, "cache")
+    # NOTE paths on windows have a max length, this extends the max length, see
+    # here for more info https://learn.microsoft.com/en-us/windows/win32/fileio/maximum-file-path-limitation?tabs=registry
+    if os.name == "nt": 
+        cachedir = "\\\\?\\" + os.path.join(folder, "cache")
+    else:
+        cachedir = os.path.join(folder, "cache")
+
     memory = Memory(cachedir, verbose=0)
 
     product_name_ = {"SENTINEL3": "SENTINEL-3", 

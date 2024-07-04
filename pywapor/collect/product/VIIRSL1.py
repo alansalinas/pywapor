@@ -321,7 +321,14 @@ def download(folder, latlim, lonlim, timelim, product_name, req_vars,
         Downloaded data.
     """
     folder = os.path.join(folder, "VIIRSL1")
-    cachedir = os.path.join(folder, "cache")
+
+    # NOTE paths on windows have a max length, this extends the max length, see
+    # here for more info https://learn.microsoft.com/en-us/windows/win32/fileio/maximum-file-path-limitation?tabs=registry
+    if os.name == "nt": 
+        cachedir = "\\\\?\\" + os.path.join(folder, "cache")
+    else:
+        cachedir = os.path.join(folder, "cache")
+
     if not os.path.exists(folder):
         os.makedirs(folder)
 
@@ -557,7 +564,7 @@ def download(folder, latlim, lonlim, timelim, product_name, req_vars,
 
 if __name__ == "__main__":
 
-    folder = "/Users/hmcoerver/Local/test_dl_VIIRSL1_0"
+    folder = r"C:\Users\bertc\Downloads\viirs_test"
     latlim = [29.4, 29.7]
     lonlim = [30.7, 31.0]
     timelim = [datetime.date(2023, 3, 1), datetime.date(2023, 3, 2)]
@@ -570,7 +577,8 @@ if __name__ == "__main__":
 
     adjust_logger(True, folder, "INFO")
 
-
+    ds = download(folder, latlim, lonlim, timelim, product_name, req_vars,
+                    variables = variables, post_processors = post_processors)
 
 
 

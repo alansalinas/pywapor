@@ -199,7 +199,14 @@ def download(folder, latlim, lonlim, timelim, product_name, req_vars = ["ndvi", 
     params['datetime'] = search_dates
     params['collections'] = [product_name]
 
-    products = search_stac(params, os.path.join(folder, "cache"))
+    # NOTE paths on windows have a max length, this extends the max length, see
+    # here for more info https://learn.microsoft.com/en-us/windows/win32/fileio/maximum-file-path-limitation?tabs=registry
+    if os.name == "nt": 
+        cachedir = "\\\\?\\" + os.path.join(folder, "cache")
+    else:
+        cachedir = os.path.join(folder, "cache")
+
+    products = search_stac(params, cachedir)
 
     dss = list()
 
