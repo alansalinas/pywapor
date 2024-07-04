@@ -525,6 +525,7 @@ def download(folder, latlim, lonlim, timelim, product_name, req_vars,
             ncqa_file = download_url(url, os.path.join(folder, nc_cloud_parts[-1].replace(".nc", "_cloud.nc")))
 
             lut_file = None
+            geoloc_.close()
             cleanup += [nc03_file]
         else:
             raise ValueError
