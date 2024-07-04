@@ -16,7 +16,7 @@ class MyCoolFormatter(logging.Formatter):
     """
     def format(self, record):
         if record.levelno > logging.INFO:
-            self._style._fmt = "\x1b[30;41m %(message)s \x1b[0m"
+            self._style._fmt = "\x1b[30;41m%(message)s\x1b[0m"
         else:
             self._style._fmt = "%(message)s"
         return super().format(record)
