@@ -248,7 +248,8 @@ def download(folder, latlim, lonlim, timelim, product_name, req_vars = ["ndvi", 
                     else:
                         ds_ = open_ds(var_file)
                         cleanup.append(ds_)
-                        dss.append(ds_)
+                        ds = ds_.rename({"Band1": var})
+                        dss.append(ds)
                 else:
                     try:
                         for k, v in gdal_config_options.items():
