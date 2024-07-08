@@ -430,7 +430,14 @@ def time_func(fn):
 
 def s2_processor(scene_folder, variables, **kwargs):
 
-    dss = [open_ds(glob.glob(os.path.join(scene_folder, "**", "*" + k), recursive = True)[0], decode_coords=None).isel(band=0).rename({"band_data": v[1]}) for k, v in variables.items()]
+    dss = list()
+    dss__ = list()
+    for k, v in variables.items():
+        ds__ = open_ds(glob.glob(os.path.join(scene_folder, "**", "*" + k), recursive = True)[0], decode_coords=None)
+        ds_ = ds__.isel(band=0).rename({"band_data": v[1]})
+        dss__.append(ds__)
+        dss.append(ds_)
+
     ds = xr.merge(dss).drop_vars("band")
 
     meta_fps = glob.glob(os.path.join(scene_folder, "**", "MTD_MSIL2A.xml"), recursive = True)
@@ -465,7 +472,7 @@ def s2_processor(scene_folder, variables, **kwargs):
             ds.attrs = {"scale_factor": 10000.0, "offset_factor": -1000.0}
         log.warning(f"--> No scale/offset found for `{meta_fps[0]}`, using `{ds.attrs}`.")
 
-    return ds
+    return ds, dss__
 
 def download(folder, latlim, lonlim, timelim, product_name, 
                 req_vars, variables = None, post_processors = None, 
@@ -529,8 +536,10 @@ def download(folder, latlim, lonlim, timelim, product_name,
         to_dl = list(variables.keys()) + ["MTD_MSIL2A.xml"]
         return np.any([x in fn for x in to_dl])
 
+    final_fn = os.path.split(fn)[-1]
+    processor = s2_processor
     scenes = copernicus_odata.download(product_folder, latlim, lonlim, timelim, "SENTINEL2", product_name.split("_")[0], node_filter = node_filter)
-    ds = copernicus_odata.process_sentinel(scenes, variables, time_func, os.path.split(fn)[-1], post_processors, s2_processor, bb = bb)
+    ds = copernicus_odata.process_sentinel(scenes, variables, time_func, final_fn, post_processors, processor, bb = bb)
 
     return ds[req_vars_orig]
 

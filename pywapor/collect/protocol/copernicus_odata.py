@@ -250,9 +250,9 @@ def process_sentinel(scenes, variables, time_func, final_fn, post_processors, pr
             remove_folder = True
         else:
             scene_folder = scene_folder
-            remove_folder = False
+            remove_folder = True
 
-        ds = processor(scene_folder, variables, bb = bb)
+        ds, to_remove = processor(scene_folder, variables, bb = bb)
 
         # Apply variable specific functions.
         for vars in variables.values():
@@ -287,8 +287,14 @@ def process_sentinel(scenes, variables, time_func, final_fn, post_processors, pr
         else:
             dss1[dtime] = [ds]
 
+        for x in to_remove:
+            remove_ds(x)
+
         if remove_folder:
-            shutil.rmtree(scene_folder)
+            try:
+                shutil.rmtree(scene_folder)
+            except PermissionError:
+                log.info(f"--> Unable to delete folder `{scene_folder}`.")
 
     log.sub()
     
@@ -316,6 +322,7 @@ def process_sentinel(scenes, variables, time_func, final_fn, post_processors, pr
 
     # Save final netcdf.
     with warnings.catch_warnings():
+        warnings.filterwarnings("ignore", message="All-NaN slice encountered")
         warnings.filterwarnings("ignore", message="invalid value encountered in true_divide")
         warnings.filterwarnings("ignore", message="divide by zero encountered in true_divide")
         ds = save_ds(ds, fp, chunks = chunks, encoding = "initiate", label = f"Merging files.")

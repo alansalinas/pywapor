@@ -82,6 +82,15 @@ def curvi_to_recto(lats, lons, data, out_fn, warp_kwargs = {}):
     out.FlushCache()
     out = None
 
+    for x, ds in data.items():
+        ds.FlushCache()
+        data[x] = None
+
+    lats.FlushCache()
+    lats = None
+    lons.FlushCache()
+    lons = None
+
     return out_fn
 
 def create_grid(latlim, lonlim, dx_dy = (0.0033, 0.0033)):
