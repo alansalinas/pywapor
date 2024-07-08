@@ -2,7 +2,7 @@ from setuptools import setup, find_packages
 
 setup(
     name = 'pywapor',
-    version = '3.5.6',
+    version = '3.5.7',
     url = 'https://www.fao.org/aquastat/py-wapor/',
     author = "FAO",
     author_email = "bert.coerver@fao.org",
@@ -16,8 +16,8 @@ setup(
         'netcdf4',
         'gdal>=3,<4.0',
         'xarray',
-        'numpy',
-        'pandas',
+        'numpy<2',
+        'pandas<3',
         'requests',
         'matplotlib',
         'pyproj',
