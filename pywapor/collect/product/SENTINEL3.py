@@ -92,9 +92,9 @@ def s3_processor(scene_folder, variables, bb = None, **kwargs):
 
     ncs = [glob.glob(os.path.join(scene_folder, "**", "*" + k), recursive = True)[0] for k in variables.keys()]
 
-    ds = xr.open_mfdataset(ncs)
+    ds_ = xr.open_mfdataset(ncs)
 
-    ds = ds.set_coords(("longitude_in", "latitude_in"))
+    ds = ds_.set_coords(("longitude_in", "latitude_in"))
     ds = ds.rename_vars({"longitude_in": "x", "latitude_in": "y"})
     ds = ds.rename_dims({"rows": "ny", "columns": "nx"})
     ds = ds[["LST", "LST_uncertainty"]]
@@ -119,9 +119,13 @@ def s3_processor(scene_folder, variables, bb = None, **kwargs):
     out_fn = os.path.join(scene_folder, "warped.nc")
     _ = curvi_to_recto(lats, lons, data, out_fn, warp_kwargs = warp_kwargs)
 
-    ds = open_ds(out_fn)
-    ds = ds.rename({"lat": "y", "lon": "x", "Band1": "lst"})
-    ds = ds.drop("crs")
+    ds_.close()
+    ds.close()
+    remove_ds(combined_fn)
+
+    ds_ = open_ds(out_fn)
+    ds = ds_.rename({"lat": "y", "lon": "x", "Band1": "lst"})
+    ds = ds.drop_vars(["crs"])
     ds.attrs = {}
     for var in ds.data_vars:
         ds[var].attrs = {}
@@ -130,9 +134,7 @@ def s3_processor(scene_folder, variables, bb = None, **kwargs):
     ds = ds.sortby("y", ascending = False)
     ds = ds.rio.write_transform(ds.rio.transform(recalc=True))
 
-    remove_ds(combined_fn)
-
-    return ds
+    return ds, [ds_] + ncs
 
 def download(folder, latlim, lonlim, timelim, product_name, 
                 req_vars, variables = None,  post_processors = None,

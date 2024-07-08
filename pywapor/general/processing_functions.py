@@ -33,7 +33,7 @@ def remove_temp_files(folder):
     else:
         log_file = log_files[0]
 
-    with open(log_file, "r") as f:
+    with open(log_file, "r", encoding='utf8') as f:
         lines = f.readlines()
 
     regex_pattern = r"--> Unable to delete temporary file `(.*)`"

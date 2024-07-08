@@ -107,7 +107,7 @@ def expand_time_dim(ds, *args):
     groups = ds.groupby(ds.lst_hour, squeeze = True)
 
     def _expand_hour_dim(x):
-        hour = np.timedelta64(int(np.nanmedian(x.lst_hour.values) * 3600), "s")
+        hour = np.timedelta64(int(np.nanmedian(x.lst_hour.values) * 3600 * 1e9), "ns")
         x = x.assign_coords({"hour": hour}).expand_dims("hour")
         return x
 

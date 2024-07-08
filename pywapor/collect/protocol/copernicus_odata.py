@@ -58,7 +58,13 @@ def download(folder, latlim, lonlim, timelim, product_name, product_type, node_f
     sd = datetime.datetime.strftime(timelim[0], "%Y-%m-%dT00:00:00Z")
     ed = datetime.datetime.strftime(timelim[1], "%Y-%m-%dT23:59:59Z")
 
-    cachedir = os.path.join(folder, "cache")
+    # NOTE paths on windows have a max length, this extends the max length, see
+    # here for more info https://learn.microsoft.com/en-us/windows/win32/fileio/maximum-file-path-limitation?tabs=registry
+    if os.name == "nt": 
+        cachedir = "\\\\?\\" + os.path.join(folder, "cache")
+    else:
+        cachedir = os.path.join(folder, "cache")
+
     memory = Memory(cachedir, verbose=0)
 
     product_name_ = {"SENTINEL3": "SENTINEL-3", 
@@ -244,9 +250,9 @@ def process_sentinel(scenes, variables, time_func, final_fn, post_processors, pr
             remove_folder = True
         else:
             scene_folder = scene_folder
-            remove_folder = False
+            remove_folder = True
 
-        ds = processor(scene_folder, variables, bb = bb)
+        ds, to_remove = processor(scene_folder, variables, bb = bb)
 
         # Apply variable specific functions.
         for vars in variables.values():
@@ -281,8 +287,14 @@ def process_sentinel(scenes, variables, time_func, final_fn, post_processors, pr
         else:
             dss1[dtime] = [ds]
 
+        for x in to_remove:
+            remove_ds(x)
+
         if remove_folder:
-            shutil.rmtree(scene_folder)
+            try:
+                shutil.rmtree(scene_folder)
+            except PermissionError:
+                log.info(f"--> Unable to delete folder `{scene_folder}`.")
 
     log.sub()
     
@@ -310,6 +322,7 @@ def process_sentinel(scenes, variables, time_func, final_fn, post_processors, pr
 
     # Save final netcdf.
     with warnings.catch_warnings():
+        warnings.filterwarnings("ignore", message="All-NaN slice encountered")
         warnings.filterwarnings("ignore", message="invalid value encountered in true_divide")
         warnings.filterwarnings("ignore", message="divide by zero encountered in true_divide")
         ds = save_ds(ds, fp, chunks = chunks, encoding = "initiate", label = f"Merging files.")

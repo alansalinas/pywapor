@@ -82,11 +82,20 @@ def curvi_to_recto(lats, lons, data, out_fn, warp_kwargs = {}):
     out.FlushCache()
     out = None
 
+    for x, ds in data.items():
+        ds.FlushCache()
+        data[x] = None
+
+    lats.FlushCache()
+    lats = None
+    lons.FlushCache()
+    lons = None
+
     return out_fn
 
 def create_grid(latlim, lonlim, dx_dy = (0.0033, 0.0033)):
     dx, dy = dx_dy
-    nx = np.ceil((lonlim[1] - lonlim[0]) / dx)
-    ny = np.ceil((latlim[1] - latlim[0]) / dy)
+    nx = int(np.ceil((lonlim[1] - lonlim[0]) / dx))
+    ny = int(np.ceil((latlim[1] - latlim[0]) / dy))
     bb = [lonlim[0], latlim[0], lonlim[0] + nx * dx, latlim[0] + ny * dy]
     return bb, nx, ny

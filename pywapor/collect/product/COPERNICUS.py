@@ -39,7 +39,7 @@ def tiles_intersect(latlim, lonlim, product_name):
     res = {"GLO30": 10, "GLO90": 30}[product_name]
     for tile in tiles:
         we_sign = {-1: "W", 1: "E"}[np.sign(tile[0])]
-        ns_sign = {-1: "S", 1: "N"}[np.sign(tile[1])]
+        ns_sign = {-1: "S", 1: "N", 0 : "N"}[np.sign(tile[1])]
         fn = f"Copernicus_DSM_COG_{res}_{ns_sign}{abs(tile[1]):02}_00_{we_sign}{abs(tile[0]):03}_00_DEM"
         if fn in all_tiles:
             dl_tiles.append(fn)
@@ -215,21 +215,21 @@ def download(folder, latlim, lonlim, product_name = "GLO30", req_vars = ["z"],
     ds = xr.combine_by_coords(dss).rename({"band_data": "z"})
     ds = ds.rio.clip_box(coords["x"][1][0], coords["y"][1][0], coords["x"][1][1], coords["y"][1][1])
 
-    ds = save_ds(ds, final_fp.replace(".nc", "_stitched.nc"), encoding="initiate", label = "Merging tiles.")
+    ds__ = save_ds(ds, final_fp.replace(".nc", "_stitched.nc"), encoding="initiate", label = "Merging tiles.")
 
     # Apply product specific functions.
-    ds = apply_enhancers(post_processors, ds)
+    ds_ = apply_enhancers(post_processors, ds__)
     
     # Remove unrequested variables.
-    ds = ds[list(post_processors.keys())]
+    ds_ = ds_[list(post_processors.keys())]
     
     # Save final output.
-    ds = save_ds(ds, final_fp, encoding = "initiate", label = f"Saving {product_name}.nc")
+    ds = save_ds(ds_, final_fp, encoding = "initiate", label = f"Saving {product_name}.nc")
 
     for nc in dss:
         remove_ds(nc)
 
-    remove_ds(final_fp.replace(".nc", "_stitched.nc"))
+    remove_ds(ds__)
 
     return ds[req_vars_orig]
 
