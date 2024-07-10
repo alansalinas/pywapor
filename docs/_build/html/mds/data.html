@@ -51,7 +51,6 @@
         </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
               <ul>
 <li class="toctree-l1"><a class="reference internal" href="../data_sources.html">Data</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../_user_guide.html">User Guide</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../_pywapor_api.html">pyWaPOR API</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../_etlook.html">ETLook</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../bibliography.html">Bibliography</a></li>
@@ -84,16 +83,18 @@
   <table class="docutils align-default">
 <colgroup>
 <col style="width: 4%" />
-<col style="width: 40%" />
+<col style="width: 38%" />
 <col style="width: 6%" />
 <col style="width: 4%" />
-<col style="width: 45%" />
+<col style="width: 6%" />
+<col style="width: 43%" />
 </colgroup>
 <thead>
 <tr class="row-odd"><th class="head"><p>source</p></th>
 <th class="head"><p>product</p></th>
 <th class="head"><p>spatial res.</p></th>
 <th class="head"><p>temp. res.</p></th>
+<th class="head"><p>category</p></th>
 <th class="head"><p>variable</p></th>
 </tr>
 </thead>
@@ -102,180 +103,217 @@
 <td><p>P05</p></td>
 <td><p>0.0500°</p></td>
 <td><p>D</p></td>
+<td><p>precipitation</p></td>
 <td><p>p</p></td>
 </tr>
 <tr class="row-odd"><td><p>LANDSAT</p></td>
 <td><p>LT05_SR</p></td>
 <td><p>0.0003°</p></td>
 <td><p>N/A</p></td>
+<td><p>optical</p></td>
 <td><p>blue, green, red, nir, swir1, swir2, ndvi, r0</p></td>
 </tr>
 <tr class="row-even"><td></td>
 <td><p>LT05_ST</p></td>
 <td><p>0.0003°</p></td>
 <td><p>N/A</p></td>
+<td><p>thermal</p></td>
 <td><p>lst</p></td>
 </tr>
 <tr class="row-odd"><td></td>
 <td><p>LE07_SR</p></td>
 <td><p>0.0003°</p></td>
 <td><p>N/A</p></td>
+<td><p>optical</p></td>
 <td><p>blue, green, red, nir, swir1, swir2, ndvi, r0</p></td>
 </tr>
 <tr class="row-even"><td></td>
 <td><p>LE07_ST</p></td>
 <td><p>0.0003°</p></td>
 <td><p>N/A</p></td>
+<td><p>thermal</p></td>
 <td><p>lst</p></td>
 </tr>
 <tr class="row-odd"><td></td>
 <td><p>LC08_SR</p></td>
 <td><p>0.0003°</p></td>
 <td><p>N/A</p></td>
+<td><p>optical</p></td>
 <td><p>coastal, blue, green, red, nir, swir1, swir2, ndvi, r0</p></td>
 </tr>
 <tr class="row-even"><td></td>
 <td><p>LC08_ST</p></td>
 <td><p>0.0003°</p></td>
 <td><p>N/A</p></td>
+<td><p>thermal</p></td>
 <td><p>lst</p></td>
 </tr>
 <tr class="row-odd"><td></td>
 <td><p>LC09_SR</p></td>
 <td><p>0.0003°</p></td>
 <td><p>N/A</p></td>
+<td><p>optical</p></td>
 <td><p>coastal, blue, green, red, nir, swir1, swir2, ndvi, r0</p></td>
 </tr>
 <tr class="row-even"><td></td>
 <td><p>LC09_ST</p></td>
 <td><p>0.0003°</p></td>
 <td><p>N/A</p></td>
+<td><p>thermal</p></td>
 <td><p>lst</p></td>
 </tr>
 <tr class="row-odd"><td><p>COPERNICUS</p></td>
 <td><p>GLO30</p></td>
 <td><p>0.0003°</p></td>
 <td><p>N/A</p></td>
+<td><p>elevation</p></td>
 <td><p>z, slope, aspect</p></td>
 </tr>
 <tr class="row-even"><td></td>
 <td><p>GLO90</p></td>
 <td><p>0.0008°</p></td>
 <td><p>N/A</p></td>
+<td><p>elevation</p></td>
 <td><p>z, slope, aspect</p></td>
 </tr>
 <tr class="row-odd"><td><p>ERA5</p></td>
 <td><p>reanalysis-era5-single-levels</p></td>
 <td><p>0.2500°</p></td>
 <td><p>H</p></td>
+<td><p>meteorological</p></td>
 <td><p>u_10m, v_10m, t_dew, p_air_0, p_air, t_air</p></td>
 </tr>
 <tr class="row-even"><td></td>
 <td><p>sis-agrometeorological-indicators</p></td>
 <td><p>0.1000°</p></td>
 <td><p>D</p></td>
-<td><p>t_air, t_dew, rh, u, vp, ra</p></td>
+<td><p>meteorological</p></td>
+<td><p>t_air, t_dew, rh, u, vp</p></td>
 </tr>
-<tr class="row-odd"><td><p>GEOS5</p></td>
+<tr class="row-odd"><td></td>
+<td><p>sis-agrometeorological-indicators</p></td>
+<td><p>0.1000°</p></td>
+<td><p>D</p></td>
+<td><p>solar radiation</p></td>
+<td><p>ra</p></td>
+</tr>
+<tr class="row-even"><td><p>GEOS5</p></td>
 <td><p>inst3_2d_asm_Nx</p></td>
 <td><p>0.3125° x 0.2500°</p></td>
 <td><p>3H</p></td>
+<td><p>meteorological</p></td>
 <td><p>t_air, t_air_max, t_air_min, u2m, v2m, qv, wv, p_air, p_air_0</p></td>
 </tr>
-<tr class="row-even"><td><p>GLOBCOVER</p></td>
+<tr class="row-odd"><td><p>GLOBCOVER</p></td>
 <td><p>2009_V2.3_Global</p></td>
 <td><p>0.0028°</p></td>
 <td><p>N/A</p></td>
+<td><p>statics</p></td>
 <td><p>lulc, rs_min, z_obst_max, land_mask, lue_max</p></td>
 </tr>
-<tr class="row-odd"><td><p>MERRA2</p></td>
+<tr class="row-even"><td><p>MERRA2</p></td>
 <td><p>M2I1NXASM.5.12.4</p></td>
 <td><p>0.6250° x 0.5000°</p></td>
 <td><p>H</p></td>
+<td><p>meteorological</p></td>
 <td><p>t_air, t_air_max, t_air_min, u2m, v2m, qv, wv, p_air, p_air_0</p></td>
 </tr>
-<tr class="row-even"><td></td>
+<tr class="row-odd"><td></td>
 <td><p>M2T1NXRAD.5.12.4</p></td>
 <td><p>0.6250° x 0.5000°</p></td>
 <td><p>H</p></td>
+<td><p>solar radiation</p></td>
 <td><p>ra</p></td>
 </tr>
-<tr class="row-odd"><td><p>MODIS</p></td>
+<tr class="row-even"><td><p>MODIS</p></td>
 <td><p>MYD13Q1.061</p></td>
 <td><p>0.0019°</p></td>
 <td><p>16D</p></td>
+<td><p>optical</p></td>
 <td><p>ndvi</p></td>
 </tr>
-<tr class="row-even"><td></td>
+<tr class="row-odd"><td></td>
 <td><p>MYD11A1.061</p></td>
 <td><p>0.0077°</p></td>
 <td><p>N/A</p></td>
+<td><p>thermal</p></td>
 <td><p>lst</p></td>
 </tr>
-<tr class="row-odd"><td></td>
+<tr class="row-even"><td></td>
 <td><p>MOD11A1.061</p></td>
 <td><p>0.0077°</p></td>
 <td><p>N/A</p></td>
+<td><p>thermal</p></td>
 <td><p>lst</p></td>
 </tr>
-<tr class="row-even"><td></td>
+<tr class="row-odd"><td></td>
 <td><p>MCD43A3.061</p></td>
 <td><p>0.0038°</p></td>
 <td><p>D</p></td>
+<td><p>optical</p></td>
 <td><p>r0</p></td>
 </tr>
-<tr class="row-odd"><td></td>
+<tr class="row-even"><td></td>
 <td><p>MOD13Q1.061</p></td>
 <td><p>0.0019°</p></td>
 <td><p>16D</p></td>
+<td><p>optical</p></td>
 <td><p>ndvi</p></td>
 </tr>
-<tr class="row-even"><td><p>TERRA</p></td>
+<tr class="row-odd"><td><p>TERRA</p></td>
 <td><p><a class="reference external" href="urn:eop:VITO:PROBAV_S5_TOC_100M_COG_V2">urn:eop:VITO:PROBAV_S5_TOC_100M_COG_V2</a></p></td>
 <td><p>0.0010°</p></td>
 <td><p>5D</p></td>
+<td><p>optical</p></td>
 <td><p>ndvi, r0</p></td>
 </tr>
-<tr class="row-odd"><td><p>SENTINEL2</p></td>
+<tr class="row-even"><td><p>SENTINEL2</p></td>
 <td><p>S2MSI2A_R60m</p></td>
 <td><p>0.0006°</p></td>
 <td><p>N/A</p></td>
+<td><p>optical</p></td>
 <td><p>coastal_aerosol, blue, green, red, red_edge_703, red_edge_740, red_edge_782, qa, swir1, swir2, psri, ndvi, nmdi, vari_red_edge, bsi, mndwi, r0</p></td>
 </tr>
-<tr class="row-even"><td></td>
+<tr class="row-odd"><td></td>
 <td><p>S2MSI2A_R20m</p></td>
 <td><p>0.0002°</p></td>
 <td><p>N/A</p></td>
+<td><p>optical</p></td>
 <td><p>coastal_aerosol, blue, green, red, red_edge_703, red_edge_740, red_edge_782, qa, swir1, swir2, psri, ndvi, nmdi, vari_red_edge, bsi, mndwi, r0</p></td>
 </tr>
-<tr class="row-odd"><td><p>SENTINEL3</p></td>
+<tr class="row-even"><td><p>SENTINEL3</p></td>
 <td><p>SL_2_LST___</p></td>
 <td><p>0.0100°</p></td>
 <td><p>N/A</p></td>
+<td><p>thermal</p></td>
 <td><p>lst</p></td>
 </tr>
-<tr class="row-even"><td><p>SRTM</p></td>
+<tr class="row-odd"><td><p>SRTM</p></td>
 <td><p>30M</p></td>
 <td><p>0.0003°</p></td>
 <td><p>N/A</p></td>
+<td><p>elevation</p></td>
 <td><p>z, slope, aspect</p></td>
 </tr>
-<tr class="row-odd"><td><p>STATICS</p></td>
+<tr class="row-even"><td><p>STATICS</p></td>
 <td><p>WaPOR2</p></td>
 <td><p>0.0022°</p></td>
 <td><p>N/A</p></td>
+<td><p>statics</p></td>
 <td><p>land_mask, lw_offset, lw_slope, r0_bare, r0_full, rn_offset, rn_slope, rs_min, t_amp_year, t_opt, vpd_slope, z_obst_max, z_oro</p></td>
 </tr>
-<tr class="row-even"><td></td>
+<tr class="row-odd"><td></td>
 <td><p>WaPOR3</p></td>
 <td><p>0.0022°</p></td>
 <td><p>N/A</p></td>
+<td><p>statics</p></td>
 <td><p>lw_offset, lw_slope</p></td>
 </tr>
-<tr class="row-odd"><td><p>VIIRSL1</p></td>
+<tr class="row-even"><td><p>VIIRSL1</p></td>
 <td><p>VNP02IMG</p></td>
 <td><p>0.0033°</p></td>
 <td><p>N/A</p></td>
+<td><p>thermal</p></td>
 <td><p>bt</p></td>
 </tr>
 </tbody>
