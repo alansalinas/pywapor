@@ -1,5 +1,6 @@
 import pywapor
 import os
+import re
 import numpy as np
 import glob
 import warnings
@@ -7,9 +8,8 @@ import json
 from functools import partial
 from pywapor.general.logger import log, adjust_logger
 from pywapor.collect.downloader import collect_sources
-from pywapor.general.levels import pre_et_look_levels
 from pywapor.general.compositer import time_bins
-from pywapor.general.processing_functions import adjust_timelim_dtype, func_from_string, open_ds
+from pywapor.general.processing_functions import adjust_timelim_dtype, func_from_string, open_ds, remove_ds, is_corrupt_or_empty, has_wrong_bb_or_period
 
 class Configuration():
 
@@ -424,6 +424,10 @@ class Project():
         self.period = adjust_timelim_dtype(period)
         self.configuration = configuration
         self.dss = None
+        self.bb = bb
+
+        os.environ["pyWaPOR_bb"] = str(self.bb)
+        os.environ["pyWaPOR_period"] = str(self.period)
 
         warnings.filterwarnings("ignore", message="invalid value encountered in power")
 
@@ -497,6 +501,133 @@ class Project():
         log.sub().sub().info("< CONFIGURATION")
         return self.configuration
     
+    def validate_project_folder(self):
+        log.info("--> Checking project folder.").add()
+        if not os.path.isabs(self.folder):
+            self.folder = os.path.abspath(self.folder)
+            log.warning(f"--> Consider specifying an absolute path to your project folder, continueing with `{self.folder}`.")
+        if not os.path.isdir(self.folder):
+            log.info(f"--> Folder does not exist, creating a new folder at `{self.folder}`.")
+            os.makedirs(self.folder)
+        dir_list = os.listdir(self.folder)
+        bb = [self.lonlim[0], self.latlim[0], self.lonlim[1], self.latlim[1]]
+        check = True
+
+        if "log.txt" in dir_list:
+            log_file = os.path.join(self.folder, "log.txt")
+            project_folders, periods, bbs, temp_files = Project.parse_log_file(log_file)
+
+            if len(set(project_folders)) > 1:
+                log.info(f"--> Project folder has previously been moved.")
+            else:
+                ... # all good.
+
+            if len(set(bbs)) > 1:
+                log.warning(f"--> You've previously defined different bounding-boxes inside this project folder, this can result in unexpected behaviour.")
+                check = False
+            elif len(set(bbs)) == 1:
+                bb_consistent = np.all([np.isclose(x, y) for x,y in zip(bbs[0], bb)])
+                if not bb_consistent:
+                    log.warning(f"--> You've changed the bounding-box of your project without changing the project folder, this can result in unexpected behaviour.")
+                    check = False
+            else:
+                ... # all good.
+
+            period_ = tuple([np.datetime64(x) for x in self.period])
+            if len(set(periods)) > 1:
+                log.warning(f"--> You've previously defined different periods inside this project folder, this can result in unexpected behaviour.")
+                check = False
+            elif len(set(periods)) == 1:
+                period_consistent = period_ == periods[0]
+                if not period_consistent:
+                    log.warning(f"--> You've changed the period of your project without changing the project folder, this can result in unexpected behaviour.")
+                    check = False
+            else:
+                ... # all good.
+
+            if len(dir_list) > 1:
+                self.clean_project_folder()
+
+        elif dir_list:
+            log.warning(f"--> Consider specifying an empty project folder.")
+            check = False
+        else:
+            ... # all good.
+
+        if check:
+            log.info(f"--> All good.")
+
+        log.sub()
+
+    def clean_project_folder(self):
+
+        n_corrupt = n_wrong = n_unkown = n_good = n_temp = 0
+        to_remove = list()
+        fhs = glob.glob(os.path.join(self.folder, "**/*.nc"), recursive=True)
+        log_file = os.path.join(self.folder, "log.txt")
+
+        if os.path.isfile(log_file):
+            temp_files = Project.parse_log_file(log_file)[-1]
+            for fh in temp_files:
+                if fh in fhs:
+                    fhs.remove(fh)
+                if os.path.isfile(fh):
+                    to_remove.append(fh)
+                    n_temp += 1
+
+        log.info(f"--> Checking {len(fhs)} files.").add()
+
+        for fh in fhs.copy():
+            corrupt = is_corrupt_or_empty(fh)
+            if corrupt:
+                to_remove.append(fh)
+                fhs.remove(fh)
+                n_corrupt += 1
+            
+        for fh in fhs:
+            wrong = has_wrong_bb_or_period(fh, self.bb, self.period)
+            if wrong:
+                to_remove.append(fh)
+                n_wrong += 1
+            elif isinstance(wrong, type(None)):
+                n_unkown += 1
+            else:
+                n_good += 1
+
+        if n_temp > 0:
+            log.info(f"--> Found {n_temp} temporary files that can be removed.")
+        log.info(f"--> Found {n_good} files in good condition.")
+        if n_corrupt > 0:
+            log.warning(f"--> Found {n_corrupt} corrupt or empty files.")
+        if n_wrong > 0:
+            log.warning(f"--> Found {n_wrong} files with an incorrect `bb` or `period`.")
+        if n_unkown > 0:
+            log.info(f"--> Couldn't determine state of {n_unkown} files.").sub()
+        
+        if n_corrupt + n_wrong + n_temp > 0:
+            response = input(prompt = f"Remove {n_corrupt} corrupt, {n_wrong} wrong and {n_temp} temporary files? (Yes/No)")
+            if response in ["Y", "y", "Yes", "yes"]:
+                for x in to_remove:
+                    remove_ds(x)
+
+    @staticmethod
+    def parse_log_file(log_file):
+
+        with open(log_file, "r", encoding='utf8') as f:
+            log_string = f.read()
+
+        project_folders = re.findall(r"--> Project Folder:\n        > (.*)", log_string)
+        
+        periods_ = re.findall(r"--> Period:\n        > (.*) - (.*)", log_string)
+        periods = [tuple([np.datetime64(x) for x in period]) for period in periods_]
+
+        bbs_ = re.findall(r"--> Bounding-Box:\n\n\s*(\d{1,2}.\d{4})\n.*\n.*\n\s*(\d{1,2}.\d{4})\D*(\d{1,2}.\d{4})\n.*\n.*\n\D*(\d{1,2}.\d{4})", log_string)
+        bbs = [tuple([[float(x) for x in bb][i] for i in [1,3,2,0]]) for bb in bbs_]
+        
+        temp_files = re.findall(r"--> Unable to delete temporary file `(.*)`", log_string)
+
+        return project_folders, periods, bbs, temp_files
+
     def set_passwords(self):
 
         log.info("> PASSWORDS").add()
@@ -642,6 +773,8 @@ if __name__ == "__main__":
     }
 
     project = pywapor.Project(project_folder, bb, timelim)
+
+    project.validate_project_folder()
 
     # project.load_configuration(name = "WaPOR3_level_2")
 

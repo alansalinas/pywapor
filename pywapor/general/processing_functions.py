@@ -6,6 +6,7 @@ import xarray as xr
 import numpy as np
 import shutil
 import glob
+from osgeo import gdal
 from datetime import datetime as dt
 import warnings
 import rasterio.warp
@@ -122,18 +123,50 @@ def remove_ds(ds):
         except PermissionError:
             log.info(f"--> Unable to delete temporary file `{fp}`.")
 
-def is_corrupt_or_empty(fp, group = None):
+def is_corrupt_or_empty(fh, group = None):
     try:
-        if isinstance(group, type(None)):
-            ds = xr.open_dataset(fp, chunks = "auto")
+        ds = xr.open_dataset(fh, chunks = "auto", group = group)
+        if ds.sizes == {}:
+            info = gdal.Info(fh, format = "json")
+            subdss = info["metadata"].get("SUBDATASETS", False)
+            if subdss:
+                group_names = set([os.path.split(v.split(":")[-1])[0] for k, v in subdss.items() if "_NAME" in k])
+                corrupt = any([is_corrupt_or_empty(fh, group = group) for group in group_names])
+            else:
+                corrupt = True
         else:
-            ds = xr.open_dataset(fp, chunks = "auto", group = group)
-        corrupt = ds.sizes == {}
-        ds = ds.close()
+            corrupt = False
     except OSError:
         corrupt = True
+    else:
+        ds.close()
     return corrupt
 
+def has_wrong_bb_or_period(fh, ref_bb, ref_period):
+
+    info = gdal.Info(fh, format = "json")
+    md = info["metadata"].get("", {})
+    bb_key = [x for x in md.keys() if re.search("pyWaPOR_bb", x)]
+    period_key = [x for x in md.keys() if re.search("pyWaPOR_period", x)]
+
+    if bb_key:
+        bb = md[bb_key[0]]
+    else:
+        bb = "unknown"
+    
+    if period_key:
+        period = md[period_key[0]]
+    else:
+        period = "unknown"
+
+    if period == "unknown" or bb == "unknown":
+        wrong = None
+    elif bb == str(ref_bb) and period == str(ref_period):
+        wrong = False
+    else:
+        wrong = True
+
+    return wrong
 
 def process_ds(ds, coords, variables, crs = None):
     """Apply some rioxarray related transformations to a dataset.
@@ -290,6 +323,10 @@ def save_ds(ds, fp, decode_coords = "all", encoding = None, chunks = "auto", pre
         for var in ds.coords:
             if var in ds.dims:
                 encoding[var] = {"dtype": "float64"}
+
+    bb_ = os.environ.get("pyWaPOR_bb", "unknown")
+    period_ = os.environ.get("pyWaPOR_period", "unknown")
+    ds.attrs.update({"pyWaPOR_bb": bb_, "pyWaPOR_period": period_})
 
     with ProgressBar(minimum = 90*10, dt = 2.0):
         with warnings.catch_warnings():

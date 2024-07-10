@@ -73,6 +73,8 @@ def curvi_to_recto(lats, lons, data, out_fn, warp_kwargs = {}):
         # also see https://gis.stackexchange.com/questions/358304/suppress-warnings-in-python-ogr
         gdal.SetConfigOption("CPL_LOG", {"nt": "NUL"}.get(os.name, "/dev/null"))
         out = gdal.Warp(out_fn, data_bands, options = options)
+        out.SetMetadataItem('pyWaPOR_bb', os.environ.get("pyWaPOR_bb", "unknown"))
+        out.SetMetadataItem('pyWaPOR_period', os.environ.get("pyWaPOR_period", "unknown"))
     except Exception as e:
         raise e
     finally:

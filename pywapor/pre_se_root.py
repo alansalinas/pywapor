@@ -13,7 +13,6 @@ import os
 import numpy as np
 import pywapor.general.pre_defaults as defaults
 from pywapor.general.logger import log
-from pywapor.general.processing_functions import remove_temp_files
 
 def rename_meteo(ds, *args):
     """Rename some variables in a dataset.

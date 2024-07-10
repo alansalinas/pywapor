@@ -14,7 +14,6 @@ from functools import partial
 import pywapor.general.pre_defaults as defaults
 from pywapor.general.variables import fill_attrs
 from pywapor.enhancers.temperature import lapse_rate as _lapse_rate
-from pywapor.general.processing_functions import remove_temp_files
 
 def rename_vars(ds, *args):
     """Rename some variables in a dataset.
@@ -165,8 +164,6 @@ def main(folder, latlim, lonlim, timelim, sources = "level_2_v3", bin_length = 1
 
     t2 = datetime.datetime.now()
     log.sub().info(f"< PRE_ET_LOOK ({str(t2 - t1)})")
-
-    files = remove_temp_files(folder)
 
     return ds
 
