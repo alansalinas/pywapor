@@ -139,6 +139,8 @@ def cog_dl(urls, out_fn, overview = "NONE", warp_kwargs = {}, vrt_options = {"se
         **warp_kwargs,
     )
     warp = gdal.Warp(out_fn, vrt_fn, options = warp_options)
+    warp.SetMetadataItem('pyWaPOR_bb', os.environ.get("pyWaPOR_bb", "unknown"))
+    warp.SetMetadataItem('pyWaPOR_period', os.environ.get("pyWaPOR_period", "unknown"))
     warp.FlushCache() # NOTE do not remove this.
 
     if os.path.isfile(vrt_fn):

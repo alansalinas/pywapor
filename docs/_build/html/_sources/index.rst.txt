@@ -6,7 +6,6 @@
    :hidden:
 
    data_sources
-   _user_guide
    _pywapor_api
    _etlook
    bibliography

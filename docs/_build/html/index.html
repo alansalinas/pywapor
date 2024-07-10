@@ -52,7 +52,6 @@
         </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
               <ul>
 <li class="toctree-l1"><a class="reference internal" href="data_sources.html">Data</a></li>
-<li class="toctree-l1"><a class="reference internal" href="_user_guide.html">User Guide</a></li>
 <li class="toctree-l1"><a class="reference internal" href="_pywapor_api.html">pyWaPOR API</a></li>
 <li class="toctree-l1"><a class="reference internal" href="_etlook.html">ETLook</a></li>
 <li class="toctree-l1"><a class="reference internal" href="bibliography.html">Bibliography</a></li>
@@ -87,7 +86,6 @@
 <h1>pyWaPOR<a class="headerlink" href="#pywapor" title="Permalink to this heading"></a></h1>
 <a class="reference external image-reference" href="https://img.shields.io/pypi/dw/pywapor"><img alt="downloads" src="https://img.shields.io/pypi/dw/pywapor" /></a>
 <a class="reference external image-reference" href="https://pypi.org/project/pywapor/"><img alt="version" src="https://img.shields.io/pypi/v/pywapor" /></a>
-<a class="reference external image-reference" href="https://colab.research.google.com/github/un-fao/FAO-Water-Applications/blob/main/pyWaPOR/introduction.ipynb"><img alt="Open In Colab" src="https://colab.research.google.com/assets/colab-badge.svg" /></a>
 <p>This repository contains a Python implementation of the algorithm used to generate the <a class="reference external" href="http://www.fao.org/in-action/remote-sensing-for-water-productivity/en/">WaPOR</a> <a class="reference external" href="https://wapor.apps.fao.org/home/WAPOR_2/1">datasets</a>. It can be used to calculate evaporation, transpiration and biomass production maps.</p>
 <section id="installation">
 <h2>Installation<a class="headerlink" href="#installation" title="Permalink to this heading"></a></h2>
@@ -96,6 +94,10 @@
 </pre></div>
 </div>
 </section>
+</section>
+<section id="contact">
+<h1>Contact<a class="headerlink" href="#contact" title="Permalink to this heading"></a></h1>
+<p>For technical questions or bug-reports, please open an <a class="reference external" href="https://bitbucket.org/cioapps/pywapor/issues">Issue here</a>. For more general questions please contact Bert Coerver at <a class="reference external" href="mailto:bert&#46;coerver&#37;&#52;&#48;fao&#46;org">bert<span>&#46;</span>coerver<span>&#64;</span>fao<span>&#46;</span>org</a> or the WaPOR team at <a class="reference external" href="mailto:wapor&#37;&#52;&#48;fao&#46;org">wapor<span>&#64;</span>fao<span>&#46;</span>org</a>.</p>
 <section id="usage">
 <h2>Usage<a class="headerlink" href="#usage" title="Permalink to this heading"></a></h2>
 <p>Run the model for a selected bounding-box and period of time:</p>
@@ -239,10 +241,6 @@
 <h2>Acknowledgments<a class="headerlink" href="#acknowledgments" title="Permalink to this heading"></a></h2>
 <p>The methodology for WaPOR was developed by the FRAME1 consortium, consisting of eLEAF (lead), VITO, ITC, University of Twente and Waterwatch foundation, commissioned by and in partnership with the Land and Water Division of FAO. The method for calculating evapotranspiration is based on the ETLook model developed by eLEAF in 2010. The method for calculating total biomass production is based on the C-Fix model.</p>
 <p>The code in the <code class="docutils literal notranslate"><span class="pre">pywapor.et_look_v2_v3</span></code> module of this repository, containing all core physical functions used by ETLook, was written by Henk Pelgrum (eLEAF) and Rutger Kassies (eLEAF). The remaining modules have been developed by Bert Coerver (FAO), Tim Hessels (WaterSat), and, in the framework of the ESA-funded ET4FAO project, Radoslaw Guzinski (DHI-GRAS), Hector Nieto (Complutig) and Laust Faerch (DHI-GRAS).</p>
-</section>
-<section id="contact">
-<h2>Contact<a class="headerlink" href="#contact" title="Permalink to this heading"></a></h2>
-<p>For questions, requests or issues with this repository, please contact Bert Coerver at <a class="reference external" href="mailto:bert&#46;coerver&#37;&#52;&#48;fao&#46;org">bert<span>&#46;</span>coerver<span>&#64;</span>fao<span>&#46;</span>org</a> or the WaPOR team at <a class="reference external" href="mailto:wapor&#37;&#52;&#48;fao&#46;org">wapor<span>&#64;</span>fao<span>&#46;</span>org</a>.</p>
 </section>
 <section id="release-notes">
 <h2>Release Notes<a class="headerlink" href="#release-notes" title="Permalink to this heading"></a></h2>
