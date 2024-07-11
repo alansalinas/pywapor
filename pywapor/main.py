@@ -213,6 +213,13 @@ class Configuration():
     @classmethod
     def from_summary(cls, summary):
         log.info(f"--> Creating configuration from summary.").add()
+
+        valids = set(cls.variable_categories.keys()).union({"_EXAMPLE_", "_WHITTAKER_", "_ENHANCE_"})
+        invalid_keys = set(summary.keys()).difference(valids)
+        if invalid_keys:
+            log.warning(f"--> Summary contains unrecognized keys ({invalid_keys}), they will be ignored.")
+            summary = {k:v for k,v in summary.items() if k not in invalid_keys}
+
         example_product = summary.pop('_EXAMPLE_', '')
         temporal_interp = summary.pop('_WHITTAKER_', {})
         enhance = summary.pop('_ENHANCE_', {})
@@ -228,6 +235,10 @@ class Configuration():
         for var_group in cls.et_look_vars + cls.se_root_vars + extra_vars:
             for var_ in var_group:
                 for var in var_:
+
+                    if var in full.keys():
+                        continue
+
                     cat = cls.category_variables[var]
                     possible_prods = summary[cat]
                     products = []
@@ -252,13 +263,18 @@ class Configuration():
                     if len(products) == 0:
                         continue
 
-                    if len(t_interps) == 0:
+                    t_interps_unique = list(map(json.loads, set(map(lambda x: json.dumps(x, sort_keys=True), t_interps))))
+                    # If no particular t_interp has been specified for this variable, use "linear".
+                    if len(t_interps_unique) == 0:
                         temporal_interp_ = "linear"
-                    elif len(t_interps) == 1:
-                        temporal_interp_ = t_interps[0]
+                    # If a single unique t_interp has been specified, use that.
+                    elif len(t_interps_unique) == 1:
+                        temporal_interp_ = t_interps_unique[0]
+                    # If multiple t_interp are specified for one variable, warn and use the first one.
                     else:
-                        log.warning("")
-                        temporal_interp_ = t_interps[0]
+                        warn_string = str({"_WHITTAKER_": {x: temporal_interp[x] for x in possible_prods}})
+                        log.warning(f"--> Multiple temporal interpolations specified for {var} (through `{warn_string}`), will continue using {t_interps_unique[0]}.")
+                        temporal_interp_ = t_interps_unique[0]
 
                     variable_enhancers = enhance.get(var, [])
 
