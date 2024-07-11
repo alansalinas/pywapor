@@ -583,7 +583,7 @@ def download_scenes(scene_ids, product_folder, product_name, latlim, lonlim, max
 
         if attempt > 0:
             log.info(f"--> Waiting {wait_time} seconds before trying again.")
-            log.info(f"--> For more info on order status, go to `https://espa.cr.usgs.gov/ordering/status`.")
+            log.info(f"--> For more info on order status, go to ` https://espa.cr.usgs.gov/ordering/status `.")
             time.sleep(wait_time)
 
         # Update statutes

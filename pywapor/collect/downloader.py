@@ -145,12 +145,12 @@ def collect_sources(folder, sources, latlim, lonlim, timelim, landsat_order_only
                         log.info(f"--> Continuing with collection of other sources while waiting for {exception_args[1]} `{source_name}.{product_name}` scenes to finish processing.")
                         if landsat_order_only:
                             attempts[(source, product_name)] += max_attempts * 10
-
-                if (attempts[(source, product_name)] < (max_attempts - 1)) and give_warning_only:
+                elif (attempts[(source, product_name)] < (max_attempts - 1)) or give_warning_only:
                     log.warning(f"--> Collect attempt {attempts[(source, product_name)] + 1} of {max_attempts} for `{source_name}.{product_name}` failed, trying again after other sources have been collected. ({type(e).__name__}: {e}).")
                 else:
                     log.warning(f"--> Collect attempt {attempts[(source, product_name)] + 1} of {max_attempts} for `{source_name}.{product_name}` failed, giving up now, see full traceback below for more info. ({type(e).__name__}: {e}).")
-                    log.exception("")
+                    log.exception("\n")
+                    log.info("")
 
                 attempts[(source, product_name)] += 1
 
