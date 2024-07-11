@@ -6,6 +6,7 @@ import logging
 import os
 from tqdm.contrib.logging import logging_redirect_tqdm
 import warnings
+import sys
 
 class MyCoolFormatter(logging.Formatter):
     """
@@ -22,7 +23,7 @@ class MyCoolFormatter(logging.Formatter):
         return super().format(record)
 
 log_settings = logging.getLogger(__name__)
-__handler__ = logging.StreamHandler()
+__handler__ = logging.StreamHandler(stream=sys.stdout)
 __handler__.setFormatter(MyCoolFormatter())
 __handler__.setLevel("INFO")
 log_settings.addHandler(__handler__)
