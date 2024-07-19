@@ -51,7 +51,7 @@ def default_vars(product_name, req_vars):
                         },
 
         "tavg1_2d_rad_Nx": {
-                    "swgdn": [("time", "lat", "lon"), "swgdn"],
+                    "swgdn": [("time", "lat", "lon"), "ra_flat"], # W/m2, surface incoming shortwave flux
                         },
 
         "tavg1_2d_lnd_Nx": {
@@ -92,7 +92,7 @@ def default_vars(product_name, req_vars):
             "to3": ["to3"], # total_column_ozone
         },
         "tavg1_2d_rad_Nx": {
-            "swgdn": ["swgdn"], # surface_incoming_shortwave_flux
+            "ra_flat": ["swgdn"], # surface_incoming_shortwave_flux
         },
         "tavg1_2d_lnd_Nx": {
             "p": ["prectot"],
@@ -152,7 +152,7 @@ def default_post_processors(product_name, req_vars):
             "to3": [],
         },
         "tavg1_2d_rad_Nx": {
-            "swgdn": [],
+            "ra_flat": [],
         },
         "tavg1_2d_lnd_Nx": {
             "p": [],
