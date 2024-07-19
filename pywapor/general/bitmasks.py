@@ -316,6 +316,37 @@ def get_pixel_qa_bits(collection, ls_number, level):
 
     return all_flags[collection][ls_number][level]
 
+def LSASAF_qa_translator(product_name):
+
+    flag_bits = dict()
+
+    msg_mdssftd = {
+        "ocean":                    [(0b00000010, True), (0b00000001, True)],
+        "land":                     [(0b00000010, True), (0b00000001, False)],
+        "space":                    [(0b00000010, False), (0b00000001, True)],
+        "continental_water":        [(0b00000010, False), (0b00000001, False)],
+    
+        "unprocessed":              [(0b00010000, True), (0b00001000, True),  (0b00000100, True)],
+        "clear":                    [(0b00010000, True), (0b00001000, True),  (0b00000100, False)],
+        "contaminated":             [(0b00010000, True), (0b00001000, False),  (0b00000100, True)],
+        "cloud_filled":             [(0b00010000, True), (0b00001000, False),  (0b00000100, False)],
+        "snow_ice":                 [(0b00010000, False), (0b00001000, True),  (0b00000100, True)],
+        "undefined":                [(0b00010000, False), (0b00001000, True),  (0b00000100, False)],
+
+        "cloudy_sky_method_ok":     [(0b10000000, True),(0b01000000, True), (0b00100000, True)],
+        "clear_sky_method_bad":     [(0b10000000, True),(0b01000000, True), (0b00100000, False)],
+        "cloudy_ATOA_issue":        [(0b10000000, True),(0b01000000, False), (0b00100000, True)],
+        "cloudy_algorithm_failure": [(0b10000000, True),(0b01000000, False), (0b00100000, False)],
+        "clear_ok":                 [(0b10000000, False),(0b01000000, True), (0b00100000, True)],
+        "clear_night":              [(0b10000000, False),(0b01000000, True), (0b00100000, False)],
+        "clear_view_angle_issue":   [(0b10000000, False),(0b01000000, False), (0b00100000, True)],
+        "clear_not_processed":      [(0b10000000, False),(0b01000000, False), (0b00100000, False)],
+    }
+
+    flag_bits['MSG_MDSSFTD'] = msg_mdssftd
+
+    return flag_bits[product_name]
+
 def MODIS_qa_translator(product_name):
     """Returns a dictionary to bridge between labels and bits in
     MODIS pixel_qa bands.

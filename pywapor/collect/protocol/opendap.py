@@ -14,6 +14,7 @@ import numpy as np
 from pywapor.general.logger import log
 from rasterio.crs import CRS
 from bs4 import BeautifulSoup
+from functools import partial
 from urllib.parse import urlsplit, urlunsplit
 from pywapor.general.processing_functions import open_ds, is_corrupt_or_empty
 from pywapor.enhancers.apply_enhancers import apply_enhancers
@@ -358,7 +359,7 @@ def soup_login(session, url, username, password,
     return session.post(to_url, data=payload)
 
 def download_xarray(url, fp, coords, variables, post_processors, 
-                    data_source_crs = None, timedelta = None):
+                    data_source_crs = None, timedelta = None, parallel = True):
     """Download a OPENDaP dataset using xarray directly.
 
     Parameters
@@ -420,11 +421,11 @@ def download_xarray(url, fp, coords, variables, post_processors,
     chunks = [online_ds.isel({"time": slice(i*block_size, block_size*(i+1))}) for i in range(int(np.ceil(online_ds.time.size / block_size)))]
     n_jobs = min(n_jobs, len(chunks))
 
-    parallel = True
     if parallel:
         out = Parallel(n_jobs=n_jobs)(delayed(download_chunk)(subds, fp) for subds in chunks)
     else:
-        out = list(map(download_chunk, chunks))
+        download_chunk_ = partial(download_chunk, fp = fp)
+        out = list(map(download_chunk_, chunks))
     
     ds = xr.concat(out, dim="time")
 
@@ -435,12 +436,12 @@ def download_xarray(url, fp, coords, variables, post_processors,
         ds["time"] = ds["time"] + timedelta
 
     # Save final output
-    out = save_ds(ds, fp, encoding = "initiate", label = "Saving netCDF.")
+    out_ = save_ds(ds, fp, encoding = "initiate", label = "Saving netCDF.")
 
     for x in out:
         remove_ds(x)
 
-    return out
+    return out_
 
 def create_selection(coords, target_crs = None, source_crs = CRS.from_epsg(4326)):
     """Create a dictionary that can be given to `xr.Dataset.sel`.
