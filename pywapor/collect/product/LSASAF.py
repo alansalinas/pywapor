@@ -10,6 +10,7 @@ import pywapor.collect.protocol.opendap
 from pywapor.enhancers.apply_enhancers import apply_enhancers
 from pywapor.general.processing_functions import open_ds, save_ds, remove_ds, is_corrupt_or_empty
 from pywapor.general.logger import log
+from pywapor.collect import accounts
 from pywapor.collect.protocol.projections import get_crss
 from joblib import Parallel, delayed
 import multiprocessing
@@ -54,6 +55,10 @@ def jouleperday_to_watt(ds, var):
     ds[var] = ds[var] / 86400
     return ds
 
+def celsius_to_kelvin(ds, var):
+    ds[var] = ds[var] + 273.15
+    return ds
+
 def fn_func(product_name, tile):
     fn = os.path.split(tile)[-1]
     return fn
@@ -80,25 +85,214 @@ def default_vars(product_name, req_vars):
                     "weight_missing_values_percent": [("time", "lat", "lon"), "weight_missing_values_percent"],
         },
 
-        # https://datalsasaf.lsasvcs.ipma.pt/PRODUCTS/MSG/MDALv2/NETCDF/2019/08/09/NETCDF4_LSASAF_MSG_ALBEDOv2_MSG-Disk_201908090000.nc
+        #########
+
+        # "MSG_DLST-MAX10D": {
+        #             "LST_MAX": [("time", "lat", "lon"), "lst"], # 10-day maximum lst, Celsius
+        #             "NUM_VALID": [("time", "lat", "lon"), "nvalids"],
+        #             "quality_flag": [("time", "lat", "lon"), "qa"],
+        #             "standard_error": [("time", "lat", "lon"), "error"],
+        # },
+
+        # "MSG_DLST-MEDIAN10D": {
+        #             "LST_MED": [("time", "lat", "lon"), "lst"], # 10-day median lst, Celsius
+        #             "NUM_VALID": [("time", "lat", "lon"), "nvalids"],
+        #             "standard_error": [("time", "lat", "lon"), "error"],
+        # },
+
+        # "MSG_LST": {
+        #             "LST": [("time", "lat", "lon"), "lst"], # inst. lst, Celsius
+        #             "quality_flag": [("time", "lat", "lon"), "qa"],
+        #             "standard_error": [("time", "lat", "lon"), "error"],
+        # },
+
+        "MSG_MLST-AS": {
+                    "MLST-AS": [("time", "lat", "lon"), "lst"], # inst. lst (all-sky, i.e. clear AND cloudy), Celsius
+                    "quality_flag": [("time", "lat", "lon"), "qa"],
+                    "CMa": [("time", "lat", "lon"), "cloud_mask"],
+        },
+
+        "MSG_MLST-ASv2": {
+                    "MLST-AS": [("time", "lat", "lon"), "lst"], # inst. lst (all-sky, i.e. clear AND cloudy), Celsius
+                    "quality_flag": [("time", "lat", "lon"), "qa"],
+                    "CMa": [("time", "lat", "lon"), "cloud_mask"],
+        },
+
+        #########
+
+        # "MSG_DMET": {
+        #             "ET": [("time", "lat", "lon"), "et_24_mm"], # mm/day
+        #             "max_nslots_missing": [("time", "lat", "lon"), "max_nslots_missing"],
+        #             "missing_values_percent": [("time", "lat", "lon"), "missing_values_percent"],
+        # },
+
+        # "MSG_ET": {
+        #             "ET": [("time", "lat", "lon"), "et_i"], # mm/h
+        #             "quality_flag": [("time", "lat", "lon"), "qa"],
+        # },
+
+        "MSG_METREF": {
+                    "METREF": [("time", "lat", "lon"), "et_ref_24_mm"], # mm/day
+                    "quality_flag": [("time", "lat", "lon"), "qa"],
+        },
+
+        "MSG_MH": {
+                    "MH": [("time", "lat", "lon"), "h_i"], # sensible heat flux, W/m2
+                    "quality_flag": [("time", "lat", "lon"), "qa"],
+        },
+
+        "MSG_MLE": {
+                    "MLE": [("time", "lat", "lon"), "lh_i"], # latent heat flux, W/m2
+                    "quality_flag": [("time", "lat", "lon"), "qa"],
+        },
+
+        #########
+
+        # "MSG_FAPAR": {
+        #             "FAPAR": [("time", "lat", "lon"), "f_par"], # [-]
+        #             "quality_flag": [("time", "lat", "lon"), "qa"],
+        #             "standard_error": [("time", "lat", "lon"), "error"],
+        # },
+
+        # "MSG_FAPAR-D10": {
+        #             "FAPAR": [("time", "lat", "lon"), "f_par"], # [-] 
+        #             "quality_flag": [("time", "lat", "lon"), "qa"],
+        #             "standard_error": [("time", "lat", "lon"), "error"],
+        # },
+
+        # "MSG_LAI": {
+        #             "LAI": [("time", "lat", "lon"), "lai"], # [m2/m2] 
+        #             "quality_flag": [("time", "lat", "lon"), "qa"],
+        #             "standard_error": [("time", "lat", "lon"), "error"],
+        # },
+
+        # "MSG_LAI-D10": {
+        #             "LAI": [("time", "lat", "lon"), "lai"], # [m2/m2]
+        #             "quality_flag": [("time", "lat", "lon"), "qa"],
+        #             "standard_error": [("time", "lat", "lon"), "error"],
+        # },
+
+        # "MSG_FVC": {
+        #             "FVC": [("time", "lat", "lon"), "vc"], # [-] 
+        #             "quality_flag": [("time", "lat", "lon"), "qa"],
+        #             "standard_error": [("time", "lat", "lon"), "error"],
+        # },
+
+        # "MSG_FVC-D10": {
+        #             "FVC": [("time", "lat", "lon"), "vc"], # [-] 
+        #             "quality_flag": [("time", "lat", "lon"), "qa"],
+        #             "standard_error": [("time", "lat", "lon"), "error"],
+        # },
 
     }
 
     req_dl_vars = {
 
-        "MSG_MDSSFTD": {
-            "ra_flat": ["DSSF_TOT", "quality_flag"],
-            "diffuse_fraction": ["FRACTION_DIFFUSE"],
-            "qa": ["quality_flag"],
+        'MSG_MDSSFTD': {
+                    'ra_flat': ['DSSF_TOT'],
+                    'diffuse_fraction': ['FRACTION_DIFFUSE'],
+                    'qa': ['quality_flag']
+                    },
+
+        'MSG_MDIDSSF': {
+                'ra_flat': ['DSSF'],
+                'max_nslots_missing': ['max_nslots_missing'],
+                'missing_values_percent': ['missing_values_percent'],
+                'weight_missing_values_percent': ['weight_missing_values_percent']
         },
 
-        "MSG_MDIDSSF": {
-            "ra_flat": ["DSSF"],
-            "max_nslots_missing": ["max_nslots_missing"],
-            "missing_values_percent": ["missing_values_percent"],
-            "weight_missing_values_percent": ["weight_missing_values_percent"],
+        # 'MSG_DLST-MAX10D': {
+        #         'lst': ['LST_MAX'],
+        #         'nvalids': ['NUM_VALID'],
+        #         'qa': ['quality_flag'],
+        #         'error': ['standard_error']
+        # },
 
-        }
+        # 'MSG_DLST-MEDIAN10D': {
+        #         'lst': ['LST_MED'],
+        #         'nvalids': ['NUM_VALID'],
+        #         'error': ['standard_error']
+        # },
+
+        # 'MSG_LST': {
+        #         'lst': ['LST'],
+        #         'qa': ['quality_flag'],
+        #         'error': ['standard_error']
+        # },
+
+        'MSG_MLST-AS': {
+                'lst': ['MLST-AS'],
+                'qa': ['quality_flag'],
+                'cloud_mask': ['CMa']
+        },
+
+        'MSG_MLST-ASv2': {
+                'lst': ['MLST-AS'],
+                'qa': ['quality_flag'],
+                'cloud_mask': ['CMa']
+        },
+
+        # 'MSG_DMET': {
+        #         'et_24_mm': ['ET'],
+        #         'max_nslots_missing': ['max_nslots_missing'],
+        #         'missing_values_percent': ['missing_values_percent']
+        # },
+
+        # 'MSG_ET': {
+        #         'et_i': ['ET'], 
+        #         'qa': ['quality_flag']
+        # },
+
+        'MSG_METREF': {
+                'et_ref_24_mm': ['METREF'], 
+                'qa': ['quality_flag']
+        },
+
+        'MSG_MH': {
+                'h_i': ['MH'], 
+                'qa': ['quality_flag']
+        },
+
+        'MSG_MLE': {
+                'lh_i': ['MLE'], 
+                'qa': ['quality_flag']
+        },
+
+        # 'MSG_FAPAR': {
+        #         'f_par': ['FAPAR'],
+        #         'qa': ['quality_flag'],
+        #         'error': ['standard_error']
+        # },
+
+        # 'MSG_FAPAR-D10': {
+        #         'f_par': ['FAPAR'],
+        #         'qa': ['quality_flag'],
+        #         'error': ['standard_error']
+        # },
+
+        # 'MSG_LAI': {
+        #        'lai': ['LAI'],
+        #         'qa': ['quality_flag'],
+        #         'error': ['standard_error']
+        # },
+
+        # 'MSG_LAI-D10': {
+        #        'lai': ['LAI'],
+        #         'qa': ['quality_flag'],
+        #         'error': ['standard_error']
+        # },
+
+        # 'MSG_FVC': {
+        #        'vc': ['FVC'],
+        #         'qa': ['quality_flag'],
+        #         'error': ['standard_error']
+        # },
+
+        # 'MSG_FVC-D10': {
+        #         'vc': ['FVC'],
+        #         'qa': ['quality_flag'],
+        #         'error': ['standard_error']
+        # }
     }
 
     out = {val:variables[product_name][val] for sublist in map(req_dl_vars[product_name].get, req_vars) for val in sublist}
@@ -108,18 +302,24 @@ def default_vars(product_name, req_vars):
 def default_post_processors(product_name, req_vars):
 
     post_processors = {
-        "MSG_MDSSFTD": {
-            "ra_flat": [],
-            "diffuse_fraction": [],
-            "qa": [],
-        },
-
-        "MSG_MDIDSSF": {
-            "ra_flat": [jouleperday_to_watt],
-            "max_nslots_missing": [],
-            "missing_values_percent": [],
-            "weight_missing_values_percent": [], 
-        }
+        'MSG_MDSSFTD': {'ra_flat': [], 'diffuse_fraction': [], 'qa': []},
+        'MSG_MDIDSSF': {'ra_flat': [jouleperday_to_watt], 'max_nslots_missing': [], 'missing_values_percent': [], 'weight_missing_values_percent': []},
+        # 'MSG_DLST-MAX10D': {'lst': [celsius_to_kelvin], 'nvalids': [], 'qa': [], 'error': []},
+        # 'MSG_DLST-MEDIAN10D': {'lst': [celsius_to_kelvin], 'nvalids': [], 'error': []},
+        # 'MSG_LST': {'lst': [celsius_to_kelvin], 'qa': [], 'error': []},
+        'MSG_MLST-AS': {'lst': [celsius_to_kelvin], 'qa': [], 'cloud_mask': []},
+        'MSG_MLST-ASv2': {'lst': [celsius_to_kelvin], 'qa': [], 'cloud_mask': []},
+        # 'MSG_DMET': {'et_24_mm': [], 'max_nslots_missing': [], 'missing_values_percent': []},
+        # 'MSG_ET': {'et_i': [], 'qa': []},
+        'MSG_METREF': {'et_ref_24_mm': [], 'qa': []},
+        'MSG_MH': {'h_i': [], 'qa': []},
+        'MSG_MLE': {'lh_i': [], 'qa': []},
+        # 'MSG_FAPAR': {'f_par': [], 'qa': [], 'error': []},
+        # 'MSG_FAPAR-D10': {'f_par': [], 'qa': [], 'error': []},
+        # 'MSG_LAI': {'lai': [], 'qa': [], 'error': []},
+        # 'MSG_LAI-D10': {'lai': [], 'qa': [], 'error': []},
+        # 'MSG_FVC': {'vc': [], 'qa': [], 'error': []},
+        # 'MSG_FVC-D10': {'vc': [], 'qa': [], 'error': []}
     }
 
     out = {k:v for k,v in post_processors[product_name].items() if k in req_vars}
@@ -130,6 +330,9 @@ def download(folder, latlim, lonlim, timelim, product_name, req_vars,
                  variables = None, post_processors = None):
 
     folder = os.path.join(folder, "LSASAF")
+
+    satellite, product_name_ = product_name.split("_")
+    format = "NETCDF"
 
     if not os.path.exists(folder):
         os.makedirs(folder)
@@ -155,9 +358,10 @@ def download(folder, latlim, lonlim, timelim, product_name, req_vars,
             return existing_ds[req_vars_orig]
         
     spatial_buffer = True
-    if spatial_buffer: # TODO check res of all products
-        latlim = [latlim[0] - 0.05, latlim[1] + 0.05]
-        lonlim = [lonlim[0] - 0.05, lonlim[1] + 0.05]
+    if spatial_buffer:
+        res = {"MSG": 0.05}.get(satellite, "define_the_sat_res_please")
+        latlim = [latlim[0] - res, latlim[1] + res]
+        lonlim = [lonlim[0] - res, lonlim[1] + res]
 
     coords = {"x": ["lon", lonlim], "y": ["lat", latlim[::-1]], "t": ["time", timelim]}
 
@@ -173,15 +377,14 @@ def download(folder, latlim, lonlim, timelim, product_name, req_vars,
     data_source_crs = get_crss("WGS84")
 
     timedelta = {
-        "MSG_MDIDSSF": np.timedelta64(12, "h")
+        "MSG_MDIDSSF": np.timedelta64(12, "h"),
+        "MSG_METREF": np.timedelta64(12, "h"),
      }.get(product_name, None)
     
-    un, pw = ("bertcoerver","samgam-jovhux-1zUfme") # TODO
+    un, pw = accounts.get("LSASAF")
     session = requests.Session()
     session.auth = (un, pw)
 
-    satellite, product_name_ = product_name.split("_")
-    format = "NETCDF"
 
     @cache(memory, "LSASAF")
     def scrape(base_url):
@@ -253,8 +456,8 @@ def download(folder, latlim, lonlim, timelim, product_name, req_vars,
     # Save final output.
     out_ = save_ds(ds, fp, encoding = "initiate", label = "Saving netCDF.")
 
-    # for x in dss:
-    #     remove_ds(x)
+    for x in dss:
+        remove_ds(x)
 
     return out_[req_vars_orig]
 
@@ -263,75 +466,102 @@ if __name__ == "__main__":
     from pywapor.general.logger import adjust_logger
     import matplotlib.pyplot as plt
 
+    tests = [
+        ('MSG_MDSSFTD', ['ra_flat', 'diffuse_fraction', 'qa']),
+        ('MSG_MDIDSSF', ['ra_flat', 'max_nslots_missing', 'missing_values_percent', 'weight_missing_values_percent']),
+        # ('MSG_DLST-MAX10D', ['lst', 'nvalids', 'qa', 'error']),
+        # ('MSG_DLST-MEDIAN10D', ['lst', 'nvalids', 'error']),
+        # ('MSG_LST', ['lst', 'qa', 'error']),
+        ('MSG_MLST-AS', ['lst', 'qa', 'cloud_mask']),
+        ('MSG_MLST-ASv2', ['lst', 'qa', 'cloud_mask']),
+        # ('MSG_DMET', ['et_24_mm', 'max_nslots_missing', 'missing_values_percent']),
+        # ('MSG_ET', ['et_i', 'qa']),
+        ('MSG_METREF', ['et_ref_24_mm', 'qa']),
+        ('MSG_MH', ['h_i', 'qa']),
+        ('MSG_MLE', ['lh_i', 'qa']),
+        # ('MSG_FAPAR', ['f_par', 'qa', 'error']),
+        # ('MSG_FAPAR-D10', ['f_par', 'qa', 'error']),
+        # ('MSG_LAI', ['lai', 'qa', 'error']),
+        # ('MSG_LAI-D10', ['lai', 'qa', 'error']),
+        # ('MSG_FVC', ['vc', 'qa', 'error']),
+        # ('MSG_FVC-D10', ['vc', 'qa', 'error']),
+    ]
+
     folder = r"/Users/hmcoerver/Local/ra_test"
 
     adjust_logger(True, folder, "INFO")
 
     latlim = [30.168923, 36.520673]
     lonlim = [29.787384, 44.625092]
-    # timelim = [datetime.date(2023,2,1), datetime.date(2023,2,2)]
-    timelim = [datetime.date(2023,2,1), datetime.date(2023,2,13)]
+    timelim = [datetime.date(2023,2,1), datetime.date(2023,2,2)]
+    # timelim = [datetime.date(2023,2,1), datetime.date(2023,2,13)]
 
     variables = None
     post_processors = None
 
-    product_name = "MSG_MDIDSSF"
-    req_vars = ["ra_flat", "max_nslots_missing", "missing_values_percent", "weight_missing_values_percent"]
-    ds1 = download(folder, latlim, lonlim, timelim, product_name, req_vars)
+    dss = list()
+    for product_name, req_vars in tests:
+        log.info(f"{product_name}, {req_vars}")
+        ds_x = download(folder, latlim, lonlim, timelim, product_name, req_vars)
+        dss.append(ds_x)
 
-    product_name = "MSG_MDSSFTD"
-    req_vars = ["ra_flat", "qa"]
-    ds2 = download(folder, latlim, lonlim, timelim, product_name, req_vars)
+    # product_name = "MSG_MDIDSSF"
+    # req_vars = ["ra_flat", "max_nslots_missing", "missing_values_percent", "weight_missing_values_percent"]
+    # ds1 = download(folder, latlim, lonlim, timelim, product_name, req_vars)
 
-    ds3 = pywapor.collect.product.ERA5.download(
-                                        folder, 
-                                        latlim, 
-                                        lonlim, 
-                                        timelim, 
-                                        product_name="sis-agrometeorological-indicators", 
-                                        req_vars=["ra_flat"]
-                                )
+    # product_name = "MSG_MDSSFTD"
+    # req_vars = ["ra_flat", "qa"]
+    # ds2 = download(folder, latlim, lonlim, timelim, product_name, req_vars)
 
-    ds4 = pywapor.collect.product.MERRA2.download(
-                                        folder, 
-                                        latlim, 
-                                        lonlim, 
-                                        timelim, 
-                                        product_name="M2T1NXRAD.5.12.4", 
-                                        req_vars=["ra_flat"]
-                                )
+    # ds3 = pywapor.collect.product.ERA5.download(
+    #                                     folder, 
+    #                                     latlim, 
+    #                                     lonlim, 
+    #                                     timelim, 
+    #                                     product_name="sis-agrometeorological-indicators", 
+    #                                     req_vars=["ra_flat"]
+    #                             )
 
-    ds5 = pywapor.collect.product.GEOS5.download(
-                                        folder, 
-                                        latlim, 
-                                        lonlim, 
-                                        timelim, 
-                                        product_name="tavg1_2d_rad_Nx", 
-                                        req_vars=["ra_flat"]
-                                )
+    # ds4 = pywapor.collect.product.MERRA2.download(
+    #                                     folder, 
+    #                                     latlim, 
+    #                                     lonlim, 
+    #                                     timelim, 
+    #                                     product_name="M2T1NXRAD.5.12.4", 
+    #                                     req_vars=["ra_flat"]
+    #                             )
+
+    # ds5 = pywapor.collect.product.GEOS5.download(
+    #                                     folder, 
+    #                                     latlim, 
+    #                                     lonlim, 
+    #                                     timelim, 
+    #                                     product_name="tavg1_2d_rad_Nx", 
+    #                                     req_vars=["ra_flat"]
+    #                             )
     
-    dss = [ds1, ds2, ds3, ds4, ds5]
+    # dss = [ds1, ds2, ds3, ds4, ds5]
 
-    fig, axs = plt.subplots(len(dss), 1, figsize = (6, 15), sharex=True, sharey=True, dpi = 300)
+    # fig, axs = plt.subplots(len(dss), 1, figsize = (6, 15), sharex=True, sharey=True, dpi = 300)
 
-    var = "ra_flat"
+    # var = "ra_flat"
 
-    timeslice = [np.datetime64("2023-02-01 00:00:00"), np.datetime64("2023-02-03 00:00:00")]
+    # timeslice = [np.datetime64("2023-02-01 00:00:00"), np.datetime64("2023-02-03 00:00:00")]
 
-    for ax, ds in zip(axs, dss):
-        source_name = os.path.split(os.path.split(ds.encoding["source"])[0])[-1]
-        prod_name = os.path.splitext(os.path.split(ds.encoding["source"])[-1])[0]
-        ds_ = ds[var].sel(time = slice(*timeslice))
-        n = ds_.sizes["time"]
-        ds__ = ds_.mean(dim = "time")
-        ds__.attrs["units"] = "W m-2"
-        ds__.plot(ax = ax, vmax = 220)
-        ax.set_title(f"{source_name}.{prod_name}, n = {n}")
-        xlabel = ax.get_xlabel()
-        ax.set_xlabel("")
-        ax.set_facecolor("lightgray")
+    # for ax, ds in zip(axs, dss):
+    #     source_name = os.path.split(os.path.split(ds.encoding["source"])[0])[-1]
+    #     prod_name = os.path.splitext(os.path.split(ds.encoding["source"])[-1])[0]
+    #     ds_ = ds[var].sel(time = slice(*timeslice))
+    #     n = ds_.sizes["time"]
+    #     ds__ = ds_.mean(dim = "time")
+    #     ds__.attrs["units"] = "W m-2"
+    #     ds__.plot(ax = ax, vmax = 220)
+    #     ax.set_title(f"{source_name}.{prod_name}, n = {n}")
+    #     xlabel = ax.get_xlabel()
+    #     ax.set_xlabel("")
+    #     ax.set_facecolor("lightgray")
 
-    plt.xlabel(xlabel)
-    plt.suptitle(f"{var}\n[{timeslice[0]} - {timeslice[1]}]")
+    # plt.xlabel(xlabel)
+    # plt.suptitle(f"{var}\n[{timeslice[0]} - {timeslice[1]}]")
 
-    plt.savefig(os.path.join(folder, "ra_flat_comparison.png"))
+    # plt.savefig(os.path.join(folder, "ra_flat_comparison.png"))

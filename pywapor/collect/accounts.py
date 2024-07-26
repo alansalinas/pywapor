@@ -35,7 +35,10 @@ PASSWORD_INSTRUCTIONS = {
 > only used when using the `requests.get` download method, 
 > which is not the default!
 > Create an account at https://ladsweb.modaps.eosdis.nasa.gov/.
-> In the top right, press "Login > Generate Token"."""
+> In the top right, press "Login > Generate Token".""",
+
+"LSASAF": """> Used for `MSG_MDSSFTD` and `MSG_MDIDSSF`.
+> Create an account at https://mokey.lsasvcs.ipma.pt/.""",
 }
 
 def ask_pw(account):
@@ -62,7 +65,7 @@ def setup(account):
 
     Parameters
     ----------
-    account : {"NASA" | "TERRA" | "ECMWF" | "COPERNICUS_DATA_SPACE" | "EARTHEXPLORER" | "VIIRSL1"}
+    account : {"NASA" | "TERRA" | "ECMWF" | "COPERNICUS_DATA_SPACE" | "EARTHEXPLORER" | "VIIRSL1" | "LSASAF"}
         Which un/pw combination to store.
     """
 
@@ -103,6 +106,7 @@ def setup(account):
             "ECMWF": ecmwf_account,
             "COPERNICUS_DATA_SPACE": copernicus_data_space_account,
             "VIIRSL1": viirs_account,
+            "LSASAF": lsasaf_account,
         }[account]((account_name, pwd))
 
         if succes:
@@ -129,7 +133,7 @@ def get(account):
 
     Parameters
     ----------
-    account : {"NASA" | "TERRA" | "ECMWF" | "COPERNICUS_DATA_SPACE" | "EARTHEXPLORER" | "VIIRSL1}
+    account : {"NASA" | "TERRA" | "ECMWF" | "COPERNICUS_DATA_SPACE" | "EARTHEXPLORER" | "VIIRSL1 | "LSASAF"}
         Which un/pw combination to load.
     """
 
@@ -191,6 +195,24 @@ def create_key():
         
     with open(filehandle,"w+") as f:
         f.write(str(Fernet.generate_key().decode("utf-8")))
+
+def lsasaf_account(user_pw):
+
+    test_url = r"https://thredds.lsasvcs.ipma.pt/thredds/catalog/catalog.html"
+
+    session = requests.Session()
+    session.auth = user_pw
+    x = session.get(test_url)
+
+    if not x.ok:
+        error = str(x.status_code)
+        succes = False
+    else:
+        error = ""
+        succes = True
+
+    return succes, error
+
 
 def terra_account(user_pw):
     """Check if the given or stored TERA username/password combination
@@ -494,6 +516,10 @@ if __name__ == "__main__":
     # check7 = copernicus_data_space_account(un_pw7)
 
     un_pw8 = get("VIIRSL1")
+    # print("VIIRSL1", un_pw8)
+    # check8 = viirs_account(un_pw8)
+
+    un_pw8 = get("LSASAF")
     # print("VIIRSL1", un_pw8)
     # check8 = viirs_account(un_pw8)
 
