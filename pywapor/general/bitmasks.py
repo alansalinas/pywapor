@@ -504,6 +504,28 @@ def PROBAV_qa_translator():
     }
     return flags
 
+def SENTINEL3_qa_translator():
+    flags = {
+
+    'coastline':            [(0b0000000000000001, False)],
+    'ocean':                [(0b0000000000000010, False)],
+    'tidal':                [(0b0000000000000100, False)],
+    'land':                 [(0b0000000000001000, False)],
+    'inland_water':         [(0b0000000000010000, False)],  
+    'unfilled':             [(0b0000000000100000, False)],
+    'spare':                [(0b0000000001000000, False)],
+    'spare2':               [(0b0000000010000000, False)],
+    'cosmetic':             [(0b0000000100000000, False)], 
+    'duplicate':            [(0b0000001000000000, False)],  
+    'day':                  [(0b0000010000000000, False)],
+    'twilight':             [(0b0000100000000000, False)],
+    'sun_glint':            [(0b0001000000000000, False)],
+    'snow':                 [(0b0010000000000000, False)],
+    'summary_cloud':        [(0b0100000000000000, False)],  
+    'summary_pointing':     [(0b1000000000000000, False)],
+    }
+    return flags
+
 def get_mask(qa_array, flags, flag_bits):
     """Given a bitmask (`qa_array`) a list of `flags` to identify and
     a dictionary to convert between the bits and labels, returns a 
