@@ -1,8 +1,18 @@
-# -*- coding: utf-8 -*-
-"""
-"""
-from pywapor.collect.product import LANDSAT, CHIRPS, ERA5, GEOS5, GLOBCOVER, MERRA2, MODIS, TERRA, SRTM, STATICS, SENTINEL2, SENTINEL3, VIIRSL1, COPERNICUS, LSASAF
-
-__all__ = ["LANDSAT", "CHIRPS", "ERA5", "GEOS5", "GLOBCOVER", "MERRA2", "MODIS", "TERRA", "SRTM", "STATICS", "SENTINEL2", "SENTINEL3", "VIIRSL1", "COPERNICUS", "LSASAF"]
-
-__version__ = '0.1'
+__all__ = [
+    "LANDSAT", 
+    "CHIRPS", 
+    "ERA5", 
+    "GEOS5", 
+    "GLOBCOVER", 
+    "MERRA2", 
+    "MODIS", 
+    "TERRA", 
+    "SRTM", 
+    "STATICS", 
+    "SENTINEL2", 
+    "SENTINEL3", 
+    "VIIRSL1", 
+    "COPERNICUS", 
+    "LSASAF"
+    ]
+from . import LANDSAT, CHIRPS, ERA5, GEOS5, GLOBCOVER, MERRA2, MODIS, TERRA, SRTM, STATICS, SENTINEL2, SENTINEL3, VIIRSL1, COPERNICUS, LSASAF

@@ -5,6 +5,7 @@ import numpy as np
 import glob
 import warnings
 import json
+import importlib
 from functools import partial
 from pywapor.general.logger import log, adjust_logger
 from pywapor.collect.downloader import collect_sources
@@ -110,7 +111,7 @@ class Configuration():
         if "FILE:" in source:
             return []
         product_name = Configuration.pname_func(prod)
-        mod = getattr(pywapor.collect.product, source)
+        mod = importlib.import_module(f"pywapor.collect.product.{source}")
         x = mod.default_post_processors(product_name, [var])[var]
 
         funcs = list()
@@ -308,7 +309,7 @@ class Configuration():
             if not verbose:
                 log.info(f"> Variable `{var}` will be loaded from a file `{source}`.")
             return True
-        mod = getattr(pywapor.collect.product, source)
+        mod = importlib.import_module(f"pywapor.collect.product.{source}")
         try:
             mod.default_vars(product_name, [var])
             valid = True
