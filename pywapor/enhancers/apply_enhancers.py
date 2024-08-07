@@ -15,7 +15,6 @@ def apply_enhancers(post_processors, ds):
                 if kwargs or args:
                     func = functools.partial(func, *args, **kwargs)
             ds, label = apply_enhancer(ds, var, func)
-            log.info(label)
     return ds
 
 def apply_enhancer(ds, variable, enhancer):
@@ -36,8 +35,6 @@ def apply_enhancer(ds, variable, enhancer):
     tuple
         The enhanced dataset and the label to log when calculating the dataset.
     """
-    ds = enhancer(ds, variable)
-
     if isinstance(enhancer, partial):
         func_name = enhancer.func.__name__
     else:
@@ -47,5 +44,9 @@ def apply_enhancer(ds, variable, enhancer):
         label = f"--> Applying '{func_name}'."
     else:
         label = f"--> Applying '{func_name}' to `{variable}`."
+
+    log.info(label)
+
+    ds = enhancer(ds, variable)
 
     return ds, label

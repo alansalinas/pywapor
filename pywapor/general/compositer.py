@@ -266,7 +266,6 @@ def main(dss, sources, folder, general_enhancers, bins):
     # Apply general enhancers.
     for func in general_enhancers:
         ds, label = apply_enhancer(ds, None, func)
-        log.info(label)
 
     while os.path.isfile(final_path):
         final_path = final_path.replace(".nc", "_.nc")
