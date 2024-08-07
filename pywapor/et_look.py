@@ -90,8 +90,17 @@ def main(input_data, et_look_version = "v2", export_vars = "default", chunks = {
     ds["lat_rad"] = ETLook.solar_radiation.latitude_rad(ds["y"]).chunk("auto")
     ds["ws"] = ETLook.solar_radiation.sunset_hour_angle(ds["lat_rad"], ds["decl"])
 
-    ds["ra_24_toa_flat"] = ETLook.solar_radiation.daily_solar_radiation_toa_flat(ds["decl"], ds["iesd"], ds["lat_rad"], ds["ws"])
-    ds["trans_24"] = ETLook.solar_radiation.transmissivity(ds["ra_24"], ds["ra_24_toa_flat"])
+    ds["ra_toa_flat_24"] = ETLook.solar_radiation.daily_solar_radiation_toa_flat(ds["decl"], ds["iesd"], ds["lat_rad"], ds["ws"])
+
+    if ds["slope"].dtype == object or ds["aspect"].dtype == object:
+        ds["ra_24"] = ds["ra_flat_24"]
+        ds["trans_24"] = ETLook.solar_radiation.transmissivity(ds["ra_flat_24"], ds["ra_toa_flat_24"])
+    else:
+        ds["sc"] = ETLook.solar_radiation.seasonal_correction(ds["doy"])
+        ds["ra_toa_24"] = ETLook.solar_radiation.daily_solar_radiation_toa(ds["sc"], ds["decl"], ds["iesd"], ds["lat_rad"], ds["slope"], ds["aspect"])
+        ds["trans_24"] = ETLook.solar_radiation.transmissivity(ds["ra_flat_24"], ds["ra_toa_flat_24"])
+        ds["diffusion_index"] = ETLook.solar_radiation.diffusion_index(ds["trans_24"], diffusion_slope = ds["diffusion_slope"], diffusion_intercept = ds["diffusion_intercept"])
+        ds["ra_24"] = ETLook.solar_radiation.daily_total_solar_radiation(ds["ra_toa_24"], ds["ra_toa_flat_24"], ds["diffusion_index"], ds["trans_24"])
 
     ds["stress_rad"] = ETLook.stress.stress_radiation(ds["ra_24"])
     ds["p_air_0_24_mbar"] = ETLook.meteo.air_pressure_kpa2mbar(ds["p_air_0_24"])
@@ -274,12 +283,12 @@ def check_for_non_chuncked_arrays(ds):
                 print(var)
 
 if __name__ == "__main__":
-
+    ...
     chunks = {"time_bins": -1, "x": 1000, "y": 1000}
     et_look_version = "v3"
     export_vars = "default"
 
-    input_data = '/Users/hmcoerver/Local/pywapor_se/et_look_in.nc'
+    # input_data = '/Users/hmcoerver/Local/pywapor_se/et_look_in.nc'
 
     # input_data = r'/Users/hmcoerver/Local/test8/et_look_in_.nc'
     # et_look_version = "v2"

@@ -68,8 +68,6 @@ def url_func(product_name, tile):
 
 def default_vars(product_name, req_vars):
 
-    # Downward Surface Shortwave Flux (DSSF)
-
     variables = {
 
         "MSG_MDSSFTD": { # MSG Total and Diffuse DSSF, https://nextcloud.lsasvcs.ipma.pt/s/bA9gYoa5mQX2yJw
@@ -87,24 +85,11 @@ def default_vars(product_name, req_vars):
 
         #########
 
-        # "MSG_DLST-MAX10D": {
-        #             "LST_MAX": [("time", "lat", "lon"), "lst"], # 10-day maximum lst, Celsius
-        #             "NUM_VALID": [("time", "lat", "lon"), "nvalids"],
-        #             "quality_flag": [("time", "lat", "lon"), "qa"],
-        #             "standard_error": [("time", "lat", "lon"), "error"],
-        # },
-
-        # "MSG_DLST-MEDIAN10D": {
-        #             "LST_MED": [("time", "lat", "lon"), "lst"], # 10-day median lst, Celsius
-        #             "NUM_VALID": [("time", "lat", "lon"), "nvalids"],
-        #             "standard_error": [("time", "lat", "lon"), "error"],
-        # },
-
-        # "MSG_LST": {
-        #             "LST": [("time", "lat", "lon"), "lst"], # inst. lst, Celsius
-        #             "quality_flag": [("time", "lat", "lon"), "qa"],
-        #             "standard_error": [("time", "lat", "lon"), "error"],
-        # },
+        "MSG_MLST": {
+                    "LST": [("time", "lat", "lon"), "lst"], # inst. lst, Celsius
+                    "quality_flag": [("time", "lat", "lon"), "qa"],
+                    "standard_error": [("time", "lat", "lon"), "error"],
+        },
 
         "MSG_MLST-AS": {
                     "MLST-AS": [("time", "lat", "lon"), "lst"], # inst. lst (all-sky, i.e. clear AND cloudy), Celsius
@@ -117,19 +102,6 @@ def default_vars(product_name, req_vars):
                     "quality_flag": [("time", "lat", "lon"), "qa"],
                     "CMa": [("time", "lat", "lon"), "cloud_mask"],
         },
-
-        #########
-
-        # "MSG_DMET": {
-        #             "ET": [("time", "lat", "lon"), "et_24_mm"], # mm/day
-        #             "max_nslots_missing": [("time", "lat", "lon"), "max_nslots_missing"],
-        #             "missing_values_percent": [("time", "lat", "lon"), "missing_values_percent"],
-        # },
-
-        # "MSG_ET": {
-        #             "ET": [("time", "lat", "lon"), "et_i"], # mm/h
-        #             "quality_flag": [("time", "lat", "lon"), "qa"],
-        # },
 
         "MSG_METREF": {
                     "METREF": [("time", "lat", "lon"), "et_ref_24_mm"], # mm/day
@@ -145,44 +117,6 @@ def default_vars(product_name, req_vars):
                     "MLE": [("time", "lat", "lon"), "lh_i"], # latent heat flux, W/m2
                     "quality_flag": [("time", "lat", "lon"), "qa"],
         },
-
-        #########
-
-        # "MSG_FAPAR": {
-        #             "FAPAR": [("time", "lat", "lon"), "f_par"], # [-]
-        #             "quality_flag": [("time", "lat", "lon"), "qa"],
-        #             "standard_error": [("time", "lat", "lon"), "error"],
-        # },
-
-        # "MSG_FAPAR-D10": {
-        #             "FAPAR": [("time", "lat", "lon"), "f_par"], # [-] 
-        #             "quality_flag": [("time", "lat", "lon"), "qa"],
-        #             "standard_error": [("time", "lat", "lon"), "error"],
-        # },
-
-        # "MSG_LAI": {
-        #             "LAI": [("time", "lat", "lon"), "lai"], # [m2/m2] 
-        #             "quality_flag": [("time", "lat", "lon"), "qa"],
-        #             "standard_error": [("time", "lat", "lon"), "error"],
-        # },
-
-        # "MSG_LAI-D10": {
-        #             "LAI": [("time", "lat", "lon"), "lai"], # [m2/m2]
-        #             "quality_flag": [("time", "lat", "lon"), "qa"],
-        #             "standard_error": [("time", "lat", "lon"), "error"],
-        # },
-
-        # "MSG_FVC": {
-        #             "FVC": [("time", "lat", "lon"), "vc"], # [-] 
-        #             "quality_flag": [("time", "lat", "lon"), "qa"],
-        #             "standard_error": [("time", "lat", "lon"), "error"],
-        # },
-
-        # "MSG_FVC-D10": {
-        #             "FVC": [("time", "lat", "lon"), "vc"], # [-] 
-        #             "quality_flag": [("time", "lat", "lon"), "qa"],
-        #             "standard_error": [("time", "lat", "lon"), "error"],
-        # },
 
     }
 
@@ -201,24 +135,18 @@ def default_vars(product_name, req_vars):
                 'weight_missing_values_percent': ['weight_missing_values_percent']
         },
 
-        # 'MSG_DLST-MAX10D': {
-        #         'lst': ['LST_MAX'],
-        #         'nvalids': ['NUM_VALID'],
-        #         'qa': ['quality_flag'],
-        #         'error': ['standard_error']
-        # },
+        'MSG_DLST-MAX10D': {
+                'lst': ['LST_MAX'],
+                'nvalids': ['NUM_VALID'],
+                'qa': ['quality_flag'],
+                'error': ['standard_error']
+        },
 
-        # 'MSG_DLST-MEDIAN10D': {
-        #         'lst': ['LST_MED'],
-        #         'nvalids': ['NUM_VALID'],
-        #         'error': ['standard_error']
-        # },
-
-        # 'MSG_LST': {
-        #         'lst': ['LST'],
-        #         'qa': ['quality_flag'],
-        #         'error': ['standard_error']
-        # },
+        'MSG_MLST': {
+                'lst': ['LST'],
+                'qa': ['quality_flag'],
+                'error': ['standard_error']
+        },
 
         'MSG_MLST-AS': {
                 'lst': ['MLST-AS'],
@@ -231,17 +159,6 @@ def default_vars(product_name, req_vars):
                 'qa': ['quality_flag'],
                 'cloud_mask': ['CMa']
         },
-
-        # 'MSG_DMET': {
-        #         'et_24_mm': ['ET'],
-        #         'max_nslots_missing': ['max_nslots_missing'],
-        #         'missing_values_percent': ['missing_values_percent']
-        # },
-
-        # 'MSG_ET': {
-        #         'et_i': ['ET'], 
-        #         'qa': ['quality_flag']
-        # },
 
         'MSG_METREF': {
                 'et_ref_24_mm': ['METREF'], 
@@ -258,41 +175,6 @@ def default_vars(product_name, req_vars):
                 'qa': ['quality_flag']
         },
 
-        # 'MSG_FAPAR': {
-        #         'f_par': ['FAPAR'],
-        #         'qa': ['quality_flag'],
-        #         'error': ['standard_error']
-        # },
-
-        # 'MSG_FAPAR-D10': {
-        #         'f_par': ['FAPAR'],
-        #         'qa': ['quality_flag'],
-        #         'error': ['standard_error']
-        # },
-
-        # 'MSG_LAI': {
-        #        'lai': ['LAI'],
-        #         'qa': ['quality_flag'],
-        #         'error': ['standard_error']
-        # },
-
-        # 'MSG_LAI-D10': {
-        #        'lai': ['LAI'],
-        #         'qa': ['quality_flag'],
-        #         'error': ['standard_error']
-        # },
-
-        # 'MSG_FVC': {
-        #        'vc': ['FVC'],
-        #         'qa': ['quality_flag'],
-        #         'error': ['standard_error']
-        # },
-
-        # 'MSG_FVC-D10': {
-        #         'vc': ['FVC'],
-        #         'qa': ['quality_flag'],
-        #         'error': ['standard_error']
-        # }
     }
 
     out = {val:variables[product_name][val] for sublist in map(req_dl_vars[product_name].get, req_vars) for val in sublist}
@@ -304,22 +186,12 @@ def default_post_processors(product_name, req_vars):
     post_processors = {
         'MSG_MDSSFTD': {'ra_flat': [], 'diffuse_fraction': [], 'qa': []},
         'MSG_MDIDSSF': {'ra_flat': [jouleperday_to_watt], 'max_nslots_missing': [], 'missing_values_percent': [], 'weight_missing_values_percent': []},
-        # 'MSG_DLST-MAX10D': {'lst': [celsius_to_kelvin], 'nvalids': [], 'qa': [], 'error': []},
-        # 'MSG_DLST-MEDIAN10D': {'lst': [celsius_to_kelvin], 'nvalids': [], 'error': []},
-        # 'MSG_LST': {'lst': [celsius_to_kelvin], 'qa': [], 'error': []},
+        'MSG_MLST': {'lst': [celsius_to_kelvin], 'qa': [], 'error': []},
         'MSG_MLST-AS': {'lst': [celsius_to_kelvin], 'qa': [], 'cloud_mask': []},
         'MSG_MLST-ASv2': {'lst': [celsius_to_kelvin], 'qa': [], 'cloud_mask': []},
-        # 'MSG_DMET': {'et_24_mm': [], 'max_nslots_missing': [], 'missing_values_percent': []},
-        # 'MSG_ET': {'et_i': [], 'qa': []},
         'MSG_METREF': {'et_ref_24_mm': [], 'qa': []},
         'MSG_MH': {'h_i': [], 'qa': []},
         'MSG_MLE': {'lh_i': [], 'qa': []},
-        # 'MSG_FAPAR': {'f_par': [], 'qa': [], 'error': []},
-        # 'MSG_FAPAR-D10': {'f_par': [], 'qa': [], 'error': []},
-        # 'MSG_LAI': {'lai': [], 'qa': [], 'error': []},
-        # 'MSG_LAI-D10': {'lai': [], 'qa': [], 'error': []},
-        # 'MSG_FVC': {'vc': [], 'qa': [], 'error': []},
-        # 'MSG_FVC-D10': {'vc': [], 'qa': [], 'error': []}
     }
 
     out = {k:v for k,v in post_processors[product_name].items() if k in req_vars}
@@ -332,6 +204,15 @@ def download(folder, latlim, lonlim, timelim, product_name, req_vars,
     folder = os.path.join(folder, "LSASAF")
 
     satellite, product_name_ = product_name.split("_")
+    x = product_name_.split("-")
+    if len(x) == 1:
+        product_name__ = x[0]
+        extra_filter = None
+    elif len(x) == 2:
+        product_name__ = x[0]
+        extra_filter = x[1]
+    else:
+        raise ValueError
     format = "NETCDF"
 
     if not os.path.exists(folder):
@@ -385,7 +266,6 @@ def download(folder, latlim, lonlim, timelim, product_name, req_vars,
     session = requests.Session()
     session.auth = (un, pw)
 
-
     @cache(memory, "LSASAF")
     def scrape(base_url):
         catalog_url = posixpath.join(base_url, "catalog.html")
@@ -397,9 +277,11 @@ def download(folder, latlim, lonlim, timelim, product_name, req_vars,
     dates = pd.date_range(timelim[0], timelim[1], freq = "D")
     urls = list()
     for date in list(dates[:-1]):
-        base_url = f"https://thredds.lsasvcs.ipma.pt/thredds/catalog/{satellite}/{product_name_}/{format}/{date.year}/{date.month:>02}/{date.day:>02}"
+        base_url = f"https://thredds.lsasvcs.ipma.pt/thredds/catalog/{satellite}/{product_name__}/{format}/{date.year}/{date.month:>02}/{date.day:>02}"
         content = scrape(base_url)
         fns = re.findall(regex, str(content))
+        if not isinstance(extra_filter, type(None)):
+            fns = [x for x in fns if f"-{extra_filter}_" in x]
         urls_ = [posixpath.join(base_url, fn).replace("/catalog/", "/dodsC/") for fn in fns]
         urls += urls_
 
@@ -425,7 +307,7 @@ def download(folder, latlim, lonlim, timelim, product_name, req_vars,
         if corrupt or not os.path.isfile(fp_):
             url_ = url.replace("https://", f"https://{un}:{pw}@")
             ds_ = pywapor.collect.protocol.opendap.download_xarray(url_, fp_, coords, variables, {}, 
-                                data_source_crs = data_source_crs, timedelta=timedelta, parallel=True)
+                                data_source_crs = data_source_crs, timedelta=timedelta, parallel=False)
         log.sub()
         return ds_
 
@@ -469,22 +351,12 @@ if __name__ == "__main__":
     tests = [
         ('MSG_MDSSFTD', ['ra_flat', 'diffuse_fraction', 'qa']),
         ('MSG_MDIDSSF', ['ra_flat', 'max_nslots_missing', 'missing_values_percent', 'weight_missing_values_percent']),
-        # ('MSG_DLST-MAX10D', ['lst', 'nvalids', 'qa', 'error']),
-        # ('MSG_DLST-MEDIAN10D', ['lst', 'nvalids', 'error']),
-        # ('MSG_LST', ['lst', 'qa', 'error']),
+        ('MSG_MLST', ['lst', 'qa', 'error']),
         ('MSG_MLST-AS', ['lst', 'qa', 'cloud_mask']),
         ('MSG_MLST-ASv2', ['lst', 'qa', 'cloud_mask']),
-        # ('MSG_DMET', ['et_24_mm', 'max_nslots_missing', 'missing_values_percent']),
-        # ('MSG_ET', ['et_i', 'qa']),
         ('MSG_METREF', ['et_ref_24_mm', 'qa']),
         ('MSG_MH', ['h_i', 'qa']),
         ('MSG_MLE', ['lh_i', 'qa']),
-        # ('MSG_FAPAR', ['f_par', 'qa', 'error']),
-        # ('MSG_FAPAR-D10', ['f_par', 'qa', 'error']),
-        # ('MSG_LAI', ['lai', 'qa', 'error']),
-        # ('MSG_LAI-D10', ['lai', 'qa', 'error']),
-        # ('MSG_FVC', ['vc', 'qa', 'error']),
-        # ('MSG_FVC-D10', ['vc', 'qa', 'error']),
     ]
 
     folder = r"/Users/hmcoerver/Local/ra_test"
@@ -493,7 +365,7 @@ if __name__ == "__main__":
 
     latlim = [30.168923, 36.520673]
     lonlim = [29.787384, 44.625092]
-    timelim = [datetime.date(2023,2,1), datetime.date(2023,2,2)]
+    timelim = [datetime.date(2023,2,5), datetime.date(2023,2,6)]
     # timelim = [datetime.date(2023,2,1), datetime.date(2023,2,13)]
 
     variables = None

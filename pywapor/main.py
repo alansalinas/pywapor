@@ -16,7 +16,7 @@ class Configuration():
     variable_categories = {
         "optical": ["ndvi", "r0", "mndwi", "psri", "vari_red_edge", "bsi", "nmdi", "green", "nir"],
         "thermal": ["bt", "lst"],
-        "solar radiation": ["ra"],
+        "solar radiation": ["ra_flat"],
         "precipitation": ["p"],
         "elevation": ["z", "slope", "aspect"],
         "meteorological": ["t_air", "t_air_min", "t_air_max", "u", "vp", "p_air", "p_air_0", "u2m", "v2m", "qv", "wv", "t_dew"],
@@ -46,8 +46,8 @@ class Configuration():
         [("se_root",)], 
 
         [("p",)],
-        [("z",)],
-        [("ra",)],
+        [("z", "slope", "aspect"), ("z")],
+        [("ra_flat",)],
 
         [("u",), ("u2m", "v2m")],
         [("p_air",)], 
@@ -240,7 +240,11 @@ class Configuration():
                         continue
 
                     cat = cls.category_variables[var]
-                    possible_prods = summary[cat]
+                    possible_prods = summary.get(cat, None)
+                    
+                    if isinstance(possible_prods, type(None)):
+                        continue
+
                     products = []
                     t_interps = list()
                     for prod in possible_prods:
@@ -413,6 +417,8 @@ class Configuration():
             example_ = [f"{prod['source']}.{prod['product_name']}" for prod in v["products"] if prod["is_example"]]
             if len(example_) > 0:
                 example = example_[0]
+            else:
+                example = None
             if isinstance(v["temporal_interp"], dict):
                 if v["temporal_interp"].get("method", "") == "whittaker":
                     for prod in v["products"]:
@@ -767,11 +773,11 @@ class Project():
 
 if __name__ == "__main__":
 
-    timelim = ["2022-01-01", "2023-12-31"]
+    timelim = ["2023-11-01", "2023-11-30"]
     latlim = [21.9692194682626933, 21.9939120838340507]
     lonlim = [91.9371349243682801, 91.9657566608824339]
     bb = [91.9371349243682801, 21.9692194682626933, 91.9657566608824339, 21.9939120838340507]
-    project_folder = r"/Users/hmcoerver/Local/pywapor_bgd"
+    project_folder = r"/Users/hmcoerver/Local/pywapor_bgdX"
 
     adjust_logger(True, project_folder, "INFO")
 
@@ -790,31 +796,31 @@ if __name__ == "__main__":
 
     project = pywapor.Project(project_folder, bb, timelim)
 
-    project.validate_project_folder()
+    # project.validate_project_folder()
 
     # project.load_configuration(name = "WaPOR3_level_2")
 
     summary = {
         # Define which products to use.
-        'elevation': {'COPERNICUS.GLO30'},
-        'meteorological': {'GEOS5.tavg1_2d_slv_Nx'},
-        'optical': {'SENTINEL2.S2MSI2A_R20m'},
-        'precipitation': {'CHIRPS.P05'},
-        'solar radiation': {'ERA5.sis-agrometeorological-indicators'},
-        'statics': {'STATICS.WaPOR3'},
-        'thermal': {'VIIRSL1.VNP02IMG'},
-        'soil moisture': {'FILE:{folder}{sep}se_root_out*.nc'},
+        'elevation': {},
+        'meteorological': {},
+        'optical': {'LANDSAT.LC09_SR'},
+        'precipitation': {},
+        'solar radiation': {},
+        'statics': {},
+        'thermal': {},
+        'soil moisture': {},
 
         # Define which product to reproject the other products to.
-        '_EXAMPLE_': 'SENTINEL2.S2MSI2A_R20m', 
+        '_EXAMPLE_': 'LANDSAT.LC09_SR', 
 
-        # Define any special functions to apply to a specific variable.
-        '_ENHANCE_': {"bt": ["pywapor.enhancers.dms.thermal_sharpener.sharpen"],},
+        # # Define any special functions to apply to a specific variable.
+        # '_ENHANCE_': {"bt": ["pywapor.enhancers.dms.thermal_sharpener.sharpen"],},
 
-        # Choose which products should be gapfilled.
-        '_WHITTAKER_': {
-            'SENTINEL2.S2MSI2A_R20m': {'lmbdas': 1000.0, 'method': 'whittaker'}, 
-            'VIIRSL1.VNP02IMG': {'a': 0.85, 'lmbdas': 1000.0, 'method': 'whittaker'}},
+        # # Choose which products should be gapfilled.
+        # '_WHITTAKER_': {
+        #     'SENTINEL2.S2MSI2A_R20m': {'lmbdas': 1000.0, 'method': 'whittaker'}, 
+        #     'VIIRSL1.VNP02IMG': {'a': 0.85, 'lmbdas': 1000.0, 'method': 'whittaker'}},
         }
     
     project.load_configuration(summary = summary)
@@ -824,10 +830,10 @@ if __name__ == "__main__":
     project.set_passwords()
     dss = project.download_data()
     
-    se_root_in = project.run_pre_se_root()
+    # se_root_in = project.run_pre_se_root()
     # se_root = project.run_se_root()
     # et_look_in = project.run_pre_et_look()
-    et_look = project.run_et_look()
+    # et_look = project.run_et_look()
 
 
 
