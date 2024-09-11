@@ -10,6 +10,7 @@ import rasterio.crs
 import itertools
 import copy
 import re
+from importlib.metadata import version
 from pywapor.enhancers.apply_enhancers import apply_enhancers
 from pywapor.general.logger import log, adjust_logger
 import shutil
@@ -140,14 +141,20 @@ def download(folder, product_name, latlim, lonlim, timelim, variables, post_proc
                                 **{"variable": var}, **area_settings})
 
     # Make sure the the individual request don't exceed the max allowed request size.
-    max_size = {"sis-agrometeorological-indicators": 100,
-                "reanalysis-era5-single-levels": 100,
+    max_size = {"sis-agrometeorological-indicators": 1000,
+                "reanalysis-era5-single-levels": 1000,
                 }.get(product_name)
     if isinstance(max_size, int):
         settings = split_settings(settings, max_size = max_size)
 
     # Load api key.
-    url, key = pywapor.collect.accounts.get("ECMWF")
+    cdsapi_version = int(version("cdsapi").replace(".", ""))
+    if cdsapi_version < 70:
+        log.warning(f"--> CDS is moving to a new system, please update the `cdsapi` package to a version `> 0.7.0.`")
+        url, key = pywapor.collect.accounts.get("ECMWF")
+    else:
+        log.info(f"--> Using the new CDS beta.")
+        url, key = pywapor.collect.accounts.get("CDS")
 
     _ = log.info("--> Directing CDS logging to file `CDS_log.txt`.")
 

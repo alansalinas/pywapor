@@ -661,7 +661,7 @@ class Project():
             "CHIRPS": "NASA",
             "MERRA2": "NASA",
             "TERRA": "TERRA",
-            "ERA5": "ECMWF",
+            "ERA5": "CDS",
             "LANDSAT": "EARTHEXPLORER",
             "SENTINEL2": "COPERNICUS_DATA_SPACE",
             "SENTINEL3": "COPERNICUS_DATA_SPACE",

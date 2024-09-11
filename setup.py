@@ -32,7 +32,7 @@ setup(
         'rioxarray>=0.15.5',
         'cryptography',
         'cachetools',
-        'cdsapi',
+        'cdsapi>=0.7.0',
         'shapely',
         'lxml',
         'scikit-learn',

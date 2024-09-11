@@ -19,10 +19,15 @@ PASSWORD_INSTRUCTIONS = {
 "TERRA": """> Used for `TERRA` (VITO:PROVA-V).
 > Create an account at https://viewer.terrascope.be.""",
 
-"ECMWF": """> Used for `ERA5`.
+"ECMWF": """> Used for `ERA5` (old, please use `"CDS"` instead).
 > Create an account at https://cds.climate.copernicus.eu.
   * On your profile page, scroll to the "API key" section.
   * Accept conditions when running `setup("ECMWF")` for the first time.""",
+
+"CDS": """> Used for `ERA5`.
+> Create an account at https://cds-beta.climate.copernicus.eu.
+  * On your profile page, scroll to the "Personal Access Token" section.
+  * Accept conditions when running `setup("CDS")` for the first time.""",
 
 "EARTHEXPLORER": """> Used for `LANDSAT`.
 > Create an account at https://earthexplorer.usgs.gov.""",
@@ -54,6 +59,10 @@ def ask_pw(account):
         api_key_1 = input(f"{account} UID: ")
         api_key_2 = input(f"{account} CDS API key: ")
         pwd = f"{api_key_1}:{api_key_2}"
+    elif account == "CDS":
+        account_name = 'https://cds-beta.climate.copernicus.eu/api'
+        pat = input(f"{account} Personal Access Token: ")
+        pwd = f"{pat}"
     else:
         account_name = input(f"{account} username: ")
         pwd = getpass.getpass(f"{account} password: ")  
@@ -65,7 +74,7 @@ def setup(account):
 
     Parameters
     ----------
-    account : {"NASA" | "TERRA" | "ECMWF" | "COPERNICUS_DATA_SPACE" | "EARTHEXPLORER" | "VIIRSL1" | "LSASAF"}
+    account : {"NASA" | "TERRA" | "ECMWF" | "CDS" | "COPERNICUS_DATA_SPACE" | "EARTHEXPLORER" | "VIIRSL1" | "LSASAF"}
         Which un/pw combination to store.
     """
 
@@ -104,6 +113,7 @@ def setup(account):
             "EARTHEXPLORER": earthexplorer_account,
             "TERRA": terra_account,
             "ECMWF": ecmwf_account,
+            "CDS": cds_account,
             "COPERNICUS_DATA_SPACE": copernicus_data_space_account,
             "VIIRSL1": viirs_account,
             "LSASAF": lsasaf_account,
@@ -133,7 +143,7 @@ def get(account):
 
     Parameters
     ----------
-    account : {"NASA" | "TERRA" | "ECMWF" | "COPERNICUS_DATA_SPACE" | "EARTHEXPLORER" | "VIIRSL1 | "LSASAF"}
+    account : {"NASA" | "TERRA" | "ECMWF" | "CDS" | "COPERNICUS_DATA_SPACE" | "EARTHEXPLORER" | "VIIRSL1 | "LSASAF"}
         Which un/pw combination to load.
     """
 
@@ -439,6 +449,58 @@ def copernicus_data_space_account(user_pw):
 
     return succes, error
 
+def cds_account(user_pw):
+    """Check if the given or stored ECMWF key is 
+    correct. Accounts can be created on https://cds.climate.copernicus.eu/#!/home.
+
+    Parameters
+    ----------
+    user_pw : tuple
+        ("username", "password") to check.
+
+    Returns
+    -------
+    tuple
+        First item is `True` if the password works, otherwise `False`,
+        seconds item is a error message.
+    """
+
+    url, key = user_pw
+
+    try:
+        vrfy = {"NO": False, "YES": True}.get(os.environ.get("PYWAPOR_VERIFY_SSL", "YES"), True)
+        c = cdsapi.Client(url = url, key = key, verify = vrfy, quiet = True)
+        fp = os.path.join(pywapor.__path__[0], "test.zip")
+        _ = c.retrieve(
+            'sis-agrometeorological-indicators',
+            {
+                'format': 'zip',
+                'variable': '2m_temperature',
+                'statistic': '24_hour_mean',
+                'year': '2005',
+                'month': '11',
+                'day': ['01'],
+                'area': [2,-2,-2,2],
+                'version': '1_1'
+            },
+            fp)
+        try:
+            os.remove(fp)
+        except PermissionError:
+            ... # windows...
+        succes = True
+        error = ""
+    except Exception as e:
+        exception_args = getattr(e, "args", ["wrong_token"])
+        succes = False
+        if len(exception_args) > 0:
+            if "Client has not agreed to the required terms and conditions" in str(exception_args[0]):
+                error = exception_args[0]
+        else:
+            error = "wrong key"
+
+    return succes, error
+
 def ecmwf_account(user_pw):
     """Check if the given or stored ECMWF key is 
     correct. Accounts can be created on https://cds.climate.copernicus.eu/#!/home.
@@ -522,5 +584,7 @@ if __name__ == "__main__":
     un_pw8 = get("LSASAF")
     # print("VIIRSL1", un_pw8)
     # check8 = viirs_account(un_pw8)
+
+    un_pw9 = get("CDS")
 
     # print(check1, check2, check4, check6, check7, check8)
