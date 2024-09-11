@@ -141,6 +141,8 @@ def main(folder, latlim, lonlim, timelim, sources = "level_1", bin_length = 1, e
     dss= {**example_dss, **other_dss}
 
     try:
+        example_t_vars_str = "`, `".join(example_t_vars)
+        log.info(f"--> Aligning to times of `{example_t_vars_str}`.")
         ds = aligner.main(dss, sources, folder, general_enhancers, example_t_vars = example_t_vars)
     except Exception as e:
         log.exception("")

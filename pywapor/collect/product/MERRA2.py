@@ -43,7 +43,7 @@ def default_vars(product_name, req_vars):
                     "SLP": [("time", "lat", "lon"), "p_air_0"],
                         },
         "M2T1NXRAD.5.12.4": {
-                    "SWGNT": [("time", "lat", "lon"), "ra"],
+                    "SWGDN": [("time", "lat", "lon"), "ra_flat"],
                         }
     }
 
@@ -60,7 +60,7 @@ def default_vars(product_name, req_vars):
             "p_air_0": ["SLP"],
         },
         "M2T1NXRAD.5.12.4": {
-            "ra": ["SWGNT"],
+            "ra_flat": ["SWGDN"],
         }
     }
 
@@ -99,7 +99,7 @@ def default_post_processors(product_name, req_vars):
             "p_air_0": [pa_to_kpa],
         },
         "M2T1NXRAD.5.12.4": {
-            "ra": [],
+            "ra_flat": [],
         },
     }
 
@@ -161,7 +161,8 @@ def url_func(product_name, tile):
 
 def download(folder, latlim, lonlim, timelim, product_name, req_vars,
                 variables = None, post_processors = None):
-    """Download MERRA2 data and store it in a single netCDF file.
+    """Download MERRA2 data and store it in a single netCDF file. See
+    https://gmao.gsfc.nasa.gov/pubs/docs/Bosilovich785.pdf for docs.
 
     Parameters
     ----------

@@ -5,6 +5,7 @@ import xarray as xr
 import numpy as np
 import pywapor.collect.protocol.copernicus_odata as copernicus_odata
 from datetime import datetime as dt
+from pywapor.general.bitmasks import SENTINEL3_qa_translator, get_mask
 from pywapor.general.curvilinear import create_grid, curvi_to_recto
 from pywapor.general.logger import log, adjust_logger
 from pywapor.general.processing_functions import open_ds, remove_ds, adjust_timelim_dtype
@@ -30,12 +31,13 @@ def default_vars(product_name, req_vars):
         "SL_2_LST___": {
                     "LST_in.nc": [(), "lst", []],
                     "geodetic_in.nc": [(), "coords", []],
+                    "flags_in.nc": [(), "qa", []],
         }
     }
 
     req_dl_vars = {
         "SL_2_LST___": {
-            "lst": ["LST_in.nc", "geodetic_in.nc"]
+            "lst": ["LST_in.nc", "geodetic_in.nc", "flags_in.nc"]
         },
     }
 
@@ -97,9 +99,14 @@ def s3_processor(scene_folder, variables, bb = None, **kwargs):
     ds = ds_.set_coords(("longitude_in", "latitude_in"))
     ds = ds.rename_vars({"longitude_in": "x", "latitude_in": "y"})
     ds = ds.rename_dims({"rows": "ny", "columns": "nx"})
-    ds = ds[["LST", "LST_uncertainty"]]
-    ds = ds.where(ds["LST_uncertainty"] < 2.5)
-    ds = ds.drop_vars("LST_uncertainty")
+    ds = ds[["LST", "LST_uncertainty", "confidence_in"]]
+
+    flags = ["summary_cloud", "summary_pointing", "snow"]
+    flag_bits = SENTINEL3_qa_translator()
+    mask = get_mask(ds["confidence_in"], flags, flag_bits)
+
+    ds = ds.where((ds["LST_uncertainty"] < 2.5) & (~mask))
+    ds = ds.drop_vars(["LST_uncertainty", "confidence_in"])
     ds = ds.rename_vars({"LST": "lst"})
     ds["x"].attrs = {}
     ds["y"].attrs = {}
@@ -210,18 +217,38 @@ def download(folder, latlim, lonlim, timelim, product_name,
 
 if __name__ == "__main__":
 
+    bb = [
+    107.7646933699809324,
+    12.7301600204295262,
+    108.0391593389445148,
+    12.9241818414943772
+    ]
+
     folder = r"/Users/hmcoerver/Local/s3_new"
     adjust_logger(True, folder, "INFO")
     timelim = ["2023-08-29", "2023-09-02"]
     latlim = [29.4, 29.7]
     lonlim = [30.7, 31.0]
 
+    latlim = [bb[1], bb[3]]
+    lonlim = [bb[0], bb[2]]
+
     product_name = 'SL_2_LST___'
 
     req_vars = ["lst"]
     post_processors = None
     variables = None
+    variables = default_vars(product_name, req_vars)
     extra_search_kwargs = {}
+
+    product_folder = os.path.join(folder, "SENTINEL3")
+    node_filter = None
+    product_name = "SENTINEL3"
+    product_type = 'SL_2_LST___'
+
+    timelim = adjust_timelim_dtype(timelim)
+
+    scene_folder = "/Users/hmcoerver/Local/s3_new/S3B_SL_2_LST____20230901T024030_20230901T024330_20230901T043910_0180_083_260_2700_PS2_O_NR_004.SEN3"
 
     # source_name = "SENTINEL3"
     # scene_folder = "/Users/hmcoerver/Local/s3_new/SENTINEL3/S3A_SL_2_LST____20230829T075655_20230829T075955_20230829T100445_0179_102_363_2520_PS1_O_NR_004.SEN3"

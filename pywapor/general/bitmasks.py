@@ -316,6 +316,37 @@ def get_pixel_qa_bits(collection, ls_number, level):
 
     return all_flags[collection][ls_number][level]
 
+def LSASAF_qa_translator(product_name):
+
+    flag_bits = dict()
+
+    msg_mdssftd = {
+        "ocean":                    [(0b00000010, True), (0b00000001, True)],
+        "land":                     [(0b00000010, True), (0b00000001, False)],
+        "space":                    [(0b00000010, False), (0b00000001, True)],
+        "continental_water":        [(0b00000010, False), (0b00000001, False)],
+    
+        "unprocessed":              [(0b00010000, True), (0b00001000, True),  (0b00000100, True)],
+        "clear":                    [(0b00010000, True), (0b00001000, True),  (0b00000100, False)],
+        "contaminated":             [(0b00010000, True), (0b00001000, False),  (0b00000100, True)],
+        "cloud_filled":             [(0b00010000, True), (0b00001000, False),  (0b00000100, False)],
+        "snow_ice":                 [(0b00010000, False), (0b00001000, True),  (0b00000100, True)],
+        "undefined":                [(0b00010000, False), (0b00001000, True),  (0b00000100, False)],
+
+        "cloudy_sky_method_ok":     [(0b10000000, True),(0b01000000, True), (0b00100000, True)],
+        "clear_sky_method_bad":     [(0b10000000, True),(0b01000000, True), (0b00100000, False)],
+        "cloudy_ATOA_issue":        [(0b10000000, True),(0b01000000, False), (0b00100000, True)],
+        "cloudy_algorithm_failure": [(0b10000000, True),(0b01000000, False), (0b00100000, False)],
+        "clear_ok":                 [(0b10000000, False),(0b01000000, True), (0b00100000, True)],
+        "clear_night":              [(0b10000000, False),(0b01000000, True), (0b00100000, False)],
+        "clear_view_angle_issue":   [(0b10000000, False),(0b01000000, False), (0b00100000, True)],
+        "clear_not_processed":      [(0b10000000, False),(0b01000000, False), (0b00100000, False)],
+    }
+
+    flag_bits['MSG_MDSSFTD'] = msg_mdssftd
+
+    return flag_bits[product_name]
+
 def MODIS_qa_translator(product_name):
     """Returns a dictionary to bridge between labels and bits in
     MODIS pixel_qa bands.
@@ -470,6 +501,28 @@ def PROBAV_qa_translator():
         'bad NIR':          [(0b0000000000100000, True)],
         'bad RED':          [(0b0000000001000000, True)], 
         'bad BLUE':         [(0b0000000010000000, True)],  
+    }
+    return flags
+
+def SENTINEL3_qa_translator():
+    flags = {
+
+    'coastline':            [(0b0000000000000001, False)],
+    'ocean':                [(0b0000000000000010, False)],
+    'tidal':                [(0b0000000000000100, False)],
+    'land':                 [(0b0000000000001000, False)],
+    'inland_water':         [(0b0000000000010000, False)],  
+    'unfilled':             [(0b0000000000100000, False)],
+    'spare':                [(0b0000000001000000, False)],
+    'spare2':               [(0b0000000010000000, False)],
+    'cosmetic':             [(0b0000000100000000, False)], 
+    'duplicate':            [(0b0000001000000000, False)],  
+    'day':                  [(0b0000010000000000, False)],
+    'twilight':             [(0b0000100000000000, False)],
+    'sun_glint':            [(0b0001000000000000, False)],
+    'snow':                 [(0b0010000000000000, False)],
+    'summary_cloud':        [(0b0100000000000000, False)],  
+    'summary_pointing':     [(0b1000000000000000, False)],
     }
     return flags
 

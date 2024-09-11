@@ -3,6 +3,7 @@ import urllib
 from bs4 import BeautifulSoup
 import warnings
 import urllib
+import urllib.request
 from joblib import Parallel, delayed
 from functools import partial
 import re
@@ -226,7 +227,7 @@ def download_urls(urls, folder, session = None, fps = None, parallel = 0,
 def _download_url(url, fp, session = None, waitbar = True, headers = None):
 
     if os.path.isfile(fp):
-        log.add().info(f"--> Reusing existing `{fp}` file.")
+        log.add().info(f"--> Reusing existing `{fp}` file.").sub()
         return fp
 
     folder, fn = os.path.split(fp)

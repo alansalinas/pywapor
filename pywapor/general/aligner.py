@@ -119,7 +119,6 @@ def main(dss, sources, folder, general_enhancers, example_t_vars = ["lst"]):
                     ds = whittaker_smoothing(ds, var, chunks = chunks, new_x = new_x, **kwargs)
                     ds = ds.rename_vars({f"{var}_smoothed": var})
                 else:
-                    # print(example_time)
                     if not ds.time.equals(example_time):
                         new_coords = xr.concat([ds.time, example_time], dim = "time").drop_duplicates("time").sortby("time")
                         ds = ds.reindex_like(new_coords).chunk(chunks)
@@ -176,7 +175,6 @@ def main(dss, sources, folder, general_enhancers, example_t_vars = ["lst"]):
     # Apply general enhancers.
     for func in general_enhancers:
         ds, label = apply_enhancer(ds, None, func)
-        log.info(label)
 
     while os.path.isfile(final_path):
         final_path = final_path.replace(".nc", "_.nc")

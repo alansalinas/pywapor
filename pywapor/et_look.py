@@ -22,7 +22,7 @@ def main(input_data, et_look_version = "v2", export_vars = "default", chunks = {
         Which version of the ETLook model to use, by default "v2".
     export_vars : "default" | "all" | list, optional
         Specify which variables to save inside the output file. `"Default"` stores `int_mm`,
-        `t_24_mm`, `e_24_mm`, `et_24_mm`, `et_ref_24_mm`, `se_root`, `biomass_prod`,
+        `t_24_mm`, `e_24_mm`, `aeti_24_mm`, `et_ref_24_mm`, `se_root`, `biomass_prod`,
         `epoch_ends` and `epoch_starts`. `"all"` stores all calculated variables. Use a
         list to specify a custom output set, by default "default".
     chunks : dict, optional
@@ -90,8 +90,17 @@ def main(input_data, et_look_version = "v2", export_vars = "default", chunks = {
     ds["lat_rad"] = ETLook.solar_radiation.latitude_rad(ds["y"]).chunk("auto")
     ds["ws"] = ETLook.solar_radiation.sunset_hour_angle(ds["lat_rad"], ds["decl"])
 
-    ds["ra_24_toa_flat"] = ETLook.solar_radiation.daily_solar_radiation_toa_flat(ds["decl"], ds["iesd"], ds["lat_rad"], ds["ws"])
-    ds["trans_24"] = ETLook.solar_radiation.transmissivity(ds["ra_24"], ds["ra_24_toa_flat"])
+    ds["ra_toa_flat_24"] = ETLook.solar_radiation.daily_solar_radiation_toa_flat(ds["decl"], ds["iesd"], ds["lat_rad"], ds["ws"])
+
+    if ds["slope"].dtype == object or ds["aspect"].dtype == object:
+        ds["ra_24"] = ds["ra_flat_24"]
+        ds["trans_24"] = ETLook.solar_radiation.transmissivity(ds["ra_flat_24"], ds["ra_toa_flat_24"])
+    else:
+        ds["sc"] = ETLook.solar_radiation.seasonal_correction(ds["doy"])
+        ds["ra_toa_24"] = ETLook.solar_radiation.daily_solar_radiation_toa(ds["sc"], ds["decl"], ds["iesd"], ds["lat_rad"], ds["slope"], ds["aspect"])
+        ds["trans_24"] = ETLook.solar_radiation.transmissivity(ds["ra_flat_24"], ds["ra_toa_flat_24"])
+        ds["diffusion_index"] = ETLook.solar_radiation.diffusion_index(ds["trans_24"], diffusion_slope = ds["diffusion_slope"], diffusion_intercept = ds["diffusion_intercept"])
+        ds["ra_24"] = ETLook.solar_radiation.daily_total_solar_radiation(ds["ra_toa_24"], ds["ra_toa_flat_24"], ds["diffusion_index"], ds["trans_24"])
 
     ds["stress_rad"] = ETLook.stress.stress_radiation(ds["ra_24"])
     ds["p_air_0_24_mbar"] = ETLook.meteo.air_pressure_kpa2mbar(ds["p_air_0_24"])
@@ -188,7 +197,7 @@ def main(input_data, et_look_version = "v2", export_vars = "default", chunks = {
     # **ETLook.unstable.evaporation***********************************************************
     ds["e_24"] = ETLook.unstable.evaporation(ds["rn_24_soil"], ds["g0_24"], ds["ssvp_24"], ds["ad_24"], ds["vpd_24"], ds["psy_24"], ds["r_soil"], ds["h_soil_24_init"], ds["t_air_k_24"], ds["u_star_24_soil_init"], ds["disp"], ds["u_b_24"], z_b = ds["z_b"], z_obs = ds["z_obs"], iter_h = ds["iter_h"])
     ds["e_24_mm"] = ETLook.unstable.evaporation_mm(ds["e_24"], ds["lh_24"])
-    ds["et_24_mm"] = ETLook.evapotranspiration.et_actual_mm(ds["e_24_mm"], ds["t_24_mm"])
+    ds["aeti_24_mm"] = ETLook.evapotranspiration.eti_actual_mm(ds["e_24_mm"], ds["t_24_mm"], ds["int_mm"])
 
     # **ETLook.unstable.evaporation***********************************************************
     ds["rn_24_grass"] = ETLook.radiation.net_radiation_grass(ds["ra_24"], ds["l_net"], r0_grass = ds["r0_grass"])
@@ -230,7 +239,7 @@ def main(input_data, et_look_version = "v2", export_vars = "default", chunks = {
                     'int_mm',
                     't_24_mm',
                     'e_24_mm',
-                    'et_24_mm',
+                    'aeti_24_mm',
                     'se_root',
                     'npp'
                     ]
@@ -274,12 +283,12 @@ def check_for_non_chuncked_arrays(ds):
                 print(var)
 
 if __name__ == "__main__":
-
+    ...
     chunks = {"time_bins": -1, "x": 1000, "y": 1000}
     et_look_version = "v3"
     export_vars = "default"
 
-    input_data = '/Users/hmcoerver/Local/pywapor_se/et_look_in.nc'
+    # input_data = '/Users/hmcoerver/Local/pywapor_se/et_look_in.nc'
 
     # input_data = r'/Users/hmcoerver/Local/test8/et_look_in_.nc'
     # et_look_version = "v2"

@@ -167,7 +167,7 @@ def et_reference_mm(et_ref_24, lh_24):
     return et_ref_24_mm
 
 
-def et_actual_mm(e_24_mm, t_24_mm):
+def eti_actual_mm(e_24_mm, t_24_mm, int_mm):
     r"""
     Computes the actual evapotranspiration based on the separate calculations
     of evaporation and transpiration.
@@ -186,12 +186,15 @@ def et_actual_mm(e_24_mm, t_24_mm):
         daily transpiration in mm, 
         :math:`T`
         [mm d-1]
-
+    int_mm : float
+        daily interception in mm
+        :math:`I`
+        [mm d-1]
     Returns
     -------
-    et_24_mm : float
-        daily evapotranspiration in mm, 
-        :math:`ET`
+    aeti_24_mm : float
+        daily evapotranspiration and interception in mm, 
+        :math:`AETI`
         [mm d-1]
     """
-    return e_24_mm + t_24_mm
+    return e_24_mm + t_24_mm + int_mm

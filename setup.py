@@ -2,7 +2,7 @@ from setuptools import setup, find_packages
 
 setup(
     name = 'pywapor',
-    version = '3.5.7',
+    version = '3.5.8',
     url = 'https://www.fao.org/aquastat/py-wapor/',
     author = "FAO",
     author_email = "bert.coerver@fao.org",
@@ -32,7 +32,7 @@ setup(
         'rioxarray>=0.15.5',
         'cryptography',
         'cachetools',
-        'cdsapi',
+        'cdsapi>=0.7.0',
         'shapely',
         'lxml',
         'scikit-learn',

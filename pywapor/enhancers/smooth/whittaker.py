@@ -3,9 +3,10 @@ import numpy as np
 from pywapor.general.processing_functions import save_ds, open_ds
 from pywapor.enhancers.smooth.plotters import make_overview
 from pywapor.general.logger import log
-from pywapor.enhancers.smooth.core import _wt1, _wt2, cve1, second_order_diff_matrix, dist_to_finite
 
 def xr_dist_to_finite(y, dim = "time"):
+
+    from pywapor.enhancers.smooth.core import dist_to_finite
 
     if not dim in y.dims:
         raise ValueError
@@ -21,7 +22,9 @@ def xr_dist_to_finite(y, dim = "time"):
     return out
 
 def xr_choose_func(y, lmbdas, dim):
-    
+
+    from pywapor.enhancers.smooth.core import _wt1, _wt2
+
     funcs = [_wt1, _wt2]
     y_dims = getattr(y, "ndim", 0)
     lmbdas_dims = getattr(lmbdas, "ndim", 0)
@@ -39,6 +42,8 @@ def xr_choose_func(y, lmbdas, dim):
     return wt_func, icd, ocd
 
 def xr_cve(y, x, lmbdas, u):
+
+    from pywapor.enhancers.smooth.core import second_order_diff_matrix, cve1
 
     # Check dimension and dtypes are valid.
     x, y, lmbdas, dim = assert_dtypes(x, y, lmbdas)
@@ -65,6 +70,8 @@ def xr_cve(y, x, lmbdas, u):
 
 def xr_wt(y, x, lmbdas, u = None, a = 0.5, min_drange = -np.inf, 
           max_drange = np.inf, max_iter = 10):
+    
+    from pywapor.enhancers.smooth.core import second_order_diff_matrix
 
     # Check dimension and dtypes are valid.
     x, y, lmbdas, dim = assert_dtypes(x, y, lmbdas)

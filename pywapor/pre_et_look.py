@@ -28,7 +28,7 @@ def rename_vars(ds, *args):
     xr.Dataset
         Dataset with renamed variables.
     """
-    varis = ["p", "ra", "t_air", "t_air_min", "t_air_max", "u", "vp",
+    varis = ["p", "ra_flat", "t_air", "t_air_min", "t_air_max", "u", "vp",
             "u2m", "v2m", "qv", "p_air", "p_air_0", "wv", "t_dew"]
     present_vars = [x for x in varis if x in ds.variables]
     ds = ds.rename({k: k + "_24" for k in present_vars})

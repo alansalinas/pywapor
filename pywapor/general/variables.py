@@ -208,6 +208,11 @@ def get_var_definitions():
             "definition": ""
         },
         "aspect": {
+            "long_name": "Aspect (0 is north; 180 is south)",
+            "units": "degrees",
+            "definition": ""
+        },
+        "aspect_rad": {
             "long_name": "Aspect (0 is north; pi is south)",
             "units": "radians",
             "definition": ""
@@ -279,6 +284,11 @@ def get_var_definitions():
         },
         "et_24_mm": {
             "long_name": "Daily evapotranspiration in mm",
+            "units": "mm day-1",
+            "definition": ""
+        },
+        "aeti_24_mm": {
+            "long_name": "Daily evapotranspiration and interception in mm",
             "units": "mm day-1",
             "definition": ""
         },
@@ -751,7 +761,7 @@ def get_var_definitions():
             "units": "C",
             "definition": ""
         },
-        "t_amp_year": {
+        "t_amp": {
             "long_name": "Yearly air temperature amplitude",
             "units": "K",
             "definition": ""

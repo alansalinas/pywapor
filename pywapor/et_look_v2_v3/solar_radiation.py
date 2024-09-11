@@ -371,7 +371,7 @@ def inst_solar_radiation_toa(csza, iesd):
     return csza * con.sol * iesd
 
 
-def daily_solar_radiation_toa(sc, decl, iesd, lat, slope=0, aspect=0):
+def daily_solar_radiation_toa(sc, decl, iesd, lat, slope, aspect):
     r"""
     Computes the daily solar radiation at the top of the atmosphere.
 
@@ -402,9 +402,9 @@ def daily_solar_radiation_toa(sc, decl, iesd, lat, slope=0, aspect=0):
         :math:`\Delta`
         [rad]
     aspect : float
-        aspect (0 is north; pi is south), 
+        aspect (0 is north; 180 is south), 
         :math:`\alpha`
-        [rad]
+        [deg]
 
     Returns
     -------
@@ -424,25 +424,29 @@ def daily_solar_radiation_toa(sc, decl, iesd, lat, slope=0, aspect=0):
     >>> solrad.daily_solar_radiation_toa(sc, decl, iesd, lat=25*pi/180.0)
     265.74072308978026
     """
+    aspect_rad = np.deg2rad(aspect)
 
     # hour angle for the whole day in half-hourly intervals (0:15-23:45)
     t_start = 0.25
-    t_end = 24.00
+    # t_end = 24.00
     interval = 0.5
     times = [t_start+i*interval for i in range(0, 48)]
     hours = [hour_angle(sc, t) for t in times]
 
-    ra24 = 0
+    if isinstance(sc, xr.DataArray):
+        ha = xr.concat(hours, dim = times).rename({"concat_dim": "times"}).rename("hour_angle").chunk({"times":-1})
+        csza = cosine_solar_zenith_angle(ha, decl, lat, slope, aspect_rad)
+        ra_24_toa = inst_solar_radiation_toa(csza, iesd).mean(dim = "times")
+    else:
+        ra_24_toa = 0
+        for t in hours:
+            csza = cosine_solar_zenith_angle(t, decl, lat, slope, aspect_rad)
+            ra_24_toa += inst_solar_radiation_toa(csza, iesd) / len(hours)
 
-    for t in hours:
-        csza = cosine_solar_zenith_angle(t, decl, lat, slope, aspect)
-        ra24 += inst_solar_radiation_toa(csza, iesd) / len(hours)
-
-    # return the average daily radiation
-    return ra24
+    return ra_24_toa
 
 
-def cosine_solar_zenith_angle(ha, decl, lat, slope=0, aspect=0):
+def cosine_solar_zenith_angle(ha, decl, lat, slope=0, aspect_rad=0):
     r"""
     computes the cosine of the solar zenith angle [-].
 
@@ -472,7 +476,7 @@ def cosine_solar_zenith_angle(ha, decl, lat, slope=0, aspect=0):
         slope, 
         :math:`\Delta`
         [rad]
-    aspect : float
+    aspect_rad : float
         aspect (0 is north; pi is south), 
         :math:`\alpha`
         [rad]
@@ -493,10 +497,10 @@ def cosine_solar_zenith_angle(ha, decl, lat, slope=0, aspect=0):
     0.92055394167363314
     """
     t1 = np.sin(decl) * np.sin(lat) * np.cos(slope)
-    t2 = np.sin(decl) * np.cos(lat) * np.sin(slope) * np.cos(aspect - np.pi)
+    t2 = np.sin(decl) * np.cos(lat) * np.sin(slope) * np.cos(aspect_rad - np.pi)
     t3 = np.cos(decl) * np.cos(lat) * np.cos(slope)
-    t4 = np.cos(decl) * np.sin(lat) * np.sin(slope) * np.cos(aspect - np.pi)
-    t5 = np.cos(decl) * np.sin(slope) * np.sin(aspect - np.pi)
+    t4 = np.cos(decl) * np.sin(lat) * np.sin(slope) * np.cos(aspect_rad - np.pi)
+    t5 = np.cos(decl) * np.sin(slope) * np.sin(aspect_rad - np.pi)
     csza = t1 - t2 + t3 * np.cos(ha) + t4 * np.cos(ha) + t5 * np.sin(ha)
 
     # check if the sun is above the horizon
@@ -514,12 +518,12 @@ def cosine_solar_zenith_angle(ha, decl, lat, slope=0, aspect=0):
     return res
 
 
-def transmissivity(ra, ra_flat):
-    """Computes the transmissivity.
+def transmissivity(ra_24_flat, ra_24_toa_flat):
+    """Computes the transmissivity (inverse of `daily_solar_radiation_flat`).
 
     Parameters
     ----------
-    ra_24 : float
+    ra_24_flat : float
         daily solar radiation for a flat surface, 
         :math:`S^{\downarrow}`
         [Wm-2]
@@ -535,7 +539,7 @@ def transmissivity(ra, ra_flat):
         :math:`\tau`
         [-]
     """
-    return ra / ra_flat
+    return ra_24_flat / ra_24_toa_flat
 
 
 def daily_solar_radiation_toa_flat(decl, iesd, lat, ws):
@@ -602,7 +606,7 @@ def daily_solar_radiation_flat(ra_24_toa_flat, trans_24):
 
     Returns
     -------
-    ra_24 : float
+    ra_24_flat : float
         daily solar radiation for a flat surface, 
         :math:`S^{\downarrow}`
         [Wm-2]

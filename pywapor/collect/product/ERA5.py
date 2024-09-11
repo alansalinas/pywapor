@@ -33,7 +33,7 @@ def default_vars(product_name, req_vars):
                     "2m_relative_humidity": [{"time": [f"{x:02d}_00" for x in [6,9,12,15,18]], "format": "zip", "version": "1_1"}, "rh"],
                     "10m_wind_speed": [{"statistic": "24_hour_mean", "format": "zip", "version": "1_1"}, "u"],
                     "vapour_pressure": [{"statistic": "24_hour_mean", "format": "zip", "version": "1_1"}, "vp"],
-                    "solar_radiation_flux": [{"statistic": "24_hour_mean", "format": "zip", "version": "1_1"}, "ra"],
+                    "solar_radiation_flux": [{"statistic": "24_hour_mean", "format": "zip", "version": "1_1"}, "ra_flat"],
                         },
 
         "reanalysis-era5-single-levels": {
@@ -56,7 +56,7 @@ def default_vars(product_name, req_vars):
             "rh": ["2m_relative_humidity"],
             "u": ["10m_wind_speed"],
             "vp": ["vapour_pressure"],
-            "ra": ["solar_radiation_flux"],
+            "ra_flat": ["solar_radiation_flux"], # [J m-2d-1], Downward solar radiation ('Solar_Radiation_Flux')
         },
         "reanalysis-era5-single-levels": {
             "wv": ['total_column_water_vapour'],
@@ -109,7 +109,7 @@ def default_post_processors(product_name, req_vars):
             "rh": [],
             "u": [adjust_wind_height],
             "vp": [], #is already mbar
-            "ra": [jouleperday_to_watt],
+            "ra_flat": [jouleperday_to_watt],
         },
         "reanalysis-era5-single-levels": {
             "wv": [], # is already kg/m2
