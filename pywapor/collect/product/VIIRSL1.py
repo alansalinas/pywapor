@@ -137,18 +137,21 @@ def search_stac(params, cachedir = None, extra_filters = {"day_night_flag": "DAY
 
     search = 'https://cmr.earthdata.nasa.gov/stac/LAADS/search'
     all_scenes = list()
-    links = [{"body": params, "rel": "next"}]
+    links = [{"href": params, "rel": "next"}]
     while "next" in [x.get("rel", None) for x in links]:
-        params_ = [x.get("body") for x in links if x.get("rel") == "next"][0]
-        out = _post_search(search, params_)
+        params_ = [x.get("href") for x in links if x.get("rel") == "next"][0]
+        if isinstance(params_, dict):
+            out = _post_search(search, params_)
+        elif isinstance(params_, str):
+            out = _post_search(params_, params_={})
         all_scenes += out["features"]
         links = out["links"]
-    log.info(f"--> Found {len(all_scenes)} `{params_['collections'][0]}` scenes.")
+    log.info(f"--> Found {len(all_scenes)} `{params['collections'][0]}` scenes.")
 
     if len(extra_filters) > 0:
-        log.add().info(f"--> Filtering `{params_['collections'][0]}` scenes with `{extra_filters}`.")
+        log.add().info(f"--> Filtering `{params['collections'][0]}` scenes with `{extra_filters}`.")
         final = [x for x in tqdm.tqdm(all_scenes, position = 0, bar_format='{l_bar}{bar}|', delay = 5, leave = False) if _check(x, extra_filters)]
-        log.info(f"--> Found {len(final)} relevant `{params_['collections'][0]}` scenes.").sub()
+        log.info(f"--> Found {len(final)} relevant `{params['collections'][0]}` scenes.").sub()
     else:
         final = all_scenes
 
@@ -172,7 +175,7 @@ def create_stac_summary(bb, timelim, cachedir=None):
     params['collections'] = ['VNP02IMG.v2']
     results02 = search_stac(params, cachedir=cachedir)
 
-    get_fns = lambda results: [os.path.split(x["assets"]["data"]["href"])[-1] for x in results]
+    get_fns = lambda results: [os.path.split(x["assets"][list(x["assets"].keys())[0]]["href"])[-1] for x in results]
     get_dts = lambda files: {datetime.datetime.strptime(".".join(x.split(".")[1:3]), "A%Y%j.%H%M"): x for x in files}
     files02 = get_fns(results02)
     files03 = get_fns(results03)
