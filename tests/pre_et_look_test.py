@@ -70,9 +70,9 @@ def test_et_look_level_2_v3(tmp_path):
 
     ds = pywapor.et_look.main(input_data, et_look_version = "v3")
     assert ds.rio.crs.to_epsg() == 4326
-    assert "et_24_mm" in ds.data_vars
-    assert ds.et_24_mm.min().values >= 0.
-    assert ds.et_24_mm.max().values <= 16.
+    assert "aeti_24_mm" in ds.data_vars
+    assert ds.aeti_24_mm.min().values >= 0.
+    assert ds.aeti_24_mm.max().values <= 16.
 
 def test_et_look_level_3_v3(tmp_path):
 
@@ -100,9 +100,9 @@ def test_et_look_level_3_v3(tmp_path):
 
     ds = pywapor.et_look.main(input_data, et_look_version = "v3")
     assert ds.rio.crs.to_epsg() == 4326
-    assert "et_24_mm" in ds.data_vars
-    assert ds.et_24_mm.min().values >= 0.
-    assert ds.et_24_mm.max().values <= 16.
+    assert "aeti_24_mm" in ds.data_vars
+    assert ds.aeti_24_mm.min().values >= 0.
+    assert ds.aeti_24_mm.max().values <= 16.
 
 def test_et_look_level_1_v2(tmp_path):
 
@@ -126,9 +126,9 @@ def test_et_look_level_1_v2(tmp_path):
 
     ds = pywapor.et_look.main(input_data, et_look_version = "v2")
     assert ds.rio.crs.to_epsg() == 4326
-    assert "et_24_mm" in ds.data_vars
-    assert ds.et_24_mm.min().values >= 0.
-    assert ds.et_24_mm.max().values <= 16.
+    assert "aeti_24_mm" in ds.data_vars
+    assert ds.aeti_24_mm.min().values >= 0.
+    assert ds.aeti_24_mm.max().values <= 16.
 
 def test_et_look_level_2_v2(tmp_path):
 
@@ -152,9 +152,9 @@ def test_et_look_level_2_v2(tmp_path):
 
     ds = pywapor.et_look.main(input_data, et_look_version = "v2")
     assert ds.rio.crs.to_epsg() == 4326
-    assert "et_24_mm" in ds.data_vars
-    assert ds.et_24_mm.min().values >= 0.
-    assert ds.et_24_mm.max().values <= 16.
+    assert "aeti_24_mm" in ds.data_vars
+    assert ds.aeti_24_mm.min().values >= 0.
+    assert ds.aeti_24_mm.max().values <= 16.
 
 def test_et_look_level_3_v2(tmp_path):
 
@@ -178,9 +178,9 @@ def test_et_look_level_3_v2(tmp_path):
 
     ds = pywapor.et_look.main(input_data, et_look_version = "v2")
     assert ds.rio.crs.to_epsg() == 4326
-    assert "et_24_mm" in ds.data_vars
-    assert ds.et_24_mm.min().values >= 0.
-    assert ds.et_24_mm.max().values <= 16.
+    assert "aeti_24_mm" in ds.data_vars
+    assert ds.aeti_24_mm.min().values >= 0.
+    assert ds.aeti_24_mm.max().values <= 16.
 
 def test_appending(tmp_path):
 

@@ -22,7 +22,7 @@ def main(input_data, et_look_version = "v2", export_vars = "default", chunks = {
         Which version of the ETLook model to use, by default "v2".
     export_vars : "default" | "all" | list, optional
         Specify which variables to save inside the output file. `"Default"` stores `int_mm`,
-        `t_24_mm`, `e_24_mm`, `et_24_mm`, `et_ref_24_mm`, `se_root`, `biomass_prod`,
+        `t_24_mm`, `e_24_mm`, `aeti_24_mm`, `et_ref_24_mm`, `se_root`, `biomass_prod`,
         `epoch_ends` and `epoch_starts`. `"all"` stores all calculated variables. Use a
         list to specify a custom output set, by default "default".
     chunks : dict, optional
@@ -197,7 +197,7 @@ def main(input_data, et_look_version = "v2", export_vars = "default", chunks = {
     # **ETLook.unstable.evaporation***********************************************************
     ds["e_24"] = ETLook.unstable.evaporation(ds["rn_24_soil"], ds["g0_24"], ds["ssvp_24"], ds["ad_24"], ds["vpd_24"], ds["psy_24"], ds["r_soil"], ds["h_soil_24_init"], ds["t_air_k_24"], ds["u_star_24_soil_init"], ds["disp"], ds["u_b_24"], z_b = ds["z_b"], z_obs = ds["z_obs"], iter_h = ds["iter_h"])
     ds["e_24_mm"] = ETLook.unstable.evaporation_mm(ds["e_24"], ds["lh_24"])
-    ds["et_24_mm"] = ETLook.evapotranspiration.et_actual_mm(ds["e_24_mm"], ds["t_24_mm"])
+    ds["aeti_24_mm"] = ETLook.evapotranspiration.eti_actual_mm(ds["e_24_mm"], ds["t_24_mm"], ds["int_mm"])
 
     # **ETLook.unstable.evaporation***********************************************************
     ds["rn_24_grass"] = ETLook.radiation.net_radiation_grass(ds["ra_24"], ds["l_net"], r0_grass = ds["r0_grass"])
@@ -239,7 +239,7 @@ def main(input_data, et_look_version = "v2", export_vars = "default", chunks = {
                     'int_mm',
                     't_24_mm',
                     'e_24_mm',
-                    'et_24_mm',
+                    'aeti_24_mm',
                     'se_root',
                     'npp'
                     ]

@@ -287,6 +287,11 @@ def get_var_definitions():
             "units": "mm day-1",
             "definition": ""
         },
+        "aeti_24_mm": {
+            "long_name": "Daily evapotranspiration and interception in mm",
+            "units": "mm day-1",
+            "definition": ""
+        },
         "et_ref_24": {
             "long_name": "Daily reference evapotranspiration (well watered grass) energy equivalent",
             "units": "W m-2",
