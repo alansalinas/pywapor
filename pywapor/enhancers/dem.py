@@ -81,7 +81,16 @@ def calc_slope_or_aspect(ds, var, write_init = True, max_cache_size = 4e9):
     f_size = lambda nbytes: "{0:.2f}{1}".format(*format_bytes(nbytes))
 
     current_cache_size = gdal.GetCacheMax()
-    filesize = os.path.getsize(fp)
+    if "NETCDF:" in fp:
+        fp_ = fp.split(":")[1].replace('"', '')
+    else:
+        fp_ = fp
+    
+    if os.path.isfile(fp_):
+        filesize = os.path.getsize(fp_)
+    else:
+        filesize = 0.5 * current_cache_size
+
     if current_cache_size < 0.95 * filesize:
         # NOTE The maximum practical value on 32 bit OS is between 2 and 4 GB. It is the responsibility 
         # of the user to set a consistent value. See: https://gdal.org/user/configoptions.html
