@@ -38,8 +38,8 @@ def tiles_intersect(latlim, lonlim, product_name):
     dl_tiles = list()
     res = {"GLO30": 10, "GLO90": 30}[product_name]
     for tile in tiles:
-        we_sign = {-1: "W", 1: "E"}[np.sign(tile[0])]
-        ns_sign = {-1: "S", 1: "N", 0 : "N"}[np.sign(tile[1])]
+        we_sign = {-1: "W", 1: "E", 0: "E"}[np.sign(tile[0])]
+        ns_sign = {-1: "S", 1: "N", 0: "N"}[np.sign(tile[1])]
         fn = f"Copernicus_DSM_COG_{res}_{ns_sign}{abs(tile[1]):02}_00_{we_sign}{abs(tile[0]):03}_00_DEM"
         if fn in all_tiles:
             dl_tiles.append(fn)
