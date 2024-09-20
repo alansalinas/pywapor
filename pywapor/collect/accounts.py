@@ -496,6 +496,8 @@ def cds_account(user_pw):
         if len(exception_args) > 0:
             if "Client has not agreed to the required terms and conditions" in str(exception_args[0]):
                 error = exception_args[0]
+            else:
+                error = str(e)
         else:
             error = "wrong key"
 
