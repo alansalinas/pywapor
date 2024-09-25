@@ -27,7 +27,7 @@ def calc_slope_or_aspect(ds, var, write_init = True, max_cache_size = 4e9):
             fp = fp.replace(".nc", "_.nc")
         ds = save_ds(ds, fp, label = f"Generating {var} input file.")
 
-    fp_out = f"/vsimem/temp_{var}.tif"
+    fp_out = fp.replace(".nc", f"_{var}.tif")
 
     ds_ = gdal.Open(fp)
     subdss_ = ds_.GetSubDatasets()

@@ -10,7 +10,7 @@ from cryptography.fernet import Fernet
 from pywapor.collect.product.LANDSAT import espa_api
 
 PASSWORD_INSTRUCTIONS = {
-"NASA": """> Used for `MODIS`, `SRTM`, `CHIRPS` and `MERRA2` data.
+"NASA": """> Used for `MODIS`, `SRTM` and `MERRA2` data.
 > Create an account at https://urs.earthdata.nasa.gov.
 > Make sure to accept the terms of use at "Applications > Authorized Apps > Approve More Applications":
   * NASA GESDISC DATA ARCHIVE
@@ -496,6 +496,8 @@ def cds_account(user_pw):
         if len(exception_args) > 0:
             if "Client has not agreed to the required terms and conditions" in str(exception_args[0]):
                 error = exception_args[0]
+            else:
+                error = str(e)
         else:
             error = "wrong key"
 

@@ -289,8 +289,9 @@ def process_sentinel(scenes, variables, time_func, final_fn, post_processors, pr
 
         for x in to_remove:
             remove_ds(x)
-
-        if remove_folder:
+            
+        rmve = {"NO": False, "YES": True}.get(os.environ.get("PYWAPOR_REMOVE_TEMP_FILES", "YES"), True)
+        if remove_folder and rmve:
             try:
                 shutil.rmtree(scene_folder)
             except PermissionError:

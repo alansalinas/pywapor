@@ -164,7 +164,7 @@ def create_stac_summary(bb, timelim, cachedir=None):
     search_dates = f"{sd}/{ed}"
 
     params = dict()
-    params['limit'] = 250
+    params['limit'] = 1000
     params['bbox'] = bb
     params['datetime'] = search_dates
 
@@ -567,10 +567,12 @@ def download(folder, latlim, lonlim, timelim, product_name, req_vars,
 
 if __name__ == "__main__":
 
-    folder = r"C:\Users\bertc\Downloads\viirs_test"
-    latlim = [29.4, 29.7]
-    lonlim = [30.7, 31.0]
-    timelim = [datetime.date(2023, 3, 1), datetime.date(2023, 3, 2)]
+    folder = r"/Users/hmcoerver/Local/viirs_solomon_prob"
+    bb = [36.4219163206182230, 32.2415207774500132, 36.5695091730081572,32.3762104800108617]
+    latlim = bb[1::2]
+    lonlim = bb[0::2]
+
+    timelim = [datetime.date(2023, 3, 1), datetime.date(2023, 9, 30)]
     product_name = "VNP02IMG"
 
     variables = None

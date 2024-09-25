@@ -206,7 +206,7 @@ def download(folder, latlim, lonlim, product_name, req_vars,
 
     spatial_buffer = True
     if spatial_buffer:
-        dx = dy = 0.2
+        dx = dy = 2/6
         latlim = [latlim[0] - dy, latlim[1] + dy]
         lonlim = [lonlim[0] - dx, lonlim[1] + dx]
 

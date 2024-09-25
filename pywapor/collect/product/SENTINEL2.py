@@ -267,7 +267,13 @@ def default_vars(product_name, req_vars):
     """
 
     variables = {
-
+        "S2MSI2A_R10m": {
+                    "_B02_10m.jp2": [(), "blue", [mask_invalid, apply_qa, scale_data]],
+                    "_B03_10m.jp2": [(), "green", [mask_invalid, apply_qa, scale_data]],
+                    "_B04_10m.jp2": [(), "red", [mask_invalid, apply_qa, scale_data]],
+                    "_B08_10m.jp2": [(), "nir", [mask_invalid, apply_qa, scale_data]],
+                    "_SCL_20m.jp2": [(), "qa", []],
+                },
         "S2MSI2A_R20m": {
                     "_B01_20m.jp2": [(), "coastal_aerosol", [mask_invalid, apply_qa, scale_data]],
                     "_B02_20m.jp2": [(), "blue", [mask_invalid, apply_qa, scale_data]],
@@ -299,6 +305,16 @@ def default_vars(product_name, req_vars):
 
     req_dl_vars = {
 
+        "S2MSI2A_R10m": {
+            "blue":             ["_B02_10m.jp2", "_SCL_20m.jp2"],
+            "green":            ["_B03_10m.jp2", "_SCL_20m.jp2"],
+            "red":              ["_B04_10m.jp2", "_SCL_20m.jp2"],
+            "nir":              ["_B08_10m.jp2", "_SCL_20m.jp2"],
+            "qa":               ["_SCL_20m.jp2"],
+            "ndvi":             ["_B04_10m.jp2", "_B08_10m.jp2", "_SCL_20m.jp2"],
+            "r0":               ["_B02_10m.jp2", "_B03_10m.jp2", "_B04_10m.jp2", "_B08_10m.jp2", "_SCL_20m.jp2"],
+        },
+
         "S2MSI2A_R20m": {
             "coastal_aerosol":  ["_B01_20m.jp2", "_SCL_20m.jp2"],
             "blue":             ["_B02_20m.jp2", "_SCL_20m.jp2"],
@@ -329,6 +345,7 @@ def default_vars(product_name, req_vars):
             "red_edge_740":     ["_B06_60m.jp2", "_SCL_60m.jp2"],
             "red_edge_782":     ["_B07_60m.jp2", "_SCL_60m.jp2"],
             "nir":              ["_B8A_60m.jp2", "_SCL_60m.jp2"],
+            "narrow_nir":       ["_B09_60m.jp2", "_SCL_60m.jp2"],
             "swir1":            ["_B11_60m.jp2", "_SCL_60m.jp2"],
             "swir2":            ["_B12_60m.jp2", "_SCL_60m.jp2"],
             "qa":               ["_SCL_60m.jp2"],
@@ -365,6 +382,16 @@ def default_post_processors(product_name, req_vars):
     """
     
     post_processors = {
+        "S2MSI2A_R10m": {
+            "blue":             [gap_fill],
+            "green":            [gap_fill],
+            "red":              [gap_fill],
+            "nir":              [gap_fill],
+            "qa":               [],
+            "ndvi":             [calc_normalized_difference, gap_fill],
+            "r0":               [calc_r0, gap_fill],
+        },
+
         "S2MSI2A_R20m": {
             "coastal_aerosol":  [gap_fill],
             "blue":             [gap_fill],
@@ -395,6 +422,7 @@ def default_post_processors(product_name, req_vars):
             "red_edge_740":     [gap_fill],
             "red_edge_782":     [gap_fill],
             "nir":              [gap_fill],
+            "narrow_nir":       [gap_fill],
             "qa":               [],
             "swir1":            [gap_fill],
             "swir2":            [gap_fill],
@@ -430,13 +458,23 @@ def time_func(fn):
 
 def s2_processor(scene_folder, variables, **kwargs):
 
+    has_10m = np.any(["_10m" in x for x in variables.keys()])
+
     dss = list()
     dss__ = list()
-    for k, v in variables.items():
+    lowres_vars_idxs = list()
+    for i, (k, v) in enumerate(variables.items()):
         ds__ = open_ds(glob.glob(os.path.join(scene_folder, "**", "*" + k), recursive = True)[0], decode_coords=None)
         ds_ = ds__.isel(band=0).rename({"band_data": v[1]})
         dss__.append(ds__)
         dss.append(ds_)
+        if has_10m and "_20m" in k:
+            lowres_vars_idxs.append(i)
+
+    if len(lowres_vars_idxs) < len(dss) and has_10m:
+        highres_ds = dss[[i for i in range(len(dss)) if i not in lowres_vars_idxs][0]]
+        for idx in lowres_vars_idxs:
+            dss[idx] = dss[idx].interp_like(highres_ds, method = "nearest",kwargs = {"fill_value": "extrapolate"})
 
     ds = xr.merge(dss).drop_vars("band")
 
@@ -545,13 +583,23 @@ def download(folder, latlim, lonlim, timelim, product_name,
 
 if __name__ == "__main__":
 
+    os.environ["PYWAPOR_REMOVE_TEMP_FILES"] = "NO"
+
     folder = r"/Users/hmcoerver/Local/s2_test"
     adjust_logger(True, folder, "INFO")
     timelim = ["2022-03-29", "2022-03-31"]
-    latlim = [28.9, 29.7]
-    lonlim = [30.2, 31.2]
+    latlim = [28.9, 29.1]
+    lonlim = [30.2, 30.4]
 
-    product_name = 'S2MSI2A_R60m'
-    req_vars = ["mndwi", "psri", "vari_red_edge", "bsi", "nmdi", "green", "nir"]
+    product_name = 'S2MSI2A_R10m'
+    # req_vars = ["mndwi", "psri", "vari_red_edge", "bsi", "nmdi", "green", "nir"]
+    req_vars = ["ndvi", "r0"]
     post_processors = None
     variables = None
+
+    # ds = download(folder, latlim, lonlim, timelim, product_name, 
+    #             req_vars, variables = variables, post_processors = post_processors)
+
+    # variables = {'_B02_10m.jp2': [(), 'blue', []], '_SCL_20m.jp2': [(), 'qa', []]}
+
+    # scene_folder = r"/Users/hmcoerver/Local/s2_test/SENTINEL2/S2A_MSIL2A_20220329T082601_N0400_R021_T36RTS_20220329T125458.SAFE"

@@ -122,6 +122,7 @@ def cog_dl(urls, out_fn, overview = "NONE", warp_kwargs = {}, vrt_options = {"se
     valid_cos = {".nc": ["COMPRESS=DEFLATE", "FORMAT=NC4C"], ".tif": ["COMPRESS=LZW"]}
     vrt_fn = out_fn.replace(out_ext, ".vrt")
 
+    log.info("--> Building `.vrt` file.")
     ## Build VRT with all the required data.
     vrt_options_ = gdal.BuildVRTOptions(
         **vrt_options
@@ -138,15 +139,13 @@ def cog_dl(urls, out_fn, overview = "NONE", warp_kwargs = {}, vrt_options = {"se
         creationOptions = valid_cos[out_ext],
         **warp_kwargs,
     )
+    log.info(f"--> Downloading {len(urls)} bands.")
     warp = gdal.Warp(out_fn, vrt_fn, options = warp_options)
     warp.SetMetadataItem('pyWaPOR_bb', os.environ.get("pyWaPOR_bb", "unknown"))
     warp.SetMetadataItem('pyWaPOR_period', os.environ.get("pyWaPOR_period", "unknown"))
     warp.FlushCache() # NOTE do not remove this.
 
     if os.path.isfile(vrt_fn):
-        try:
-            os.remove(vrt_fn)
-        except PermissionError:
-            ...
+        remove_ds(vrt_fn)
 
     return out_fn
