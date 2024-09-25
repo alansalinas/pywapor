@@ -102,6 +102,10 @@ def remove_ds(ds):
         Either a `xr.Dataset` (in which case its `source` as defined in the `encoding` attribute will be used)
         or a `str` in which case it must be a path to a file.
     """
+    rmve = {"NO": False, "YES": True}.get(os.environ.get("PYWAPOR_REMOVE_TEMP_FILES", "YES"), True)
+    if not rmve:
+        return
+
     fp = None
     if isinstance(ds, xr.Dataset):
         if "source" in ds.encoding.keys():
