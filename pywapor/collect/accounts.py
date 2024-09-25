@@ -10,7 +10,7 @@ from cryptography.fernet import Fernet
 from pywapor.collect.product.LANDSAT import espa_api
 
 PASSWORD_INSTRUCTIONS = {
-"NASA": """> Used for `MODIS`, `SRTM`, `CHIRPS` and `MERRA2` data.
+"NASA": """> Used for `MODIS`, `SRTM` and `MERRA2` data.
 > Create an account at https://urs.earthdata.nasa.gov.
 > Make sure to accept the terms of use at "Applications > Authorized Apps > Approve More Applications":
   * NASA GESDISC DATA ARCHIVE

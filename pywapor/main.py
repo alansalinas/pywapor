@@ -658,7 +658,6 @@ class Project():
         req_accounts = {
             "MODIS": "NASA",
             "SRTM": "NASA",
-            "CHIRPS": "NASA",
             "MERRA2": "NASA",
             "TERRA": "TERRA",
             "ERA5": "CDS",
