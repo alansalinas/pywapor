@@ -2,16 +2,17 @@ from setuptools import setup, find_packages
 
 setup(
     name = 'pywapor',
-    version = '3.5.12',
+    version = '3.5.13',
     url = 'https://www.fao.org/aquastat/py-wapor/',
     author = "FAO",
     author_email = "bert.coerver@fao.org",
     license = "Apache",
     packages = find_packages(include = ['pywapor', 'pywapor.*']),
     include_package_data=True,
-    python_requires='>=3.7',
+    python_requires='>=3.10',
     install_requires = [
         'netcdf4',
+        'libgdal-netcdf',
         'gdal>=3,<4.0',
         'xarray',
         'numpy<2',
@@ -39,10 +40,9 @@ setup(
     ],
     classifiers=[
         "Operating System :: OS Independent",
-        "Programming Language :: Python :: 3.7",
-        "Programming Language :: Python :: 3.8",
-        "Programming Language :: Python :: 3.9",
         "Programming Language :: Python :: 3.10",
         "Programming Language :: Python :: 3.11",
+        "Programming Language :: Python :: 3.12",
+        "Programming Language :: Python :: 3.13",
     ],
 )
