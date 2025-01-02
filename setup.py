@@ -13,6 +13,7 @@ setup(
     install_requires = [
         'netcdf4',
         'libgdal-netcdf',
+        'libgdal-jp2openjpeg',
         'gdal>=3,<4.0',
         'xarray',
         'numpy<2',
